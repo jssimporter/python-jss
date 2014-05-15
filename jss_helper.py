@@ -16,12 +16,17 @@ import requests
 import FoundationPlist
 import os
 
+
+# Create a plist file with the API username and password like so:
+# defaults write org.da.jss_helper jss_user <username>
+# defaults write org.da.jss_helper jss_pass <password>
 preferences = '~/Library/Preferences/org.da.jss_helper.plist'
 jss_helper_prefs = FoundationPlist.readPlist(os.path.expanduser(preferences))
 authUser = jss_helper_prefs.get('jss_user')
 authPass = jss_helper_prefs.get('jss_pass')
 base64string = base64.encodestring('%s:%s' % (authUser, authPass)).replace('\n', '')
 repoUrl = "https://uscasper.school.da.org:8443"
+
 
 def indent(elem, level=0, more_sibs=False):
     """Indent an xml element object to prepare for pretty printing."""
@@ -148,12 +153,7 @@ def get_group_policies(args):
 
 
 def main():
-    """Run our testing procedures."""
-    #results = get_policies_scoped_to_computer_group('All Managed Clients')
-    #for result in results:
-    #    pprint(result[0])
-    #    pprint(result[1])
-    #pprint(get_policy('150'))
+    """Run as a cli command."""
 
     # Create our argument parser
     parser = argparse.ArgumentParser(description="Query the JSS.")
