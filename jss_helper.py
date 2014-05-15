@@ -23,7 +23,8 @@ preferences = '~/Library/Preferences/org.da.jss_helper.plist'
 jss_helper_prefs = FoundationPlist.readPlist(os.path.expanduser(preferences))
 authUser = jss_helper_prefs.get('jss_user')
 authPass = jss_helper_prefs.get('jss_pass')
-base64string = base64.encodestring('%s:%s' % (authUser, authPass)).replace('\n', '')
+base64string = base64.encodestring('%s:%s' %
+                                   (authUser, authPass)).replace('\n', '')
 repoUrl = "https://uscasper.school.da.org:8443"
 
 
@@ -76,13 +77,13 @@ def get_policies():
 
 def get_policy_ids(xmldata):
     """Parse an etree of policies for id numbers."""
-    elements = xmldata.findall('policy/id') 
+    elements = xmldata.findall('policy/id')
     return [element.text for element in elements]
 
 
-def get_policy(id):
+def get_policy(jss_id):
     """Get all data for a policy."""
-    apiUrl = repoUrl + "/JSSResource/" + 'policies/id/' + id
+    apiUrl = repoUrl + "/JSSResource/" + 'policies/id/' + jss_id
     try:
         xmldata = jss_request(apiUrl)
     except RuntimeError:
@@ -101,11 +102,11 @@ def get_policy(id):
 
 def jss_request(apiUrl):
     """Requests data from the jss.
-    
+
     apiUrl should be a string of the full URL to the desired get procedure.
 
     Returns an ElementTree Element.
-    
+
     """
     submitRequest = urllib2.Request(apiUrl)
     print('Trying to reach JSS and fetch at %s' % (apiUrl))
@@ -119,14 +120,16 @@ def jss_request(apiUrl):
         elif hasattr(e, 'code'):
             print 'Error! code:', e.code
             if e.code == 401:
-                raise RuntimeError('Got a 401 error.. check the api username and password')
+                raise RuntimeError('Got a 401 error.. \
+                                   check the api username and password')
         raise RuntimeError('Did not get a valid response from the server')
     #Create an ElementTree for parsing
     jss_results = submitResult.read()
     try:
         xmldata = ElementTree.fromstring(jss_results)
     except:
-        raise ElementTree.ParseError("Successfully communicated, but error'd when parsing XML")
+        raise ElementTree.ParseError("Successfully communicated, but error'd \
+                                     when parsing XML")
     return xmldata
 
 
@@ -134,12 +137,14 @@ def get_policies_scoped_to_computer_group(group):
     """Search for policies that are scoped to a particular computer group."""
     policies = get_policies()
     ids = get_policy_ids(policies)
-    full_policies = [get_policy(id) for id in ids]
+    full_policies = [get_policy(jss_id) for jss_id in ids]
     results = []
+    search = 'scope/computer_groups/computer_group'
     for policy in full_policies:
-        for computer_group in policy.findall('scope/computer_groups/computer_group'):
+        for computer_group in policy.findall(search):
             if computer_group.findtext('name') == group:
-                results.append((policy.find('general/id'), policy.find('general/name')))
+                results.append((policy.find('general/id'),
+                                policy.find('general/name')))
     return results
 
 def get_group_policies(args):
