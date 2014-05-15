@@ -9,7 +9,7 @@ Shea Craig 2014
 
 from xml.etree import ElementTree
 import base64
-import urllib2
+#import urllib2
 import time
 import requests
 import FoundationPlist
@@ -90,7 +90,7 @@ def get_policy(jss_id):
         #This can fail because you make too many requests, too quickly
         print("Failed... Trying again in 3 seconds")
         xmldata = None
-        while not xmldata:
+        while xmldata is None:
             time.sleep(3)
             try:
                 xmldata = jss_request(apiUrl)
@@ -108,13 +108,12 @@ def jss_request(apiUrl):
     Returns an ElementTree Element.
 
     """
-    submitRequest = urllib2.Request(apiUrl)
     print('Trying to reach JSS and fetch at %s' % (apiUrl))
-    submitRequest.add_header("Authorization", "Basic %s" % base64string)
-    # try reaching the server and performing the GET
+    #submitRequest = urllib2.Request(apiUrl)
+    headers = {'Authorization': "Basic %s" % base64string}
     try:
-        submitResult = urllib2.urlopen(submitRequest)
-    except urllib2.URLError, e:
+        submitRequest = requests.get(apiUrl, headers=headers)
+    except requests.exceptions.SSLError as e:
         if hasattr(e, 'reason'):
             print 'Error! reason:', e.reason
         elif hasattr(e, 'code'):
@@ -123,8 +122,24 @@ def jss_request(apiUrl):
                 raise RuntimeError('Got a 401 error.. \
                                    check the api username and password')
         raise RuntimeError('Did not get a valid response from the server')
+    #submitRequest.add_header("Authorization", "Basic %s" % base64string)
+    #submitRequest.add_header("Authorization", "Basic %s" % base64string)
+
+    # try reaching the server and performing the GET
+    #try:
+    #    submitResult = urllib2.urlopen(submitRequest)
+    #except urllib2.URLError, e:
+    #    if hasattr(e, 'reason'):
+    #        print 'Error! reason:', e.reason
+    #    elif hasattr(e, 'code'):
+    #        print 'Error! code:', e.code
+    #        if e.code == 401:
+    #            raise RuntimeError('Got a 401 error.. \
+    #                               check the api username and password')
+    #    raise RuntimeError('Did not get a valid response from the server')
     #Create an ElementTree for parsing
-    jss_results = submitResult.read()
+    #jss_results = submitResult.read()
+    jss_results = submitRequest.text
     try:
         xmldata = ElementTree.fromstring(jss_results)
     except:
