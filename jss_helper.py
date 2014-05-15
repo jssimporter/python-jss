@@ -147,6 +147,7 @@ def get_policies_scoped_to_computer_group(group):
                                 policy.find('general/name')))
     return results
 
+
 def get_group_policies(args):
     """Helper function."""
     results = get_policies_scoped_to_computer_group(args.group)
