@@ -11,7 +11,6 @@ from xml.etree import ElementTree
 import base64
 import urllib2
 import time
-import argparse
 import requests
 import FoundationPlist
 import os
@@ -150,25 +149,3 @@ def get_group_policies(args):
     for result in results:
         pprint(result[0])
         pprint(result[1])
-
-
-def main():
-    """Run as a cli command."""
-
-    # Create our argument parser
-    parser = argparse.ArgumentParser(description="Query the JSS.")
-    subparser = parser.add_subparsers(dest='subparser_name')
-    subparser_policy = subparser.add_parser('policy_by_group', help="Lists all \
-                                               policies scoped to provided \
-                                               group.")
-    subparser_policy.add_argument('group', help="Group name to query.")
-    subparser_policy.set_defaults(func=get_group_policies)
-
-    # Parse the args and then call their target function
-    args = parser.parse_args()
-    args.func(args)
-    
-
-
-if __name__ == '__main__':
-    main()
