@@ -101,15 +101,19 @@ def jss_request(apiUrl):
         print("Object %s does not exist!" % apiUrl)
         exit(404)
 
-    # Create an ElementTree for parsing
-    jss_results = submitRequest.text
+    # Create an ElementTree for parsing-encode it properly
+    jss_results = submitRequest.text.encode('utf-8')
     try:
         xmldata = ElementTree.fromstring(jss_results)
-    except:
-        print jss_results
-        raise ElementTree.ParseError("Successfully communicated, but error " \
-                                     "when parsing XML")
+    except UnicodeEncodeError as e:
+        if hasattr(e, 'reason'):
+            print 'Error! Reason: %s' % e.reason
+            print 'Attempted encoding: %s' % e.encoding
+            exit(1)
     return xmldata
+
+
+#Computer Functions############################################################
 
 
 def get_policies():
@@ -150,4 +154,48 @@ def get_policies_scoped_to_computer_group(group):
             if computer_group.findtext('name') == group:
                 results.append((policy.find('general/id'),
                                 policy.find('general/name')))
+    return results
+
+
+#Mobile Device Functions#######################################################
+
+
+def get_md_configps():
+    """Gets the list of all mobile device configuration profiles from the
+    JSS.
+
+    """
+    # build our request for the entire list of items
+    apiUrl = repoUrl + "/JSSResource/" + 'mobiledeviceconfigurationprofiles'
+    xmldata = jss_request(apiUrl)
+    return xmldata
+
+
+def get_md_configp_ids(xmldata):
+    """Parse an etree of configuration profiles for id numbers."""
+    elements = xmldata.findall('configuration_profile/id')
+    return [element.text for element in elements]
+
+
+def get_configp_by_id(jss_id):
+    """Get all data for a configuration profile."""
+    apiUrl = repoUrl + "/JSSResource/" + 'mobiledeviceconfigurationprofiles/id/' + jss_id
+    return jss_request(apiUrl)
+
+
+def get_md_configp_scoped_to_group(group):
+    """Search for configuration profiles that are scoped to a particular
+    group.
+
+    """
+    configps = get_md_configps()
+    ids = get_md_configp_ids(configps)
+    full_configps = [get_configp_by_id(jss_id) for jss_id in ids]
+    results = []
+    search = 'scope/mobile_device_groups/mobile_device_group'
+    for configp in full_configps:
+        for device_group in configp.findall(search):
+            if device_group.findtext('name') == group:
+                results.append((configp.find('general/id'),
+                                configp.find('general/name')))
     return results

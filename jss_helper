@@ -40,6 +40,27 @@ def policy_by_name(args):
     pprint(result)
 
 
+def md_configps(args):
+    """Helper function."""
+    result = get_md_configps()
+    pprint(result)
+
+
+def md_configp(args):
+    """Helper function."""
+    result = get_configp_by_id(args.id)
+    pprint(result)
+
+
+def md_configp_group(args):
+    """Helper function."""
+    results = get_md_configp_scoped_to_group(args.group)
+    print("Results:")
+    for result in results:
+        pprint(result[0])
+        pprint(result[1])
+
+
 def main():
     """Run as a cli command."""
 
@@ -72,6 +93,26 @@ def main():
                                                      help=help)
     subparser_policy_by_group.add_argument('group', help="Group name to query.")
     subparser_policy_by_group.set_defaults(func=get_group_policies)
+
+    # md_configps
+    help = "Get a list of all mobile device configuration profiles, and " \
+            "their IDs."
+    subparser_md_configps = subparser.add_parser('md_configps', help=help)
+    subparser_md_configps.set_defaults(func=md_configps)
+
+    # md_configp
+    help = "Get a mobile device configuration profile by ID."
+    subparser_md_configp = subparser.add_parser('md_configp', help=help)
+    subparser_md_configp.add_argument('id', help="ID of policy to retrieve.")
+    subparser_md_configp.set_defaults(func=md_configp)
+
+    # md_config_by_group
+    help = "List all configuration profiles scoped to group"
+    subparser_md_configp_by_group = subparser.add_parser('md_configp_by_group',
+                                                help=help)
+    subparser_md_configp_by_group.add_argument('group',
+                                               help="Group name to query.")
+    subparser_md_configp_by_group.set_defaults(func=md_configp_group)
 
     # Parse the args and then call their target function
     args = parser.parse_args()
