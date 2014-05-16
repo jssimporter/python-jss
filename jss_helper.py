@@ -86,19 +86,7 @@ def get_policy_ids(xmldata):
 def get_policy(jss_id):
     """Get all data for a policy."""
     apiUrl = repoUrl + "/JSSResource/" + 'policies/id/' + jss_id
-    try:
-        xmldata = jss_request(apiUrl)
-    except RuntimeError:
-        #This can fail because you make too many requests, too quickly
-        print("Failed... Trying again in 3 seconds")
-        xmldata = None
-        while xmldata is None:
-            time.sleep(3)
-            try:
-                xmldata = jss_request(apiUrl)
-            except RuntimeError:
-                xmldata = None
-                print("Failed again... Trying again")
+    xmldata = jss_request(apiUrl)
     return xmldata
 
 
@@ -112,17 +100,22 @@ def jss_request(apiUrl):
     """
     print('Trying to reach JSS and fetch at %s' % (apiUrl))
     headers = {'Authorization': "Basic %s" % base64string}
-    try:
-        submitRequest = requests.get(apiUrl, headers=headers)
-    except requests.exceptions.SSLError as e:
-        if hasattr(e, 'reason'):
-            print 'Error! reason:', e.reason
-        elif hasattr(e, 'code'):
-            print 'Error! code:', e.code
-            if e.code == 401:
-                raise RuntimeError('Got a 401 error.. \
-                                   check the api username and password')
-        raise RuntimeError('Did not get a valid response from the server')
+    submitRequest = None
+    while submitRequest is None:
+        try:
+            submitRequest = requests.get(apiUrl, headers=headers)
+        except requests.exceptions.SSLError as e:
+            if hasattr(e, 'reason'):
+                print 'Error! reason:', e.reason
+            elif hasattr(e, 'code'):
+                print 'Error! code:', e.code
+                if e.code == 401:
+                    raise RuntimeError('Got a 401 error.. \
+                                       check the api username and password')
+            #raise RuntimeError('Did not get a valid response from the server')
+            print("Failed... Trying again in a moment.")
+            time.sleep(2)
+
     #Create an ElementTree for parsing
     jss_results = submitRequest.text
     try:
