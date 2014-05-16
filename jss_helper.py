@@ -83,9 +83,28 @@ def get_policy_ids(xmldata):
     return [element.text for element in elements]
 
 
-def get_policy(jss_id):
+def get_policy_by_id(jss_id):
     """Get all data for a policy."""
     apiUrl = repoUrl + "/JSSResource/" + 'policies/id/' + jss_id
+    try:
+        xmldata = jss_request(apiUrl)
+    except RuntimeError:
+        #This can fail because you make too many requests, too quickly
+        print("Failed... Trying again in 3 seconds")
+        xmldata = None
+        while xmldata is None:
+            time.sleep(3)
+            try:
+                xmldata = jss_request(apiUrl)
+            except RuntimeError:
+                xmldata = None
+                print("Failed again... Trying again")
+    return xmldata
+
+
+def get_policy_by_name(policy_name):
+    """Get all data for a policy."""
+    apiUrl = repoUrl + "/JSSResource/" + 'policies/name/' + policy_name
     try:
         xmldata = jss_request(apiUrl)
     except RuntimeError:
@@ -137,7 +156,7 @@ def get_policies_scoped_to_computer_group(group):
     """Search for policies that are scoped to a particular computer group."""
     policies = get_policies()
     ids = get_policy_ids(policies)
-    full_policies = [get_policy(jss_id) for jss_id in ids]
+    full_policies = [get_policy_by_id(jss_id) for jss_id in ids]
     results = []
     search = 'scope/computer_groups/computer_group'
     for policy in full_policies:

@@ -7,8 +7,16 @@ Shea Craig 2014
 
 """
 
+# Be careful not to have name collisions due helper functions calling similar
+# functions from jss_helper!
 from jss_helper import *
 import argparse
+
+
+def get_all_policies(args):
+    """Helper function."""
+    results = get_policies()
+    pprint(results)
 
 
 def get_group_policies(args):
@@ -20,15 +28,10 @@ def get_group_policies(args):
         pprint(result[1])
 
 
-def get_all_policies(args):
-    """Helper function."""
-    results = get_policies()
-    pprint(results)
-
-
 def get_policy(args):
     """Helper function."""
-    pass
+    result = get_policy_by_id(args.id)
+    pprint(result)
 
 
 def main():
@@ -38,6 +41,17 @@ def main():
     parser = argparse.ArgumentParser(description="Query the JSS.")
     subparser = parser.add_subparsers(dest='subparser_name')
 
+    # get_policies
+    help = "Get a list of all policies and their IDs."
+    subparser_policies = subparser.add_parser('policies', help=help)
+    subparser_policies.set_defaults(func=get_all_policies)
+
+    # get_policy
+    help = "Get a policy by ID." 
+    subparser_policy = subparser.add_parser('policy', help=help)
+    subparser_policy.add_argument('id', help="ID of policy to retrieve.")
+    subparser_policy.set_defaults(func=get_policy)
+
     # policy_by_group
     help = "Lists all policies scoped to provided group."
     subparser_policy_by_group = subparser.add_parser('policy_by_group',
@@ -45,10 +59,6 @@ def main():
     subparser_policy_by_group.add_argument('group', help="Group name to query.")
     subparser_policy_by_group.set_defaults(func=get_group_policies)
     
-    # get_policy_ids
-    subparser_policy_ids = subparser.add_parser('policy_ids', help=help)
-    subparser_policy_ids.set_defaults(func=get_all_policies)
-
     # Parse the args and then call their target function
     args = parser.parse_args()
     args.func(args)
