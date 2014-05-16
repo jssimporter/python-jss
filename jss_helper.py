@@ -13,6 +13,7 @@ import time
 import requests
 import FoundationPlist
 import os
+from sys import exit
 
 
 repoUrl = "https://uscasper.school.da.org:8443"
@@ -86,27 +87,13 @@ def get_policy_ids(xmldata):
 def get_policy_by_id(jss_id):
     """Get all data for a policy."""
     apiUrl = repoUrl + "/JSSResource/" + 'policies/id/' + jss_id
-    xmldata = jss_request(apiUrl)
-    return xmldata
+    return jss_request(apiUrl)
 
 
 def get_policy_by_name(policy_name):
     """Get all data for a policy."""
     apiUrl = repoUrl + "/JSSResource/" + 'policies/name/' + policy_name
-    try:
-        xmldata = jss_request(apiUrl)
-    except RuntimeError:
-        #This can fail because you make too many requests, too quickly
-        print("Failed... Trying again in 3 seconds")
-        xmldata = None
-        while xmldata is None:
-            time.sleep(3)
-            try:
-                xmldata = jss_request(apiUrl)
-            except RuntimeError:
-                xmldata = None
-                print("Failed again... Trying again")
-    return xmldata
+    return jss_request(apiUrl)
 
 
 def jss_request(apiUrl):
@@ -135,12 +122,18 @@ def jss_request(apiUrl):
             print("Failed... Trying again in a moment.")
             time.sleep(2)
 
-    #Create an ElementTree for parsing
+    # Does this object exist?
+    if submitRequest.status_code == 404:
+        print("Object %s does not exist!" % apiUrl)
+        exit(404)
+
+    # Create an ElementTree for parsing
     jss_results = submitRequest.text
     try:
         xmldata = ElementTree.fromstring(jss_results)
     except:
-        raise ElementTree.ParseError("Successfully communicated, but error'd" \
+        print jss_results
+        raise ElementTree.ParseError("Successfully communicated, but error " \
                                      "when parsing XML")
     return xmldata
 
