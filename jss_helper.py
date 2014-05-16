@@ -9,23 +9,25 @@ Shea Craig 2014
 
 from xml.etree import ElementTree
 import base64
-#import urllib2
 import time
 import requests
 import FoundationPlist
 import os
 
 
+repoUrl = "https://uscasper.school.da.org:8443"
+
 # Create a plist file with the API username and password like so:
 # defaults write org.da.jss_helper jss_user <username>
 # defaults write org.da.jss_helper jss_pass <password>
+
+# Get auth information
 preferences = '~/Library/Preferences/org.da.jss_helper.plist'
 jss_helper_prefs = FoundationPlist.readPlist(os.path.expanduser(preferences))
 authUser = jss_helper_prefs.get('jss_user')
 authPass = jss_helper_prefs.get('jss_pass')
 base64string = base64.encodestring('%s:%s' %
                                    (authUser, authPass)).replace('\n', '')
-repoUrl = "https://uscasper.school.da.org:8443"
 
 
 def indent(elem, level=0, more_sibs=False):
@@ -109,7 +111,6 @@ def jss_request(apiUrl):
 
     """
     print('Trying to reach JSS and fetch at %s' % (apiUrl))
-    #submitRequest = urllib2.Request(apiUrl)
     headers = {'Authorization': "Basic %s" % base64string}
     try:
         submitRequest = requests.get(apiUrl, headers=headers)
@@ -122,23 +123,7 @@ def jss_request(apiUrl):
                 raise RuntimeError('Got a 401 error.. \
                                    check the api username and password')
         raise RuntimeError('Did not get a valid response from the server')
-    #submitRequest.add_header("Authorization", "Basic %s" % base64string)
-    #submitRequest.add_header("Authorization", "Basic %s" % base64string)
-
-    # try reaching the server and performing the GET
-    #try:
-    #    submitResult = urllib2.urlopen(submitRequest)
-    #except urllib2.URLError, e:
-    #    if hasattr(e, 'reason'):
-    #        print 'Error! reason:', e.reason
-    #    elif hasattr(e, 'code'):
-    #        print 'Error! code:', e.code
-    #        if e.code == 401:
-    #            raise RuntimeError('Got a 401 error.. \
-    #                               check the api username and password')
-    #    raise RuntimeError('Did not get a valid response from the server')
     #Create an ElementTree for parsing
-    #jss_results = submitResult.read()
     jss_results = submitRequest.text
     try:
         xmldata = ElementTree.fromstring(jss_results)
