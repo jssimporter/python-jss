@@ -28,9 +28,15 @@ def get_group_policies(args):
         pprint(result[1])
 
 
-def get_policy(args):
+def policy(args):
     """Helper function."""
     result = get_policy_by_id(args.id)
+    pprint(result)
+
+
+def policy_by_name(args):
+    """Helper function."""
+    result = get_policy_by_name(args.name)
     pprint(result)
 
 
@@ -46,11 +52,19 @@ def main():
     subparser_policies = subparser.add_parser('policies', help=help)
     subparser_policies.set_defaults(func=get_all_policies)
 
-    # get_policy
-    help = "Get a policy by ID." 
+    # policy
+    help = "Get a policy by ID."
     subparser_policy = subparser.add_parser('policy', help=help)
     subparser_policy.add_argument('id', help="ID of policy to retrieve.")
-    subparser_policy.set_defaults(func=get_policy)
+    subparser_policy.set_defaults(func=policy)
+
+    # policy_by_name
+    help = "Get a policy by name."
+    subparser_policy_by_name = subparser.add_parser('policy_by_name',
+                                                    help=help)
+    help = "Name of policy to retrieve."
+    subparser_policy_by_name.add_argument('name', help=help)
+    subparser_policy_by_name.set_defaults(func=policy_by_name)
 
     # policy_by_group
     help = "Lists all policies scoped to provided group."
@@ -58,11 +72,11 @@ def main():
                                                      help=help)
     subparser_policy_by_group.add_argument('group', help="Group name to query.")
     subparser_policy_by_group.set_defaults(func=get_group_policies)
-    
+
     # Parse the args and then call their target function
     args = parser.parse_args()
     args.func(args)
-    
+
 
 if __name__ == '__main__':
     main()

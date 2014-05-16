@@ -139,16 +139,16 @@ def jss_request(apiUrl):
         elif hasattr(e, 'code'):
             print 'Error! code:', e.code
             if e.code == 401:
-                raise RuntimeError('Got a 401 error.. \
-                                   check the api username and password')
+                raise RuntimeError('Got a 401 error.. ' \
+                                   'check the api username and password')
         raise RuntimeError('Did not get a valid response from the server')
     #Create an ElementTree for parsing
     jss_results = submitRequest.text
     try:
         xmldata = ElementTree.fromstring(jss_results)
     except:
-        raise ElementTree.ParseError("Successfully communicated, but error'd \
-                                     when parsing XML")
+        raise ElementTree.ParseError("Successfully communicated, but error'd" \
+                                     "when parsing XML")
     return xmldata
 
 
