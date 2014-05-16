@@ -70,32 +70,6 @@ def pprint(et):
     ElementTree.dump(root)
 
 
-def get_policies():
-    """Gets the list of all policies from the JSS."""
-    # build our request for the entire list of items
-    apiUrl = repoUrl + "/JSSResource/" + 'policies'
-    xmldata = jss_request(apiUrl)
-    return xmldata
-
-
-def get_policy_ids(xmldata):
-    """Parse an etree of policies for id numbers."""
-    elements = xmldata.findall('policy/id')
-    return [element.text for element in elements]
-
-
-def get_policy_by_id(jss_id):
-    """Get all data for a policy."""
-    apiUrl = repoUrl + "/JSSResource/" + 'policies/id/' + jss_id
-    return jss_request(apiUrl)
-
-
-def get_policy_by_name(policy_name):
-    """Get all data for a policy."""
-    apiUrl = repoUrl + "/JSSResource/" + 'policies/name/' + policy_name
-    return jss_request(apiUrl)
-
-
 def jss_request(apiUrl):
     """Requests data from the jss.
 
@@ -136,6 +110,32 @@ def jss_request(apiUrl):
         raise ElementTree.ParseError("Successfully communicated, but error " \
                                      "when parsing XML")
     return xmldata
+
+
+def get_policies():
+    """Gets the list of all policies from the JSS."""
+    # build our request for the entire list of items
+    apiUrl = repoUrl + "/JSSResource/" + 'policies'
+    xmldata = jss_request(apiUrl)
+    return xmldata
+
+
+def get_policy_ids(xmldata):
+    """Parse an etree of policies for id numbers."""
+    elements = xmldata.findall('policy/id')
+    return [element.text for element in elements]
+
+
+def get_policy_by_id(jss_id):
+    """Get all data for a policy."""
+    apiUrl = repoUrl + "/JSSResource/" + 'policies/id/' + jss_id
+    return jss_request(apiUrl)
+
+
+def get_policy_by_name(policy_name):
+    """Get all data for a policy."""
+    apiUrl = repoUrl + "/JSSResource/" + 'policies/name/' + policy_name
+    return jss_request(apiUrl)
 
 
 def get_policies_scoped_to_computer_group(group):
