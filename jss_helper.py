@@ -146,12 +146,3 @@ def get_policies_scoped_to_computer_group(group):
                 results.append((policy.find('general/id'),
                                 policy.find('general/name')))
     return results
-
-
-def get_group_policies(args):
-    """Helper function."""
-    results = get_policies_scoped_to_computer_group(args.group)
-    print("Results:")
-    for result in results:
-        pprint(result[0])
-        pprint(result[1])

@@ -7,8 +7,28 @@ Shea Craig 2014
 
 """
 
-import jss_helper
+from jss_helper import *
 import argparse
+
+
+def get_group_policies(args):
+    """Helper function."""
+    results = get_policies_scoped_to_computer_group(args.group)
+    print("Results:")
+    for result in results:
+        pprint(result[0])
+        pprint(result[1])
+
+
+def get_all_policies(args):
+    """Helper function."""
+    results = get_policies()
+    pprint(results)
+
+
+def get_policy(args):
+    """Helper function."""
+    pass
 
 
 def main():
@@ -17,11 +37,17 @@ def main():
     # Create our argument parser
     parser = argparse.ArgumentParser(description="Query the JSS.")
     subparser = parser.add_subparsers(dest='subparser_name')
-    subparser_policy = subparser.add_parser('policy_by_group',
-                                            help="Lists all policies scoped \
-                                            to provided group.")
-    subparser_policy.add_argument('group', help="Group name to query.")
-    subparser_policy.set_defaults(func=jss_helper.get_group_policies)
+
+    # policy_by_group
+    help = "Lists all policies scoped to provided group."
+    subparser_policy_by_group = subparser.add_parser('policy_by_group',
+                                                     help=help)
+    subparser_policy_by_group.add_argument('group', help="Group name to query.")
+    subparser_policy_by_group.set_defaults(func=get_group_policies)
+    
+    # get_policy_ids
+    subparser_policy_ids = subparser.add_parser('policy_ids', help=help)
+    subparser_policy_ids.set_defaults(func=get_all_policies)
 
     # Parse the args and then call their target function
     args = parser.parse_args()
