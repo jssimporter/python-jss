@@ -131,10 +131,10 @@ class JSS(object):
     def delete(self, url):
         pass
 
-    def get(self, obj_class, id=None):
+    def get(self, obj_class, idn=None):
         url = obj_class._url
-        if id is not None:
-            url = '%s%s%s' % (self._url, url, str(id))
+        if idn is not None:
+            url = '%s%s%s' % (self._url, url, str(idn))
             print(url)
         else:
             url = '%s%s' % (self._url, url)
