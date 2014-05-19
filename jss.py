@@ -34,7 +34,7 @@ class JSSGetError(Exception):
 
 class JSSPrefs(object):
     def __init__(self, preferences_file=None):
-        if not preferences_file:
+        if preferences_file is None:
             path = '~/Library/Preferences/org.da.jss_helper.plist'
             preferences = os.path.expanduser(path)
         else:
@@ -84,25 +84,72 @@ class JSS(object):
         auth = (self._user, self._password)
         self.auth = base64.encodestring('%s:%s' % auth).replace('\n', '')
 
-    def get(self, path, **kwargs):
+    def raw_get(self, path):
         """Perform a get operation.
         path: Path to specific object type.
         Returns an ElementTree element.
         
         """
-        # Not sure I'll be needing the **kwargs
         url = '%s%s' % (self._url, path)
         headers = {'Authorization': "Basic %s" % self.auth}
         response = None
         print('Trying to reach JSS at %s' % url)
         while response is None:
             try:
-                response = requests.get(url, headers=headers, 
+                response = requests.get(url, headers=headers,
                                          verify=self.ssl_verify)
             except requests.exceptions.SSLError as e:
                 if hasattr(e, 'reason'):
                     print 'Error! reason:', e.reason
-                #raise RuntimeError('Did not get a valid response from the server')
+
+                print("Failed... Trying again in a moment.")
+                time.sleep(2)
+
+        if response.status_code == 401:
+            raise JSSAuthenticationError('Authentication error: check the ' \
+                                         'api username and password')
+        elif response.status_code == 404:
+            raise JSSGetError("Object %s does not exist!" % url)
+
+        # Create an ElementTree for parsing-encode it properly
+        jss_results = response.text.encode('utf-8')
+        try:
+            xmldata = ElementTree.fromstring(jss_results)
+        except UnicodeEncodeError as e:
+            if hasattr(e, 'reason'):
+                print 'Error! Reason: %s' % e.reason
+                print 'Attempted encoding: %s' % e.encoding
+                exit(1)
+        return xmldata
+
+    def post(self, url, **kwargs):
+        pass
+
+    def put(self, url, **kwargs):
+        pass
+
+    def delete(self, url):
+        pass
+
+    def get(self, obj_class, id=None):
+        url = obj_class._url
+        if id is not None:
+            url = '%s%s%s' % (self._url, url, str(id))
+        else:
+            url = '%s%s' % (self._url, url)
+
+        headers = {'Authorization': "Basic %s" % self.auth}
+
+        response = None
+        while response is None:
+            try:
+                response = requests.get(url, headers=headers,
+                                         verify=self.ssl_verify)
+
+            except requests.exceptions.SSLError as e:
+                if hasattr(e, 'reason'):
+                    print 'Error! reason:', e.reason
+
                 print("Failed... Trying again in a moment.")
                 time.sleep(2)
 
@@ -126,8 +173,13 @@ class JSS(object):
 
 class JSSObject(object):
     """Base class for representing all available JSS API objects."""
-    def __init__(self):
-        pass
+    _url = None
+
+    def __init__(self, jss, data=None, **kwargs):
+        self.jss = jss
+
+        if data is None:
+            self.data = self.jss.get(self.__class__, data)
 
     def indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing."""
@@ -143,7 +195,7 @@ class JSSObject(object):
                     elem.text += pad
             count = 0
             for kid in elem:
-                indent(kid, level+1, count < num_kids - 1)
+                self.indent(kid, level+1, count < num_kids - 1)
                 count += 1
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
@@ -155,17 +207,20 @@ class JSSObject(object):
                 if more_sibs:
                     elem.tail += pad
 
-
-    def pprint(self, et):
-        """Get the root of an elementtree and pretty print it."""
+    def pprint(self):
+        """Take xml, indent it, and print nicely."""
         #If I ElementTree.parse() I get an ElementTree object, but
         #ElementTree.fromstring() returns an Element object
-        if isinstance(et, ElementTree.ElementTree):
-            root = et.getroot()
-        else:
-            root = et
-        indent(root)
-        ElementTree.dump(root)
+        #if isinstance(et, ElementTree.ElementTree):
+        #    root = et.getroot()
+        #else:
+        #    root = et
+        self.indent(self.data)
+        ElementTree.dump(self.data)
+
+
+class Policies(JSSObject):
+    _url = '/policies'
 
 
 #OLD STUFF#####################################################################

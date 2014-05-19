@@ -67,9 +67,16 @@ def test_jss_password_user_change():
 def test_jss_auth_error():
     j = std_jss()
     j.password('DonkeyTacos')
-    assert_raises(JSSAuthenticationError, j.get, '/policies')
+    assert_raises(JSSAuthenticationError, j.raw_get, '/policies')
 
 
-def test_jss_get_error():
+def test_jss_raw_get_error():
     j = std_jss()
-    assert_raises(JSSGetError, j.get, '/donkey-tacos')
+    assert_raises(JSSGetError, j.raw_get, '/donkey-tacos')
+
+
+def test_policies():
+    j = std_jss()
+    p = Policies(j)
+    p.pprint()
+    assert_is_instance(p, Policies)
