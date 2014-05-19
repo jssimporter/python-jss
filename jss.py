@@ -68,11 +68,21 @@ class JSS(object):
             password = jss_prefs.password
 
         self._url = '%s/JSSResource' % url
-        self.user = user
-        self.password = password
+        self._user = user
+        self._password = password
         self.ssl_verify = ssl_verify
         self.auth = base64.encodestring('%s:%s' %
                                    (user, password)).replace('\n', '')
+
+    def user(self, user):
+        self._user = user
+        auth = (self._user, self._password)
+        self.auth = base64.encodestring('%s:%s' % auth).replace('\n', '')
+
+    def password(self, password):
+        self._password = password
+        auth = (self._user, self._password)
+        self.auth = base64.encodestring('%s:%s' % auth).replace('\n', '')
 
     def get(self, path, **kwargs):
         """Perform a get operation.
@@ -80,10 +90,11 @@ class JSS(object):
         Returns an ElementTree element.
         
         """
+        # Not sure I'll be needing the **kwargs
         url = '%s%s' % (self._url, path)
-        print('Trying to reach JSS and fetch at %s' % url)
         headers = {'Authorization': "Basic %s" % self.auth}
         response = None
+        print('Trying to reach JSS at %s' % url)
         while response is None:
             try:
                 response = requests.get(url, headers=headers, 
@@ -112,101 +123,52 @@ class JSS(object):
                 exit(1)
         return xmldata
 
-repoUrl = "https://uscasper.school.da.org:8443"
 
-# Create a plist file with the API username and password like so:
-# defaults write org.da.jss_helper jss_user <username>
-# defaults write org.da.jss_helper jss_pass <password>
+class JSSObject(object):
+    """Base class for representing all available JSS API objects."""
+    def __init__(self):
+        pass
 
-# Get auth information
-preferences = '~/Library/Preferences/org.da.jss_helper.plist'
-jss_helper_prefs = FoundationPlist.readPlist(os.path.expanduser(preferences))
-authUser = jss_helper_prefs.get('jss_user')
-authPass = jss_helper_prefs.get('jss_pass')
-base64string = base64.encodestring('%s:%s' %
-                                   (authUser, authPass)).replace('\n', '')
-
-
-def indent(elem, level=0, more_sibs=False):
-    """Indent an xml element object to prepare for pretty printing."""
-    i = "\n"
-    pad = '    '
-    if level:
-        i += (level - 1) * pad
-    num_kids = len(elem)
-    if num_kids:
-        if not elem.text or not elem.text.strip():
-            elem.text = i + pad
-            if level:
-                elem.text += pad
-        count = 0
-        for kid in elem:
-            indent(kid, level+1, count < num_kids - 1)
-            count += 1
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
-            if more_sibs:
-                elem.tail += pad
-    else:
-        if level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
-            if more_sibs:
-                elem.tail += pad
+    def indent(self, elem, level=0, more_sibs=False):
+        """Indent an xml element object to prepare for pretty printing."""
+        i = "\n"
+        pad = '    '
+        if level:
+            i += (level - 1) * pad
+        num_kids = len(elem)
+        if num_kids:
+            if not elem.text or not elem.text.strip():
+                elem.text = i + pad
+                if level:
+                    elem.text += pad
+            count = 0
+            for kid in elem:
+                indent(kid, level+1, count < num_kids - 1)
+                count += 1
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+                if more_sibs:
+                    elem.tail += pad
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i
+                if more_sibs:
+                    elem.tail += pad
 
 
-def pprint(et):
-    """Get the root of an elementtree and pretty print it."""
-    #If I ElementTree.parse() I get an ElementTree object, but
-    #ElementTree.fromstring() returns an Element object
-    if isinstance(et, ElementTree.ElementTree):
-        root = et.getroot()
-    else:
-        root = et
-    indent(root)
-    ElementTree.dump(root)
+    def pprint(self, et):
+        """Get the root of an elementtree and pretty print it."""
+        #If I ElementTree.parse() I get an ElementTree object, but
+        #ElementTree.fromstring() returns an Element object
+        if isinstance(et, ElementTree.ElementTree):
+            root = et.getroot()
+        else:
+            root = et
+        indent(root)
+        ElementTree.dump(root)
 
 
-def jss_request(apiUrl):
-    """Requests data from the jss.
-
-    apiUrl should be a string of the full URL to the desired get procedure.
-
-    Returns an ElementTree Element.
-
-    """
-    print('Trying to reach JSS and fetch at %s' % (apiUrl))
-    headers = {'Authorization': "Basic %s" % base64string}
-    submitRequest = None
-    while submitRequest is None:
-        try:
-            submitRequest = requests.get(apiUrl, headers=headers)
-        except requests.exceptions.SSLError as e:
-            if hasattr(e, 'reason'):
-                print 'Error! reason:', e.reason
-            elif hasattr(e, 'code'):
-                print 'Error! code:', e.code
-                if e.code == 401:
-                    raise RuntimeError('Got a 401 error.. \
-                                       check the api username and password')
-            #raise RuntimeError('Did not get a valid response from the server')
-            print("Failed... Trying again in a moment.")
-            time.sleep(2)
-
-    # Does this object exist?
-    if submitRequest.status_code == 404:
-        print("Object %s does not exist!" % apiUrl)
-        exit(404)
-
-    # Create an ElementTree for parsing-encode it properly
-    jss_results = submitRequest.text.encode('utf-8')
-    try:
-        xmldata = ElementTree.fromstring(jss_results)
-    except UnicodeEncodeError as e:
-        if hasattr(e, 'reason'):
-            print 'Error! Reason: %s' % e.reason
-            print 'Attempted encoding: %s' % e.encoding
-            exit(1)
-    return xmldata
+#OLD STUFF#####################################################################
 
 
 #Computer Functions############################################################

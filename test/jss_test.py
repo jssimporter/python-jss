@@ -4,6 +4,7 @@
 from nose.tools import *
 from jss import *
 import subprocess
+import base64
 
 
 def setup():
@@ -43,12 +44,29 @@ def test_jss_with_jss_prefs():
 
 
 def test_jss_with_args():
+    authUser = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_user'])
+    authPass = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_pass'])
+    repoUrl = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_url'])
     j = JSS(url=repoUrl, user=authUser, password=authPass)
     assert_is_instance(j, JSS)
 
 
+def test_jss_password_user_change():
+    j = std_jss()
+    password = 'DonkeyTacos'
+    user = 'Muleboy'
+    j.password(password)
+    assert(j._password == password)
+    j.user(user)
+    assert(j._user == user)
+    auth = base64.encodestring('%s:%s' %
+                              (user, password)).replace('\n', '')
+    assert(j.auth == auth)
+
+
 def test_jss_auth_error():
-    j = JSS(url=repoUrl, user=authUser, password='badPassword')
+    j = std_jss()
+    j.password('DonkeyTacos')
     assert_raises(JSSAuthenticationError, j.get, '/policies')
 
 
