@@ -11,6 +11,12 @@ def setup():
     pass
 
 
+def std_jss():
+    jp = JSSPrefs()
+    j = JSS(jss_prefs=jp)
+    return j
+
+
 def test_jss_prefs():
     # For test to succeed, you need to set up a preferences file.
     # Create a plist file with the API username and password like so:
@@ -26,12 +32,22 @@ def test_jss_prefs():
     assert_in(jp.url, result)
 
 
+def test_jss_with_jss_prefs():
+    jp = JSSPrefs()
+    j = JSS(jss_prefs=jp)
+    assert_is_instance(j, JSS)
+
+
+def test_jss_with_args():
+    j = JSS(url=repoUrl, user=authUser, password=authPass)
+    assert_is_instance(j, JSS)
+
+
 def test_jss_auth_error():
     j = JSS(url=repoUrl, user=authUser, password='badPassword')
     assert_raises(JSSAuthenticationError, j.get, '/policies')
 
 
-@with_setup(setup)
 def test_jss_get_error():
-    j = JSS(url=repoUrl, user=authUser, password=authPass)
+    j = std_jss()
     assert_raises(JSSGetError, j.get, '/donkey-tacos')
