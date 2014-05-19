@@ -134,7 +134,7 @@ class JSS(object):
     def get(self, obj_class, idn=None):
         url = obj_class._url
         if idn is not None:
-            url = '%s%s%s' % (self._url, url, str(idn))
+            url = '%s%s%s%s' % (self._url, url, '/id/', str(idn))
             print(url)
         else:
             url = '%s%s' % (self._url, url)
@@ -155,6 +155,36 @@ class JSS(object):
         xmldata = ElementTree.fromstring(jss_results)
         return xmldata
 
+    def list(self, obj_class, **kwargs):
+        url = obj_class._url
+        url = '%s%s' % (self._url, url)
+
+        headers = {'Authorization': "Basic %s" % self.auth}
+
+        response = requests.get(url, headers=headers,
+                                 verify=self.ssl_verify)
+
+        if response.status_code == 401:
+            raise JSSAuthenticationError('Authentication error: check the ' \
+                                         'api username and password')
+        elif response.status_code == 404:
+            raise JSSGetError("Object %s does not exist!" % url)
+
+        # JSS returns xml encoded in utf-8
+        jss_results = response.text.encode('utf-8')
+        xmldata = ElementTree.fromstring(jss_results)
+
+        #l = [obj_class(self, item) for item in xmldata if item is not None]
+        l = [obj_class(self, item) for item in xmldata if item is not None and item.tag != 'size']
+        if kwargs:
+            for k, v in kwargs.items():
+                for obj in l:
+                    obj.__dict__[k] = str(v)
+        return l
+
+    #def Policies(self):
+
+
 
 class JSSObject(object):
     """Base class for representing all available JSS API objects."""
@@ -164,7 +194,9 @@ class JSSObject(object):
         self.jss = jss
 
         if data is None or type(data) in [int, str, unicode]:
-            self.data = self.jss.get(self.__class__, data)
+            data = self.jss.get(self.__class__, data, **kwargs)
+
+        self._setFromDict(data)
 
         if kwargs:
             for k, v in kwargs.items():
@@ -207,101 +239,35 @@ class JSSObject(object):
         self.indent(self.data)
         ElementTree.dump(self.data)
 
+    def _get_list_or_object(self, cls, id, **kwargs):
+        if id is None:
+            return cls.list(self, **kwargs)
+        else:
+            return cls(self, id, **kwargs)
 
-class Policies(JSSObject):
-    _url = '/policies'
+    @classmethod
+    def list(cls, jss, **kwargs):
+        return jss.list(cls, **kwargs)
+
+    def _setFromDict(self, data):
+        # TODO!
+        # data.getchildren, and need to split tag and text manually
+        for k, v in data.items():
+            if isinstance(v, list):
+                self.__dict__[k] = []
+                for i in v:
+                    self.__dict__[k].append(self._getObject(k, i))
+            elif v:
+                self.__dict__[k] = self._getObject(k, v)
+            else:  # None object
+                #self.__dict__[k] = None
+                self.__dict__[k] = v.text
+
+
+
+#class Policies(JSSObject):
+#    _url = '/policies'
 
 
 class Policy(JSSObject):
-    _url = '/policies/id/'
-
-
-#OLD STUFF#####################################################################
-
-
-#Computer Functions############################################################
-
-
-def get_policies():
-    """Gets the list of all policies from the JSS."""
-    # build our request for the entire list of items
-    apiUrl = repoUrl + "/JSSResource/" + 'policies'
-    xmldata = jss_request(apiUrl)
-    return xmldata
-
-
-def get_policy_ids(xmldata):
-    """Parse an etree of policies for id numbers."""
-    elements = xmldata.findall('policy/id')
-    return [element.text for element in elements]
-
-
-def get_policy_by_id(jss_id):
-    """Get all data for a policy."""
-    apiUrl = repoUrl + "/JSSResource/" + 'policies/id/' + jss_id
-    return jss_request(apiUrl)
-
-
-def get_policy_by_name(policy_name):
-    """Get all data for a policy."""
-    apiUrl = repoUrl + "/JSSResource/" + 'policies/name/' + policy_name
-    return jss_request(apiUrl)
-
-
-def get_policies_scoped_to_computer_group(group):
-    """Search for policies that are scoped to a particular computer group."""
-    policies = get_policies()
-    ids = get_policy_ids(policies)
-    full_policies = [get_policy_by_id(jss_id) for jss_id in ids]
-    results = []
-    search = 'scope/computer_groups/computer_group'
-    for policy in full_policies:
-        for computer_group in policy.findall(search):
-            if computer_group.findtext('name') == group:
-                results.append((policy.find('general/id'),
-                                policy.find('general/name')))
-    return results
-
-
-#Mobile Device Functions#######################################################
-
-
-def get_md_configps():
-    """Gets the list of all mobile device configuration profiles from the
-    JSS.
-
-    """
-    # build our request for the entire list of items
-    apiUrl = repoUrl + "/JSSResource/" + 'mobiledeviceconfigurationprofiles'
-    xmldata = jss_request(apiUrl)
-    return xmldata
-
-
-def get_md_configp_ids(xmldata):
-    """Parse an etree of configuration profiles for id numbers."""
-    elements = xmldata.findall('configuration_profile/id')
-    return [element.text for element in elements]
-
-
-def get_configp_by_id(jss_id):
-    """Get all data for a configuration profile."""
-    apiUrl = repoUrl + "/JSSResource/" + 'mobiledeviceconfigurationprofiles/id/' + jss_id
-    return jss_request(apiUrl)
-
-
-def get_md_configp_scoped_to_group(group):
-    """Search for configuration profiles that are scoped to a particular
-    group.
-
-    """
-    configps = get_md_configps()
-    ids = get_md_configp_ids(configps)
-    full_configps = [get_configp_by_id(jss_id) for jss_id in ids]
-    results = []
-    search = 'scope/mobile_device_groups/mobile_device_group'
-    for configp in full_configps:
-        for device_group in configp.findall(search):
-            if device_group.findtext('name') == group:
-                results.append((configp.find('general/id'),
-                                configp.find('general/name')))
-    return results
+    _url = '/policies'
