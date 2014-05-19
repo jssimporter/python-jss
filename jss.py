@@ -28,9 +28,28 @@ class JSSGetError(Exception):
     pass
 
 
+class JSSPrefs(object):
+    def __init__(self, preferences_file=None):
+        if not preferences_file:
+            path = '~/Library/Preferences/org.da.jss_helper.plist'
+            preferences = os.path.expanduser(path)
+        else:
+            preferences = preferences_file
+        prefs = FoundationPlist.readPlist(os.path.expanduser(preferences))
+        self.user = prefs.get('jss_user')
+        self.password = prefs.get('jss_pass')
+        self.url = prefs.get('jss_url')
+
+
 class JSS(object):
     """Connect to a JSS and handle API requests."""
-    def __init__(self, url, user, password, ssl_verify=True):
+    def __init__(self, jss_prefs=None, url=None, user=None, password=None,
+                 ssl_verify=True):
+        if jss_prefs is not None:
+            url = jss_prefs.url
+            user = jss_prefs.user
+            password = jss_prefs.password
+
         self._url = '%s/JSSResource' % url
         self.user = user
         self.password = password
