@@ -17,7 +17,7 @@ def std_jss():
     return j
 
 
-def test_jss_prefs():
+def test_jssprefs():
     # For test to succeed, you need to set up a preferences file.
     # Create a plist file with the API username and password like so:
     # defaults write org.da.jss_helper jss_user <username>
@@ -30,6 +30,10 @@ def test_jss_prefs():
     assert_in(jp.password, result)
     result = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_url'])
     assert_in(jp.url, result)
+
+
+def test_jssprefs_missing_key_error():
+    assert_raises(JSSPrefsMissingKeyError, JSSPrefs, '/nonexistent_path')
 
 
 def test_jss_with_jss_prefs():

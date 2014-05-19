@@ -16,6 +16,10 @@ import os
 from sys import exit
 
 
+class JSSPrefsMissingKeyError(Exception):
+    pass
+
+
 class JSSAuthenticationError(Exception):
     pass
 
@@ -35,16 +39,29 @@ class JSSPrefs(object):
             preferences = os.path.expanduser(path)
         else:
             preferences = preferences_file
-        prefs = FoundationPlist.readPlist(os.path.expanduser(preferences))
-        self.user = prefs.get('jss_user')
-        self.password = prefs.get('jss_pass')
-        self.url = prefs.get('jss_url')
+        try:
+            prefs = FoundationPlist.readPlist(os.path.expanduser(preferences))
+            self.user = prefs.get('jss_user')
+            self.password = prefs.get('jss_pass')
+            self.url = prefs.get('jss_url')
+        except:
+            raise JSSPrefsMissingKeyError
 
 
 class JSS(object):
     """Connect to a JSS and handle API requests."""
     def __init__(self, jss_prefs=None, url=None, user=None, password=None,
                  ssl_verify=True):
+        """Provide either a JSSPrefs object OR specify url, user, and password
+        to init.
+
+        jss_prefs: A JSSPrefs object.
+        url: Path with port to a JSS.
+        user: API Username.
+        password: API Password.
+        ssl_verify: Boolean indicating whether to verify SSL certificates.
+
+        """
         if jss_prefs is not None:
             url = jss_prefs.url
             user = jss_prefs.user
