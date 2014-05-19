@@ -140,18 +140,8 @@ class JSS(object):
 
         headers = {'Authorization': "Basic %s" % self.auth}
 
-        response = None
-        while response is None:
-            try:
-                response = requests.get(url, headers=headers,
-                                         verify=self.ssl_verify)
-
-            except requests.exceptions.SSLError as e:
-                if hasattr(e, 'reason'):
-                    print 'Error! reason:', e.reason
-
-                print("Failed... Trying again in a moment.")
-                time.sleep(2)
+        response = requests.get(url, headers=headers,
+                                 verify=self.ssl_verify)
 
         if response.status_code == 401:
             raise JSSAuthenticationError('Authentication error: check the ' \
@@ -159,15 +149,9 @@ class JSS(object):
         elif response.status_code == 404:
             raise JSSGetError("Object %s does not exist!" % url)
 
-        # Create an ElementTree for parsing-encode it properly
+        # JSS returns xml encoded in utf-8
         jss_results = response.text.encode('utf-8')
-        try:
-            xmldata = ElementTree.fromstring(jss_results)
-        except UnicodeEncodeError as e:
-            if hasattr(e, 'reason'):
-                print 'Error! Reason: %s' % e.reason
-                print 'Attempted encoding: %s' % e.encoding
-                exit(1)
+        xmldata = ElementTree.fromstring(jss_results)
         return xmldata
 
 
