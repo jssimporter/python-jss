@@ -135,6 +135,7 @@ class JSS(object):
         url = obj_class._url
         if id is not None:
             url = '%s%s%s' % (self._url, url, str(id))
+            print(url)
         else:
             url = '%s%s' % (self._url, url)
 
@@ -162,8 +163,12 @@ class JSSObject(object):
     def __init__(self, jss, data=None, **kwargs):
         self.jss = jss
 
-        if data is None:
+        if data is None or type(data) in [int, str, unicode]:
             self.data = self.jss.get(self.__class__, data)
+
+        if kwargs:
+            for k, v in kwargs.items():
+                self.__dict__[k] = v
 
     def indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing."""
@@ -205,6 +210,10 @@ class JSSObject(object):
 
 class Policies(JSSObject):
     _url = '/policies'
+
+
+class Policy(JSSObject):
+    _url = '/policies/id/'
 
 
 #OLD STUFF#####################################################################

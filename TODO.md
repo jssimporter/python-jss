@@ -9,3 +9,5 @@
 	*Alternately, it could be added where it is expected to be needed, which
 	for the wrapper is nowhere. This has just been a problem with me doing my
 	policies_for_group search, which pulls every full policy down afap.
+
+*Remove try/except and while loop from rawget.
