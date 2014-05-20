@@ -85,7 +85,7 @@ def test_jss_policy():
     print(policies)
     assert_is_instance(policies, list)
     assert_greater(len(policies), 0)
-    id_ = policies[0].__dict__['data'].find('id').text
+    id_ = policies[0].xml.find('id').text
     policy = j.Policy(id_)
     assert_is_instance(policy, Policy)
     policy.pprint()
@@ -96,7 +96,7 @@ def test_jss_computer():
     print(computers)
     assert_is_instance(computers, list)
     assert_greater(len(computers), 0)
-    id_ = computers[0].__dict__['data'].find('id').text
+    id_ = computers[0].xml.find('id').text
     computer = j.Computer(id_)
     assert_is_instance(computer, Computer)
     computer.pprint()

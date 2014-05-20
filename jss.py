@@ -168,7 +168,7 @@ class JSSObject(object):
         if data is None or type(data) in [int, str, unicode]:
             data = self.jss.get(self.__class__, data)
 
-        self._set_from_dict(data)
+        self.xml = data
 
     def _get_list_or_object(self, cls, id):
         if id is None:
@@ -179,9 +179,6 @@ class JSSObject(object):
     @classmethod
     def list(cls, jss):
         return jss.list(cls)
-
-    def _set_from_dict(self, data):
-        self.__dict__['data'] = data
 
     def _get_object(self, k, v):
         return v
@@ -214,8 +211,8 @@ class JSSObject(object):
 
     def pprint(self):
         """Pretty print our XML data."""
-        self.indent(self.__dict__['data'])
-        ElementTree.dump(self.__dict__['data'])
+        self.indent(self.xml)
+        ElementTree.dump(self.xml)
 
 
 class Computer(JSSObject):
