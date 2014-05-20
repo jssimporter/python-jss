@@ -35,16 +35,16 @@ class JSSPrefs(object):
     def __init__(self, preferences_file=None):
         if preferences_file is None:
             path = '~/Library/Preferences/org.da.jss_helper.plist'
-            preferences = os.path.expanduser(path)
-        else:
-            preferences = preferences_file
+            preferences_file = os.path.expanduser(path)
         try:
-            prefs = FoundationPlist.readPlist(os.path.expanduser(preferences))
+            prefs = FoundationPlist.readPlist(os.path.expanduser(
+                    preferences_file))
             self.user = prefs.get('jss_user')
             self.password = prefs.get('jss_pass')
             self.url = prefs.get('jss_url')
         except:
-            raise JSSPrefsMissingKeyError
+            raise JSSPrefsMissingKeyError("Please provide all required"
+                                          " preferences!")
 
 
 class JSS(object):
@@ -59,6 +59,7 @@ class JSS(object):
         user: API Username.
         password: API Password.
         ssl_verify: Boolean indicating whether to verify SSL certificates.
+                Defaults to True.
 
         """
         if jss_prefs is not None:
@@ -111,6 +112,7 @@ class JSS(object):
         return self.get_request(url)
 
     def get(self, obj_class, id_=None):
+        """Get method for JSSObjects."""
         url = obj_class._url
         if id_ is not None:
             # JSS API adds a /id/ between our object type and id number.
@@ -118,12 +120,10 @@ class JSS(object):
             print(url)
         else:
             url = '%s%s' % (self._url, url)
-
         return self.get_request(url)
 
     def list(self, obj_class):
-        """Retrieve an xml list of a type of objects.
-
+        """Query the JSS for a list of all objects of an object type.
         Returns a list of objects of the corresponding type.
 
         """
@@ -133,8 +133,8 @@ class JSS(object):
         xmldata = self.get_request(url)
 
         # Build a list of objects based on the results. Remove the size elements.
-        l = [obj_class(self, item) for item in xmldata if item is not None and item.tag != 'size']
-        return l
+        lst = [obj_class(self, item) for item in xmldata if item is not None and item.tag != 'size']
+        return lst
 
     def post(self, url):
         pass
@@ -145,14 +145,14 @@ class JSS(object):
     def delete(self, url):
         pass
 
-    def _getListOrObject(self, cls, id_):
+    def _get_list_or_object(self, cls, id_):
         if id_ is None:
             return cls.list(self)
         else:
             return cls(self, id_)
 
     def Policy(self, id_=None):
-        return self._getListOrObject(Policy, id_)
+        return self._get_list_or_object(Policy, id_)
 
 
 class JSSObject(object):
@@ -165,7 +165,23 @@ class JSSObject(object):
         if data is None or type(data) in [int, str, unicode]:
             data = self.jss.get(self.__class__, data)
 
-        self._setFromDict(data)
+        self._set_from_dict(data)
+
+    def _get_list_or_object(self, cls, id):
+        if id is None:
+            return cls.list(self)
+        else:
+            return cls(self, id)
+
+    @classmethod
+    def list(cls, jss):
+        return jss.list(cls)
+
+    def _set_from_dict(self, data):
+        self.__dict__['data'] = data
+
+    def _get_object(self, k, v):
+        return v
 
     def indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing."""
@@ -194,25 +210,9 @@ class JSSObject(object):
                     elem.tail += pad
 
     def pprint(self):
-        """Take xml, indent it, and print nicely."""
+        """Pretty print our XML data."""
         self.indent(self.__dict__['data'])
         ElementTree.dump(self.__dict__['data'])
-
-    def _get_list_or_object(self, cls, id):
-        if id is None:
-            return cls.list(self)
-        else:
-            return cls(self, id)
-
-    @classmethod
-    def list(cls, jss):
-        return jss.list(cls)
-
-    def _setFromDict(self, data):
-        self.__dict__['data'] = data
-
-    def _getObject(self, k, v):
-        return v
 
 
 class Policy(JSSObject):
