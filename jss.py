@@ -151,6 +151,9 @@ class JSS(object):
         else:
             return cls(self, id_)
 
+    def Computer(self, id_=None):
+        return self._get_list_or_object(Computer, id_)
+
     def Policy(self, id_=None):
         return self._get_list_or_object(Policy, id_)
 
@@ -213,6 +216,10 @@ class JSSObject(object):
         """Pretty print our XML data."""
         self.indent(self.__dict__['data'])
         ElementTree.dump(self.__dict__['data'])
+
+
+class Computer(JSSObject):
+    _url = '/computers'
 
 
 class Policy(JSSObject):

@@ -1,15 +1,21 @@
 #!/usr/bin/python
-"""Tests for jss wrapper."""
+"""Tests for jss wrapper.
+For test to succeed, you need to set up a preferences file at:
+~/Library/Preferences/org.da.jss_helper.plist
 
-from nose.tools import *
-from jss import *
+Create a plist file with the API username and password like so:
+defaults write org.da.jss_helper jss_user <username>
+defaults write org.da.jss_helper jss_pass <password>
+defaults write org.da.jss_helper jss_url <URL to JSS>
+
+"""
+
 import subprocess
 import base64
 
+from nose.tools import *
 
-def setup():
-    #j = JSS(repoUrl, authUser, authPass)
-    pass
+from jss import *
 
 
 def std_jss():
@@ -19,11 +25,6 @@ def std_jss():
 
 
 def test_jssprefs():
-    # For test to succeed, you need to set up a preferences file.
-    # Create a plist file with the API username and password like so:
-    # defaults write org.da.jss_helper jss_user <username>
-    # defaults write org.da.jss_helper jss_pass <password>
-    # defaults write org.da.jss_helper jss_url <URL to JSS>
     jp = JSSPrefs()
     result = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_user'])
     assert_in(jp.user, result)
@@ -75,12 +76,27 @@ def test_jss_raw_get_error():
     assert_raises(JSSGetError, j.raw_get, '/donkey-tacos')
 
 
+#JSSObject Tests###############################################################
+
+
 def test_jss_policy():
     j = std_jss()
-    ps = j.Policy()
-    print(ps)
-    assert_is_instance(ps, list)
-    idn = ps[0].__dict__['data'].find('id').text
-    p = j.Policy(idn)
-    assert_is_instance(p, Policy)
-    p.pprint()
+    policies = j.Policy()
+    print(policies)
+    assert_is_instance(policies, list)
+    assert_greater(len(policies), 0)
+    id_ = policies[0].__dict__['data'].find('id').text
+    policy = j.Policy(id_)
+    assert_is_instance(policy, Policy)
+    policy.pprint()
+
+def test_jss_computer():
+    j = std_jss()
+    computers = j.Computer()
+    print(computers)
+    assert_is_instance(computers, list)
+    assert_greater(len(computers), 0)
+    id_ = computers[0].__dict__['data'].find('id').text
+    computer = j.Computer(id_)
+    assert_is_instance(computer, Computer)
+    computer.pprint()
