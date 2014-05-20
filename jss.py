@@ -84,26 +84,12 @@ class JSS(object):
         auth = (self._user, self._password)
         self.auth = base64.encodestring('%s:%s' % auth).replace('\n', '')
 
-    def raw_get(self, path):
-        """Perform a get operation.
-        path: Path to specific object type.
-        Returns an ElementTree element.
-        
-        """
-        url = '%s%s' % (self._url, path)
+    def get_request(self, url):
+        """Get a url, handle errors, and return an etree from the XML data."""
         headers = {'Authorization': "Basic %s" % self.auth}
-        response = None
-        print('Trying to reach JSS at %s' % url)
-        while response is None:
-            try:
-                response = requests.get(url, headers=headers,
-                                         verify=self.ssl_verify)
-            except requests.exceptions.SSLError as e:
-                if hasattr(e, 'reason'):
-                    print 'Error! reason:', e.reason
 
-                print("Failed... Trying again in a moment.")
-                time.sleep(2)
+        response = requests.get(url, headers=headers,
+                                 verify=self.ssl_verify)
 
         if response.status_code == 401:
             raise JSSAuthenticationError('Authentication error: check the ' \
@@ -111,16 +97,45 @@ class JSS(object):
         elif response.status_code == 404:
             raise JSSGetError("Object %s does not exist!" % url)
 
-        # Create an ElementTree for parsing-encode it properly
+        # JSS returns xml encoded in utf-8
         jss_results = response.text.encode('utf-8')
-        try:
-            xmldata = ElementTree.fromstring(jss_results)
-        except UnicodeEncodeError as e:
-            if hasattr(e, 'reason'):
-                print 'Error! Reason: %s' % e.reason
-                print 'Attempted encoding: %s' % e.encoding
-                exit(1)
+        xmldata = ElementTree.fromstring(jss_results)
         return xmldata
+
+    def raw_get(self, path):
+        """Perform a get operation from a specified path.
+        path: Path to specific object type.
+        Returns an ElementTree element.
+
+        """
+        url = '%s%s' % (self._url, path)
+        return self.get_request(url)
+
+    def get(self, obj_class, idn=None):
+        url = obj_class._url
+        if idn is not None:
+            # JSS API adds a /id/ between our object type and id number.
+            url = '%s%s%s%s' % (self._url, url, '/id/', str(idn))
+            print(url)
+        else:
+            url = '%s%s' % (self._url, url)
+
+        return self.get_request(url)
+
+    def list(self, obj_class):
+        """Retrieve an xml list of a type of objects.
+
+        Returns a list of objects of the corresponding type.
+
+        """
+        url = obj_class._url
+        url = '%s%s' % (self._url, url)
+
+        xmldata = self.get_request(url)
+
+        # Build a list of objects based on the results. Remove the size elements.
+        l = [obj_class(self, item) for item in xmldata if item is not None and item.tag != 'size']
+        return l
 
     def post(self, url):
         pass
@@ -130,53 +145,6 @@ class JSS(object):
 
     def delete(self, url):
         pass
-
-    def get(self, obj_class, idn=None):
-        url = obj_class._url
-        if idn is not None:
-            url = '%s%s%s%s' % (self._url, url, '/id/', str(idn))
-            print(url)
-        else:
-            url = '%s%s' % (self._url, url)
-
-        headers = {'Authorization': "Basic %s" % self.auth}
-
-        response = requests.get(url, headers=headers,
-                                 verify=self.ssl_verify)
-
-        if response.status_code == 401:
-            raise JSSAuthenticationError('Authentication error: check the ' \
-                                         'api username and password')
-        elif response.status_code == 404:
-            raise JSSGetError("Object %s does not exist!" % url)
-
-        # JSS returns xml encoded in utf-8
-        jss_results = response.text.encode('utf-8')
-        xmldata = ElementTree.fromstring(jss_results)
-        return xmldata
-
-    def list(self, obj_class):
-        url = obj_class._url
-        url = '%s%s' % (self._url, url)
-
-        headers = {'Authorization': "Basic %s" % self.auth}
-
-        response = requests.get(url, headers=headers,
-                                 verify=self.ssl_verify)
-
-        if response.status_code == 401:
-            raise JSSAuthenticationError('Authentication error: check the ' \
-                                         'api username and password')
-        elif response.status_code == 404:
-            raise JSSGetError("Object %s does not exist!" % url)
-
-        # JSS returns xml encoded in utf-8
-        jss_results = response.text.encode('utf-8')
-        xmldata = ElementTree.fromstring(jss_results)
-
-        #l = [obj_class(self, item) for item in xmldata if item is not None]
-        l = [obj_class(self, item) for item in xmldata if item is not None and item.tag != 'size']
-        return l
 
     def _getListOrObject(self, cls, idn):
         if idn is None:
@@ -191,14 +159,12 @@ class JSS(object):
 class JSSObject(object):
     """Base class for representing all available JSS API objects."""
     _url = None
-    _jss_return = None
 
     def __init__(self, jss, data=None):
         self.jss = jss
 
         if data is None or type(data) in [int, str, unicode]:
             data = self.jss.get(self.__class__, data)
-        #ElementTree.dump(data)
 
         self._setFromDict(data)
 
@@ -230,17 +196,8 @@ class JSSObject(object):
 
     def pprint(self):
         """Take xml, indent it, and print nicely."""
-        #If I ElementTree.parse() I get an ElementTree object, but
-        #ElementTree.fromstring() returns an Element object
-        #if isinstance(et, ElementTree.ElementTree):
-        #    root = et.getroot()
-        #else:
-        #    root = et
         self.indent(self.__dict__['data'])
         ElementTree.dump(self.__dict__['data'])
-        #for k, v in self.__dict__.items():
-        #    print("%s=>%s" % (k, v))
-        #print self.__dict__
 
     def _get_list_or_object(self, cls, id):
         if id is None:
@@ -253,25 +210,11 @@ class JSSObject(object):
         return jss.list(cls)
 
     def _setFromDict(self, data):
-    #TODO
-    #This has major problems. I think I need to just keep my data in ElementTrees
-    #Actually, this is done...
         self.__dict__['data'] = data
-        #for item in data:
-        #    k = item.tag
-        #    v = item.text
-        #    if isinstance(v, ElementTree.Element):
-        #        self.__dict__[k] = []
-        #        for i in v:
-        #            self.__dict__[k].append(self._getObject(k, i))
-        #    elif v:
-        #        self.__dict__[k] = self._getObject(k, v)
-        #    else:  # None object
-        #        self.__dict__[k] = None
 
     def _getObject(self, k, v):
         return v
 
+
 class Policy(JSSObject):
     _url = '/policies'
-    _jss_return = 'policy'
