@@ -9,11 +9,10 @@ Shea Craig 2014
 
 from xml.etree import ElementTree
 import base64
-import time
+import os
+
 import requests
 import FoundationPlist
-import os
-from sys import exit
 
 
 class JSSPrefsMissingKeyError(Exception):
@@ -71,8 +70,8 @@ class JSS(object):
         self._user = user
         self._password = password
         self.ssl_verify = ssl_verify
-        self.auth = base64.encodestring('%s:%s' %
-                                   (user, password)).replace('\n', '')
+        self.auth = base64.encodestring(
+                '%s:%s' % (user, password)).replace('\n', '')
 
     def user(self, user):
         self._user = user
@@ -92,8 +91,8 @@ class JSS(object):
                                  verify=self.ssl_verify)
 
         if response.status_code == 401:
-            raise JSSAuthenticationError('Authentication error: check the ' \
-                                         'api username and password')
+            raise JSSAuthenticationError(
+                    'Authentication error: check the api username and password')
         elif response.status_code == 404:
             raise JSSGetError("Object %s does not exist!" % url)
 
@@ -111,11 +110,11 @@ class JSS(object):
         url = '%s%s' % (self._url, path)
         return self.get_request(url)
 
-    def get(self, obj_class, idn=None):
+    def get(self, obj_class, id_=None):
         url = obj_class._url
-        if idn is not None:
+        if id_ is not None:
             # JSS API adds a /id/ between our object type and id number.
-            url = '%s%s%s%s' % (self._url, url, '/id/', str(idn))
+            url = '%s%s%s%s' % (self._url, url, '/id/', str(id_))
             print(url)
         else:
             url = '%s%s' % (self._url, url)
@@ -146,14 +145,14 @@ class JSS(object):
     def delete(self, url):
         pass
 
-    def _getListOrObject(self, cls, idn):
-        if idn is None:
+    def _getListOrObject(self, cls, id_):
+        if id_ is None:
             return cls.list(self)
         else:
-            return cls(self, idn)
+            return cls(self, id_)
 
-    def Policy(self, idn=None):
-        return self._getListOrObject(Policy, idn)
+    def Policy(self, id_=None):
+        return self._getListOrObject(Policy, id_)
 
 
 class JSSObject(object):
