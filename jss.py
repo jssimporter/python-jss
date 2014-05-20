@@ -122,10 +122,10 @@ class JSS(object):
                 exit(1)
         return xmldata
 
-    def post(self, url, **kwargs):
+    def post(self, url):
         pass
 
-    def put(self, url, **kwargs):
+    def put(self, url):
         pass
 
     def delete(self, url):
@@ -155,7 +155,7 @@ class JSS(object):
         xmldata = ElementTree.fromstring(jss_results)
         return xmldata
 
-    def list(self, obj_class, **kwargs):
+    def list(self, obj_class):
         url = obj_class._url
         url = '%s%s' % (self._url, url)
 
@@ -176,31 +176,31 @@ class JSS(object):
 
         #l = [obj_class(self, item) for item in xmldata if item is not None]
         l = [obj_class(self, item) for item in xmldata if item is not None and item.tag != 'size']
-        if kwargs:
-            for k, v in kwargs.items():
-                for obj in l:
-                    obj.__dict__[k] = str(v)
         return l
 
-    #def Policies(self):
+    def _getListOrObject(self, cls, idn):
+        if idn is None:
+            return cls.list(self)
+        else:
+            return cls(self, idn)
 
+    def Policy(self, idn=None):
+        return self._getListOrObject(Policy, idn)
 
 
 class JSSObject(object):
     """Base class for representing all available JSS API objects."""
     _url = None
+    _jss_return = None
 
-    def __init__(self, jss, data=None, **kwargs):
+    def __init__(self, jss, data=None):
         self.jss = jss
 
         if data is None or type(data) in [int, str, unicode]:
-            data = self.jss.get(self.__class__, data, **kwargs)
+            data = self.jss.get(self.__class__, data)
+        #ElementTree.dump(data)
 
         self._setFromDict(data)
-
-        if kwargs:
-            for k, v in kwargs.items():
-                self.__dict__[k] = v
 
     def indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing."""
@@ -236,38 +236,42 @@ class JSSObject(object):
         #    root = et.getroot()
         #else:
         #    root = et
-        self.indent(self.data)
-        ElementTree.dump(self.data)
+        self.indent(self.__dict__['data'])
+        ElementTree.dump(self.__dict__['data'])
+        #for k, v in self.__dict__.items():
+        #    print("%s=>%s" % (k, v))
+        #print self.__dict__
 
-    def _get_list_or_object(self, cls, id, **kwargs):
+    def _get_list_or_object(self, cls, id):
         if id is None:
-            return cls.list(self, **kwargs)
+            return cls.list(self)
         else:
-            return cls(self, id, **kwargs)
+            return cls(self, id)
 
     @classmethod
-    def list(cls, jss, **kwargs):
-        return jss.list(cls, **kwargs)
+    def list(cls, jss):
+        return jss.list(cls)
 
     def _setFromDict(self, data):
-        # TODO!
-        # data.getchildren, and need to split tag and text manually
-        for k, v in data.items():
-            if isinstance(v, list):
-                self.__dict__[k] = []
-                for i in v:
-                    self.__dict__[k].append(self._getObject(k, i))
-            elif v:
-                self.__dict__[k] = self._getObject(k, v)
-            else:  # None object
-                #self.__dict__[k] = None
-                self.__dict__[k] = v.text
+    #TODO
+    #This has major problems. I think I need to just keep my data in ElementTrees
+    #Actually, this is done...
+        self.__dict__['data'] = data
+        #for item in data:
+        #    k = item.tag
+        #    v = item.text
+        #    if isinstance(v, ElementTree.Element):
+        #        self.__dict__[k] = []
+        #        for i in v:
+        #            self.__dict__[k].append(self._getObject(k, i))
+        #    elif v:
+        #        self.__dict__[k] = self._getObject(k, v)
+        #    else:  # None object
+        #        self.__dict__[k] = None
 
-
-
-#class Policies(JSSObject):
-#    _url = '/policies'
-
+    def _getObject(self, k, v):
+        return v
 
 class Policy(JSSObject):
     _url = '/policies'
+    _jss_return = 'policy'

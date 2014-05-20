@@ -75,8 +75,8 @@ def test_jss_raw_get_error():
     assert_raises(JSSGetError, j.raw_get, '/donkey-tacos')
 
 
-def test_policies():
+def test_policy():
     j = std_jss()
-    p = Policies(j)
+    p = Policy(j)
     p.pprint()
-    assert_is_instance(p, Policies)
+    assert_is_instance(p, Policy)
