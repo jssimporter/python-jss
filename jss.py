@@ -154,6 +154,9 @@ class JSS(object):
     def Computer(self, id_=None):
         return self._get_list_or_object(Computer, id_)
 
+    def ComputerGroup(self, id_=None):
+        return self._get_list_or_object(ComputerGroup, id_)
+
     def Policy(self, id_=None):
         return self._get_list_or_object(Policy, id_)
 
@@ -218,6 +221,8 @@ class JSSObject(object):
 class Computer(JSSObject):
     _url = '/computers'
 
+class ComputerGroup(JSSObject):
+    _url = '/computergroups'
 
 class Policy(JSSObject):
     _url = '/policies'
