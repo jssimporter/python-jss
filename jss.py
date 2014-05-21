@@ -209,11 +209,12 @@ class JSSObject(object):
         self.indent(self.xml)
         ElementTree.dump(self.xml)
 
+    # Shared properties
     def name(self):
-        pass
+        return self.xml.find('name').text
 
     def id(self):
-        pass
+        return self.xml.find('id').text
 
 
 class Computer(JSSObject):

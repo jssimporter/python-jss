@@ -73,7 +73,7 @@ def jss_object_runner(object_cls):
     print(obj_list)
     assert_is_instance(obj_list, list)
     assert_greater(len(obj_list), 0)
-    id_ = obj_list[0].xml.find('id').text
+    id_ = obj_list[0].id()
     obj = object_cls(j, id_)
     assert_is_instance(obj, object_cls)
     obj.pprint()
