@@ -143,6 +143,15 @@ class JSS(object):
     def ComputerGroup(self, id_=None):
         return self._get_list_or_object(ComputerGroup, id_)
 
+    def MobileDevice(self, id_=None):
+        return self._get_list_or_object(MobileDevice, id_)
+
+    def MobileDeviceConfigurationProfile(self, id_=None):
+        return self._get_list_or_object(MobileDeviceConfigurationProfile, id_)
+
+    def MobileDeviceGroup(self, id_=None):
+        return self._get_list_or_object(MobileDeviceGroup, id_)
+
     def Policy(self, id_=None):
         return self._get_list_or_object(Policy, id_)
 
@@ -207,8 +216,22 @@ class JSSObject(object):
 class Computer(JSSObject):
     _url = '/computers'
 
+
 class ComputerGroup(JSSObject):
     _url = '/computergroups'
+
+
+class MobileDevice(JSSObject):
+    _url = '/mobiledevices'
+
+
+class MobileDeviceConfigurationProfile(JSSObject):
+    _url = '/mobiledeviceconfigurationprofiles'
+
+
+class MobileDeviceGroup(JSSObject):
+    _url = '/mobiledevicegroups'
+
 
 class Policy(JSSObject):
     _url = '/policies'

@@ -101,3 +101,36 @@ def test_jss_policy():
     assert_is_instance(policy, Policy)
     policy.pprint()
 
+def test_jss_mobiledevice():
+    j = std_jss()
+    mobiledevices = j.MobileDevice()
+    print(mobiledevices)
+    assert_is_instance(mobiledevices, list)
+    assert_greater(len(mobiledevices), 0)
+    id_ = mobiledevices[0].xml.find('id').text
+    mobiledevice = j.MobileDevice(id_)
+    assert_is_instance(mobiledevice, MobileDevice)
+    mobiledevice.pprint()
+
+def test_jss_mobiledeviceconfigurationprofile():
+    j = std_jss()
+    mobiledeviceconfigps = j.MobileDeviceConfigurationProfile()
+    print(mobiledeviceconfigps)
+    assert_is_instance(mobiledeviceconfigps, list)
+    assert_greater(len(mobiledeviceconfigps), 0)
+    id_ = mobiledeviceconfigps[0].xml.find('id').text
+    mobiledeviceconfigp = j.MobileDeviceConfigurationProfile(id_)
+    assert_is_instance(mobiledeviceconfigp, MobileDeviceConfigurationProfile)
+    mobiledeviceconfigp.pprint()
+
+def test_jss_mobiledevicegroups():
+    j = std_jss()
+    mobiledevicegroups = j.MobileDeviceGroup()
+    print(mobiledevicegroups)
+    assert_is_instance(mobiledevicegroups, list)
+    assert_greater(len(mobiledevicegroups), 0)
+    id_ = mobiledevicegroups[0].xml.find('id').text
+    mobiledevicegroup = j.MobileDeviceGroup(id_)
+    assert_is_instance(mobiledevicegroup, MobileDeviceGroup)
+    mobiledevicegroup.pprint()
+
