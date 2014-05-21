@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """Tests for jss wrapper.
 For test to succeed, you need to set up a preferences file at:
 ~/Library/Preferences/org.da.jss_helper.plist
@@ -52,22 +52,9 @@ def test_jss_with_args():
     assert_is_instance(j, JSS)
 
 
-def test_jss_password_user_change():
-    j = std_jss()
-    password = 'DonkeyTacos'
-    user = 'Muleboy'
-    j.password(password)
-    assert(j._password == password)
-    j.user(user)
-    assert(j._user == user)
-    auth = base64.encodestring('%s:%s' %
-                              (user, password)).replace('\n', '')
-    assert(j.auth == auth)
-
-
 def test_jss_auth_error():
     j = std_jss()
-    j.password('DonkeyTacos')
+    j.password = 'DonkeyTacos'
     assert_raises(JSSAuthenticationError, j.raw_get, '/policies')
 
 

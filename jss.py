@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """jss.py
 
 Python wrapper for JSS API.
@@ -68,28 +68,14 @@ class JSS(object):
             password = jss_prefs.password
 
         self._url = '%s/JSSResource' % url
-        self._user = user
-        self._password = password
+        self.user = user
+        self.password = password
         self.ssl_verify = ssl_verify
-        self.auth = base64.encodestring(
-                '%s:%s' % (user, password)).replace('\n', '')
-
-    def user(self, user):
-        self._user = user
-        auth = (self._user, self._password)
-        self.auth = base64.encodestring('%s:%s' % auth).replace('\n', '')
-
-    def password(self, password):
-        self._password = password
-        auth = (self._user, self._password)
-        self.auth = base64.encodestring('%s:%s' % auth).replace('\n', '')
 
     def get_request(self, url):
         """Get a url, handle errors, and return an etree from the XML data."""
-        headers = {'Authorization': "Basic %s" % self.auth}
-
-        response = requests.get(url, headers=headers,
-                                 verify=self.ssl_verify)
+        response = requests.get(url, auth=(self.user, self.password),
+                                verify=self.ssl_verify)
 
         if response.status_code == 401:
             raise JSSAuthenticationError(
@@ -168,7 +154,7 @@ class JSSObject(object):
     def __init__(self, jss, data=None):
         self.jss = jss
 
-        if data is None or type(data) in [int, str, unicode]:
+        if data is None or type(data) in [int, str]:
             data = self.jss.get(self.__class__, data)
 
         self.xml = data
