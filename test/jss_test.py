@@ -65,72 +65,39 @@ def test_jss_raw_get_error():
 
 #JSSObject Tests###############################################################
 
-
-def test_jss_computer():
+# Helper function to test individual object classes. Does not test the
+# JSS methods for creating these objects.
+def jss_object_runner(object_cls):
     j = std_jss()
-    computers = j.Computer()
-    print(computers)
-    assert_is_instance(computers, list)
-    assert_greater(len(computers), 0)
-    id_ = computers[0].xml.find('id').text
-    computer = j.Computer(id_)
-    assert_is_instance(computer, Computer)
-    computer.pprint()
+    obj_list = j.list(object_cls)
+    print(obj_list)
+    assert_is_instance(obj_list, list)
+    assert_greater(len(obj_list), 0)
+    id_ = obj_list[0].xml.find('id').text
+    obj = object_cls(j, id_)
+    assert_is_instance(obj, object_cls)
+    obj.pprint()
+
+
+def test_jss_computer_helper():
+    jss_object_runner(Computer)
 
 
 def test_jss_computergroup():
-    j = std_jss()
-    computergroups = j.ComputerGroup()
-    print(computergroups)
-    assert_is_instance(computergroups, list)
-    assert_greater(len(computergroups), 0)
-    id_ = computergroups[0].xml.find('id').text
-    computergroup = j.ComputerGroup(id_)
-    assert_is_instance(computergroup, ComputerGroup)
-    computergroup.pprint()
+    jss_object_runner(ComputerGroup)
 
 
 def test_jss_policy():
-    j = std_jss()
-    policies = j.Policy()
-    print(policies)
-    assert_is_instance(policies, list)
-    assert_greater(len(policies), 0)
-    id_ = policies[0].xml.find('id').text
-    policy = j.Policy(id_)
-    assert_is_instance(policy, Policy)
-    policy.pprint()
+    jss_object_runner(Policy)
+
 
 def test_jss_mobiledevice():
-    j = std_jss()
-    mobiledevices = j.MobileDevice()
-    print(mobiledevices)
-    assert_is_instance(mobiledevices, list)
-    assert_greater(len(mobiledevices), 0)
-    id_ = mobiledevices[0].xml.find('id').text
-    mobiledevice = j.MobileDevice(id_)
-    assert_is_instance(mobiledevice, MobileDevice)
-    mobiledevice.pprint()
+    jss_object_runner(MobileDevice)
+
 
 def test_jss_mobiledeviceconfigurationprofile():
-    j = std_jss()
-    mobiledeviceconfigps = j.MobileDeviceConfigurationProfile()
-    print(mobiledeviceconfigps)
-    assert_is_instance(mobiledeviceconfigps, list)
-    assert_greater(len(mobiledeviceconfigps), 0)
-    id_ = mobiledeviceconfigps[0].xml.find('id').text
-    mobiledeviceconfigp = j.MobileDeviceConfigurationProfile(id_)
-    assert_is_instance(mobiledeviceconfigp, MobileDeviceConfigurationProfile)
-    mobiledeviceconfigp.pprint()
+    jss_object_runner(MobileDeviceConfigurationProfile)
+
 
 def test_jss_mobiledevicegroups():
-    j = std_jss()
-    mobiledevicegroups = j.MobileDeviceGroup()
-    print(mobiledevicegroups)
-    assert_is_instance(mobiledevicegroups, list)
-    assert_greater(len(mobiledevicegroups), 0)
-    id_ = mobiledevicegroups[0].xml.find('id').text
-    mobiledevicegroup = j.MobileDeviceGroup(id_)
-    assert_is_instance(mobiledevicegroup, MobileDeviceGroup)
-    mobiledevicegroup.pprint()
-
+    jss_object_runner(MobileDeviceGroup)
