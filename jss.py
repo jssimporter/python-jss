@@ -178,9 +178,6 @@ class JSSObject(object):
     def list(cls, jss):
         return jss.list(cls)
 
-    def _get_object(self, k, v):
-        return v
-
     def indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing."""
         i = "\n"
@@ -211,6 +208,12 @@ class JSSObject(object):
         """Pretty print our XML data."""
         self.indent(self.xml)
         ElementTree.dump(self.xml)
+
+    def name(self):
+        pass
+
+    def id(self):
+        pass
 
 
 class Computer(JSSObject):

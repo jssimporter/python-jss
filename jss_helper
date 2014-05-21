@@ -61,6 +61,21 @@ def md_configp_group(args):
         pprint(result[1])
 
 
+#To be integrated
+#import jss
+#
+#jss_prefs = jss.JSSPrefs()
+#j = jss.JSS(jss_prefs)
+#
+#for p in j.Policy():
+#    a = j.Policy(p.xml.find('id').text)
+#    #print a.pprint()
+#    search = 'scope/computer_groups/computer_group'
+#    for computer_group in a.xml.findall(search):
+#        if computer_group.findtext('name') == 'Testing':
+#            print('Hit, hit!')
+
+
 def main():
     """Run as a cli command."""
 
