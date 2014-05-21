@@ -64,22 +64,31 @@ def test_jss_raw_get_error():
 
 
 #JSSObject Tests###############################################################
-
-# Helper function to test individual object classes. Does not test the
-# JSS methods for creating these objects.
 def jss_object_runner(object_cls):
+    """ Helper function to test individual object classes. Does not test the
+    JSS methods for creating these objects.
+
+    """
     j = std_jss()
     obj_list = j.list(object_cls)
     print(obj_list)
     assert_is_instance(obj_list, list)
+    # There should be objects in the JSS to test for.
     assert_greater(len(obj_list), 0)
     id_ = obj_list[0].id()
     obj = object_cls(j, id_)
+    # This kind_of tests for success, in that it creates an object. The test
+    # would fail without the assertion if there was just an exception, but I
+    # don't know how to better test this, yet.
     assert_is_instance(obj, object_cls)
     obj.pprint()
 
 
-def test_jss_computer_helper():
+def test_jss_category():
+    jss_object_runner(Category)
+
+
+def test_jss_computer():
     jss_object_runner(Computer)
 
 

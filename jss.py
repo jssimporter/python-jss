@@ -137,6 +137,9 @@ class JSS(object):
         else:
             return cls(self, id_)
 
+    def Category(self, id_=None):
+        return self._get_list_or_object(Category, id_)
+
     def Computer(self, id_=None):
         return self._get_list_or_object(Computer, id_)
 
@@ -216,6 +219,8 @@ class JSSObject(object):
     def id(self):
         return self.xml.find('id').text
 
+class Category(JSSObject):
+    _url = '/categories'
 
 class Computer(JSSObject):
     _url = '/computers'
