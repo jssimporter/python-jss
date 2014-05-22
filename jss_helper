@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """jss_helper
 
 Command line utility using jss.py
@@ -142,19 +142,19 @@ def main():
     subparser_md.add_argument('-id', help="ID of mobile device to retrieve.")
     subparser_md.set_defaults(func=get_md)
 
-    # md_configp
-    help = ("Get a list of mobile device configuration profiles, or find one"
-            " by ID.")
-    subparser_md_configp = subparser.add_parser('md_configp', help=help)
-    subparser_md_configp.add_argument('-id', help="ID of profile to retrieve.")
-    subparser_md_configp.set_defaults(func=get_md_configp)
-
     # md_group
     help = ("Get a list of mobile device groups, or an individual "
             "group's XML.")
     subparser_md_group= subparser.add_parser('md_group', help=help)
     subparser_md_group.add_argument('-id', help="ID of group to retrieve.")
     subparser_md_group.set_defaults(func=get_md_group)
+
+    # md_configp
+    help = ("Get a list of mobile device configuration profiles, or find one"
+            " by ID.")
+    subparser_md_configp = subparser.add_parser('md_configp', help=help)
+    subparser_md_configp.add_argument('-id', help="ID of profile to retrieve.")
+    subparser_md_configp.set_defaults(func=get_md_configp)
 
     # md_config_by_group
     help = "List all configuration profiles scoped to group"

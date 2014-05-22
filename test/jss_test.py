@@ -12,6 +12,7 @@ defaults write org.da.jss_helper jss_url <URL to JSS>
 
 import subprocess
 import base64
+from xml.etree import ElementTree
 
 from nose.tools import *
 
@@ -81,6 +82,8 @@ def jss_object_runner(object_cls):
     # would fail without the assertion if there was just an exception, but I
     # don't know how to better test this, yet.
     assert_is_instance(obj, object_cls)
+    print(type(obj.xml))
+    assert_is_instance(obj.xml, ElementTree.Element)
     obj.pprint()
 
 

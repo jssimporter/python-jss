@@ -50,7 +50,7 @@ class JSSPrefs(object):
 class JSS(object):
     """Connect to a JSS and handle API requests."""
     def __init__(self, jss_prefs=None, url=None, user=None, password=None,
-                 ssl_verify=True):
+                 ssl_verify=True, verbose=True):
         """Provide either a JSSPrefs object OR specify url, user, and password
         to init.
 
@@ -71,6 +71,7 @@ class JSS(object):
         self.user = user
         self.password = password
         self.ssl_verify = ssl_verify
+        self.verbose = verbose
 
     def get_request(self, url):
         """Get a url, handle errors, and return an etree from the XML data."""
@@ -103,7 +104,8 @@ class JSS(object):
         if id_ is not None:
             # JSS API adds a /id/ between our object type and id number.
             url = '%s%s%s%s' % (self._url, url, '/id/', str(id_))
-            print(url)
+            if self.verbose:
+                print(url)
         else:
             url = '%s%s' % (self._url, url)
         return self.get_request(url)
