@@ -82,3 +82,6 @@ Object created with ID: 364
 
 >>> new_policy.delete()
 Success.
+
+# Alternately, you can pass the object to the JSS object's delete method:
+# e.g. "j.delete(new_policy)"
