@@ -264,10 +264,16 @@ class JSSObject(object):
 
     # Shared properties
     def name(self):
-        return self.xml.find('general/name').text
+        if self.xml.find('name'):
+            return self.xml.find('name').text
+        else:
+            return self.xml.find('general/name').text
 
     def id(self):
-        return self.xml.find('general/id').text
+        if self.xml.find('id'):
+            return self.xml.find('id').text
+        else:
+            return self.xml.find('general/id').text
 
 
 class Category(JSSObject):
