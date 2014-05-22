@@ -65,7 +65,6 @@ Example:
 ...     policy_data = f.read()
 ... 
 >>> new_policy = j.Policy(policy_data)
-<?xml version="1.0" encoding="UTF-8"?><policy><id>364</id></policy>
 Object created with ID: 364
 
 # Let's see our new policy, nicely:
