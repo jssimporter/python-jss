@@ -79,5 +79,7 @@ Object created with ID: 364
 		...
 </policy>
 
+# ...and let's get rid of it.
+
 >>> new_policy.delete()
 Success.
