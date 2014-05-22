@@ -210,7 +210,6 @@ class JSSObject(object):
         # Create a new object
         elif isinstance(data, str):
             results = self.jss.post(self.__class__, data)
-            print results
             id_ =  re.search(r'<id>([0-9]+)</id>', results).group(1)
             print("Object created with ID: %s" % id_)
             #data = ElementTree.fromstring(data)
