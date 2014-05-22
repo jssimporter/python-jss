@@ -10,6 +10,7 @@ Shea Craig 2014
 from xml.etree import ElementTree
 import base64
 import os
+import re
 
 import requests
 import FoundationPlist
@@ -28,6 +29,13 @@ class JSSConnectionError(Exception):
 
 
 class JSSGetError(Exception):
+    pass
+
+
+class JSSCreationError(Exception):
+    pass
+
+class JSSDeletionError(Exception):
     pass
 
 
@@ -126,14 +134,40 @@ class JSS(object):
         lst = [obj_class(self, item) for item in xmldata if item is not None and item.tag != 'size']
         return lst
 
-    def post(self, url):
-        pass
+    def post(self, obj_class, data):
+        """Post an object to the JSS. For creating new objects only."""
+        # The JSS expects a post to ID 0 to create an object
+        url = '%s%s%s' % (self._url, obj_class._url, '/id/0')
+        response = requests.post(url, auth=(self.user, self.password),
+                                 data=data, verify=self.ssl_verify)
+
+        if response.status_code == 401:
+            raise JSSAuthenticationError(
+                    'Authentication error: check the api username and password')
+        elif response.status_code == 409:
+            raise JSSCreationError(
+                    'Creation error: Possible name conflict or other problem.'
+                    '\n%s' % response.text.encode('utf-8'))
+
+        # Get the ID of the new object. JSS returns xml encoded in utf-8
+        jss_results = response.text.encode('utf-8')
+        return jss_results
 
     def put(self, url):
         pass
 
-    def delete(self, url):
-        pass
+    def delete(self, obj_class):
+        """Delete an object from the JSS."""
+        url = '%s%s%s%s' % (self._url, obj_class._url, '/id/', 
+                            str(obj_class.id()))
+        response = requests.delete(url, auth=(self.user, self.password),
+                                 verify=self.ssl_verify)
+        if response.status_code == 200:
+            print("Success.")
+        elif response.status_code == 404:
+            raise JSSDeletionError('Deletion error: %s' %
+                                   response.text.encode('utf-8'))
+
 
     def _get_list_or_object(self, cls, id_):
         if id_ is None:
@@ -170,8 +204,17 @@ class JSSObject(object):
     def __init__(self, jss, data=None):
         self.jss = jss
 
-        if data is None or type(data) in [int, str]:
+        #if data is None or type(data) in [int, str]:
+        if data is None or isinstance(data, int):
             data = self.jss.get(self.__class__, data)
+        # Create a new object
+        elif isinstance(data, str):
+            results = self.jss.post(self.__class__, data)
+            print results
+            id_ =  re.search(r'<id>([0-9]+)</id>', results).group(1)
+            print("Object created with ID: %s" % id_)
+            #data = ElementTree.fromstring(data)
+            data = self.jss.get(self.__class__, id_)
 
         self.xml = data
 
@@ -184,6 +227,9 @@ class JSSObject(object):
     @classmethod
     def list(cls, jss):
         return jss.list(cls)
+
+    def _create(self):
+        self.xml = self.gitlab.post(self)
 
     def indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing."""
@@ -218,10 +264,11 @@ class JSSObject(object):
 
     # Shared properties
     def name(self):
-        return self.xml.find('name').text
+        return self.xml.find('general/name').text
 
     def id(self):
-        return self.xml.find('id').text
+        return self.xml.find('general/id').text
+
 
 class Category(JSSObject):
     _url = '/categories'

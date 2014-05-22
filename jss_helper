@@ -27,10 +27,11 @@ def create_func(obj_method):
     """Generates a function to perform basic list and xml queries."""
     def f(j, args):
         if args.id:
+            id_ = int(args.id)
             try:
-                results = obj_method(args.id)
+                results = obj_method(id_)
             except JSSGetError:
-                print("Object ID: %s does not exist!" % args.id)
+                print("Object ID: %s does not exist!" % id_)
                 sys.exit(1)
         else:
             results = obj_method()

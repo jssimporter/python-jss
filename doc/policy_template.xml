@@ -1,0 +1,1 @@
+<policy><general><name>jss python wrapper API test policy</name><enabled>true</enabled><frequency>Once per computer</frequency><category><name>testing</name></category></general><scope></scope><self_service><use_for_self_service>true</use_for_self_service></self_service><maintenance><recon>true</recon></maintenance></policy>
