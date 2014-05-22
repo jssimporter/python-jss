@@ -106,17 +106,20 @@ def main():
                               'func': create_func(j.Computer),
                               'kwargs': {'--id': 'ID of computer to retrieve.'}
                              }
+    subparsers['group'] = {'help': "Get a list of all computer groups, or an "
+                              "individual group.",
+                              'func': create_func(j.ComputerGroup),
+                              'kwargs': {'--id': 'ID of computer group to '
+                                         'retrieve.'}}
     subparsers['policy'] = {'help': "Get a list of all policies' names and "
                             "IDs, or the policy XML.",
                               'func': create_func(j.Policy),
                               'kwargs': {'--id': 'ID of policy to retrieve.',
-                                         '--xml': 'Policy XML.'}
-                           }
+                                         '--xml': 'Policy XML.'}}
     subparsers['policy_by_group'] = {'help': "Lists all policies scoped to "
                             "provided group.",
                               'func': get_group_policies,
-                              'kwargs': {'group': 'Group name to query.'}
-                             }
+                              'kwargs': {'group': 'Group name to query.'}}
     subparsers['category'] = {'help': "Get a list of all categories' names and "
                             "IDs.",
                               'func': create_func(j.Category),
@@ -126,14 +129,12 @@ def main():
                             "by ID.",
                               'func': create_func(j.MobileDevice),
                               'kwargs': {'--id': 'ID of mobile device to '
-                                         'retrieve.'}
-                       }
+                                         'retrieve.'}}
     subparsers['md_group'] = {'help': "Get a list of mobile device groups, "
                               "or find one by ID.",
                               'func': create_func(j.MobileDeviceGroup),
                               'kwargs': {'--id': 'ID of mobile device group '
-                                         'to retrieve.'}
-                             }
+                                         'to retrieve.'}}
     subparsers['md_configp'] = {'help': "Get a list of mobile device "
                                 "configuration profiles, or find one by ID, ",
                                'func':
@@ -146,8 +147,7 @@ def main():
                                          "provided group.",
                                         'func': get_md_configp_group,
                                         'kwargs': {'group': 'Group name to '
-                                                   'query.'}
-                                        }
+                                                   'query.'}}
 
     for name, d in subparsers.items():
         create_subparser(subparser, name, d['help'], d['func'], **d['kwargs'])
