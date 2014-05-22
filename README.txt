@@ -3,7 +3,9 @@ unlimited, python wrapper for the Jamf JSS API. Sparesely implemented in the
 sense that I have at this time no desire to thoroughly cover all features of
 the JSS API, since I don't plan on using them all, and dangerously unlimited in
 the sense that you can POST/GET/PUT to objects that don't actually implement
-those methods. This, at least, I plan on solving in the near future.
+those methods. This, at least, I plan on solving in the near future, although
+the JSS is pretty good at just rejecting unimplemented/nonexistent attempts
+and poorly formed objects.
 
 The preferred method for specifying credentials is to create a preferences file at "~/Library/Preferences/org.da.jss_helper.plist".
 Required keys include:

@@ -263,13 +263,13 @@ class JSSObject(object):
 
     # Shared properties
     def name(self):
-        if self.xml.find('name'):
+        if self.xml.find('name') is not None:
             return self.xml.find('name').text
         else:
             return self.xml.find('general/name').text
 
     def id(self):
-        if self.xml.find('id'):
+        if self.xml.find('id') is not None:
             return self.xml.find('id').text
         else:
             return self.xml.find('general/id').text
