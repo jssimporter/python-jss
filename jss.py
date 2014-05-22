@@ -228,8 +228,8 @@ class JSSObject(object):
     def list(cls, jss):
         return jss.list(cls)
 
-    def _create(self):
-        self.xml = self.gitlab.post(self)
+    def delete(self):
+        return self.jss.delete(self)
 
     def indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing."""
