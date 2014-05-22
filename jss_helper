@@ -8,6 +8,7 @@ Shea Craig 2014
 """
 
 import argparse
+import sys
 
 import requests.exceptions
 
@@ -22,26 +23,24 @@ def print_object(objs):
         objs.pprint()
 
 
-def get_computer(j, args):
-    """Helper function."""
-    if args.id:
-        results = j.Computer(args.id)
-    else:
-        results = j.Computer()
-    print_object(results)
+def create_func(obj_method):
+    """Generates a function to perform basic list and xml queries."""
+    def f(j, args):
+        if args.id:
+            try:
+                results = obj_method(args.id)
+            except JSSGetError:
+                print("Object ID: %s does not exist!" % args.id)
+                sys.exit(1)
+        else:
+            results = obj_method()
+        print_object(results)
 
-
-def get_policy(j, args):
-    """Helper function."""
-    if args.id:
-        results = j.Policy(args.id)
-    else:
-        results = j.Policy()
-    print_object(results)
+    return f
 
 
 def get_group_policies(j, args):
-    """Helper function."""
+    """Find all policies scoped to a group."""
     results = []
     for p in j.Policy():
         px = None
@@ -60,35 +59,8 @@ def get_group_policies(j, args):
         print("ID: %s\t\tNAME: %s" % (i[0], i[1]))
 
 
-def get_md(j, args):
-    """Helper function."""
-    if args.id:
-        results = j.MobileDevice(args.id)
-    else:
-        results = j.MobileDevice()
-    print_object(results)
-
-
-def get_md_configp(j, args):
-    """Helper function."""
-    if args.id:
-        results = j.MobileDeviceConfigurationProfile(args.id)
-    else:
-        results = j.MobileDeviceConfigurationProfile()
-    print_object(results)
-
-
-def get_md_group(j, args):
-    """Helper function."""
-    if args.id:
-        results = j.MobileDeviceGroup(args.id)
-    else:
-        results = j.MobileDeviceGroup()
-    print_object(results)
-
-
 def get_md_configp_group(j, args):
-    """Helper function."""
+    """Find all mobile device configuration profiles scoped to a group."""
     results = []
     for p in j.MobileDeviceConfigurationProfile():
         px = None
@@ -107,66 +79,82 @@ def get_md_configp_group(j, args):
         print("ID: %s\t\tNAME: %s" % (i[0], i[1]))
 
 
+def create_subparser(parser, name, help, func, **kwargs):
+    """Create subparsers for our interface."""
+    subparser = parser.add_parser(name, help=help)
+    if kwargs:
+        for arg_name, arg_help in kwargs.items():
+            subparser.add_argument(arg_name, help=arg_help)
+    subparser.set_defaults(func=func)
+
+
 def main():
     """Run as a cli command."""
+    jss_prefs = JSSPrefs()
+    j = JSS(jss_prefs)
 
     # Create our argument parser
     parser = argparse.ArgumentParser(description="Query the JSS.")
     parser.add_argument('-v', action='store_true', help="Verbose output.")
     subparser = parser.add_subparsers(dest='subparser_name')
 
-    # get_computer
-    help = "Get a list of all computers, or an individual computer."
-    subparser_policy = subparser.add_parser('computer', help=help)
-    subparser_policy.add_argument('-id', help="ID of computer to retrieve.")
-    subparser_policy.set_defaults(func=get_computer)
+    subparsers = {}
 
-    # get_policy
-    help = "Get a list of all policies' names and ids or the policy XML. "
-    subparser_policy = subparser.add_parser('policy', help=help)
-    subparser_policy.add_argument('-id', help="ID of policy to retrieve.")
-    subparser_policy.set_defaults(func=get_policy)
+    # computer
+    subparsers['computer'] = {'help': "Get a list of all computers, or an "
+                              "individual computer.",
+                              'func': create_func(j.Computer),
+                              'kwargs': {'--id': 'ID of computer to retrieve.'}
+                             }
+    subparsers['policy'] = {'help': "Get a list of all policies' names and "
+                            "IDs, or the policy XML.",
+                              'func': create_func(j.Policy),
+                              'kwargs': {'--id': 'ID of policy to retrieve.',
+                                         '--xml': 'Policy XML.'}
+                           }
+    subparsers['policy_by_group'] = {'help': "Lists all policies scoped to "
+                            "provided group.",
+                              'func': get_group_policies,
+                              'kwargs': {'group': 'Group name to query.'}
+                             }
+    subparsers['category'] = {'help': "Get a list of all categories' names and "
+                            "IDs.",
+                              'func': create_func(j.Category),
+                              'kwargs': {'--id': 'ID of category to retrieve.'}
+                             }
+    subparsers['md'] = {'help': "Get a list of mobile devices, or find one "
+                            "by ID.",
+                              'func': create_func(j.MobileDevice),
+                              'kwargs': {'--id': 'ID of mobile device to '
+                                         'retrieve.'}
+                       }
+    subparsers['md_group'] = {'help': "Get a list of mobile device groups, "
+                              "or find one by ID.",
+                              'func': create_func(j.MobileDeviceGroup),
+                              'kwargs': {'--id': 'ID of mobile device group '
+                                         'to retrieve.'}
+                             }
+    subparsers['md_configp'] = {'help': "Get a list of mobile device "
+                                "configuration profiles, or find one by ID, ",
+                               'func':
+                               create_func(j.MobileDeviceConfigurationProfile),
+                               'kwargs': {'--id': 'ID of mobile device '
+                                          'configuration profile to retrieve.'}
+                               }
+    subparsers['md_configp_by_group'] = {'help': "Lists all mobile "
+                                         "configuration profiles scoped to "
+                                         "provided group.",
+                                        'func': get_md_configp_group,
+                                        'kwargs': {'group': 'Group name to '
+                                                   'query.'}
+                                        }
 
-    # policy_by_group
-    help = "Lists all policies scoped to provided group."
-    subparser_policy_by_group = subparser.add_parser('policy_by_group',
-                                                     help=help)
-    subparser_policy_by_group.add_argument('group', help="Group name to query.")
-    subparser_policy_by_group.set_defaults(func=get_group_policies)
+    for name, d in subparsers.items():
+        create_subparser(subparser, name, d['help'], d['func'], **d['kwargs'])
 
-    # md
-    help = ("Get a list of mobile devices, or find one by ID.")
-    subparser_md = subparser.add_parser('md', help=help)
-    subparser_md.add_argument('-id', help="ID of mobile device to retrieve.")
-    subparser_md.set_defaults(func=get_md)
-
-    # md_group
-    help = ("Get a list of mobile device groups, or an individual "
-            "group's XML.")
-    subparser_md_group= subparser.add_parser('md_group', help=help)
-    subparser_md_group.add_argument('-id', help="ID of group to retrieve.")
-    subparser_md_group.set_defaults(func=get_md_group)
-
-    # md_configp
-    help = ("Get a list of mobile device configuration profiles, or find one"
-            " by ID.")
-    subparser_md_configp = subparser.add_parser('md_configp', help=help)
-    subparser_md_configp.add_argument('-id', help="ID of profile to retrieve.")
-    subparser_md_configp.set_defaults(func=get_md_configp)
-
-    # md_config_by_group
-    help = "List all configuration profiles scoped to group"
-    subparser_md_configp_by_group = subparser.add_parser('md_configp_by_group',
-                                                help=help)
-    subparser_md_configp_by_group.add_argument('group',
-                                               help="Group name to query.")
-    subparser_md_configp_by_group.set_defaults(func=get_md_configp_group)
-
-    # Parse the args and then call their target function
     args = parser.parse_args()
-
-    jss_prefs = JSSPrefs()
-    j = JSS(jss_prefs, verbose=args.v)
+    if args.v:
+        j.verbose = True
 
     args.func(j, args)
 
