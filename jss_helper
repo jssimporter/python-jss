@@ -110,11 +110,9 @@ def get_md_configp_group(j, args):
 def main():
     """Run as a cli command."""
 
-    jss_prefs = JSSPrefs()
-    j = JSS(jss_prefs)
-
     # Create our argument parser
     parser = argparse.ArgumentParser(description="Query the JSS.")
+    parser.add_argument('-v', action='store_true', help="Verbose output.")
     subparser = parser.add_subparsers(dest='subparser_name')
 
     # get_computer
@@ -166,6 +164,10 @@ def main():
 
     # Parse the args and then call their target function
     args = parser.parse_args()
+
+    jss_prefs = JSSPrefs()
+    j = JSS(jss_prefs, verbose=args.v)
+
     args.func(j, args)
 
 

@@ -50,7 +50,7 @@ class JSSPrefs(object):
 class JSS(object):
     """Connect to a JSS and handle API requests."""
     def __init__(self, jss_prefs=None, url=None, user=None, password=None,
-                 ssl_verify=True, verbose=True):
+                 ssl_verify=True, verbose=False):
         """Provide either a JSSPrefs object OR specify url, user, and password
         to init.
 
@@ -118,6 +118,8 @@ class JSS(object):
         url = obj_class._url
         url = '%s%s' % (self._url, url)
 
+        if self.verbose:
+            print(url)
         xmldata = self.get_request(url)
 
         # Build a list of objects based on the results. Remove the size elements.
