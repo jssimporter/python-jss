@@ -8,3 +8,5 @@ multiple calls, is nearly inevitable.
 
 The best solution I have come up with is to wrap these sorts of situations in a
 while, with a try/except block to handle the exception.
+
+*Does this make a list?
