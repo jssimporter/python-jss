@@ -88,8 +88,11 @@ class JSS(object):
 
     def get_request(self, url):
         """Get a url, handle errors, and return an etree from the XML data."""
+        # For some objects the JSS tries to return JSON if we don't specify
+        # that we want XML.
+        headers = {'Accept': 'application/xml'}
         response = requests.get(url, auth=(self.user, self.password),
-                                verify=self.ssl_verify)
+                                verify=self.ssl_verify, headers=headers)
 
         if response.status_code == 401:
             raise JSSAuthenticationError(
@@ -100,7 +103,11 @@ class JSS(object):
 
         # JSS returns xml encoded in utf-8
         jss_results = response.text.encode('utf-8')
-        xmldata = ElementTree.fromstring(jss_results)
+        try:
+            xmldata = ElementTree.fromstring(jss_results)
+        except ElementTree.ParseError:
+            print("Error Parsing XML:\n%s" % jss_results)
+            raise JSSGetError
         return xmldata
 
     def raw_get(self, path):
@@ -183,7 +190,7 @@ class JSS(object):
             return cls(self, id_)
 
     def ActivationCode(self, id_=None):
-        return self._get_list_or_object(ActivationCode, id_)
+        return ActivationCode(self, None)
 
     def Category(self, id_=None):
         return self._get_list_or_object(Category, id_)
@@ -192,7 +199,7 @@ class JSS(object):
         return self._get_list_or_object(Computer, id_)
 
     def ComputerCheckIn(self, id_=None):
-        return self._get_list_or_object(ComputerCheckIn, id_)
+        return ComputerCheckIn(self, None)
 
     def ComputerCommand(self, id_=None):
         return self._get_list_or_object(ComputerCommand, id_)
@@ -226,6 +233,7 @@ class JSSObject(object):
         attempt to create a new object, but fail due to flawed XML.
     """
     _url = None
+    can_list = True
     can_get = True
     can_put = True
     can_post = True
@@ -249,6 +257,7 @@ class JSSObject(object):
         self.xml = data
 
     def _get_list_or_object(self, cls, id):
+        # Currently unused; may be useful if there are any dependent objects.
         if id is None:
             return cls.list(self)
         else:
@@ -256,9 +265,13 @@ class JSSObject(object):
 
     @classmethod
     def list(cls, jss):
+        if not cls.can_list:
+            raise JSSMethodNotAllowedError("Object class %s cannot be listed!"
+                                           % cls.__class__.__name__)
         if not cls.can_get:
             raise JSSMethodNotAllowedError(cls.__class__.__name__)
-        return jss.list(cls)
+        else:
+            return jss.list(cls)
 
     def delete(self):
         if not self.can_delete:
@@ -314,6 +327,7 @@ class ActivationCode(JSSObject):
     _url = '/activationcode'
     can_delete = False
     can_post = False
+    can_list = False
 
 
 class Category(JSSObject):
@@ -327,12 +341,14 @@ class Computer(JSSObject):
 class ComputerCheckIn(JSSObject):
     _url = '/computercheckin'
     can_delete = False
+    can_list = False
     can_post = False
 
 
 class ComputerCommand(JSSObject):
     _url = '/computercommands'
     can_delete = False
+    #can_list = False
     can_put = False
 
 
