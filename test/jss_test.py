@@ -25,6 +25,12 @@ def std_jss():
     return j
 
 
+def setup():
+    jp = JSSPrefs()
+    global JSSServer
+    JSSServer = JSS(jss_prefs=jp)
+
+
 def test_jssprefs():
     jp = JSSPrefs()
     result = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_user'])
@@ -63,6 +69,19 @@ def test_jss_raw_get_error():
     j = std_jss()
     assert_raises(JSSGetError, j.raw_get, '/donkey-tacos')
 
+
+@with_setup(setup)
+def test_jss_put_and_delete():
+    with open('doc/policy_template.xml') as f:
+        xml = f.read()
+    new_policy = JSSServer.Policy(xml)
+    # If successful, we'll get a new ID number
+    assert_is_instance(new_policy.id(), int)
+    id_ = new_policy.id()
+
+    # Test delete
+    new_policy.delete()
+    assert_raises(JSSGetError, JSSServer.Policy, id_)
 
 #JSSObject Tests###############################################################
 def jss_object_runner(object_cls):
