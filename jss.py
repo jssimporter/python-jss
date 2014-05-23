@@ -270,9 +270,9 @@ class JSSObject(object):
 
     def id(self):
         if self.xml.find('id') is not None:
-            return self.xml.find('id').text
+            return int(self.xml.find('id').text)
         else:
-            return self.xml.find('general/id').text
+            return int(self.xml.find('general/id').text)
 
 
 class Category(JSSObject):
