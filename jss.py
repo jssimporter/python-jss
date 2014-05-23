@@ -35,7 +35,12 @@ class JSSGetError(Exception):
 class JSSCreationError(Exception):
     pass
 
+
 class JSSDeletionError(Exception):
+    pass
+
+
+class JSSMethodNotAllowedError(Exception):
     pass
 
 
@@ -88,7 +93,8 @@ class JSS(object):
 
         if response.status_code == 401:
             raise JSSAuthenticationError(
-                    'Authentication error: check the api username and password')
+                    'Authentication error: check the api username and password'
+                    ', and verify user has access to this object.')
         elif response.status_code == 404:
             raise JSSGetError("Object %s does not exist!" % url)
 
@@ -130,12 +136,15 @@ class JSS(object):
             print(url)
         xmldata = self.get_request(url)
 
-        # Build a list of objects based on the results. Remove the size elements.
-        lst = [obj_class(self, item) for item in xmldata if item is not None and item.tag != 'size']
+        # Build a list of objects based on the results. Remove the size elems.
+        lst = [obj_class(self, item) for item in xmldata if
+               item is not None and item.tag != 'size']
         return lst
 
     def post(self, obj_class, data):
         """Post an object to the JSS. For creating new objects only."""
+        if not obj_class.can_post:
+            raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
         # The JSS expects a post to ID 0 to create an object
         url = '%s%s%s' % (self._url, obj_class._url, '/id/0')
         response = requests.post(url, auth=(self.user, self.password),
@@ -143,7 +152,8 @@ class JSS(object):
 
         if response.status_code == 401:
             raise JSSAuthenticationError(
-                    'Authentication error: check the api username and password')
+                    'Authentication error: check the api username and password'
+                    ', and verify user has access to this object.')
         elif response.status_code == 409:
             raise JSSCreationError(
                     'Creation error: Possible name conflict or other problem.'
@@ -158,7 +168,7 @@ class JSS(object):
 
     def delete(self, obj_class):
         """Delete an object from the JSS."""
-        url = '%s%s%s%s' % (self._url, obj_class._url, '/id/', 
+        url = '%s%s%s%s' % (self._url, obj_class._url, '/id/',
                             str(obj_class.id()))
         response = requests.delete(url, auth=(self.user, self.password),
                                  verify=self.ssl_verify)
@@ -175,11 +185,20 @@ class JSS(object):
         else:
             return cls(self, id_)
 
+    def ActivationCode(self, id_=None):
+        return self._get_list_or_object(ActivationCode, id_)
+
     def Category(self, id_=None):
         return self._get_list_or_object(Category, id_)
 
     def Computer(self, id_=None):
         return self._get_list_or_object(Computer, id_)
+
+    def ComputerCheckIn(self, id_=None):
+        return self._get_list_or_object(ComputerCheckIn, id_)
+
+    def ComputerCommand(self, id_=None):
+        return self._get_list_or_object(ComputerCommand, id_)
 
     def ComputerGroup(self, id_=None):
         return self._get_list_or_object(ComputerGroup, id_)
@@ -198,13 +217,26 @@ class JSS(object):
 
 
 class JSSObject(object):
-    """Base class for representing all available JSS API objects."""
+    """Base class for representing all available JSS API objects.
+
+    Object construction depends on the data argument provided to init.
+    If data is type:
+        None:   Perform a list operation
+        int:    Retrieve an object with ID of <data>
+        str:    Create a new object with xml <str>
+
+        Warning! Be careful to not pass an ID number as a str, as this will
+        attempt to create a new object, but fail due to flawed XML.
+    """
     _url = None
+    can_get = True
+    can_put = True
+    can_post = True
+    can_delete = True
 
     def __init__(self, jss, data=None):
         self.jss = jss
 
-        #if data is None or type(data) in [int, str]:
         if data is None or isinstance(data, int):
             data = self.jss.get(self.__class__, data)
         # Create a new object
@@ -225,9 +257,13 @@ class JSSObject(object):
 
     @classmethod
     def list(cls, jss):
+        if not cls.can_get:
+            raise JSSMethodNotAllowedError(cls.__class__.__name__)
         return jss.list(cls)
 
     def delete(self):
+        if not self.can_delete:
+            raise JSSMethodNotAllowedError(self.__class__.__name__)
         return self.jss.delete(self)
 
     def indent(self, elem, level=0, more_sibs=False):
@@ -275,11 +311,30 @@ class JSSObject(object):
             return int(self.xml.find('general/id').text)
 
 
+class ActivationCode(JSSObject):
+    _url = '/activationcode'
+    can_delete = False
+    can_post = False
+
+
 class Category(JSSObject):
     _url = '/categories'
 
+
 class Computer(JSSObject):
     _url = '/computers'
+
+
+class ComputerCheckIn(JSSObject):
+    _url = '/computercheckin'
+    can_delete = False
+    can_post = False
+
+
+class ComputerCommand(JSSObject):
+    _url = '/computercommands'
+    can_delete = False
+    can_put = False
 
 
 class ComputerGroup(JSSObject):

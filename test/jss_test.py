@@ -109,3 +109,35 @@ def jss_object_tests():
             MobileDeviceConfigurationProfile, MobileDeviceGroup]
     for obj in objs:
         jss_object_runner(obj)
+
+@with_setup(setup)
+def jss_method_not_allowed_tests():
+    class NoGetObject(JSSObject):
+        can_get = False
+
+    assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
+                  NoGetObject, None)
+
+    class NoPostObject(JSSObject):
+        can_post = False
+
+    assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
+                  NoPostObject, "<xml>No workie.</xml>")
+
+    # Need to create an existing object first, and it's not implemented yet.
+    #class NoPutObject(JSSObject):
+    #    can_put = False
+
+    #assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
+    #NoPutObject, "<xml>No workie.</xml>")
+
+    class NoDeleteObject(JSSObject):
+        can_delete = False
+        def __init__(self):
+            pass
+    nd = NoDeleteObject()
+
+    assert_raises(JSSMethodNotAllowedError, nd.delete)
+
+    ac = ActivationCode(j_global, None)
+    assert_raises(JSSMethodNotAllowedError, ac.delete)
