@@ -143,8 +143,6 @@ class JSS(object):
 
     def post(self, obj_class, data):
         """Post an object to the JSS. For creating new objects only."""
-        if not obj_class.can_post:
-            raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
         # The JSS expects a post to ID 0 to create an object
         url = '%s%s%s' % (self._url, obj_class._url, '/id/0')
         response = requests.post(url, auth=(self.user, self.password),
@@ -177,7 +175,6 @@ class JSS(object):
         elif response.status_code == 404:
             raise JSSDeletionError('Deletion error: %s' %
                                    response.text.encode('utf-8'))
-
 
     def _get_list_or_object(self, cls, id_):
         if id_ is None:
@@ -241,6 +238,8 @@ class JSSObject(object):
             data = self.jss.get(self.__class__, data)
         # Create a new object
         elif isinstance(data, str):
+            if not self.can_post:
+                raise JSSMethodNotAllowedError(self.__class__.__name__)
             results = self.jss.post(self.__class__, data)
             id_ =  re.search(r'<id>([0-9]+)</id>', results).group(1)
             print("Object created with ID: %s" % id_)
