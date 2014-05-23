@@ -32,6 +32,10 @@ class JSSGetError(Exception):
     pass
 
 
+class JSSPutError(Exception):
+    pass
+
+
 class JSSCreationError(Exception):
     pass
 
@@ -155,6 +159,8 @@ class JSS(object):
         response = requests.post(url, auth=(self.user, self.password),
                                  data=data, verify=self.ssl_verify)
 
+        # Technically, you're supposed to get a 403 if you don't have
+        # permissions... Need to research and test.
         if response.status_code == 401:
             raise JSSAuthenticationError(
                     'Authentication error: check the api username and password'
@@ -169,7 +175,19 @@ class JSS(object):
         return jss_results
 
     def put(self, url):
-        pass
+        """Updates an object on the JSS."""
+        # Need to convert data to string...
+        data = None
+        url = '%s%s%s%s' % (self._url, obj_class._url, '/id/',
+                            str(obj_class.id()))
+        response = requests.put(url, auth=(self.user, self.password),
+                                 verify=self.ssl_verify, data=data)
+        if response.status_code == 200:
+            print("Success.")
+        else
+            raise JSSPutError('Put error. Response Code: %s\tResponse: %s"
+                              response.text.encode('utf-8'))
+
 
     def delete(self, obj_class):
         """Delete an object from the JSS."""
@@ -277,6 +295,11 @@ class JSSObject(object):
         if not self.can_delete:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
         return self.jss.delete(self)
+
+    def update(self):
+        if not self.can_put:
+            raise JSSMethodNotAllowedError(self.__class__.__name___
+        return self.jss.put(self)
 
     def indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing."""
