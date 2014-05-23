@@ -19,16 +19,10 @@ from nose.tools import *
 from jss import *
 
 
-def std_jss():
-    jp = JSSPrefs()
-    j = JSS(jss_prefs=jp)
-    return j
-
-
 def setup():
+    global j_global
     jp = JSSPrefs()
-    global JSSServer
-    JSSServer = JSS(jss_prefs=jp)
+    j_global = JSS(jss_prefs=jp)
 
 
 def test_jssprefs():
@@ -59,44 +53,47 @@ def test_jss_with_args():
     assert_is_instance(j, JSS)
 
 
+@with_setup(setup)
 def test_jss_auth_error():
-    j = std_jss()
-    j.password = 'DonkeyTacos'
-    assert_raises(JSSAuthenticationError, j.raw_get, '/policies')
+    j_global.password = 'DonkeyTacos'
+    assert_raises(JSSAuthenticationError, j_global.raw_get, '/policies')
 
 
+@with_setup(setup)
 def test_jss_raw_get_error():
-    j = std_jss()
-    assert_raises(JSSGetError, j.raw_get, '/donkey-tacos')
+    assert_raises(JSSGetError, j_global.raw_get, '/donkey-tacos')
 
 
 @with_setup(setup)
 def test_jss_put_and_delete():
     with open('doc/policy_template.xml') as f:
         xml = f.read()
-    new_policy = JSSServer.Policy(xml)
+    new_policy = j_global.Policy(xml)
     # If successful, we'll get a new ID number
     assert_is_instance(new_policy.id(), int)
     id_ = new_policy.id()
 
     # Test delete
     new_policy.delete()
-    assert_raises(JSSGetError, JSSServer.Policy, id_)
+    assert_raises(JSSGetError, j_global.Policy, id_)
+
 
 #JSSObject Tests###############################################################
+
+
+@with_setup(setup)
 def jss_object_runner(object_cls):
     """ Helper function to test individual object classes. Does not test the
     JSS methods for creating these objects.
 
     """
-    j = std_jss()
-    obj_list = j.list(object_cls)
+    obj_list = j_global.list(object_cls)
     print(obj_list)
     assert_is_instance(obj_list, list)
     # There should be objects in the JSS to test for.
     assert_greater(len(obj_list), 0)
     id_ = obj_list[0].id()
-    obj = object_cls(j, id_)
+    obj = object_cls(j_global, id_)
     # This kind_of tests for success, in that it creates an object. The test
     # would fail without the assertion if there was just an exception, but I
     # don't know how to better test this, yet.
@@ -106,29 +103,9 @@ def jss_object_runner(object_cls):
     obj.pprint()
 
 
-def test_jss_category():
-    jss_object_runner(Category)
-
-
-def test_jss_computer():
-    jss_object_runner(Computer)
-
-
-def test_jss_computergroup():
-    jss_object_runner(ComputerGroup)
-
-
-def test_jss_policy():
-    jss_object_runner(Policy)
-
-
-def test_jss_mobiledevice():
-    jss_object_runner(MobileDevice)
-
-
-def test_jss_mobiledeviceconfigurationprofile():
-    jss_object_runner(MobileDeviceConfigurationProfile)
-
-
-def test_jss_mobiledevicegroups():
-    jss_object_runner(MobileDeviceGroup)
+def jss_object_tests():
+    # This is a list of all of the JSSObject classes we want to test.
+    objs = [Category, Computer, ComputerGroup, Policy, MobileDevice,
+            MobileDeviceConfigurationProfile, MobileDeviceGroup]
+    for obj in objs:
+        jss_object_runner(obj)
