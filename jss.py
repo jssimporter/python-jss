@@ -90,6 +90,24 @@ class JSS(object):
         self.ssl_verify = ssl_verify
         self.verbose = verbose
 
+    def _error_handler(self, exception_cls, response):
+        """Generic error handler. Converts html responses to friendlier
+        text.
+
+        """
+        # Responses are sent as html. Split on the newlines and give us the
+        # <p> text back.
+        errorlines = response.text.encode('utf-8').split('\n')
+        error = []
+        for line in errorlines:
+            e = re.search(r'<p.*>(.*)</p>', line)
+            if e:
+                error.append(e.group(1))
+
+        error = '\n'.join(error)
+        raise exception_cls('JSS ERROR. Response Code: %s\tResponse: %s' %
+                          (response.status_code, error))
+
     def get_request(self, url):
         """Get a url, handle errors, and return an etree from the XML data."""
         # For some objects the JSS tries to return JSON if we don't specify
@@ -98,12 +116,10 @@ class JSS(object):
         response = requests.get(url, auth=(self.user, self.password),
                                 verify=self.ssl_verify, headers=headers)
 
-        if response.status_code == 401:
-            raise JSSAuthenticationError(
-                    'Authentication error: check the api username and password'
-                    ', and verify user has access to this object.')
-        elif response.status_code == 404:
-            raise JSSGetError("Object %s does not exist!" % url)
+        if response.status_code == 200:
+            print("Success.")
+        elif response.status_code >= 400:
+            self._error_handler(JSSGetError, response)
 
         # JSS returns xml encoded in utf-8
         jss_results = response.text.encode('utf-8')
@@ -159,16 +175,10 @@ class JSS(object):
         response = requests.post(url, auth=(self.user, self.password),
                                  data=data, verify=self.ssl_verify)
 
-        # Technically, you're supposed to get a 403 if you don't have
-        # permissions... Need to research and test.
-        if response.status_code == 401:
-            raise JSSAuthenticationError(
-                    'Authentication error: check the api username and password'
-                    ', and verify user has access to this object.')
-        elif response.status_code == 409:
-            raise JSSCreationError(
-                    'Creation error: Possible name conflict or other problem.'
-                    '\n%s' % response.text.encode('utf-8'))
+        if response.status_code == 201:
+            print("Success")
+        elif response.status_code >= 400:
+            self._error_handler(JSSGetError, response)
 
         # Get the ID of the new object. JSS returns xml encoded in utf-8
         jss_results = response.text.encode('utf-8')
@@ -184,12 +194,8 @@ class JSS(object):
                                  verify=self.ssl_verify, data=data)
         if response.status_code == 201:
             print("Success.")
-        else:
-            #raise JSSPutError('Put error. Response Code: %s\tResponse: %s'
-            #                  (response.status_code,
-            #                   response.text.encode('utf-8')))
-            raise JSSPutError(response.status_code)
-
+        elif response.status_code >= 400:
+            self._error_handler(JSSGetError, response)
 
     def delete(self, obj_class):
         """Delete an object from the JSS."""
@@ -199,9 +205,8 @@ class JSS(object):
                                  verify=self.ssl_verify)
         if response.status_code == 200:
             print("Success.")
-        elif response.status_code == 404:
-            raise JSSDeletionError('Deletion error: %s' %
-                                   response.text.encode('utf-8'))
+        elif response.status_code >= 400:
+            self._error_handler(JSSGetError, response)
 
     def _get_list_or_object(self, cls, id_):
         if id_ is None:
@@ -271,7 +276,6 @@ class JSSObject(object):
             results = self.jss.post(self.__class__, data)
             id_ =  re.search(r'<id>([0-9]+)</id>', results).group(1)
             print("Object created with ID: %s" % id_)
-            #data = ElementTree.fromstring(data)
             data = self.jss.get(self.__class__, id_)
 
         self.xml = data
