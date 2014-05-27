@@ -174,20 +174,21 @@ class JSS(object):
         jss_results = response.text.encode('utf-8')
         return jss_results
 
-    def put(self, url):
+    def put(self, obj_class):
         """Updates an object on the JSS."""
         # Need to convert data to string...
-        data = None
+        data = ElementTree.tostring(obj_class.xml)
         url = '%s%s%s%s' % (self._url, obj_class._url, '/id/',
                             str(obj_class.id()))
         response = requests.put(url, auth=(self.user, self.password),
                                  verify=self.ssl_verify, data=data)
-        if response.status_code == 200:
+        if response.status_code == 201:
             print("Success.")
         else:
-            raise JSSPutError('Put error. Response Code: %s\tResponse: %s'
-                              (response.status_code,
-                               response.text.encode('utf-8')))
+            #raise JSSPutError('Put error. Response Code: %s\tResponse: %s'
+            #                  (response.status_code,
+            #                   response.text.encode('utf-8')))
+            raise JSSPutError(response.status_code)
 
 
     def delete(self, obj_class):

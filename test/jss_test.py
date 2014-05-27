@@ -65,7 +65,7 @@ def test_jss_raw_get_error():
 
 
 @with_setup(setup)
-def test_jss_put_and_delete():
+def test_jss_post():
     with open('doc/policy_template.xml') as f:
         xml = f.read()
     new_policy = j_global.Policy(xml)
@@ -73,7 +73,37 @@ def test_jss_put_and_delete():
     assert_is_instance(new_policy.id(), int)
     id_ = new_policy.id()
 
-    # Test delete
+    new_policy.delete()
+
+
+@with_setup(setup)
+def test_jss_put():
+    with open('doc/policy_template.xml') as f:
+        xml = f.read()
+    new_policy = j_global.Policy(xml)
+    id_ = new_policy.id()
+
+    # Change the policy.
+    recon = new_policy.xml.find('maintenance/recon')
+    # This is str, not bool...
+    recon.text = 'false'
+    new_policy.update()
+
+    test_policy = j_global.Policy(id_)
+    assert_equal(test_policy.xml.find('maintenance/recon').text, 'false')
+
+    new_policy.delete()
+
+
+@with_setup(setup)
+def test_jss_delete():
+    with open('doc/policy_template.xml') as f:
+        xml = f.read()
+    new_policy = j_global.Policy(xml)
+    id_ = new_policy.id()
+
+    # Test delete. This is of course successful if the previous two tests
+    # pass.
     new_policy.delete()
     assert_raises(JSSGetError, j_global.Policy, id_)
 
