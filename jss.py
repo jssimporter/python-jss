@@ -184,9 +184,10 @@ class JSS(object):
                                  verify=self.ssl_verify, data=data)
         if response.status_code == 200:
             print("Success.")
-        else
-            raise JSSPutError('Put error. Response Code: %s\tResponse: %s"
-                              response.text.encode('utf-8'))
+        else:
+            raise JSSPutError('Put error. Response Code: %s\tResponse: %s'
+                              (response.status_code,
+                               response.text.encode('utf-8')))
 
 
     def delete(self, obj_class):
@@ -298,7 +299,7 @@ class JSSObject(object):
 
     def update(self):
         if not self.can_put:
-            raise JSSMethodNotAllowedError(self.__class__.__name___
+            raise JSSMethodNotAllowedError(self.__class__.__name__)
         return self.jss.put(self)
 
     def indent(self, elem, level=0, more_sibs=False):
