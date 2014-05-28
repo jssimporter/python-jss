@@ -20,10 +20,6 @@ class JSSPrefsMissingKeyError(Exception):
     pass
 
 
-class JSSConnectionError(Exception):
-    pass
-
-
 class JSSGetError(Exception):
     pass
 
@@ -32,11 +28,7 @@ class JSSPutError(Exception):
     pass
 
 
-class JSSCreationError(Exception):
-    pass
-
-
-class JSSDeletionError(Exception):
+class JSSDeleteError(Exception):
     pass
 
 
@@ -123,8 +115,7 @@ class JSS(object):
         try:
             xmldata = ElementTree.fromstring(jss_results)
         except ElementTree.ParseError:
-            print("Error Parsing XML:\n%s" % jss_results)
-            raise JSSGetError
+            raise JSSGetError("Error Parsing XML:\n%s" % jss_results)
         return xmldata
 
     def raw_get(self, path):
@@ -177,7 +168,7 @@ class JSS(object):
             if self.verbose:
                 print("POST: Success")
         elif response.status_code >= 400:
-            self._error_handler(JSSGetError, response)
+            self._error_handler(JSSPostError, response)
 
         # Get the ID of the new object. JSS returns xml encoded in utf-8
         jss_results = response.text.encode('utf-8')
@@ -195,7 +186,7 @@ class JSS(object):
             if self.verbose:
                 print("PUT: Success.")
         elif response.status_code >= 400:
-            self._error_handler(JSSGetError, response)
+            self._error_handler(JSSPutError, response)
 
     def delete(self, obj_class):
         """Delete an object from the JSS."""
@@ -207,7 +198,7 @@ class JSS(object):
             if self.verbose:
                 print("DEL: Success.")
         elif response.status_code >= 400:
-            self._error_handler(JSSGetError, response)
+            self._error_handler(JSSDeleteError, response)
 
     def _get_list_or_object(self, cls, id_):
         if id_ is None:

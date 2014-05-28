@@ -147,33 +147,37 @@ def jss_object_tests():
 
 @with_setup(setup)
 def jss_method_not_allowed_tests():
+    class NoListObject(JSSObject):
+        can_list = False
+
     class NoGetObject(JSSObject):
         can_get = False
-
-    assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
-                  NoGetObject, None)
 
     class NoPostObject(JSSObject):
         can_post = False
 
-    bad_xml = ElementTree.fromstring("<xml>No workie.</xml>")
-    assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
-                  NoPostObject, bad_xml)
-
-    # Need to create an existing object first, and it's not implemented yet.
-    #class NoPutObject(JSSObject):
-    #    can_put = False
-
-    #assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
-    #NoPutObject, "<xml>No workie.</xml>")
+    class NoPutObject(JSSObject):
+        can_put = False
+        def __init__(self):
+            pass
 
     class NoDeleteObject(JSSObject):
         can_delete = False
         def __init__(self):
             pass
+
+    assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
+                  NoListObject, None)
+    assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
+                  NoGetObject, None)
+    bad_xml = ElementTree.fromstring("<xml>No workie.</xml>")
+    assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
+                  NoPostObject, bad_xml)
+
+
+    np = NoPutObject()
+    np.xml = '<xml>Changed!</xml>'
+    assert_raises(JSSMethodNotAllowedError, np.update)
+
     nd = NoDeleteObject()
-
     assert_raises(JSSMethodNotAllowedError, nd.delete)
-
-    ac = ActivationCode(j_global, None)
-    assert_raises(JSSMethodNotAllowedError, ac.delete)
