@@ -151,10 +151,16 @@ class JSS(object):
             print(url)
         xmldata = self.get_request(url)
 
-        # Build a list of dicts based on the results. Remove the size elems.
-        lst = [{'id': item.find('id').text, 'name': item.find('name').text}
-               for item in xmldata if item is not None and item.tag !='size']
-        return lst
+        # Build a list of objects based on the results. Remove the size elems.
+        objects = []
+        response_objects = [item for item in xmldata if item is not None and item.tag !='size']
+        for response_object in response_objects:
+            d = {}
+            for i in response_object:
+                d[i.tag] = i.text
+
+            objects.append(obj_class(self, d))
+        return objects
 
     def post(self, obj_class, data):
         """Post an object to the JSS. For creating new objects only."""
@@ -201,7 +207,7 @@ class JSS(object):
             self._error_handler(JSSDeleteError, response)
 
     def _get_list_or_object(self, cls, id_):
-        if id_ is None:
+        if id_ is None and cls.can_list:
             return cls.list(self)
         else:
             return cls(self, id_)
@@ -258,8 +264,13 @@ class JSSObject(object):
     def __init__(self, jss, data=None):
         self.jss = jss
 
+        # Get an object with a numeric ID. Some objects don't list, so if
+        # data is None, we do a get anyway.
         if data is None or isinstance(data, int):
             data = self.jss.get(self.__class__, data)
+        # This object has been "listed". Copy useful data to a dict
+        elif isinstance(data, dict):
+            data = {k: v for k, v in data.items()}
         # Create a new object
         elif isinstance(data, ElementTree.Element):
             if not self.can_post:
@@ -326,8 +337,14 @@ class JSSObject(object):
 
     def pprint(self):
         """Pretty print our XML data."""
-        self.indent(self.xml)
-        ElementTree.dump(self.xml)
+        if isinstance(self.xml, ElementTree.Element):
+            self.indent(self.xml)
+            print(ElementTree.tostring(self.xml))
+        else:
+            for k, v in self.xml.items():
+                print("%30s:\t%s" % (k, v))
+
+
 
     # Shared properties
     def name(self):
