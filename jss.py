@@ -113,7 +113,8 @@ class JSS(object):
                                 verify=self.ssl_verify, headers=headers)
 
         if response.status_code == 200:
-            print("Success.")
+            if self.verbose:
+                print("GET: Success.")
         elif response.status_code >= 400:
             self._error_handler(JSSGetError, response)
 
@@ -173,7 +174,8 @@ class JSS(object):
                                  data=data, verify=self.ssl_verify)
 
         if response.status_code == 201:
-            print("Success")
+            if self.verbose:
+                print("POST: Success")
         elif response.status_code >= 400:
             self._error_handler(JSSGetError, response)
 
@@ -190,7 +192,8 @@ class JSS(object):
         response = requests.put(url, auth=(self.user, self.password),
                                  verify=self.ssl_verify, data=data)
         if response.status_code == 201:
-            print("Success.")
+            if self.verbose:
+                print("PUT: Success.")
         elif response.status_code >= 400:
             self._error_handler(JSSGetError, response)
 
@@ -201,7 +204,8 @@ class JSS(object):
         response = requests.delete(url, auth=(self.user, self.password),
                                  verify=self.ssl_verify)
         if response.status_code == 200:
-            print("Success.")
+            if self.verbose:
+                print("DEL: Success.")
         elif response.status_code >= 400:
             self._error_handler(JSSGetError, response)
 
