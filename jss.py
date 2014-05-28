@@ -20,10 +20,6 @@ class JSSPrefsMissingKeyError(Exception):
     pass
 
 
-class JSSAuthenticationError(Exception):
-    pass
-
-
 class JSSConnectionError(Exception):
     pass
 
@@ -163,15 +159,16 @@ class JSS(object):
             print(url)
         xmldata = self.get_request(url)
 
-        # Build a list of objects based on the results. Remove the size elems.
-        lst = [obj_class(self, item) for item in xmldata if
-               item is not None and item.tag != 'size']
+        # Build a list of dicts based on the results. Remove the size elems.
+        lst = [{'id': item.find('id').text, 'name': item.find('name').text}
+               for item in xmldata if item is not None and item.tag !='size']
         return lst
 
     def post(self, obj_class, data):
         """Post an object to the JSS. For creating new objects only."""
         # The JSS expects a post to ID 0 to create an object
         url = '%s%s%s' % (self._url, obj_class._url, '/id/0')
+        data = ElementTree.tostring(data)
         response = requests.post(url, auth=(self.user, self.password),
                                  data=data, verify=self.ssl_verify)
 
@@ -252,10 +249,9 @@ class JSSObject(object):
     If data is type:
         None:   Perform a list operation
         int:    Retrieve an object with ID of <data>
-        str:    Create a new object with xml <str>
+        xml.etree.ElementTree.Element:    Create a new object from xml
 
-        Warning! Be careful to not pass an ID number as a str, as this will
-        attempt to create a new object, but fail due to flawed XML.
+        Warning! Be sure to pass ID's as ints, not str!
     """
     _url = None
     can_list = True
@@ -270,7 +266,7 @@ class JSSObject(object):
         if data is None or isinstance(data, int):
             data = self.jss.get(self.__class__, data)
         # Create a new object
-        elif isinstance(data, str):
+        elif isinstance(data, ElementTree.Element):
             if not self.can_post:
                 raise JSSMethodNotAllowedError(self.__class__.__name__)
             results = self.jss.post(self.__class__, data)
@@ -377,7 +373,6 @@ class ComputerCheckIn(JSSObject):
 class ComputerCommand(JSSObject):
     _url = '/computercommands'
     can_delete = False
-    #can_list = False
     can_put = False
 
 

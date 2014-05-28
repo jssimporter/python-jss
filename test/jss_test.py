@@ -53,10 +53,10 @@ def test_jss_with_args():
     assert_is_instance(j, JSS)
 
 
-@with_setup(setup)
-def test_jss_auth_error():
-    j_global.password = 'DonkeyTacos'
-    assert_raises(JSSAuthenticationError, j_global.raw_get, '/policies')
+#@with_setup(setup)
+#def test_jss_auth_error():
+#    j_global.password = 'DonkeyTacos'
+#    assert_raises(JSSAuthenticationError, j_global.raw_get, '/policies')
 
 
 @with_setup(setup)
@@ -67,7 +67,9 @@ def test_jss_raw_get_error():
 @with_setup(setup)
 def test_jss_post():
     with open('doc/policy_template.xml') as f:
-        xml = f.read()
+        data  = f.read()
+
+    xml = ElementTree.fromstring(data)
     new_policy = j_global.Policy(xml)
     # If successful, we'll get a new ID number
     assert_is_instance(new_policy.id(), int)
@@ -79,7 +81,9 @@ def test_jss_post():
 @with_setup(setup)
 def test_jss_put():
     with open('doc/policy_template.xml') as f:
-        xml = f.read()
+        data = f.read()
+
+    xml = ElementTree.fromstring(data)
     new_policy = j_global.Policy(xml)
     id_ = new_policy.id()
 
@@ -98,7 +102,8 @@ def test_jss_put():
 @with_setup(setup)
 def test_jss_delete():
     with open('doc/policy_template.xml') as f:
-        xml = f.read()
+        data = f.read()
+    xml = ElementTree.fromstring(data)
     new_policy = j_global.Policy(xml)
     id_ = new_policy.id()
 
@@ -122,7 +127,7 @@ def jss_object_runner(object_cls):
     assert_is_instance(obj_list, list)
     # There should be objects in the JSS to test for.
     assert_greater(len(obj_list), 0)
-    id_ = obj_list[0].id()
+    id_ = int(obj_list[0]['id'])
     obj = object_cls(j_global, id_)
     # This kind_of tests for success, in that it creates an object. The test
     # would fail without the assertion if there was just an exception, but I
@@ -151,8 +156,9 @@ def jss_method_not_allowed_tests():
     class NoPostObject(JSSObject):
         can_post = False
 
+    bad_xml = ElementTree.fromstring("<xml>No workie.</xml>")
     assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
-                  NoPostObject, "<xml>No workie.</xml>")
+                  NoPostObject, bad_xml)
 
     # Need to create an existing object first, and it's not implemented yet.
     #class NoPutObject(JSSObject):
