@@ -50,3 +50,5 @@ as an option if I get stuck and can't figure out how I'm jacking stuff up.
 	*sites
 	*softwareupdateservers
 	*smtpserver
+*I don't like how the JSS._get_list_or_object() is the one that checks for can_listiness. See if I can move that out
+*JSS.list does a super ugly list comprehension to crappy dict unpacking that could be cleaned up.
