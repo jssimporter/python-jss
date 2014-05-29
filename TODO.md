@@ -32,11 +32,9 @@
 *Double check implementation checks for objects. e.g. _canGet, _canDelete, _canList, etc.
 	**Do I cover the full range?
 	**Do they work
-*__dict__ is a special class property which allows you to see all instance
-variables as a dictionary of k=variable name, v=value. I don't see keeping
-anything else there, but the python-gitlab code does, so I want to remember it
-as an option if I get stuck and can't figure out how I'm jacking stuff up.
-*Should .data have getters/setters?
+*Implement container behavior.
+	**Researching...
+*Should .data have getters/setters as a safety net?
 *Sort out id/name method on JSSObject.
 	**Should there be more? (UDID, SN, MAC)
 	**Should they be @property
@@ -89,3 +87,4 @@ as an option if I get stuck and can't figure out how I'm jacking stuff up.
 *Add sorting options for listing operations in jss_helper
 *Revert to using id/name method instead of dict access for a few functions
 *Add ability to search using name or ID, and for some objects, SN, UDID, MAC, etc.
+*Use Element.findtext(path) rather than if Element.find(path).text ==
