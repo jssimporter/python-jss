@@ -52,6 +52,10 @@ class JSSMethodNotAllowedError(Exception):
     pass
 
 
+class JSSUnsupportedSearchMethodError(Exception):
+    pass
+
+
 class JSSPrefs(object):
     """Uses the OS X preferences system to store credentials and JSS URL."""
     def __init__(self, preferences_file=None):
@@ -156,12 +160,12 @@ class JSS(object):
         url = '%s%s' % (self._url, path)
         return self.get_request(url)
 
-    def get(self, obj_class, id_=None):
+    def get(self, obj_class, id_=None, url_suffix='/id/'):
         """Get method for JSSObjects."""
         url = obj_class._url
-        if id_ is not None:
+        if id_ is not None and url_suffix:
             # JSS API adds a /id/ between our object type and id number.
-            url = '%s%s%s%s' % (self._url, url, '/id/', str(id_))
+            url = '%s%s%s%s' % (self._url, url, url_suffix, str(id_))
             if self.verbose:
                 print(url)
         else:
@@ -237,42 +241,43 @@ class JSS(object):
         elif response.status_code >= 400:
             self._error_handler(JSSDeleteError, response)
 
-    def _get_list_or_object(self, cls, id_):
+    def _get_list_or_object(self, cls, id_, search):
         """Determine whether to list or get."""
         if id_ is None:
             return cls.list(self)
         else:
-            return cls(self, id_)
+            return cls(self, id_, search)
 
-    def ActivationCode(self, id_=None):
-        return self._get_list_or_object(ActivationCode, id_)
+    def ActivationCode(self, id_=None, search=None):
+        return self._get_list_or_object(ActivationCode, id_, search)
 
-    def Category(self, id_=None):
-        return self._get_list_or_object(Category, id_)
+    def Category(self, id_=None, search=None):
+        return self._get_list_or_object(Category, id_, search)
 
-    def Computer(self, id_=None):
-        return self._get_list_or_object(Computer, id_)
+    def Computer(self, id_=None, search=None):
+        return self._get_list_or_object(Computer, id_, search)
 
-    def ComputerCheckIn(self, id_=None):
-        return self._get_list_or_object(ComputerCheckIn, id_)
+    def ComputerCheckIn(self, id_=None, search=None):
+        return self._get_list_or_object(ComputerCheckIn, id_, search)
 
-    def ComputerCommand(self, id_=None):
-        return self._get_list_or_object(ComputerCommand, id_)
+    def ComputerCommand(self, id_=None, search=None):
+        return self._get_list_or_object(ComputerCommand, id_, search)
 
-    def ComputerGroup(self, id_=None):
-        return self._get_list_or_object(ComputerGroup, id_)
+    def ComputerGroup(self, id_=None, search=None):
+        return self._get_list_or_object(ComputerGroup, id_, search)
 
-    def MobileDevice(self, id_=None):
-        return self._get_list_or_object(MobileDevice, id_)
+    def MobileDevice(self, id_=None, search=None):
+        return self._get_list_or_object(MobileDevice, id_, search)
 
-    def MobileDeviceConfigurationProfile(self, id_=None):
-        return self._get_list_or_object(MobileDeviceConfigurationProfile, id_)
+    def MobileDeviceConfigurationProfile(self, id_=None, search=None):
+        return self._get_list_or_object(MobileDeviceConfigurationProfile, id_,
+                                        search)
 
-    def MobileDeviceGroup(self, id_=None):
-        return self._get_list_or_object(MobileDeviceGroup, id_)
+    def MobileDeviceGroup(self, id_=None, search=None):
+        return self._get_list_or_object(MobileDeviceGroup, id_, search)
 
-    def Policy(self, id_=None):
-        return self._get_list_or_object(Policy, id_)
+    def Policy(self, id_=None, search=None):
+        return self._get_list_or_object(Policy, id_, search)
 
 
 class JSSObject(object):
@@ -285,18 +290,23 @@ class JSSObject(object):
     can_put = True
     can_post = True
     can_delete = True
+    search_types = {'name': '/name/'}
 
-    def __init__(self, jss, data=None):
+    def __init__(self, jss, data=None, search='name'):
         """Object construction depends on the data argument provided to init.
             If data is type:
                 None:   Perform a list operation, or for non-container objects,
                         return all data.
                 int:    Retrieve an object with ID of <data>
-                str:    Retrieve an object with name of <str>. For some objects,
-                        this may be overridden to include searching by other criteria.
-                        See those objects for more info.
+                str:    Retrieve an object with name of <str>. For some
+                        objects, this may be overridden to include searching
+                        by other criteria. See those objects for more info.
                 dict:   Get the existing object with <dict>['id']
                 xml.etree.ElementTree.Element:    Create a new object from xml
+
+                search: A string matching the key of one of the object's
+                        search_types. Defaults to a name search. See object
+                        for available search types.
 
                 Warning! Be sure to pass ID's as ints, not str!
 
@@ -312,8 +322,9 @@ class JSSObject(object):
         elif isinstance(data, dict):
             data = {k: v for k, v in data.items()}
 
-        elif isinstance(data, str):
-            pass
+        elif isinstance(data, str) and search in self.search_types:
+                data = self.jss.get(self.__class__, data,
+                                    self.search_types[search])
 
         # Create a new object
         elif isinstance(data, ElementTree.Element):
@@ -323,6 +334,9 @@ class JSSObject(object):
             id_ =  re.search(r'<id>([0-9]+)</id>', results).group(1)
             print("Object created with ID: %s" % id_)
             data = self.jss.get(self.__class__, id_)
+        elif search not in self.search_types:
+            raise JSSUnsupportedSearchMethodError("This object cannot be "
+                                                  "queried by %s" % search)
 
         self.data = data
 
@@ -426,7 +440,8 @@ class JSSObject(object):
     # convenient accessor.
     def name(self):
         if isinstance(self.data, ElementTree.Element):
-            return self.data.findtext('name') or self.data.findtext('general/name')
+            return self.data.findtext('name') or \
+                    self.data.findtext('general/name')
         else:
             return  self.data['name']
 
@@ -475,6 +490,8 @@ class Category(JSSObject):
 
 class Computer(JSSDeviceObject):
     _url = '/computers'
+    search_types = {'name': '/name/', 'serial_number': '/serialnumber/',
+                    'udid': '/udid/', 'macaddress': '/macadress/'}
 
     def mac_addresses(self):
         """Return a list of mac addresses for this device."""
@@ -482,7 +499,8 @@ class Computer(JSSDeviceObject):
         if isinstance(self.data, ElementTree.Element):
             mac_addresses = [self.data.findtext('general/mac_address')]
             if self.data.findtext('general/alt_mac_address'):
-                mac_addresses.append(self.data.findtext('general/alt_mac_address'))
+                mac_addresses.append(self.data.findtext(\
+                        'general/alt_mac_address'))
             return mac_addresses
         else:
             return "Load object to retrieve."
@@ -507,6 +525,8 @@ class ComputerGroup(JSSObject):
 
 class MobileDevice(JSSDeviceObject):
     _url = '/mobiledevices'
+    search_types = {'name': '/name/', 'serial_number': '/serialnumber/',
+                    'udid': '/udid/', 'macaddress': '/macadress/'}
 
     def wifi_mac_address(self):
         if isinstance(self.data, ElementTree.Element):
@@ -516,9 +536,11 @@ class MobileDevice(JSSDeviceObject):
 
     def bluetooth_mac_address(self):
         if isinstance(self.data, ElementTree.Element):
-            return self.data.findtext('general/bluetooth_mac_address') or self.data.findtext('general/mac_address')
+            return self.data.findtext('general/bluetooth_mac_address') or \
+                    self.data.findtext('general/mac_address')
         elif wifi_mac_address in self.data:
-            return  self.data['wifi_mac_address'] or self.data['mac_address'] or None
+            return  self.data['wifi_mac_address'] or \
+        self.data['mac_address'] or None
         else:
             return "Load object to retrieve."
 

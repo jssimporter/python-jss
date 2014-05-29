@@ -169,12 +169,12 @@ def jss_method_not_allowed_tests():
             pass
 
     assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
-                  NoListObject, None)
+                  NoListObject, None, None)
     assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
-                  NoGetObject, None)
+                  NoGetObject, None, None)
     bad_xml = ElementTree.fromstring("<xml>No workie.</xml>")
     assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
-                  NoPostObject, bad_xml)
+                  NoPostObject, bad_xml, None)
 
     np = NoPutObject()
     np.data = '<xml>Changed!</xml>'
