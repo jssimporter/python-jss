@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from xml.etree import ElementTree
-import base64
 import os
 import re
 import copy
@@ -54,7 +53,20 @@ class JSSMethodNotAllowedError(Exception):
 
 
 class JSSPrefs(object):
+    """Uses the OS X preferences system to store credentials and JSS URL."""
     def __init__(self, preferences_file=None):
+        """Create a preferences object.
+
+        preferences_file: Alternate location to look for preferences.
+
+        Preference file should include the following keys:
+            jss_url:        Full path, including port, to JSS,
+                            e.g. 'https://mycasper.donkey.com:8443'
+                            (JSS() handles the appending of /JSSResource)
+            jss_user:       API username to use.
+            jss_password:   API password.
+
+        """
         if preferences_file is None:
             path = '~/Library/Preferences/org.da.jss_helper.plist'
             preferences_file = os.path.expanduser(path)
@@ -76,12 +88,12 @@ class JSS(object):
         """Provide either a JSSPrefs object OR specify url, user, and password
         to init.
 
-        jss_prefs: A JSSPrefs object.
-        url: Path with port to a JSS.
-        user: API Username.
-        password: API Password.
+        jss_prefs:  A JSSPrefs object.
+        url:        Path with port to a JSS. See JSSPrefs.__doc__
+        user:       API Username.
+        password:   API Password.
         ssl_verify: Boolean indicating whether to verify SSL certificates.
-                Defaults to True.
+                    Defaults to True.
 
         """
         if jss_prefs is not None:
@@ -158,7 +170,8 @@ class JSS(object):
 
     def list(self, obj_class):
         """Query the JSS for a list of all objects of an object type.
-        Returns a list of objects of the corresponding type.
+        Returns a list of objects of the corresponding type. Objects will have
+        a dict as their data property, rather than an Element.
 
         """
         url = obj_class._url
@@ -170,7 +183,8 @@ class JSS(object):
 
         # Build a list of objects based on the results. Remove the size elems.
         objects = []
-        response_objects = [item for item in xmldata if item is not None and item.tag !='size']
+        response_objects = [item for item in xmldata if item is not None and \
+                            item.tag != 'size']
         for response_object in response_objects:
             d = {}
             for i in response_object:
@@ -224,13 +238,14 @@ class JSS(object):
             self._error_handler(JSSDeleteError, response)
 
     def _get_list_or_object(self, cls, id_):
+        """Determine whether to list or get."""
         if id_ is None:
             return cls.list(self)
         else:
             return cls(self, id_)
 
     def ActivationCode(self, id_=None):
-        return ActivationCode(self, None)
+        return self._get_list_or_object(ActivationCode, id_)
 
     def Category(self, id_=None):
         return self._get_list_or_object(Category, id_)
@@ -239,7 +254,7 @@ class JSS(object):
         return self._get_list_or_object(Computer, id_)
 
     def ComputerCheckIn(self, id_=None):
-        return ComputerCheckIn(self, None)
+        return self._get_list_or_object(ComputerCheckIn, id_)
 
     def ComputerCommand(self, id_=None):
         return self._get_list_or_object(ComputerCommand, id_)
@@ -263,13 +278,6 @@ class JSS(object):
 class JSSObject(object):
     """Base class for representing all available JSS API objects.
 
-    Object construction depends on the data argument provided to init.
-    If data is type:
-        None:   Perform a list operation
-        int:    Retrieve an object with ID of <data>
-        xml.etree.ElementTree.Element:    Create a new object from xml
-
-        Warning! Be sure to pass ID's as ints, not str!
     """
     _url = None
     can_list = True
@@ -279,15 +287,34 @@ class JSSObject(object):
     can_delete = True
 
     def __init__(self, jss, data=None):
+        """Object construction depends on the data argument provided to init.
+            If data is type:
+                None:   Perform a list operation, or for non-container objects,
+                        return all data.
+                int:    Retrieve an object with ID of <data>
+                str:    Retrieve an object with name of <str>. For some objects,
+                        this may be overridden to include searching by other criteria.
+                        See those objects for more info.
+                dict:   Get the existing object with <dict>['id']
+                xml.etree.ElementTree.Element:    Create a new object from xml
+
+                Warning! Be sure to pass ID's as ints, not str!
+
+        """
         self.jss = jss
 
         # Get an object with a numeric ID. Some objects don't list, so if
         # data is None, we do a get anyway.
         if data is None or isinstance(data, int):
             data = self.jss.get(self.__class__, data)
+
         # This object has been "listed". Copy useful data to a dict
         elif isinstance(data, dict):
             data = {k: v for k, v in data.items()}
+
+        elif isinstance(data, str):
+            pass
+
         # Create a new object
         elif isinstance(data, ElementTree.Element):
             if not self.can_post:
@@ -299,15 +326,19 @@ class JSSObject(object):
 
         self.data = data
 
-    def _get_list_or_object(self, cls, id):
-        # Currently unused; may be useful if there are any dependent objects.
-        if id is None:
-            return cls.list(self)
-        else:
-            return cls(self, id)
+    #def _get_list_or_object(self, cls, id_):
+    #   """Currently unused; may be useful if there are any dependent
+    #   objects.
+    #
+    #   """
+    #    if id_ is None:
+    #        return cls.list(self)
+    #    else:
+    #        return cls(self, id_)
 
     @classmethod
     def list(cls, jss):
+        """Ensure that cls doesn't do something it shouldn't."""
         if not cls.can_list and not cls.can_get:
             raise JSSMethodNotAllowedError("Object class %s cannot be listed!"
                                            % cls.__class__.__name__)
@@ -319,21 +350,27 @@ class JSSObject(object):
             return jss.list(cls)
 
     def delete(self):
+        """Delete this object from the JSS."""
         if not self.can_delete:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
         return self.jss.delete(self)
 
     def update(self):
+        """Update this object on the JSS.
+
+        Data validation is up to the client.
+
+        """
         if not self.can_put:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
         return self.jss.put(self)
 
     def load(self):
         """Pull down information from the JSS to fill self.data property.
-        
+
         When you perform a JSSObject.list(), self.data is filled with a dict
         as returned by the JSS. This data is used to perform a get with the ID
-        from that dict. This method should be used on items in a list to 
+        from that dict. This method should be used on items in a list to
         retrieve their full data.
 
         """
@@ -341,7 +378,12 @@ class JSSObject(object):
         self.data = data
 
     def _indent(self, elem, level=0, more_sibs=False):
-        """Indent an xml element object to prepare for pretty printing."""
+        """Indent an xml element object to prepare for pretty printing.
+
+        Method is internal to discourage indenting the self.data Element,
+        thus potentially corrupting it.
+
+        """
         i = "\n"
         pad = '    '
         if level:
@@ -367,33 +409,32 @@ class JSSObject(object):
                     elem.tail += pad
 
     def __repr__(self):
+        """Make our data human readable."""
         if isinstance(self.data, ElementTree.Element):
             # deepcopy so we don't mess with the valid XML.
             pretty_data = copy.deepcopy(self.data)
             self._indent(pretty_data)
             s = ElementTree.tostring(pretty_data)
         else:
-            s = ''
+            s = 30 * '-' + '\n'
             for k, v in self.data.items():
-                s += "%30s:\t%s\n" % (k, v)
+                s += "%s:\t%s\n" % (k, v)
         return s.encode('utf-8')
 
-    # Shared properties
+    # Shared properties:
+    # Almost all JSSObjects have at least name and id properties, so provide a
+    # convenient accessor.
     def name(self):
-        if self.data.find('name') is not None:
-            return self.data.find('name').text
+        if isinstance(self.data, ElementTree.Element):
+            return self.data.findtext('name') or self.data.findtext('general/name')
         else:
-            return self.data.find('general/name').text
+            return  self.data['name']
 
     def id(self):
         if isinstance(self.data, ElementTree.Element):
-            if self.data.find('id') is not None:
-                id_ = self.data.find('id').text
-            else:
-                id_ = self.data.find('general/id').text
+            id_ = self.data.findtext('id') or self.data.findtext('general/id')
         else:
             id_ = self.data['id']
-
         return int(id_)
 
 

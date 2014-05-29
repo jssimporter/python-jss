@@ -20,6 +20,7 @@
 	yourself put into the README.
 
 !test/jss_test.py
+*Add a cleanup or something to setup to clean out test Policy so I don't have to clicky clicky delete it.
 *Audit existing tests
 *Tests for all remaining to be implemented API features (do this before writing them)
 	**Perhaps a more meaninful test for each would be to confirm that it has a top-level
