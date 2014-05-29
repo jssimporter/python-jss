@@ -36,7 +36,6 @@
 variables as a dictionary of k=variable name, v=value. I don't see keeping
 anything else there, but the python-gitlab code does, so I want to remember it
 as an option if I get stuck and can't figure out how I'm jacking stuff up.
-*Need to implement or set up a way for a JSSObject with a dict .data property to get its full data
 *Should .data have getters/setters?
 *Sort out id/name method on JSSObject.
 	**Should there be more? (UDID, SN, MAC)

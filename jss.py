@@ -315,6 +315,18 @@ class JSSObject(object):
             raise JSSMethodNotAllowedError(self.__class__.__name__)
         return self.jss.put(self)
 
+    def load(self):
+        """Pull down information from the JSS to fill self.data property.
+        
+        When you perform a JSSObject.list(), self.data is filled with a dict
+        as returned by the JSS. This data is used to perform a get with the ID
+        from that dict. This method should be used on items in a list to 
+        retrieve their full data.
+
+        """
+        data = self.jss.get(self.__class__, self.id())
+        self.data = data
+
     def indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing."""
         i = "\n"
@@ -362,13 +374,13 @@ class JSSObject(object):
     def id(self):
         if isinstance(self.data, ElementTree.Element):
             if self.data.find('id') is not None:
-                id = self.data.find('id').text
+                id_ = self.data.find('id').text
             else:
-                id = self.data.find('general/id').text
+                id_ = self.data.find('general/id').text
         else:
-            id = self.data['id']
+            id_ = self.data['id']
 
-        return int(id)
+        return int(id_)
 
 
 class ActivationCode(JSSObject):
