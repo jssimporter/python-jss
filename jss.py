@@ -11,6 +11,7 @@ from xml.etree import ElementTree
 import base64
 import os
 import re
+import copy
 
 import requests
 import FoundationPlist
@@ -327,7 +328,7 @@ class JSSObject(object):
         data = self.jss.get(self.__class__, self.id())
         self.data = data
 
-    def indent(self, elem, level=0, more_sibs=False):
+    def _indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing."""
         i = "\n"
         pad = '    '
@@ -341,7 +342,7 @@ class JSSObject(object):
                     elem.text += pad
             count = 0
             for kid in elem:
-                self.indent(kid, level+1, count < num_kids - 1)
+                self._indent(kid, level+1, count < num_kids - 1)
                 count += 1
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
@@ -353,16 +354,17 @@ class JSSObject(object):
                 if more_sibs:
                     elem.tail += pad
 
-    def pprint(self):
-        """Pretty print our XML data."""
+    def __repr__(self):
         if isinstance(self.data, ElementTree.Element):
-            self.indent(self.data)
-            print(ElementTree.tostring(self.data))
+            # deepcopy so we don't mess with the valid XML.
+            pretty_data = copy.deepcopy(self.data)
+            self._indent(pretty_data)
+            s = ElementTree.tostring(pretty_data)
         else:
+            s = ''
             for k, v in self.data.items():
-                print("%30s:\t%s" % (k, v))
-
-
+                s += "%30s:\t%s\n" % (k, v)
+        return s.encode('utf-8')
 
     # Shared properties
     def name(self):

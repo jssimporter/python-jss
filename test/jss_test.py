@@ -135,7 +135,7 @@ def jss_object_runner(object_cls):
     assert_is_instance(obj, object_cls)
     print(type(obj.data))
     assert_is_instance(obj.data, ElementTree.Element)
-    obj.pprint()
+    print(obj)
 
 
 def jss_object_tests():
