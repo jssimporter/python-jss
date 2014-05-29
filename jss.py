@@ -438,6 +438,30 @@ class JSSObject(object):
         return int(id_)
 
 
+class JSSDeviceObject(JSSObject):
+    """Provides convenient accessors for properties of devices.
+
+    This is helpful since Computers and MobileDevices allow us to query
+    based on these properties.
+
+    """
+    def udid(self):
+        if isinstance(self.data, ElementTree.Element):
+            return self.data.findtext('general/udid')
+        elif 'udid' in self.data:
+            return  self.data['udid']
+        else:
+            return "Load object to retrieve."
+
+    def serial_number(self):
+        if isinstance(self.data, ElementTree.Element):
+            return self.data.findtext('general/serial_number')
+        elif 'serial_number' in self.data:
+            return  self.data['serial_number']
+        else:
+            return "Load object to retrieve."
+
+
 class ActivationCode(JSSObject):
     _url = '/activationcode'
     can_delete = False
@@ -449,8 +473,19 @@ class Category(JSSObject):
     _url = '/categories'
 
 
-class Computer(JSSObject):
+class Computer(JSSDeviceObject):
     _url = '/computers'
+
+    def mac_addresses(self):
+        """Return a list of mac addresses for this device."""
+        # Computers don't tell you which network device is which.
+        if isinstance(self.data, ElementTree.Element):
+            mac_addresses = [self.data.findtext('general/mac_address')]
+            if self.data.findtext('general/alt_mac_address'):
+                mac_addresses.append(self.data.findtext('general/alt_mac_address'))
+            return mac_addresses
+        else:
+            return "Load object to retrieve."
 
 
 class ComputerCheckIn(JSSObject):
@@ -470,9 +505,22 @@ class ComputerGroup(JSSObject):
     _url = '/computergroups'
 
 
-class MobileDevice(JSSObject):
+class MobileDevice(JSSDeviceObject):
     _url = '/mobiledevices'
 
+    def wifi_mac_address(self):
+        if isinstance(self.data, ElementTree.Element):
+            return self.data.findtext('general/wifi_mac_address')
+        else:
+            return  self.data['wifi_mac_address']
+
+    def bluetooth_mac_address(self):
+        if isinstance(self.data, ElementTree.Element):
+            return self.data.findtext('general/bluetooth_mac_address') or self.data.findtext('general/mac_address')
+        elif wifi_mac_address in self.data:
+            return  self.data['wifi_mac_address'] or self.data['mac_address'] or None
+        else:
+            return "Load object to retrieve."
 
 class MobileDeviceConfigurationProfile(JSSObject):
     _url = '/mobiledeviceconfigurationprofiles'
