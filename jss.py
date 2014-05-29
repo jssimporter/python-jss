@@ -28,6 +28,10 @@ class JSSPutError(Exception):
     pass
 
 
+class JSSPostError(Exception):
+    pass
+
+
 class JSSDeleteError(Exception):
     pass
 
@@ -183,7 +187,7 @@ class JSS(object):
     def put(self, obj_class):
         """Updates an object on the JSS."""
         # Need to convert data to string...
-        data = ElementTree.tostring(obj_class.xml)
+        data = ElementTree.tostring(obj_class.data)
         url = '%s%s%s%s' % (self._url, obj_class._url, '/id/',
                             str(obj_class.id()))
         response = requests.put(url, auth=(self.user, self.password),
@@ -207,7 +211,7 @@ class JSS(object):
             self._error_handler(JSSDeleteError, response)
 
     def _get_list_or_object(self, cls, id_):
-        if id_ is None and cls.can_list:
+        if id_ is None:
             return cls.list(self)
         else:
             return cls(self, id_)
@@ -280,7 +284,7 @@ class JSSObject(object):
             print("Object created with ID: %s" % id_)
             data = self.jss.get(self.__class__, id_)
 
-        self.xml = data
+        self.data = data
 
     def _get_list_or_object(self, cls, id):
         # Currently unused; may be useful if there are any dependent objects.
@@ -291,10 +295,12 @@ class JSSObject(object):
 
     @classmethod
     def list(cls, jss):
-        if not cls.can_list:
+        if not cls.can_list and not cls.can_get:
             raise JSSMethodNotAllowedError("Object class %s cannot be listed!"
                                            % cls.__class__.__name__)
-        if not cls.can_get:
+        elif not cls.can_list:
+            return cls(jss)
+        elif not cls.can_get:
             raise JSSMethodNotAllowedError(cls.__class__.__name__)
         else:
             return jss.list(cls)
@@ -337,27 +343,32 @@ class JSSObject(object):
 
     def pprint(self):
         """Pretty print our XML data."""
-        if isinstance(self.xml, ElementTree.Element):
-            self.indent(self.xml)
-            print(ElementTree.tostring(self.xml))
+        if isinstance(self.data, ElementTree.Element):
+            self.indent(self.data)
+            print(ElementTree.tostring(self.data))
         else:
-            for k, v in self.xml.items():
+            for k, v in self.data.items():
                 print("%30s:\t%s" % (k, v))
 
 
 
     # Shared properties
     def name(self):
-        if self.xml.find('name') is not None:
-            return self.xml.find('name').text
+        if self.data.find('name') is not None:
+            return self.data.find('name').text
         else:
-            return self.xml.find('general/name').text
+            return self.data.find('general/name').text
 
     def id(self):
-        if self.xml.find('id') is not None:
-            return int(self.xml.find('id').text)
+        if isinstance(self.data, ElementTree.Element):
+            if self.data.find('id') is not None:
+                id = self.data.find('id').text
+            else:
+                id = self.data.find('general/id').text
         else:
-            return int(self.xml.find('general/id').text)
+            id = self.data['id']
+
+        return int(id)
 
 
 class ActivationCode(JSSObject):

@@ -88,13 +88,13 @@ def test_jss_put():
     id_ = new_policy.id()
 
     # Change the policy.
-    recon = new_policy.xml.find('maintenance/recon')
+    recon = new_policy.data.find('maintenance/recon')
     # This is str, not bool...
     recon.text = 'false'
     new_policy.update()
 
     test_policy = j_global.Policy(id_)
-    assert_equal(test_policy.xml.find('maintenance/recon').text, 'false')
+    assert_equal(test_policy.data.find('maintenance/recon').text, 'false')
 
     new_policy.delete()
 
@@ -127,14 +127,14 @@ def jss_object_runner(object_cls):
     assert_is_instance(obj_list, list)
     # There should be objects in the JSS to test for.
     assert_greater(len(obj_list), 0)
-    id_ = int(obj_list[0]['id'])
+    id_ = obj_list[0].id()
     obj = object_cls(j_global, id_)
     # This kind_of tests for success, in that it creates an object. The test
     # would fail without the assertion if there was just an exception, but I
     # don't know how to better test this, yet.
     assert_is_instance(obj, object_cls)
-    print(type(obj.xml))
-    assert_is_instance(obj.xml, ElementTree.Element)
+    print(type(obj.data))
+    assert_is_instance(obj.data, ElementTree.Element)
     obj.pprint()
 
 
@@ -147,8 +147,10 @@ def jss_object_tests():
 
 @with_setup(setup)
 def jss_method_not_allowed_tests():
+    # This type of object probably doesn't exist in the wild.
     class NoListObject(JSSObject):
         can_list = False
+        can_get = False
 
     class NoGetObject(JSSObject):
         can_get = False
@@ -174,9 +176,8 @@ def jss_method_not_allowed_tests():
     assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
                   NoPostObject, bad_xml)
 
-
     np = NoPutObject()
-    np.xml = '<xml>Changed!</xml>'
+    np.data = '<xml>Changed!</xml>'
     assert_raises(JSSMethodNotAllowedError, np.update)
 
     nd = NoDeleteObject()

@@ -36,13 +36,11 @@
 variables as a dictionary of k=variable name, v=value. I don't see keeping
 anything else there, but the python-gitlab code does, so I want to remember it
 as an option if I get stuck and can't figure out how I'm jacking stuff up.
-*Need to implement or set up a way for a JSSObject with a dict .xml property to get its full data
-*Rename JSSObject.xml to something more appropriate
-*Should .xml have getters/setters?
+*Need to implement or set up a way for a JSSObject with a dict .data property to get its full data
+*Should .data have getters/setters?
 *Sort out id/name method on JSSObject.
 	**Should there be more? (UDID, SN, MAC)
 	**Should they be @property
-	**Need to fix id and name methods to use dict if no Element
 *Implement further API features
 	**accounts
 	**activationcode
@@ -86,7 +84,6 @@ as an option if I get stuck and can't figure out how I'm jacking stuff up.
 	**sites
 	**softwareupdateservers
 	**smtpserver
-*I don't like how the JSS._get_list_or_object() is the one that checks for can_listiness. See if I can move that out
 *JSS.list does a super ugly list comprehension to crappy dict unpacking that could be cleaned up.
 
 !JSS HELPER
