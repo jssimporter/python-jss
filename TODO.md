@@ -47,6 +47,8 @@ class Computer(JSSObject):
 		if isinstance(data, str) and search_type is None:
 			data = '%s%s' % ('/match/', data)
 			super(Computer, self).__init__(self, jss, data)
+			#Python 3:
+			#super().__init__(self, jss, data)
 
 All others would probably have '/name/' as the search type default. Probably just need to
 run down the list and see.
