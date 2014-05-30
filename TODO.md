@@ -30,6 +30,40 @@
 *Devise a test for the rather complicated overload of data in JSSObject.__init__()
 
 !JSS.py
+*I set up searching for strings. However, after thinking about it, I think I
+would rather have one data argument like before. I would need a helper method
+to parse strings, but I could override computer and mobile device to default to
+match searches (which just searches udid, sn, mac, name), and everything else
+could be passed a string like this: "udid=134123409dfad09u23234r" and the string
+parser would seperate out the type of search from the data. This would involve
+some case sanitization, and whatnot, but pretty simple. = should be an acceptable
+delimiter. And honestly, I do not think that many other objects even have a search
+feature beyond name, so this may just be moot.
+	**I think I can override __init__ like:
+
+class Computer(JSSObject):
+	def __init__(self, jss, data):
+		search_type, data = self.string_parser(data)
+		if isinstance(data, str) and search_type is None:
+			data = '%s%s' % ('/match/', data)
+			super(Computer, self).__init__(self, jss, data)
+
+All others would probably have '/name/' as the search type default. Probably just need to
+run down the list and see.
+*The overloading algorithm seems overly complicated. This should be cleaned up.
+	**There are two ways to create an object:
+		***JSS.Computer()
+		***Computer()
+	**I am tempted to just make the JSSObjects private, or at least discourage people from
+	using them in the readme.
+	**What's the need for separating get_request() from get()?
+	**Concerned about logic errors that can allow you to post to non-postable objects, etc
+	**In one place we have the url_suffix='/id/' default, and in another search='/name/'.
+		***This either needs to be cleared up so there's only one, or documented appropriately
+		so it's not such a mystery.
+*Decide whether I wnat to keep in the crazy list() code where I instantiate a class as part
+of a list comprehension with a dict comprehension inside of it. Yee haw!
+
 *Double check implementation checks for objects. e.g. _canGet, _canDelete, _canList, etc.
 	**Do I cover the full range?
 	**Do they work

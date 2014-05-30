@@ -189,12 +189,12 @@ class JSS(object):
         objects = []
         response_objects = [item for item in xmldata if item is not None and \
                             item.tag != 'size']
-        for response_object in response_objects:
-            d = {}
-            for i in response_object:
-                d[i.tag] = i.text
-
-            objects.append(obj_class(self, d))
+        #for response_object in response_objects:
+            #d = {}
+            #for i in response_object:
+            #    d[i.tag] = i.text
+            #objects.append(obj_class(self, d))
+        objects = [obj_class(self, {i.tag: i.text for i in response_object}) for response_object in response_objects]
         return objects
 
     def post(self, obj_class, data):
