@@ -30,6 +30,7 @@
 *Devise a test for the rather complicated overload of data in JSSObject.__init__()
 
 !JSS.py
+*Have JSSObject inherit from Element
 *I'm worried that my algorithm for __init__, _get_list_or_object, etc, are too complicated.
 	*Do I need to seperately say search='/id/' as a default, and then search='/name' as another
 *I set up searching for strings. However, after thinking about it, I think I
