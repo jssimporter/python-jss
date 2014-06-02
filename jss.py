@@ -25,7 +25,14 @@ import re
 import copy
 
 import requests
-import FoundationPlist
+try:
+    import FoundationPlist
+except ImportError:
+    import plistlib
+
+
+class JSSPrefsMissingFileError(Exception):
+    pass
 
 
 class JSSPrefsMissingKeyError(Exception):
@@ -74,15 +81,22 @@ class JSSPrefs(object):
         if preferences_file is None:
             path = '~/Library/Preferences/org.da.jss_helper.plist'
             preferences_file = os.path.expanduser(path)
-        try:
-            prefs = FoundationPlist.readPlist(os.path.expanduser(
-                    preferences_file))
-            self.user = prefs.get('jss_user')
-            self.password = prefs.get('jss_pass')
-            self.url = prefs.get('jss_url')
-        except:
-            raise JSSPrefsMissingKeyError("Please provide all required"
-                                          " preferences!")
+        if os.path.exists(preferences_file):
+            try:
+                prefs = FoundationPlist.readPlist(os.path.expanduser(preferences_file))
+            except NameError:
+                # Plist files are probably not binary on non-OS X machines, so
+                # this should be safe.
+                prefs = plistlib.readPlist(os.path.expanduser(preferences_file))
+            try:
+                self.user = prefs.get('jss_user')
+                self.password = prefs.get('jss_pass')
+                self.url = prefs.get('jss_url')
+            except:
+                raise JSSPrefsMissingKeyError("Please provide all required"
+                                              " preferences!")
+        else:
+            raise JSSPrefsMissingFileError("Preferences file not found!")
 
 
 class JSS(object):

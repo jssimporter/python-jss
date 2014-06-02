@@ -35,8 +35,8 @@ def test_jssprefs():
     assert_in(jp.url, result)
 
 
-def test_jssprefs_missing_key_error():
-    assert_raises(JSSPrefsMissingKeyError, JSSPrefs, '/nonexistent_path')
+def test_jssprefs_missing_file_error():
+    assert_raises(JSSPrefsMissingFileError, JSSPrefs, '/nonexistent_path')
 
 
 def test_jss_with_jss_prefs():
