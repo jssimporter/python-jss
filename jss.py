@@ -427,13 +427,14 @@ class JSSObject(object):
             if '=' in data:
                 key, value = data.split('=')
                 if key in cls.search_types:
-                    return '%s%s%s' % (cls._url, cls.search_types[key], data)
+                    return '%s%s%s' % (cls._url, cls.search_types[key], value)
                 else:
                     raise JSSUnsupportedSearchMethodError("This object cannot"
                             "be queried by %s." % key)
+            elif 'match' in cls.search_types:
+                return '%s%s%s' % (cls._url, cls.search_types['match'], data)
             else:
-                if 'match' in cls.search_types:
-                    return '%s%s%s' % (cls._url, cls.search_types[key], data)
+                return '%s%s%s' % (cls._url, cls.search_types['name'], data)
 
 
     @classmethod

@@ -1,3 +1,6 @@
+*Fix TODO!
+*Add in permissions tests
+
 !Project Level
 *Figure out how to do README for public release (markdown works on Github?)
 *Document changes in README.
