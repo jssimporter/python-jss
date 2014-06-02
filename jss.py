@@ -124,6 +124,7 @@ class JSS(object):
         self.password = password
         self.ssl_verify = ssl_verify
         self.verbose = verbose
+        self.factory = JSSObjectFactory(self)
 
     def _error_handler(self, exception_cls, response):
         """Generic error handler. Converts html responses to friendlier
@@ -174,17 +175,17 @@ class JSS(object):
         url = '%s%s' % (self._url, path)
         return self.get_request(url)
 
-    def get(self, obj_class, id_=None, url_suffix='/id/'):
-        """Get method for JSSObjects."""
-        url = obj_class._url
-        if id_ is not None and url_suffix:
-            # JSS API adds a /id/ between our object type and id number.
-            url = '%s%s%s%s' % (self._url, url, url_suffix, str(id_))
-            if self.verbose:
-                print(url)
-        else:
-            url = '%s%s' % (self._url, url)
-        return self.get_request(url)
+    #def get(self, obj_class, id_=None, url_suffix='/id/'):
+    #    """Get method for JSSObjects."""
+    #    url = obj_class._url
+    #    if id_ is not None and url_suffix:
+    #        # JSS API adds a /id/ between our object type and id number.
+    #        url = '%s%s%s%s' % (self._url, url, url_suffix, str(id_))
+    #        if self.verbose:
+    #            print(url)
+    #    else:
+    #        url = '%s%s' % (self._url, url)
+    #    return self.get_request(url)
 
     def list(self, obj_class):
         """Query the JSS for a list of all objects of an object type.
@@ -255,43 +256,95 @@ class JSS(object):
         elif response.status_code >= 400:
             self._error_handler(JSSDeleteError, response)
 
-    def _get_list_or_object(self, cls, id_, search):
-        """Determine whether to list or get."""
-        if id_ is None:
-            return cls.list(self)
-        else:
-            return cls(self, id_, search)
+    #def _get_list_or_object(self, cls, id_, search):
+    #    """Determine whether to list or get."""
+    #    if id_ is None:
+    #        return cls.list(self)
+    #    else:
+    #        return cls(self, id_, search)
 
-    def ActivationCode(self, id_=None, search=None):
-        return self._get_list_or_object(ActivationCode, id_, search)
+    #def ActivationCode(self, id_=None, search=None):
+    #    return self._get_list_or_object(ActivationCode, id_, search)
 
-    def Category(self, id_=None, search=None):
-        return self._get_list_or_object(Category, id_, search)
+    #def Category(self, id_=None, search=None):
+    #    return self._get_list_or_object(Category, id_, search)
 
-    def Computer(self, id_=None, search=None):
-        return self._get_list_or_object(Computer, id_, search)
+    #def Computer(self, id_=None, search=None):
+    #    return self._get_list_or_object(Computer, id_, search)
 
-    def ComputerCheckIn(self, id_=None, search=None):
-        return self._get_list_or_object(ComputerCheckIn, id_, search)
+    #def ComputerCheckIn(self, id_=None, search=None):
+    #    return self._get_list_or_object(ComputerCheckIn, id_, search)
 
-    def ComputerCommand(self, id_=None, search=None):
-        return self._get_list_or_object(ComputerCommand, id_, search)
+    #def ComputerCommand(self, id_=None, search=None):
+    #    return self._get_list_or_object(ComputerCommand, id_, search)
 
-    def ComputerGroup(self, id_=None, search=None):
-        return self._get_list_or_object(ComputerGroup, id_, search)
+    #def ComputerGroup(self, id_=None, search=None):
+    #    return self._get_list_or_object(ComputerGroup, id_, search)
 
-    def MobileDevice(self, id_=None, search=None):
-        return self._get_list_or_object(MobileDevice, id_, search)
+    #def MobileDevice(self, id_=None, search=None):
+    #    return self._get_list_or_object(MobileDevice, id_, search)
 
-    def MobileDeviceConfigurationProfile(self, id_=None, search=None):
-        return self._get_list_or_object(MobileDeviceConfigurationProfile, id_,
-                                        search)
+    #def MobileDeviceConfigurationProfile(self, id_=None, search=None):
+    #    return self._get_list_or_object(MobileDeviceConfigurationProfile, id_,
+    #                                    search)
 
-    def MobileDeviceGroup(self, id_=None, search=None):
-        return self._get_list_or_object(MobileDeviceGroup, id_, search)
+    #def MobileDeviceGroup(self, id_=None, search=None):
+    #    return self._get_list_or_object(MobileDeviceGroup, id_, search)
 
-    def Policy(self, id_=None, search=None):
-        return self._get_list_or_object(Policy, id_, search)
+    #def Policy(self, id_=None, search=None):
+    #    return self._get_list_or_object(Policy, id_, search)
+
+    def Policy(self, data=None):
+        return self.factory.get_object(Policy, data)
+
+
+class JSSObjectFactory(object):
+    def __init__(self, jss):
+        self.jss = jss
+
+    def get_object(self, obj_class, data):
+        if data is None:
+            url = '%s%s' % (self.jss._url, obj_class.get_url(data))
+            xmldata = self.jss.get_request(url)
+            if obj_class.can_list:
+                response_objects = [item for item in xmldata if item is not None and \
+                                    item.tag != 'size']
+                objects = [{i.tag: i.text for i in response_object} for response_object in response_objects]
+                return JSSObjectList(obj_class, objects)
+            else:
+                # Single object
+                return obj_class(xmldata)
+        elif type(data) in [str, int]:
+            #if obj_class.can_get:
+            url = '%s%s' % (self.jss._url, obj_class.get_url(data))
+            xmldata = self.jss.get_request(url)
+            return obj_class(self.jss, xmldata)
+        elif isinstance(data, JSSObjectTemplate):
+            if obj_class.can_post:
+                url = '%s%s' % (self.jss._url, obj_class.get_post_url())
+                return jss.post(url, data)
+
+
+class JSSObjectTemplate(object):
+    pass
+
+
+class JSSObjectList(object):
+    def __init__(self, obj_class, objects):
+        self.obj_class = obj_class
+        self.objects = objects
+
+    def __repr__(self):
+        """Make our data human readable."""
+        delimeter = 30 * '-' + '\n'
+        s = delimeter
+        for object in self.objects:
+            for k, v in object.items():
+                s += "%s:\t%s\n" % (k, v)
+            s += delimeter
+        return s.encode('utf-8')
+
+
 
 
 class JSSObject(object):
@@ -327,30 +380,30 @@ class JSSObject(object):
         """
         self.jss = jss
 
-        # Get an object with a numeric ID. Some objects don't list, so if
-        # data is None, we do a get anyway.
-        if data is None or isinstance(data, int):
-            data = self.jss.get(self.__class__, data)
+        ## Get an object with a numeric ID. Some objects don't list, so if
+        ## data is None, we do a get anyway.
+        #if data is None or isinstance(data, int):
+        #    data = self.jss.get(self.__class__, data)
 
-        # This object has been "listed". Copy useful data to a dict
-        elif isinstance(data, dict):
-            data = {k: v for k, v in data.items()}
+        ## This object has been "listed". Copy useful data to a dict
+        #elif isinstance(data, dict):
+        #    data = {k: v for k, v in data.items()}
 
-        elif isinstance(data, str) and search in self.search_types:
-                data = self.jss.get(self.__class__, data,
-                                    self.search_types[search])
+        #elif isinstance(data, str) and search in self.search_types:
+        #        data = self.jss.get(self.__class__, data,
+        #                            self.search_types[search])
 
-        # Create a new object
-        elif isinstance(data, ElementTree.Element):
-            if not self.can_post:
-                raise JSSMethodNotAllowedError(self.__class__.__name__)
-            results = self.jss.post(self.__class__, data)
-            id_ =  re.search(r'<id>([0-9]+)</id>', results).group(1)
-            print("Object created with ID: %s" % id_)
-            data = self.jss.get(self.__class__, id_)
-        elif search not in self.search_types:
-            raise JSSUnsupportedSearchMethodError("This object cannot be "
-                                                  "queried by %s" % search)
+        ## Create a new object
+        #elif isinstance(data, ElementTree.Element):
+        #    if not self.can_post:
+        #        raise JSSMethodNotAllowedError(self.__class__.__name__)
+        #    results = self.jss.post(self.__class__, data)
+        #    id_ =  re.search(r'<id>([0-9]+)</id>', results).group(1)
+        #    print("Object created with ID: %s" % id_)
+        #    data = self.jss.get(self.__class__, id_)
+        #elif search not in self.search_types:
+        #    raise JSSUnsupportedSearchMethodError("This object cannot be "
+        #                                          "queried by %s" % search)
 
         self.data = data
 
@@ -363,6 +416,25 @@ class JSSObject(object):
     #        return cls.list(self)
     #    else:
     #        return cls(self, id_)
+
+    @classmethod
+    def get_url(cls, data):
+        if isinstance(data, int):
+            return '%s%s%s' % (cls._url, '/id/', data)
+        elif data is None:
+            return cls._url
+        else:
+            if '=' in data:
+                key, value = data.split('=')
+                if key in cls.search_types:
+                    return '%s%s%s' % (cls._url, cls.search_types[key], data)
+                else:
+                    raise JSSUnsupportedSearchMethodError("This object cannot"
+                            "be queried by %s." % key)
+            else:
+                if 'match' in cls.search_types:
+                    return '%s%s%s' % (cls._url, cls.search_types[key], data)
+
 
     @classmethod
     def list(cls, jss):
@@ -438,15 +510,10 @@ class JSSObject(object):
 
     def __repr__(self):
         """Make our data human readable."""
-        if isinstance(self.data, ElementTree.Element):
-            # deepcopy so we don't mess with the valid XML.
-            pretty_data = copy.deepcopy(self.data)
-            self._indent(pretty_data)
-            s = ElementTree.tostring(pretty_data)
-        else:
-            s = 30 * '-' + '\n'
-            for k, v in self.data.items():
-                s += "%s:\t%s\n" % (k, v)
+        # deepcopy so we don't mess with the valid XML.
+        pretty_data = copy.deepcopy(self.data)
+        self._indent(pretty_data)
+        s = ElementTree.tostring(pretty_data)
         return s.encode('utf-8')
 
     # Shared properties:
