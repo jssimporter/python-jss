@@ -173,8 +173,7 @@ class JSS(object):
     def post(self, obj_class, url, data):
         """Post an object to the JSS. For creating new objects only."""
         # The JSS expects a post to ID 0 to create an object
-        url = '%s%s%s' % (self._url, obj_class._url, '/id/0')
-        data = ElementTree.tostring(data)
+        data = ElementTree.tostring(data.getroot())
         response = requests.post(url, auth=(self.user, self.password),
                                  data=data, verify=self.ssl_verify)
 
@@ -186,26 +185,27 @@ class JSS(object):
 
         # Get the ID of the new object. JSS returns xml encoded in utf-8
         jss_results = response.text.encode('utf-8')
-        return jss_results
+        id_ =  int(re.search(r'<id>([0-9]+)</id>', jss_results).group(1))
 
-    def put(self, obj_class):
-        """Updates an object on the JSS."""
-        # Need to convert data to string...
-        data = ElementTree.tostring(obj_class.data)
-        url = '%s%s%s%s' % (self._url, obj_class._url, '/id/',
-                            str(obj_class.id()))
-        response = requests.put(url, auth=(self.user, self.password),
-                                 verify=self.ssl_verify, data=data)
-        if response.status_code == 201:
-            if self.verbose:
-                print("PUT: Success.")
-        elif response.status_code >= 400:
-            self._error_handler(JSSPutError, response)
+        return self.factory.get_object(obj_class, id_)
 
-    def delete(self, obj_class):
+    ###TODO
+    #def put(self, obj_class):
+    #    """Updates an object on the JSS."""
+    #    # Need to convert data to string...
+    #    data = ElementTree.tostring(obj_class.data)
+    #    url = '%s%s%s%s' % (self._url, obj_class._url, '/id/',
+    #                        str(obj_class.id()))
+    #    response = requests.put(url, auth=(self.user, self.password),
+    #                             verify=self.ssl_verify, data=data)
+    #    if response.status_code == 201:
+    #        if self.verbose:
+    #            print("PUT: Success.")
+    #    elif response.status_code >= 400:
+    #        self._error_handler(JSSPutError, response)
+
+    def delete(self, url):
         """Delete an object from the JSS."""
-        url = '%s%s%s%s' % (self._url, obj_class._url, '/id/',
-                            str(obj_class.id()))
         response = requests.delete(url, auth=(self.user, self.password),
                                  verify=self.ssl_verify)
         if response.status_code == 200:
@@ -296,15 +296,19 @@ class JSSObjectFactory(object):
         elif isinstance(data, JSSObjectTemplate):
             if obj_class.can_post:
                 url = '%s%s' % (self.jss._url, obj_class.get_post_url())
-                return jss.post(url, data)
+                return self.jss.post(obj_class, url, data)
 
-
-class JSSObjectTemplate(object):
+class JSSObjectTemplate(ElementTree.ElementTree):
     """Base class for generating the skeleton XML required to post a new
     object.
 
     """
     pass
+
+
+class JSSPolicyTemplate(JSSObjectTemplate):
+    def __init__(self):
+        super(JSSPolicyTemplate, self).__init__(self, file='doc/policy_template.xml')
 
 
 class JSSListData(dict):
@@ -489,6 +493,12 @@ class JSSObject(object):
             else:
                 return '%s%s%s' % (cls._url, cls.search_types['name'], data)
 
+    @classmethod
+    def get_post_url(cls):
+        return '%s%s' % (cls._url, '/id/0')
+
+    def get_delete_url(self):
+        return '%s%s%s%s' % (self.jss._url, self._url, '/id/', self.id())
 
     @classmethod
     def list(cls, jss):
@@ -507,7 +517,7 @@ class JSSObject(object):
         """Delete this object from the JSS."""
         if not self.can_delete:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
-        return self.jss.delete(self)
+        return self.jss.delete(self.get_delete_url())
 
     def update(self):
         """Update this object on the JSS.
