@@ -274,25 +274,32 @@ class JSSObjectFactory(object):
         if data is None:
             url = '%s%s' % (self.jss._url, obj_class.get_url(data))
             xmldata = self.jss.get(url)
-            if obj_class.can_list:
+            if obj_class.can_list and obj_class.can_get:
                 response_objects = [item for item in xmldata if item is not None and \
                                     item.tag != 'size']
                 objects = [JSSListData(obj_class, {i.tag: i.text for i in response_object}) for response_object in response_objects]
                 return JSSObjectList(self, obj_class, objects)
-            else:
+            elif obj_class.can_get:
                 # Single object
                 return obj_class(xmldata)
+            else:
+                raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
         # Retrieve individual objects
         elif type(data) in [str, int]:
             if obj_class.can_get:
                 url = '%s%s' % (self.jss._url, obj_class.get_url(data))
                 xmldata = self.jss.get(url)
                 return obj_class(self.jss, xmldata)
+            else:
+                raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
         # Create a new object
         elif isinstance(data, JSSObjectTemplate):
             if obj_class.can_post:
                 url = '%s%s' % (self.jss._url, obj_class.get_post_url())
                 return self.jss.post(obj_class, url, data)
+            else:
+                raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
+
 
 class JSSObjectTemplate(ElementTree.ElementTree):
     """Base class for generating the skeleton XML required to post a new
