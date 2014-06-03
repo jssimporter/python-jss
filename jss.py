@@ -235,43 +235,32 @@ class JSS(object):
         elif response.status_code >= 400:
             self._error_handler(JSSDeleteError, response)
 
-    #def _get_list_or_object(self, cls, id_, search):
-    #    """Determine whether to list or get."""
-    #    if id_ is None:
-    #        return cls.list(self)
-    #    else:
-    #        return cls(self, id_, search)
+    def ActivationCode(self, data=None):
+        return self.factory.get_object(ActivationCode, data)
 
-    #def ActivationCode(self, id_=None, search=None):
-    #    return self._get_list_or_object(ActivationCode, id_, search)
+    def Category(self, data=None):
+        return self.factory.get_object(Category, data)
 
-    #def Category(self, id_=None, search=None):
-    #    return self._get_list_or_object(Category, id_, search)
+    def Computer(self, data=None):
+        return self.factory.get_object(Computer, data)
 
-    #def Computer(self, id_=None, search=None):
-    #    return self._get_list_or_object(Computer, id_, search)
+    def ComputerCheckIn(self, data=None):
+        return self.factory.get_object(ComputerCheckIn, data)
 
-    #def ComputerCheckIn(self, id_=None, search=None):
-    #    return self._get_list_or_object(ComputerCheckIn, id_, search)
+    def ComputerCommand(self, data=None):
+        return self.factory.get_object(ComputerCommand, data)
 
-    #def ComputerCommand(self, id_=None, search=None):
-    #    return self._get_list_or_object(ComputerCommand, id_, search)
+    def ComputerGroup(self, data=None):
+        return self.factory.get_object(ComputerGroup, data)
 
-    #def ComputerGroup(self, id_=None, search=None):
-    #    return self._get_list_or_object(ComputerGroup, id_, search)
+    def MobileDevice(self, data=None):
+        return self.factory.get_object(MobileDevice, data)
 
-    #def MobileDevice(self, id_=None, search=None):
-    #    return self._get_list_or_object(MobileDevice, id_, search)
+    def MobileDeviceConfigurationProfile(self, data=None):
+        return self.factory.get_object(MobileDeviceConfigurationProfile, data)
 
-    #def MobileDeviceConfigurationProfile(self, id_=None, search=None):
-    #    return self._get_list_or_object(MobileDeviceConfigurationProfile, id_,
-    #                                    search)
-
-    #def MobileDeviceGroup(self, id_=None, search=None):
-    #    return self._get_list_or_object(MobileDeviceGroup, id_, search)
-
-    #def Policy(self, id_=None, search=None):
-    #    return self._get_list_or_object(Policy, id_, search)
+    def MobileDeviceGroup(self, data=None):
+        return self.factory.get_object(MobileDeviceGroup, data)
 
     def Policy(self, data=None):
         return self.factory.get_object(Policy, data)
