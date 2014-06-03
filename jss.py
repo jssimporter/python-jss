@@ -63,6 +63,10 @@ class JSSUnsupportedSearchMethodError(Exception):
     pass
 
 
+class JSSListIDError(Exception):
+    pass
+
+
 class JSSPrefs(object):
     """Uses the OS X preferences system to store credentials and JSS URL."""
     def __init__(self, preferences_file=None):
@@ -356,14 +360,33 @@ class JSSObjectList(list):
         delimeter = 30 * '-' + '\n'
         s = delimeter
         for object in self:
-            for k, v in object.items():
-                s += "%s:\t%s\n" % (k, v)
+            if isinstance(object, JSSListData):
+                s += "List index: %s\n" % self.index(object)
+                for k, v in object.items():
+                    s += "%s:\t%s\n" % (k, v)
+            elif isinstance(object, JSSObject):
+                s += object.__repr__()
             s += delimeter
         return s.encode('utf-8')
+
+    def sort(self):
+        super(JSSObjectList, self).sort(key=lambda k: int(k['id']))
+
+    def sort_by_name(self):
+        super(JSSObjectList, self).sort(key=lambda k: k['name'])
 
     def retrieve(self, index):
         """Replace JSSListData element at index with its full JSSObject."""
         self[index] = self.factory.get_object(self.obj_class, int(self[index]['id']))
+
+    def retrieve_by_id(self, id_):
+        """Replace JSSListData element with ID id_ with its full JSSObject."""
+        list_index = [int(i) for i, j in enumerate(self) if int(j['id']) == id_]
+        if len(list_index) == 1:
+            list_index = list_index[0]
+            self[list_index] = self.factory.get_object(self.obj_class, int(self[list_index]['id']))
+        else:
+            raise JSSListIDError("There is no object with that ID!")
 
     def retrieve_all(self):
         """Replace JSSListData element at index with its full JSSObject."""
@@ -459,8 +482,12 @@ class JSSObject(object):
                 else:
                     raise JSSUnsupportedSearchMethodError("This object cannot"
                             "be queried by %s." % key)
+            # Some objects types can be searched across numerous properties
+            # through the "match" URL.
             elif 'match' in cls.search_types:
                 return '%s%s%s' % (cls._url, cls.search_types['match'], data)
+            # Every object has a "name" search, and this is usually what you
+            # would want if not specifying.
             else:
                 return '%s%s%s' % (cls._url, cls.search_types['name'], data)
 
