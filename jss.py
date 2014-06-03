@@ -338,6 +338,11 @@ class JSSListData(dict):
         self.obj_class = obj_class
         super(JSSListData, self).__init__(d)
 
+    def id(self):
+        return int(self['id'])
+
+    def name(self):
+        return self['name']
 
 class JSSObjectList(list):
     """A list style collection of JSSObjects.
@@ -356,46 +361,64 @@ class JSSObjectList(list):
 
 
     def __repr__(self):
-        """Make our data human readable."""
-        delimeter = 30 * '-' + '\n'
+        """Make our data human readable.
+
+        Note: Large lists of large objects may take a long time due to
+        indenting!
+
+        """
+        delimeter = 50 * '-' + '\n'
         s = delimeter
         for object in self:
             if isinstance(object, JSSListData):
-                s += "List index: %s\n" % self.index(object)
+                s += "List index: \t%s\n" % self.index(object)
                 for k, v in object.items():
-                    s += "%s:\t%s\n" % (k, v)
+                    s += "%s:\t\t%s\n" % (k, v)
             elif isinstance(object, JSSObject):
                 s += object.__repr__()
             s += delimeter
         return s.encode('utf-8')
 
     def sort(self):
-        super(JSSObjectList, self).sort(key=lambda k: int(k['id']))
+        """Sort list elements by ID."""
+        super(JSSObjectList, self).sort(key=lambda k: k.id())
 
     def sort_by_name(self):
-        super(JSSObjectList, self).sort(key=lambda k: k['name'])
+        super(JSSObjectList, self).sort(key=lambda k: k.name())
 
     def retrieve(self, index):
         """Replace JSSListData element at index with its full JSSObject."""
-        self[index] = self.factory.get_object(self.obj_class, int(self[index]['id']))
+        self[index] = self.factory.get_object(self.obj_class, self[index].id())
 
     def retrieve_by_id(self, id_):
         """Replace JSSListData element with ID id_ with its full JSSObject."""
-        list_index = [int(i) for i, j in enumerate(self) if int(j['id']) == id_]
+        list_index = [int(i) for i, j in enumerate(self) if j.id() == id_]
         if len(list_index) == 1:
             list_index = list_index[0]
-            self[list_index] = self.factory.get_object(self.obj_class, int(self[list_index]['id']))
+            self[list_index] = self.factory.get_object(self.obj_class, self[list_index].id())
         else:
             raise JSSListIDError("There is no object with that ID!")
 
     def retrieve_all(self):
-        """Replace JSSListData element at index with its full JSSObject."""
-        # TODO: Needs to handle fast multiple requests
-        # TODO: Once you retrieve_all, you can't repr
+        """Replace all JSSListData elements.
 
+        At least on my JSS, I end up with some harmless SSL errors, which are
+        dealth with.
+
+        Note: This can take a long time given a large number of objects, and
+        depending on the size of each object.
+
+        """
         final_list = []
         for i in range(0, len(self)):
-            self[i] = self.factory.get_object(self.obj_class, int(self[i]['id']))
+            result = []
+            while result == []:
+                try:
+                    result = self.factory.get_object(self.obj_class, int(self[i]['id']))
+                except requests.exceptions.SSLError as e:
+                    print("SSL Exception: %s\nTrying again." % e)
+
+            self[i] = result
 
 
 class JSSObject(object):
