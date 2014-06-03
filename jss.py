@@ -144,7 +144,7 @@ class JSS(object):
         raise exception_cls('JSS ERROR. Response Code: %s\tResponse: %s' %
                           (response.status_code, error))
 
-    def get_request(self, url):
+    def get(self, url):
         """Get a url, handle errors, and return an etree from the XML data."""
         # For some objects the JSS tries to return JSON if we don't specify
         # that we want XML.
@@ -166,27 +166,6 @@ class JSS(object):
             raise JSSGetError("Error Parsing XML:\n%s" % jss_results)
         return xmldata
 
-    def raw_get(self, path):
-        """Perform a get operation from a specified path.
-        path: Path to specific object type.
-        Returns an ElementTree element.
-
-        """
-        url = '%s%s' % (self._url, path)
-        return self.get_request(url)
-
-    #def get(self, obj_class, id_=None, url_suffix='/id/'):
-    #    """Get method for JSSObjects."""
-    #    url = obj_class._url
-    #    if id_ is not None and url_suffix:
-    #        # JSS API adds a /id/ between our object type and id number.
-    #        url = '%s%s%s%s' % (self._url, url, url_suffix, str(id_))
-    #        if self.verbose:
-    #            print(url)
-    #    else:
-    #        url = '%s%s' % (self._url, url)
-    #    return self.get_request(url)
-
     def list(self, obj_class):
         """Query the JSS for a list of all objects of an object type.
         Returns a list of objects of the corresponding type. Objects will have
@@ -198,7 +177,7 @@ class JSS(object):
 
         if self.verbose:
             print(url)
-        xmldata = self.get_request(url)
+        xmldata = self.get(url)
 
         # Build a list of objects based on the results. Remove the size elems.
         objects = []
@@ -330,7 +309,7 @@ class JSSObjectFactory(object):
         # List objects
         if data is None:
             url = '%s%s' % (self.jss._url, obj_class.get_url(data))
-            xmldata = self.jss.get_request(url)
+            xmldata = self.jss.get(url)
             if obj_class.can_list:
                 response_objects = [item for item in xmldata if item is not None and \
                                     item.tag != 'size']
@@ -343,7 +322,7 @@ class JSSObjectFactory(object):
         elif type(data) in [str, int]:
             if obj_class.can_get:
                 url = '%s%s' % (self.jss._url, obj_class.get_url(data))
-                xmldata = self.jss.get_request(url)
+                xmldata = self.jss.get(url)
                 return obj_class(self.jss, xmldata)
         # Create a new object
         elif isinstance(data, JSSObjectTemplate):
