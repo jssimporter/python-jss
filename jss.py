@@ -299,26 +299,53 @@ class JSS(object):
 
 
 class JSSObjectFactory(object):
+    """Create JSSObjects intelligently based on a single data argument."""
     def __init__(self, jss):
         self.jss = jss
 
     def get_object(self, obj_class, data):
+        """Return a subclassed JSSObject instance by querying for existing
+        objects or posting a new object. List operations return a
+        JSSObjectList.
+
+        obj_class is the class to retrieve.
+        data is flexible.
+            If data is type:
+                None:   Perform a list operation, or for non-container objects,
+                        return all data.
+                int:    Retrieve an object with ID of <data>
+                str:    Retrieve an object with name of <str>. For some
+                        objects, this may be overridden to include searching
+                        by other criteria. See those objects for more info.
+                dict:   Get the existing object with <dict>['id']
+                xml.etree.ElementTree.Element:    Create a new object from xml
+
+                search: A string matching the key of one of the object's
+                        search_types. Defaults to a name search. See object
+                        for available search types.
+
+                Warning! Be sure to pass ID's as ints, not str!
+
+        """
+        # List objects
         if data is None:
             url = '%s%s' % (self.jss._url, obj_class.get_url(data))
             xmldata = self.jss.get_request(url)
             if obj_class.can_list:
                 response_objects = [item for item in xmldata if item is not None and \
                                     item.tag != 'size']
-                objects = [{i.tag: i.text for i in response_object} for response_object in response_objects]
-                return JSSObjectList(obj_class, objects)
+                objects = [JSSListData(obj_class, {i.tag: i.text for i in response_object}) for response_object in response_objects]
+                return JSSObjectList(self, obj_class, objects)
             else:
                 # Single object
                 return obj_class(xmldata)
+        # Retrieve individual objects
         elif type(data) in [str, int]:
-            #if obj_class.can_get:
-            url = '%s%s' % (self.jss._url, obj_class.get_url(data))
-            xmldata = self.jss.get_request(url)
-            return obj_class(self.jss, xmldata)
+            if obj_class.can_get:
+                url = '%s%s' % (self.jss._url, obj_class.get_url(data))
+                xmldata = self.jss.get_request(url)
+                return obj_class(self.jss, xmldata)
+        # Create a new object
         elif isinstance(data, JSSObjectTemplate):
             if obj_class.can_post:
                 url = '%s%s' % (self.jss._url, obj_class.get_post_url())
@@ -326,25 +353,58 @@ class JSSObjectFactory(object):
 
 
 class JSSObjectTemplate(object):
+    """Base class for generating the skeleton XML required to post a new
+    object.
+
+    """
     pass
 
 
-class JSSObjectList(object):
-    def __init__(self, obj_class, objects):
+class JSSListData(dict):
+    """Holds information retrieved as part of a list operation."""
+    def __init__(self, obj_class, d):
         self.obj_class = obj_class
-        self.objects = objects
+        super(JSSListData, self).__init__(d)
+
+
+class JSSObjectList(list):
+    """A list style collection of JSSObjects.
+
+    List operations retrieve only minimal information for most object types.
+    Further, we may want to know all Computer(s) to get their ID's, but that
+    does not mean we want to do a full object search for each one. Thus,
+    methods are provided to both retrieve individual members' full
+    information, and to retrieve the full information for the entire list.
+
+    """
+    def __init__(self, factory, obj_class, objects):
+        self.factory = factory
+        self.obj_class = obj_class
+        super(JSSObjectList, self).__init__(objects)
+
 
     def __repr__(self):
         """Make our data human readable."""
         delimeter = 30 * '-' + '\n'
         s = delimeter
-        for object in self.objects:
+        for object in self:
             for k, v in object.items():
                 s += "%s:\t%s\n" % (k, v)
             s += delimeter
         return s.encode('utf-8')
 
+    def retrieve(self, index):
+        """Replace JSSListData element at index with its full JSSObject."""
+        self[index] = self.factory.get_object(self.obj_class, int(self[index]['id']))
 
+    def retrieve_all(self):
+        """Replace JSSListData element at index with its full JSSObject."""
+        # TODO: Needs to handle fast multiple requests
+        # TODO: Once you retrieve_all, you can't repr
+
+        final_list = []
+        for i in range(0, len(self)):
+            self[i] = self.factory.get_object(self.obj_class, int(self[i]['id']))
 
 
 class JSSObject(object):
