@@ -170,32 +170,7 @@ class JSS(object):
             raise JSSGetError("Error Parsing XML:\n%s" % jss_results)
         return xmldata
 
-    def list(self, obj_class):
-        """Query the JSS for a list of all objects of an object type.
-        Returns a list of objects of the corresponding type. Objects will have
-        a dict as their data property, rather than an Element.
-
-        """
-        url = obj_class._url
-        url = '%s%s' % (self._url, url)
-
-        if self.verbose:
-            print(url)
-        xmldata = self.get(url)
-
-        # Build a list of objects based on the results. Remove the size elems.
-        objects = []
-        response_objects = [item for item in xmldata if item is not None and \
-                            item.tag != 'size']
-        #for response_object in response_objects:
-            #d = {}
-            #for i in response_object:
-            #    d[i.tag] = i.text
-            #objects.append(obj_class(self, d))
-        objects = [obj_class(self, {i.tag: i.text for i in response_object}) for response_object in response_objects]
-        return objects
-
-    def post(self, obj_class, data):
+    def post(self, obj_class, url, data):
         """Post an object to the JSS. For creating new objects only."""
         # The JSS expects a post to ID 0 to create an object
         url = '%s%s%s' % (self._url, obj_class._url, '/id/0')
