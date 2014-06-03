@@ -189,20 +189,16 @@ class JSS(object):
 
         return self.factory.get_object(obj_class, id_)
 
-    ###TODO
-    #def put(self, obj_class):
-    #    """Updates an object on the JSS."""
-    #    # Need to convert data to string...
-    #    data = ElementTree.tostring(obj_class.data)
-    #    url = '%s%s%s%s' % (self._url, obj_class._url, '/id/',
-    #                        str(obj_class.id()))
-    #    response = requests.put(url, auth=(self.user, self.password),
-    #                             verify=self.ssl_verify, data=data)
-    #    if response.status_code == 201:
-    #        if self.verbose:
-    #            print("PUT: Success.")
-    #    elif response.status_code >= 400:
-    #        self._error_handler(JSSPutError, response)
+    def put(self, url, data):
+        """Updates an object on the JSS."""
+        data = ElementTree.tostring(data)
+        response = requests.put(url, auth=(self.user, self.password),
+                                 verify=self.ssl_verify, data=data)
+        if response.status_code == 201:
+            if self.verbose:
+                print("PUT: Success.")
+        elif response.status_code >= 400:
+            self._error_handler(JSSPutError, response)
 
     def delete(self, url):
         """Delete an object from the JSS."""
@@ -472,6 +468,7 @@ class JSSObject(object):
 
     @classmethod
     def get_url(cls, data):
+        """Return the URL for a get request based on data type."""
         if isinstance(data, int):
             return '%s%s%s' % (cls._url, '/id/', data)
         elif data is None:
@@ -495,29 +492,18 @@ class JSSObject(object):
 
     @classmethod
     def get_post_url(cls):
+        """Return the post URL for this object class."""
         return '%s%s' % (cls._url, '/id/0')
 
-    def get_delete_url(self):
+    def get_object_url(self):
+        """Return the complete API url to this object."""
         return '%s%s%s%s' % (self.jss._url, self._url, '/id/', self.id())
-
-    @classmethod
-    def list(cls, jss):
-        """Ensure that cls doesn't do something it shouldn't."""
-        if not cls.can_list and not cls.can_get:
-            raise JSSMethodNotAllowedError("Object class %s cannot be listed!"
-                                           % cls.__class__.__name__)
-        elif not cls.can_list:
-            return cls(jss)
-        elif not cls.can_get:
-            raise JSSMethodNotAllowedError(cls.__class__.__name__)
-        else:
-            return jss.list(cls)
 
     def delete(self):
         """Delete this object from the JSS."""
         if not self.can_delete:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
-        return self.jss.delete(self.get_delete_url())
+        return self.jss.delete(self.get_object_url())
 
     def update(self):
         """Update this object on the JSS.
@@ -527,19 +513,9 @@ class JSSObject(object):
         """
         if not self.can_put:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
-        return self.jss.put(self)
 
-    def load(self):
-        """Pull down information from the JSS to fill self.data property.
-
-        When you perform a JSSObject.list(), self.data is filled with a dict
-        as returned by the JSS. This data is used to perform a get with the ID
-        from that dict. This method should be used on items in a list to
-        retrieve their full data.
-
-        """
-        data = self.jss.get(self.__class__, self.id())
-        self.data = data
+        url = self.get_object_url()
+        return self.jss.put(url, self.data)
 
     def _indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing.
