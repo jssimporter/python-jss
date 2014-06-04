@@ -47,12 +47,12 @@ def get_group_policies(j, args):
         px = None
         while px is None:
             try:
-                px = j.Policy(int(p['id']))
+                px = j.Policy(p.id())
                 search = 'scope/computer_groups/computer_group'
-                for computer_group in px.xml.findall(search):
+                for computer_group in px.findall(search):
                     if computer_group.findtext('name') == args.group or \
                        computer_group.findtext('id') == args.group:
-                        results.append((p['id'], p['name']))
+                        results.append((p.id(), p.name()))
             except requests.exceptions.SSLError as e:
                 print("Failed... Trying again in a moment.")
 
@@ -68,7 +68,7 @@ def get_md_configp_group(j, args):
         px = None
         while px is None:
             try:
-                px = j.MobileDeviceConfigurationProfile(int(p['id']))
+                px = j.MobileDeviceConfigurationProfile(p.id())
                 search = 'scope/mobile_device_groups/mobile_device_group'
                 for md_group in px.xml.findall(search):
                     if md_group.findtext('name') == args.group or \

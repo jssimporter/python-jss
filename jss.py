@@ -422,7 +422,7 @@ class JSSObject(ElementTree.ElementTree):
 
     def id(self):
         """Return object ID or None."""
-        return self.findtext('id') or self.findtext('general/id')
+        return int(self.findtext('id') or self.findtext('general/id'))
 
 
 class JSSDeviceObject(JSSObject):
