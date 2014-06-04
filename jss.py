@@ -321,7 +321,6 @@ class JSSObject(ElementTree.ElementTree):
             raise TypeError("JSSObjects data argument must be of type "
                             "xml.etree.ElemenTree.Element")
         super(JSSObject, self).__init__(element=data)
-        #self.data = data
 
     @classmethod
     def get_url(cls, data):
@@ -372,12 +371,12 @@ class JSSObject(ElementTree.ElementTree):
             raise JSSMethodNotAllowedError(self.__class__.__name__)
 
         url = self.get_object_url()
-        return self.jss.put(url, self.data)
+        return self.jss.put(url, self.getroot())
 
     def _indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing.
 
-        Method is internal to discourage indenting the self.data Element,
+        Method is internal to discourage indenting the self._root Element,
         thus potentially corrupting it.
 
         """
@@ -434,20 +433,10 @@ class JSSDeviceObject(JSSObject):
 
     """
     def udid(self):
-        if isinstance(self.data, ElementTree.Element):
-            return self.data.findtext('general/udid')
-        elif 'udid' in self.data:
-            return  self.data['udid']
-        else:
-            return "Load object to retrieve."
+        return self.findtext('general/udid')
 
     def serial_number(self):
-        if isinstance(self.data, ElementTree.Element):
-            return self.data.findtext('general/serial_number')
-        elif 'serial_number' in self.data:
-            return  self.data['serial_number']
-        else:
-            return "Load object to retrieve."
+        return self.findtext('general/serial_number')
 
 
 class ActivationCode(JSSObject):
@@ -469,14 +458,11 @@ class Computer(JSSDeviceObject):
     def mac_addresses(self):
         """Return a list of mac addresses for this device."""
         # Computers don't tell you which network device is which.
-        if isinstance(self.data, ElementTree.Element):
-            mac_addresses = [self.data.findtext('general/mac_address')]
-            if self.data.findtext('general/alt_mac_address'):
-                mac_addresses.append(self.data.findtext(\
-                        'general/alt_mac_address'))
+        mac_addresses = [self.findtext('general/mac_address')]
+        if self.findtext('general/alt_mac_address'):
+            mac_addresses.append(self.findtext(\
+                    'general/alt_mac_address'))
             return mac_addresses
-        else:
-            return "Load object to retrieve."
 
 
 class ComputerCheckIn(JSSObject):
@@ -502,20 +488,11 @@ class MobileDevice(JSSDeviceObject):
                     'udid': '/udid/', 'macaddress': '/macadress/'}
 
     def wifi_mac_address(self):
-        if isinstance(self.data, ElementTree.Element):
-            return self.data.findtext('general/wifi_mac_address')
-        else:
-            return  self.data['wifi_mac_address']
+        return self.findtext('general/wifi_mac_address')
 
     def bluetooth_mac_address(self):
-        if isinstance(self.data, ElementTree.Element):
-            return self.data.findtext('general/bluetooth_mac_address') or \
-                    self.data.findtext('general/mac_address')
-        elif wifi_mac_address in self.data:
-            return  self.data['wifi_mac_address'] or \
-        self.data['mac_address'] or None
-        else:
-            return "Load object to retrieve."
+        return self.findtext('general/bluetooth_mac_address') or \
+                self.findtext('general/mac_address')
 
 class MobileDeviceConfigurationProfile(JSSObject):
     _url = '/mobiledeviceconfigurationprofiles'
