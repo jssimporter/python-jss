@@ -263,10 +263,6 @@ class JSSObjectFactory(object):
                 dict:   Get the existing object with <dict>['id']
                 xml.etree.ElementTree.Element:    Create a new object from xml
 
-                search: A string matching the key of one of the object's
-                        search_types. Defaults to a name search. See object
-                        for available search types.
-
                 Warning! Be sure to pass ID's as ints, not str!
 
         """
@@ -281,7 +277,7 @@ class JSSObjectFactory(object):
                 return JSSObjectList(self, obj_class, objects)
             elif obj_class.can_get:
                 # Single object
-                return obj_class(xmldata)
+                return obj_class(self.jss, xmldata)
             else:
                 raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
         # Retrieve individual objects
@@ -301,108 +297,6 @@ class JSSObjectFactory(object):
                 raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
 
 
-class JSSObjectTemplate(ElementTree.ElementTree):
-    """Base class for generating the skeleton XML required to post a new
-    object.
-
-    """
-    pass
-
-
-class JSSPolicyTemplate(JSSObjectTemplate):
-    def __init__(self):
-        super(JSSPolicyTemplate, self).__init__(self, file='doc/policy_template.xml')
-
-
-class JSSListData(dict):
-    """Holds information retrieved as part of a list operation."""
-    def __init__(self, obj_class, d):
-        self.obj_class = obj_class
-        super(JSSListData, self).__init__(d)
-
-    def id(self):
-        return int(self['id'])
-
-    def name(self):
-        return self['name']
-
-class JSSObjectList(list):
-    """A list style collection of JSSObjects.
-
-    List operations retrieve only minimal information for most object types.
-    Further, we may want to know all Computer(s) to get their ID's, but that
-    does not mean we want to do a full object search for each one. Thus,
-    methods are provided to both retrieve individual members' full
-    information, and to retrieve the full information for the entire list.
-
-    """
-    def __init__(self, factory, obj_class, objects):
-        self.factory = factory
-        self.obj_class = obj_class
-        super(JSSObjectList, self).__init__(objects)
-
-
-    def __repr__(self):
-        """Make our data human readable.
-
-        Note: Large lists of large objects may take a long time due to
-        indenting!
-
-        """
-        delimeter = 50 * '-' + '\n'
-        s = delimeter
-        for object in self:
-            if isinstance(object, JSSListData):
-                s += "List index: \t%s\n" % self.index(object)
-                for k, v in object.items():
-                    s += "%s:\t\t%s\n" % (k, v)
-            elif isinstance(object, JSSObject):
-                s += object.__repr__()
-            s += delimeter
-        return s.encode('utf-8')
-
-    def sort(self):
-        """Sort list elements by ID."""
-        super(JSSObjectList, self).sort(key=lambda k: k.id())
-
-    def sort_by_name(self):
-        super(JSSObjectList, self).sort(key=lambda k: k.name())
-
-    def retrieve(self, index):
-        """Replace JSSListData element at index with its full JSSObject."""
-        self[index] = self.factory.get_object(self.obj_class, self[index].id())
-
-    def retrieve_by_id(self, id_):
-        """Replace JSSListData element with ID id_ with its full JSSObject."""
-        list_index = [int(i) for i, j in enumerate(self) if j.id() == id_]
-        if len(list_index) == 1:
-            list_index = list_index[0]
-            self[list_index] = self.factory.get_object(self.obj_class, self[list_index].id())
-        else:
-            raise JSSListIDError("There is no object with that ID!")
-
-    def retrieve_all(self):
-        """Replace all JSSListData elements.
-
-        At least on my JSS, I end up with some harmless SSL errors, which are
-        dealth with.
-
-        Note: This can take a long time given a large number of objects, and
-        depending on the size of each object.
-
-        """
-        final_list = []
-        for i in range(0, len(self)):
-            result = []
-            while result == []:
-                try:
-                    result = self.factory.get_object(self.obj_class, int(self[i]['id']))
-                except requests.exceptions.SSLError as e:
-                    print("SSL Exception: %s\nTrying again." % e)
-
-            self[i] = result
-
-
 class JSSObject(object):
     """Base class for representing all available JSS API objects.
 
@@ -415,63 +309,15 @@ class JSSObject(object):
     can_delete = True
     search_types = {'name': '/name/'}
 
-    def __init__(self, jss, data=None, search='name'):
-        """Object construction depends on the data argument provided to init.
-            If data is type:
-                None:   Perform a list operation, or for non-container objects,
-                        return all data.
-                int:    Retrieve an object with ID of <data>
-                str:    Retrieve an object with name of <str>. For some
-                        objects, this may be overridden to include searching
-                        by other criteria. See those objects for more info.
-                dict:   Get the existing object with <dict>['id']
-                xml.etree.ElementTree.Element:    Create a new object from xml
+    def __init__(self, jss, data):
+        """Initialize a new JSSObject
 
-                search: A string matching the key of one of the object's
-                        search_types. Defaults to a name search. See object
-                        for available search types.
-
-                Warning! Be sure to pass ID's as ints, not str!
+        jss:    JSS object.
+        data:   Valid XML.
 
         """
         self.jss = jss
-
-        ## Get an object with a numeric ID. Some objects don't list, so if
-        ## data is None, we do a get anyway.
-        #if data is None or isinstance(data, int):
-        #    data = self.jss.get(self.__class__, data)
-
-        ## This object has been "listed". Copy useful data to a dict
-        #elif isinstance(data, dict):
-        #    data = {k: v for k, v in data.items()}
-
-        #elif isinstance(data, str) and search in self.search_types:
-        #        data = self.jss.get(self.__class__, data,
-        #                            self.search_types[search])
-
-        ## Create a new object
-        #elif isinstance(data, ElementTree.Element):
-        #    if not self.can_post:
-        #        raise JSSMethodNotAllowedError(self.__class__.__name__)
-        #    results = self.jss.post(self.__class__, data)
-        #    id_ =  re.search(r'<id>([0-9]+)</id>', results).group(1)
-        #    print("Object created with ID: %s" % id_)
-        #    data = self.jss.get(self.__class__, id_)
-        #elif search not in self.search_types:
-        #    raise JSSUnsupportedSearchMethodError("This object cannot be "
-        #                                          "queried by %s" % search)
-
         self.data = data
-
-    #def _get_list_or_object(self, cls, id_):
-    #   """Currently unused; may be useful if there are any dependent
-    #   objects.
-    #
-    #   """
-    #    if id_ is None:
-    #        return cls.list(self)
-    #    else:
-    #        return cls(self, id_)
 
     @classmethod
     def get_url(cls, data):
@@ -682,3 +528,105 @@ class MobileDeviceGroup(JSSObject):
 
 class Policy(JSSObject):
     _url = '/policies'
+
+
+class JSSObjectTemplate(ElementTree.ElementTree):
+    """Base class for generating the skeleton XML required to post a new
+    object.
+
+    """
+    pass
+
+
+class JSSPolicyTemplate(JSSObjectTemplate):
+    def __init__(self):
+        super(JSSPolicyTemplate, self).__init__(self, file='doc/policy_template.xml')
+
+
+class JSSListData(dict):
+    """Holds information retrieved as part of a list operation."""
+    def __init__(self, obj_class, d):
+        self.obj_class = obj_class
+        super(JSSListData, self).__init__(d)
+
+    def id(self):
+        return int(self['id'])
+
+    def name(self):
+        return self['name']
+
+class JSSObjectList(list):
+    """A list style collection of JSSObjects.
+
+    List operations retrieve only minimal information for most object types.
+    Further, we may want to know all Computer(s) to get their ID's, but that
+    does not mean we want to do a full object search for each one. Thus,
+    methods are provided to both retrieve individual members' full
+    information, and to retrieve the full information for the entire list.
+
+    """
+    def __init__(self, factory, obj_class, objects):
+        self.factory = factory
+        self.obj_class = obj_class
+        super(JSSObjectList, self).__init__(objects)
+
+
+    def __repr__(self):
+        """Make our data human readable.
+
+        Note: Large lists of large objects may take a long time due to
+        indenting!
+
+        """
+        delimeter = 50 * '-' + '\n'
+        s = delimeter
+        for object in self:
+            if isinstance(object, JSSListData):
+                s += "List index: \t%s\n" % self.index(object)
+                for k, v in object.items():
+                    s += "%s:\t\t%s\n" % (k, v)
+            elif isinstance(object, JSSObject):
+                s += object.__repr__()
+            s += delimeter
+        return s.encode('utf-8')
+
+    def sort(self):
+        """Sort list elements by ID."""
+        super(JSSObjectList, self).sort(key=lambda k: k.id())
+
+    def sort_by_name(self):
+        super(JSSObjectList, self).sort(key=lambda k: k.name())
+
+    def retrieve(self, index):
+        """Replace JSSListData element at index with its full JSSObject."""
+        self[index] = self.factory.get_object(self.obj_class, self[index].id())
+
+    def retrieve_by_id(self, id_):
+        """Replace JSSListData element with ID id_ with its full JSSObject."""
+        list_index = [int(i) for i, j in enumerate(self) if j.id() == id_]
+        if len(list_index) == 1:
+            list_index = list_index[0]
+            self[list_index] = self.factory.get_object(self.obj_class, self[list_index].id())
+        else:
+            raise JSSListIDError("There is no object with that ID!")
+
+    def retrieve_all(self):
+        """Replace all JSSListData elements.
+
+        At least on my JSS, I end up with some harmless SSL errors, which are
+        dealth with.
+
+        Note: This can take a long time given a large number of objects, and
+        depending on the size of each object.
+
+        """
+        final_list = []
+        for i in range(0, len(self)):
+            result = []
+            while result == []:
+                try:
+                    result = self.factory.get_object(self.obj_class, int(self[i]['id']))
+                except requests.exceptions.SSLError as e:
+                    print("SSL Exception: %s\nTrying again." % e)
+
+            self[i] = result
