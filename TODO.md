@@ -32,6 +32,7 @@
 
 !JSS.py
 *Have JSSObject inherit from Element
+*Looked into using composite pattern on JSSObject/JSSObjectList, but determined that this is innapropriate.
 *JSSPolicyTemplates
 	**Build them with a composite pattern, only implement the ones I'll need
 	**Not sure about the back and forth between string and xml for this

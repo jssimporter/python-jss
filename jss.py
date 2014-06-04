@@ -297,7 +297,7 @@ class JSSObjectFactory(object):
                 raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
 
 
-class JSSObject(object):
+class JSSObject(ElementTree.ElementTree):
     """Base class for representing all available JSS API objects.
 
     """
@@ -317,7 +317,11 @@ class JSSObject(object):
 
         """
         self.jss = jss
-        self.data = data
+        if not isinstance(data, ElementTree.Element):
+            raise TypeError("JSSObjects data argument must be of type "
+                            "xml.etree.ElemenTree.Element")
+        super(JSSObject, self).__init__(element=data)
+        #self.data = data
 
     @classmethod
     def get_url(cls, data):
@@ -404,7 +408,7 @@ class JSSObject(object):
     def __repr__(self):
         """Make our data human readable."""
         # deepcopy so we don't mess with the valid XML.
-        pretty_data = copy.deepcopy(self.data)
+        pretty_data = copy.deepcopy(self._root)
         self._indent(pretty_data)
         s = ElementTree.tostring(pretty_data)
         return s.encode('utf-8')
@@ -413,18 +417,13 @@ class JSSObject(object):
     # Almost all JSSObjects have at least name and id properties, so provide a
     # convenient accessor.
     def name(self):
-        if isinstance(self.data, ElementTree.Element):
-            return self.data.findtext('name') or \
-                    self.data.findtext('general/name')
-        else:
-            return  self.data['name']
+        """Return object name or None."""
+        return self.findtext('name') or \
+                    self.findtext('general/name')
 
     def id(self):
-        if isinstance(self.data, ElementTree.Element):
-            id_ = self.data.findtext('id') or self.data.findtext('general/id')
-        else:
-            id_ = self.data['id']
-        return int(id_)
+        """Return object ID or None."""
+        return self.findtext('id') or self.findtext('general/id')
 
 
 class JSSDeviceObject(JSSObject):
