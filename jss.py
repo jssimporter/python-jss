@@ -562,12 +562,9 @@ class JSSObjectList(list):
         delimeter = 50 * '-' + '\n'
         s = delimeter
         for object in self:
-            if isinstance(object, JSSListData):
-                s += "List index: \t%s\n" % self.index(object)
-                for k, v in object.items():
-                    s += "%s:\t\t%s\n" % (k, v)
-            elif isinstance(object, JSSObject):
-                s += object.__repr__()
+            s += "List index: \t%s\n" % self.index(object)
+            for k, v in object.items():
+                s += "%s:\t\t%s\n" % (k, v)
             s += delimeter
         return s.encode('utf-8')
 
@@ -579,20 +576,20 @@ class JSSObjectList(list):
         super(JSSObjectList, self).sort(key=lambda k: k.name())
 
     def retrieve(self, index):
-        """Replace JSSListData element at index with its full JSSObject."""
-        self[index] = self.factory.get_object(self.obj_class, self[index].id())
+        """Return a JSSObject for the JSSListData element at index."""
+        return self.factory.get_object(self.obj_class, self[index].id())
 
     def retrieve_by_id(self, id_):
-        """Replace JSSListData element with ID id_ with its full JSSObject."""
+        """Return a JSSObject for the JSSListData element with ID id_."""
         list_index = [int(i) for i, j in enumerate(self) if j.id() == id_]
         if len(list_index) == 1:
             list_index = list_index[0]
-            self[list_index] = self.factory.get_object(self.obj_class, self[list_index].id())
+            return self.factory.get_object(self.obj_class, self[list_index].id())
         else:
             raise JSSListIDError("There is no object with that ID!")
 
     def retrieve_all(self):
-        """Replace all JSSListData elements.
+        """Return a list of all JSSListData elements as full JSSObjects.
 
         At least on my JSS, I end up with some harmless SSL errors, which are
         dealth with.
@@ -610,4 +607,5 @@ class JSSObjectList(list):
                 except requests.exceptions.SSLError as e:
                     print("SSL Exception: %s\nTrying again." % e)
 
-            self[i] = result
+            final_list.append(result)
+        return final_list

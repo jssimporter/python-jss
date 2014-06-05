@@ -3,6 +3,10 @@
 !Project Level
 *Figure out how to do README for public release (markdown works on Github?)
 *Update readme with new interface
+	**Talk about why NOT composite
+	**Strategy
+	**Factory
+	**Much validation occurs through JSS
 *Pylint
 *Research whether there will need to be any container JSSObjects
 	**In python-gitlab, a project then has commits, files, members, etc.

@@ -23,6 +23,11 @@ def setup():
     global j_global
     jp = JSSPrefs()
     j_global = JSS(jss_prefs=jp)
+    try:
+        cleanup = j_global.Policy('jss python wrapper API test policy')
+        cleanup.delete()
+    except JSSGetError:
+        pass
 
 
 def test_jssprefs():
@@ -60,51 +65,43 @@ def test_jss_with_args():
 
 
 @with_setup(setup)
-def test_jss_raw_get_error():
-    assert_raises(JSSGetError, j_global.raw_get, '/donkey-tacos')
+def test_jss_get_error():
+    assert_raises(JSSGetError, j_global.get, '/donkey-tacos')
 
 
 @with_setup(setup)
 def test_jss_post():
-    with open('doc/policy_template.xml') as f:
-        data  = f.read()
-
-    xml = ElementTree.fromstring(data)
-    new_policy = j_global.Policy(xml)
+    pt = JSSPolicyTemplate()
+    new_policy = j_global.Policy(pt)
     # If successful, we'll get a new ID number
     assert_is_instance(new_policy.id(), int)
-    id_ = new_policy.id()
-
     new_policy.delete()
 
 
 @with_setup(setup)
 def test_jss_put():
-    with open('doc/policy_template.xml') as f:
-        data = f.read()
-
-    xml = ElementTree.fromstring(data)
-    new_policy = j_global.Policy(xml)
+    pt = JSSPolicyTemplate()
+    new_policy = j_global.Policy(pt)
     id_ = new_policy.id()
 
     # Change the policy.
-    recon = new_policy.data.find('maintenance/recon')
+    recon = new_policy.find('maintenance/recon')
     # This is str, not bool...
     recon.text = 'false'
     new_policy.update()
 
     test_policy = j_global.Policy(id_)
-    assert_equal(test_policy.data.find('maintenance/recon').text, 'false')
+    assert_equal(test_policy.find('maintenance/recon').text, 'false')
 
     new_policy.delete()
 
 
 @with_setup(setup)
 def test_jss_delete():
-    with open('doc/policy_template.xml') as f:
-        data = f.read()
-    xml = ElementTree.fromstring(data)
-    new_policy = j_global.Policy(xml)
+    pt = JSSPolicyTemplate()
+    new_policy = j_global.Policy(pt)
+    # If successful, we'll get a new ID number
+    assert_is_instance(new_policy.id(), int)
     id_ = new_policy.id()
 
     # Test delete. This is of course successful if the previous two tests
@@ -122,20 +119,17 @@ def jss_object_runner(object_cls):
     JSS methods for creating these objects.
 
     """
-    obj_list = j_global.list(object_cls)
+    obj_list = j_global.factory.get_object(object_cls)
     print(obj_list)
-    assert_is_instance(obj_list, list)
+    assert_is_instance(obj_list, JSSObjectList)
     # There should be objects in the JSS to test for.
     assert_greater(len(obj_list), 0)
     id_ = obj_list[0].id()
-    obj = object_cls(j_global, id_)
+    obj = j_global.factory.get_object(object_cls, id_)
     # This kind_of tests for success, in that it creates an object. The test
     # would fail without the assertion if there was just an exception, but I
     # don't know how to better test this, yet.
     assert_is_instance(obj, object_cls)
-    print(type(obj.data))
-    assert_is_instance(obj.data, ElementTree.Element)
-    print(obj)
 
 
 def jss_object_tests():
@@ -144,6 +138,7 @@ def jss_object_tests():
             MobileDeviceConfigurationProfile, MobileDeviceGroup]
     for obj in objs:
         jss_object_runner(obj)
+
 
 @with_setup(setup)
 def jss_method_not_allowed_tests():
@@ -168,17 +163,18 @@ def jss_method_not_allowed_tests():
         def __init__(self):
             pass
 
-    assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
-                  NoListObject, None, None)
-    assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
-                  NoGetObject, None, None)
-    bad_xml = ElementTree.fromstring("<xml>No workie.</xml>")
-    assert_raises(JSSMethodNotAllowedError, j_global._get_list_or_object,
-                  NoPostObject, bad_xml, None)
+    assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
+                  NoListObject, None)
+    assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
+                  NoGetObject, None)
+    bad_element = ElementTree.fromstring("<xml>No workie.</xml>")
+    bad_policy = JSSObjectTemplate(element=bad_element)
+    assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
+                  NoPostObject, bad_policy)
 
-    np = NoPutObject()
-    np.data = '<xml>Changed!</xml>'
-    assert_raises(JSSMethodNotAllowedError, np.update)
+    #np = NoPutObject()
+    #np.data = '<xml>Changed!</xml>'
+    #assert_raises(JSSMethodNotAllowedError, np.update)
 
-    nd = NoDeleteObject()
-    assert_raises(JSSMethodNotAllowedError, nd.delete)
+    #nd = NoDeleteObject()
+    #assert_raises(JSSMethodNotAllowedError, nd.delete)
