@@ -12,6 +12,7 @@ defaults write org.da.jss_helper jss_url <URL to JSS>
 
 import subprocess
 import base64
+import inspect
 from xml.etree import ElementTree
 
 from nose.tools import *
@@ -108,6 +109,16 @@ def test_jss_delete():
     # pass.
     new_policy.delete()
     assert_raises(JSSGetError, j_global.Policy, id_)
+
+
+@with_setup(setup)
+def test_jss_method_constructors():
+    skip_these_methods = ['__init__', 'get', 'delete', 'put', 'post', '_error_handler']
+    method_constructors = [ m[1] for m in inspect.getmembers(j_global) if inspect.ismethod(m[1]) and m[0] not in skip_these_methods]
+    for cls in method_constructors:
+        instance = cls()
+        print(type(instance))
+        assert_true(isinstance(instance, JSSObject) or isinstance(instance, JSSObjectList))
 
 
 #JSSObject Tests###############################################################
