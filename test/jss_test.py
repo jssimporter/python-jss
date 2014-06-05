@@ -31,6 +31,9 @@ def setup():
         pass
 
 
+#JSSPrefs Tests################################################################
+
+
 def test_jssprefs():
     jp = JSSPrefs()
     result = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_user'])
@@ -43,6 +46,9 @@ def test_jssprefs():
 
 def test_jssprefs_missing_file_error():
     assert_raises(JSSPrefsMissingFileError, JSSPrefs, '/nonexistent_path')
+
+
+#JSS Tests#####################################################################
 
 
 def test_jss_with_jss_prefs():
@@ -80,6 +86,19 @@ def test_jss_post():
 
 
 @with_setup(setup)
+def test_jss_method_constructors():
+    skip_these_methods = ['__init__', 'get', 'delete', 'put', 'post', '_error_handler']
+    method_constructors = [ m[1] for m in inspect.getmembers(j_global) if inspect.ismethod(m[1]) and m[0] not in skip_these_methods]
+    for cls in method_constructors:
+        instance = cls()
+        assert_true(isinstance(instance, JSSObject) or isinstance(instance, JSSObjectList), msg='The %s was not expected as a type.' % cls)
+
+
+# These test both JSS methods and JSSObject methods. I don't feel the need to
+# write more to cover both.
+
+
+@with_setup(setup)
 def test_jss_put():
     pt = JSSPolicyTemplate()
     new_policy = j_global.Policy(pt)
@@ -111,16 +130,6 @@ def test_jss_delete():
     assert_raises(JSSGetError, j_global.Policy, id_)
 
 
-@with_setup(setup)
-def test_jss_method_constructors():
-    skip_these_methods = ['__init__', 'get', 'delete', 'put', 'post', '_error_handler']
-    method_constructors = [ m[1] for m in inspect.getmembers(j_global) if inspect.ismethod(m[1]) and m[0] not in skip_these_methods]
-    for cls in method_constructors:
-        instance = cls()
-        print(type(instance))
-        assert_true(isinstance(instance, JSSObject) or isinstance(instance, JSSObjectList))
-
-
 #JSSObject Tests###############################################################
 
 
@@ -131,20 +140,20 @@ def jss_object_runner(object_cls):
 
     """
     obj_list = j_global.factory.get_object(object_cls)
-    print(obj_list)
     assert_is_instance(obj_list, JSSObjectList)
     # There should be objects in the JSS to test for.
     assert_greater(len(obj_list), 0)
     id_ = obj_list[0].id()
     obj = j_global.factory.get_object(object_cls, id_)
-    # This kind_of tests for success, in that it creates an object. The test
-    # would fail without the assertion if there was just an exception, but I
-    # don't know how to better test this, yet.
-    assert_is_instance(obj, object_cls)
+    assert_is_instance(obj, object_cls, msg='The object of type %s was not '
+                      'expected.' % type(obj))
 
 
-def jss_object_tests():
-    # This is a list of all of the JSSObject classes we want to test.
+def test_container_JSSObject_subclasses():
+    """Test for factory to return objects of each of our JSSObject
+    subclasses that are containers.
+
+    """
     objs = [Category, Computer, ComputerGroup, Policy, MobileDevice,
             MobileDeviceConfigurationProfile, MobileDeviceGroup]
     for obj in objs:
@@ -188,3 +197,27 @@ def jss_method_not_allowed_tests():
 
     nd = NoDeleteObject()
     assert_raises(JSSMethodNotAllowedError, nd.delete)
+
+
+#JSSObjectFactory Tests########################################################
+@with_setup(setup)
+def test_JSSObjectFactory_list():
+    obj_list = j_global.factory.get_object(Policy)
+    assert_is_instance(obj_list, JSSObjectList)
+
+
+@with_setup(setup)
+def test_JSSObjectFactory_JSSObject():
+    obj_list = j_global.factory.get_object(Policy, 242)
+    assert_is_instance(obj_list, Policy)
+
+
+#JSSDeviceObject Tests#########################################################
+
+#JSSObject Subclasses Tests####################################################
+
+#JSSObjectTemplate Tests#######################################################
+
+#JSSListData Tests#############################################################
+
+#JSSObjectList Tests###########################################################
