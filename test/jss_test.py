@@ -172,9 +172,8 @@ def jss_method_not_allowed_tests():
     assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
                   NoPostObject, bad_policy)
 
-    #np = NoPutObject()
-    #np.data = '<xml>Changed!</xml>'
-    #assert_raises(JSSMethodNotAllowedError, np.update)
+    np = NoPutObject()
+    assert_raises(JSSMethodNotAllowedError, np.update)
 
-    #nd = NoDeleteObject()
-    #assert_raises(JSSMethodNotAllowedError, nd.delete)
+    nd = NoDeleteObject()
+    assert_raises(JSSMethodNotAllowedError, nd.delete)
