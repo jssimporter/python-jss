@@ -58,15 +58,15 @@ def test_jss_with_args():
     assert_is_instance(j, JSS)
 
 
-#@with_setup(setup)
-#def test_jss_auth_error():
-#    j_global.password = 'DonkeyTacos'
-#    assert_raises(JSSAuthenticationError, j_global.raw_get, '/policies')
-
-
 @with_setup(setup)
 def test_jss_get_error():
     assert_raises(JSSGetError, j_global.get, '/donkey-tacos')
+
+
+@with_setup(setup)
+def test_jss_get():
+    policy = j_global.get(Policy.get_url(None))
+    assert_is_instance(policy, ElementTree.Element)
 
 
 @with_setup(setup)
