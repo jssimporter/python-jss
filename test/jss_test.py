@@ -131,14 +131,13 @@ def test_jss_delete():
 
 
 #JSSObject Tests###############################################################
+#TODO: Test methods of JSSObject
 
 
+#TODO: Move to JSSObject subclasses section
 @with_setup(setup)
 def jss_object_runner(object_cls):
-    """ Helper function to test individual object classes. Does not test the
-    JSS methods for creating these objects.
-
-    """
+    """ Helper function to test individual object classes."""
     obj_list = j_global.factory.get_object(object_cls)
     assert_is_instance(obj_list, JSSObjectList)
     # There should be objects in the JSS to test for.
