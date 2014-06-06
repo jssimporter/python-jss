@@ -23,33 +23,16 @@
 	yourself put into the README.
 
 !test/jss_test.py
-*Add in permissions tests
-*Write tests for search methods
-*Add a cleanup or something to setup to clean out test Policy so I don't have to clicky clicky delete it.
-*Audit existing tests
-*Tests for all remaining to be implemented API features (do this before writing them)
-	**Perhaps a more meaninful test for each would be to confirm that it has a top-level
-	element, like <computer>.
-	**Should test correct ID and name, since we rely on that.
-		***Should ensure correct type.
-*Devise a test for the rather complicated overload of data in JSSObject.__init__()
+*JSSObjectTemplate tests
 
 !JSS.py
 *match searches return a list type.
 *Groups should be a container type or list type. Then you can retrieve elements.
-*Have JSSObject inherit from Element
-*Looked into using composite pattern on JSSObject/JSSObjectList, but determined that this is innapropriate.
 *JSSPolicyTemplates
-	**Build them with a composite pattern, only implement the ones I'll need
-	**Not sure about the back and forth between string and xml for this
 *Implement container behavior.
 	**Researching...
-*Sort out id/name method on JSSObject.
-	**Should there be more? (UDID, SN, MAC)
-	**Should they be @property
 *Implement further API features
 	**accounts
-	**activationcode
 	**advancedcomputersearches
 	**advancedmobiledevicesearches
 	**buildings

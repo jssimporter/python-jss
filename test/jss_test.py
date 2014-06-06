@@ -85,7 +85,7 @@ class testJSS(object):
         pt = JSSPolicyTemplate()
         new_policy = j_global.Policy(pt)
         # If successful, we'll get a new ID number
-        assert_is_instance(new_policy.id(), int)
+        assert_is_instance(new_policy.id, int)
         new_policy.delete()
 
     def test_jss_method_constructors(self):
@@ -102,7 +102,7 @@ class testJSS(object):
     def test_jss_put(self):
         pt = JSSPolicyTemplate()
         new_policy = j_global.Policy(pt)
-        id_ = new_policy.id()
+        id_ = new_policy.id
 
         # Change the policy.
         recon = new_policy.find('maintenance/recon')
@@ -120,8 +120,8 @@ class testJSS(object):
         pt = JSSPolicyTemplate()
         new_policy = j_global.Policy(pt)
         # If successful, we'll get a new ID number
-        assert_is_instance(new_policy.id(), int)
-        id_ = new_policy.id()
+        assert_is_instance(new_policy.id, int)
+        id_ = new_policy.id
 
         # Test delete. This is of course successful if the previous two tests
         # pass.
@@ -149,7 +149,7 @@ class testJSSObject(object):
         new_policy = j_global.Policy(pt)
 
         assert_equal(new_policy.get_object_url(), '/policies/id/%s' % 
-                     new_policy.id())
+                     new_policy.id)
 
         new_policy.delete()
 
@@ -204,19 +204,19 @@ class testJSSObjectFactory(object):
 class testJSSDeviceObjects(object):
     def test_JSSDeviceObject_properties(self):
         computer = j_global.Computer('name=craigs-imac')
-        assert_equal(computer.udid(), '012CDB33-82E1-558F-9F6F-18EAAC05B5AC')
-        assert_equal(computer.serial_number(), 'D25H40JBDHJV')
+        assert_equal(computer.udid, '012CDB33-82E1-558F-9F6F-18EAAC05B5AC')
+        assert_equal(computer.serial_number, 'D25H40JBDHJV')
 
     def test_Computer_properties(self):
         computer = j_global.Computer('name=craigs-imac')
-        assert_is_instance(computer.mac_addresses(), list)
-        assert_equal(computer.mac_addresses(), ['3C:07:54:6E:8B:14',
+        assert_is_instance(computer.mac_addresses, list)
+        assert_equal(computer.mac_addresses, ['3C:07:54:6E:8B:14',
                                                 '04:54:53:0F:E9:D1'])
 
     def test_MobileDevice_properties(self):
         computer = j_global.MobileDevice('name=Testing iPad - 2')
-        assert_equal(computer.wifi_mac_address(), '28:6A:BA:11:F0:A3')
-        assert_equal(computer.bluetooth_mac_address(), '28:6A:BA:11:F0:A4')
+        assert_equal(computer.wifi_mac_address, '28:6A:BA:11:F0:A3')
+        assert_equal(computer.bluetooth_mac_address, '28:6A:BA:11:F0:A4')
 
 class testJSSObject_Subclasses(object):
     def jssobject_runner(self, object_cls):
@@ -225,7 +225,7 @@ class testJSSObject_Subclasses(object):
         assert_is_instance(obj_list, JSSObjectList)
         # There should be objects in the JSS to test for.
         assert_greater(len(obj_list), 0)
-        id_ = obj_list[0].id()
+        id_ = obj_list[0].id
         obj = j_global.factory.get_object(object_cls, id_)
         assert_is_instance(obj, object_cls, msg='The object of type %s was not '
                           'expected.' % type(obj))
@@ -258,7 +258,7 @@ class testJSSObjectList(object):
 
     def test_retrieve_by_id(self):
         computers = j_global.Computer()
-        search_id = computers[-1].id()
+        search_id = computers[-1].id
         assert_is_instance(computers.retrieve_by_id(search_id), Computer)
 
     def test_retrieve_all(self):
@@ -272,14 +272,14 @@ class testJSSObjectList(object):
     def test_sort(self):
         policies = j_global.Policy()
         policies.sort()
-        first_policy_id = policies[0].id()
-        sorted = [True for policy in policies if policy.id() > first_policy_id]
+        first_policy_id = policies[0].id
+        sorted = [True for policy in policies if policy.id > first_policy_id]
         assert_not_in(False, sorted)
 
     def test_sort_by_name(self):
         policies = j_global.Policy()
         policies.sort()
-        first_policy_name = policies[0].name()
-        sorted = [True for policy in policies if policy.name() >
+        first_policy_name = policies[0].name
+        sorted = [True for policy in policies if policy.name >
                   first_policy_name]
         assert_not_in(False, sorted)

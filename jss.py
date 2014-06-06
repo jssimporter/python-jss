@@ -354,7 +354,7 @@ class JSSObject(ElementTree.ElementTree):
 
     def get_object_url(self):
         """Return the complete API url to this object."""
-        return '%s%s%s' % (self._url, '/id/', self.id())
+        return '%s%s%s' % (self._url, '/id/', self.id)
 
     def delete(self):
         """Delete this object from the JSS."""
@@ -416,13 +416,16 @@ class JSSObject(ElementTree.ElementTree):
     # Shared properties:
     # Almost all JSSObjects have at least name and id properties, so provide a
     # convenient accessor.
+    @property
     def name(self):
         """Return object name or None."""
         return self.findtext('name') or \
                     self.findtext('general/name')
 
+    @property
     def id(self):
         """Return object ID or None."""
+        # Most objects have ID nested in general. Groups don't.
         return int(self.findtext('id') or self.findtext('general/id'))
 
 
@@ -433,9 +436,11 @@ class JSSDeviceObject(JSSObject):
     based on these properties.
 
     """
+    @property
     def udid(self):
         return self.findtext('general/udid')
 
+    @property
     def serial_number(self):
         return self.findtext('general/serial_number')
 
@@ -457,6 +462,7 @@ class Computer(JSSDeviceObject):
                     'udid': '/udid/', 'macaddress': '/macadress/',
                     'match': '/match/'}
 
+    @property
     def mac_addresses(self):
         """Return a list of mac addresses for this device."""
         # Computers don't tell you which network device is which.
@@ -490,9 +496,11 @@ class MobileDevice(JSSDeviceObject):
                     'udid': '/udid/', 'macaddress': '/macadress/',
                     'match': '/match/'}
 
+    @property
     def wifi_mac_address(self):
         return self.findtext('general/wifi_mac_address')
 
+    @property
     def bluetooth_mac_address(self):
         return self.findtext('general/bluetooth_mac_address') or \
                 self.findtext('general/mac_address')
@@ -528,9 +536,11 @@ class JSSListData(dict):
         self.obj_class = obj_class
         super(JSSListData, self).__init__(d)
 
+    @property
     def id(self):
         return int(self['id'])
 
+    @property
     def name(self):
         return self['name']
 
@@ -568,21 +578,21 @@ class JSSObjectList(list):
 
     def sort(self):
         """Sort list elements by ID."""
-        super(JSSObjectList, self).sort(key=lambda k: k.id())
+        super(JSSObjectList, self).sort(key=lambda k: k.id)
 
     def sort_by_name(self):
-        super(JSSObjectList, self).sort(key=lambda k: k.name())
+        super(JSSObjectList, self).sort(key=lambda k: k.name)
 
     def retrieve(self, index):
         """Return a JSSObject for the JSSListData element at index."""
-        return self.factory.get_object(self.obj_class, self[index].id())
+        return self.factory.get_object(self.obj_class, self[index].id)
 
     def retrieve_by_id(self, id_):
         """Return a JSSObject for the JSSListData element with ID id_."""
-        list_index = [int(i) for i, j in enumerate(self) if j.id() == id_]
+        list_index = [int(i) for i, j in enumerate(self) if j.id == id_]
         if len(list_index) == 1:
             list_index = list_index[0]
-            return self.factory.get_object(self.obj_class, self[list_index].id())
+            return self.factory.get_object(self.obj_class, self[list_index].id)
 
     def retrieve_all(self):
         """Return a list of all JSSListData elements as full JSSObjects.
