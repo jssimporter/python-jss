@@ -93,10 +93,10 @@ class JSSPrefs(object):
                 # this should be safe.
                 prefs = plistlib.readPlist(os.path.expanduser(preferences_file))
             try:
-                self.user = prefs.get('jss_user')
-                self.password = prefs.get('jss_pass')
-                self.url = prefs.get('jss_url')
-            except:
+                self.user = prefs['jss_user']
+                self.password = prefs['jss_pass']
+                self.url = prefs['jss_url']
+            except KeyError:
                 raise JSSPrefsMissingKeyError("Please provide all required"
                                               " preferences!")
         else:

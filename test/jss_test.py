@@ -8,6 +8,10 @@ defaults write org.da.jss_helper jss_user <username>
 defaults write org.da.jss_helper jss_pass <password>
 defaults write org.da.jss_helper jss_url <URL to JSS>
 
+The JSS itself does validation on any data passed to it, so for the most part
+we are only concerned with testing for interactions between the wrapper
+objects.
+
 """
 
 import subprocess
@@ -46,6 +50,10 @@ def test_jssprefs():
 
 def test_jssprefs_missing_file_error():
     assert_raises(JSSPrefsMissingFileError, JSSPrefs, '/nonexistent_path')
+
+
+def test_jssprefs_missing_key_error():
+    assert_raises(JSSPrefsMissingKeyError, JSSPrefs, 'test/incomplete_preferences.plist')
 
 
 #JSS Tests#####################################################################
