@@ -246,8 +246,40 @@ class testJSSObjectTemplate(object):
 
 
 class testJSSListData(object):
+    # The methods on JSSListData are indirectly tested in many of the above
+    # tests.
     pass
 
 
 class testJSSObjectList(object):
-    pass
+    def test_retrieve(self):
+        computers = j_global.Computer()
+        assert_is_instance(computers.retrieve(1), Computer)
+
+    def test_retrieve_by_id(self):
+        computers = j_global.Computer()
+        search_id = computers[-1].id()
+        assert_is_instance(computers.retrieve_by_id(search_id), Computer)
+
+    def test_retrieve_all(self):
+        # We use policies since they're smaller, and hopefully smaller in
+        #number
+        policies = j_global.Policy()
+        full_policies = policies.retrieve_all()
+        assert_is_instance(full_policies, list)
+        assert_is_instance(full_policies[1], Policy)
+
+    def test_sort(self):
+        policies = j_global.Policy()
+        policies.sort()
+        first_policy_id = policies[0].id()
+        sorted = [True for policy in policies if policy.id() > first_policy_id]
+        assert_not_in(False, sorted)
+
+    def test_sort_by_name(self):
+        policies = j_global.Policy()
+        policies.sort()
+        first_policy_name = policies[0].name()
+        sorted = [True for policy in policies if policy.name() >
+                  first_policy_name]
+        assert_not_in(False, sorted)
