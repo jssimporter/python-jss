@@ -141,10 +141,14 @@ def test_jss_delete():
 #JSSObject Tests###############################################################
 #TODO: Test methods of JSSObject
 
+def test_jssobject_unsupported_search_method_error():
+    assert_raises(JSSUnsupportedSearchMethodError,
+                  j_global.Policy, 'taco=alpastor')
+
 
 #TODO: Move to JSSObject subclasses section
 @with_setup(setup)
-def jss_object_runner(object_cls):
+def jssobject_runner(object_cls):
     """ Helper function to test individual object classes."""
     obj_list = j_global.factory.get_object(object_cls)
     assert_is_instance(obj_list, JSSObjectList)
@@ -164,11 +168,11 @@ def test_container_JSSObject_subclasses():
     objs = [Category, Computer, ComputerGroup, Policy, MobileDevice,
             MobileDeviceConfigurationProfile, MobileDeviceGroup]
     for obj in objs:
-        jss_object_runner(obj)
+        jssobject_runner(obj)
 
 
 @with_setup(setup)
-def jss_method_not_allowed_tests():
+def test_jssobject_method_not_allowed():
     # This type of object probably doesn't exist in the wild.
     class NoListObject(JSSObject):
         can_list = False
