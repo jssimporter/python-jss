@@ -79,7 +79,7 @@ class JSSPrefs(object):
 
         """
         if preferences_file is None:
-            path = '~/Library/Preferences/org.da.jss_helper.plist'
+            path = '~/Library/Preferences/org.da.python-jss.plist'
             preferences_file = os.path.expanduser(path)
         if os.path.exists(preferences_file):
             try:

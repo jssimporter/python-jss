@@ -45,11 +45,11 @@ class testJSSPrefs(object):
 
     def test_jssprefs(self):
         jp = JSSPrefs()
-        result = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_user'])
+        result = subprocess.check_output(['defaults', 'read', 'org.da.python-jss', 'jss_user'])
         assert_in(jp.user, result)
-        result = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_pass'])
+        result = subprocess.check_output(['defaults', 'read', 'org.da.python-jss', 'jss_pass'])
         assert_in(jp.password, result)
-        result = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_url'])
+        result = subprocess.check_output(['defaults', 'read', 'org.da.python-jss', 'jss_url'])
         assert_in(jp.url, result)
 
     def test_jssprefs_missing_file_error(self):
@@ -67,9 +67,9 @@ class testJSS(object):
         assert_is_instance(j, JSS)
 
     def test_jss_with_args(self):
-        authUser = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_user'])
-        authPass = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_pass'])
-        repoUrl = subprocess.check_output(['defaults', 'read', 'org.da.jss_helper', 'jss_url'])
+        authUser = subprocess.check_output(['defaults', 'read', 'org.da.python-jss', 'jss_user'])
+        authPass = subprocess.check_output(['defaults', 'read', 'org.da.python-jss', 'jss_pass'])
+        repoUrl = subprocess.check_output(['defaults', 'read', 'org.da.python-jss', 'jss_url'])
         j = JSS(url=repoUrl, user=authUser, password=authPass)
         assert_is_instance(j, JSS)
 
