@@ -458,7 +458,8 @@ class Category(JSSObject):
 class Computer(JSSDeviceObject):
     _url = '/computers'
     search_types = {'name': '/name/', 'serial_number': '/serialnumber/',
-                    'udid': '/udid/', 'macaddress': '/macadress/'}
+                    'udid': '/udid/', 'macaddress': '/macadress/',
+                    'match': '/match/'}
 
     def mac_addresses(self):
         """Return a list of mac addresses for this device."""
@@ -490,7 +491,8 @@ class ComputerGroup(JSSObject):
 class MobileDevice(JSSDeviceObject):
     _url = '/mobiledevices'
     search_types = {'name': '/name/', 'serial_number': '/serialnumber/',
-                    'udid': '/udid/', 'macaddress': '/macadress/'}
+                    'udid': '/udid/', 'macaddress': '/macadress/',
+                    'match': '/match/'}
 
     def wifi_mac_address(self):
         return self.findtext('general/wifi_mac_address')
