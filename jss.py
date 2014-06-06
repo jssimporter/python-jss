@@ -63,10 +63,6 @@ class JSSUnsupportedSearchMethodError(Exception):
     pass
 
 
-class JSSListIDError(Exception):
-    pass
-
-
 class JSSPrefs(object):
     """Uses the OS X preferences system to store credentials and JSS URL."""
     def __init__(self, preferences_file=None):
@@ -587,8 +583,6 @@ class JSSObjectList(list):
         if len(list_index) == 1:
             list_index = list_index[0]
             return self.factory.get_object(self.obj_class, self[list_index].id())
-        else:
-            raise JSSListIDError("There is no object with that ID!")
 
     def retrieve_all(self):
         """Return a list of all JSSListData elements as full JSSObjects.

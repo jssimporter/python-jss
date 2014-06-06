@@ -237,8 +237,4 @@ class testJSSListData(object):
 
 
 class testJSSObjectList(object):
-    def test_JSSObjectList_JSSListIDError(self):
-        policies = j_global.Policy()
-        num_of_policies = len(policies)
-        oops_id = num_of_policies + 42
-        assert_raises(JSSListIDError, policies.retrieve_by_id, oops_id)
+    pass
