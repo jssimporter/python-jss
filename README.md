@@ -76,12 +76,33 @@ using plistlib, although it's up to you to create the proper xml file.
 
 Interacting with the JSS:
 =================
-In general, you should use the constructor methods on the JSS object to query
-for existing objects and create new objects. The JSS object will return an
-object subclassed from JSSObject.
+In general, you should use the constructor methods on the JSS to query
+for existing objects and create new objects. The JSS will return either an
+object subclassed from JSSObject, or a list of JSSListData objects.
 
 Updating existing objects and deleting objects should be handled through the
-object's methods.
+methods.
+
+After careful consideration, I decided to do it this way rather than by using
+the composite pattern to treat lists and single objects similarly. In thinking
+about what operations I would want to perform, deleting ALL computers at once,
+or updating all policies at once, for example, seemed both dangerous and
+unnecessary.
+
+Also, the JSS returns different data structures for an object type
+depending on the context. A "full" object listing is _not_ the same thing as the
+greatly abbreviated data returned by a listing operation or a "match" search.
+Likewise, trying to PUT a new object by just editing the full XML retrieved
+from an already existing object would fail. (For example, the ID is assigned by
+the JSS, not you.)
+
+Therefore, there are a few object classes for each type of data:
+*JSSObject: All data on a single object, like a single computer, the activation
+code, or a policy.
+*JSSObjectList: A list of JSSListData objects, containing only the most
+important information on an object.
+*JSSObjectTemplate: An snippet of XML sufficient to create a new object of that
+class
 
 I.e.:
 
