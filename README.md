@@ -16,6 +16,7 @@ JSSObjectTemplate for those objects, and I would be happy to include them. Send
 me your pull requests!
 
 Installing:
+=================
 The python-jss module can be put wherever you normally install your modules. At
 some point I may get around to making a pip install.
 
@@ -28,8 +29,9 @@ Check it out at http://docs.python-requests.org/en/latest/
 (It also uses Greg Neagle's FoundationPlist module to eliminate binary plist issues.)
 
 SSL Errors:
+=================
 Warning: Due to SSL bugs, requests can fail with an SSL exception:
-requests.exceptions.SSLError "error:14094410:SSL routines:SSL3_READ_BYTES:sslv3
+```requests.exceptions.SSLError "error:14094410:SSL routines:SSL3_READ_BYTES:sslv3```
 alert handshake failure"
 
 This usually isn't a problem for single calls, but when rapidly making multiple
@@ -39,6 +41,7 @@ with is to wrap these sorts of situations in a while, with a try/except block
 to handle the exception.
 
 Data Validation:
+=================
 The wrapper prevents you from trying to delete object types that can't be
 deleted, and from POSTing to objects that can't be created. It does zero
 validation on any JSSObjectTemplate or JSSObject xml prior to POST or PUT
@@ -46,26 +49,31 @@ operations. However, the JSS handles all of this nicely, and ElementTree should
 keep you from creating improperly formatted XML.
 
 Basics-Connecting to the JSS:
+=================
+```
 # Connect to the JSS
 >>> import jss
 >>> jss_prefs = jss.JSSPrefs()
 >>> j = jss.JSS(jss_prefs)
-
+```
 Supplying Credentials to the JSSPrefs object:
+=================
 The preferred method for specifying credentials is to create a preferences file
 at "~/Library/Preferences/org.da.python-jss.plist".  Required keys include:
 jss_user
 jss_pass
 jss_url (Should be full URL with port, e.g. "https://myjss.domain.org:8443"
 and can be set with:
-"defaults write ~/Library/Preferences/org.da.jss_helper.plist jss_user <username>"
-"defaults write ~/Library/Preferences/org.da.jss_helper.plist jss_password <password>"
-"defaults write ~/Library/Preferences/org.da.jss_helper.plist jss_url <url>"
-
+```
+defaults write ~/Library/Preferences/org.da.jss_helper.plist jss_user <username>
+defaults write ~/Library/Preferences/org.da.jss_helper.plist jss_password <password>
+defaults write ~/Library/Preferences/org.da.jss_helper.plist jss_url <url>
+```
 If you are working on a non-OS X machine, the JSSPrefs object falls back to
 using plistlib, although it's up to you to create the proper xml file.
 
 Interacting with the JSS:
+=================
 In general, you should use the constructor methods on the JSS object to query
 for existing objects and create new objects. The JSS object will return an
 object subclassed from JSSObject.
@@ -76,19 +84,26 @@ object's methods.
 I.e.:
 
 To GET an existing object (JSS constructor)
+```
 >>> computers = j.Computer()
 >>> computer = j.Computer(25)
+```
 Create a new object (JSS constructor)
+```
 >>> j.Computer(computer_template)
-
+```
 Once you have the JSSObject you can update/delete it. In this example, the
 objects are of type Computer.
+```
 >>> computer.update()
 POST: Success
 >>> computer.delete()
 DEL: Success
+```
 
 Querying for Objects:
+=================
+```
 >>> # Find a computer (returns a Computer object, which prints itself if not
 >>> # assigned
 >>> j.Computer('my-computer')
@@ -150,15 +165,19 @@ name:		USLab-test
 >>> # The entire list can be "convertd" into a list of objects, although this
 >>> # can be slow.
 >>> full_computers_list = computers.retrieve_all()
+```
 
 The available object types can be found in the JSS API documentation. They are
 named in the singular, with CamelCase, e.g. MobileDeviceConfigurationProfiles
 for mobiledeviceconfigurationprofiles.
 
 Of course, you can get a list like this as well:
+```
 >>> dir(jss.JSS)
+```
 
 Manipulating JSSObjects:
+=================
 JSSObject inherits xml.etree.ElementTree, so all xml data can be manipulated
 per that module. Simply print() the object or call it in the interpretor to
 print a nicely indented representation of the internal xml. This can be very
@@ -169,6 +188,7 @@ are all string unless you cast them yourself. The id properties of the various
 objects _do_ convert to int, but otherwise you are on your own.
 
 Creating, Updating, and Delete Objects:
+=================
 To create a new object, you need to pass an instance of a JSSObjectTemplate.
 JSSObjectTemplate is also an ElementTree, so you can manipulate their data in
 the same way.  
@@ -176,6 +196,7 @@ the same way.
 Modify the template to your needs and then call the method
 constructor on the JSS instance.  
 
+```
 >>> new_policy_data = jss.JSSPolicyTemplate()
 >>> new_policy_data.find['enabled'].text = 'false'
 >>> # The constructor will return your new object...
@@ -190,3 +211,4 @@ PUT: Success
 >>> # ...and to delete it:
 >>> new_policy.delete()
 DEL: Success
+```
