@@ -24,10 +24,16 @@ from nose.tools import *
 from jss import *
 
 
+global j_global
+jp = JSSPrefs()
+j_global = JSS(jss_prefs=jp)
+
+
 def setup():
-    global j_global
-    jp = JSSPrefs()
-    j_global = JSS(jss_prefs=jp)
+    """Make sure failed tests that create policies don't hamper our ability
+    to continue testing.
+
+    """
     try:
         cleanup = j_global.Policy('jss python wrapper API test policy')
         cleanup.delete()
@@ -73,12 +79,10 @@ def test_jss_with_args():
     assert_is_instance(j, JSS)
 
 
-@with_setup(setup)
 def test_jss_get_error():
     assert_raises(JSSGetError, j_global.get, '/donkey-tacos')
 
 
-@with_setup(setup)
 def test_jss_get():
     policy = j_global.get(Policy.get_url(None))
     assert_is_instance(policy, ElementTree.Element)
@@ -93,7 +97,6 @@ def test_jss_post():
     new_policy.delete()
 
 
-@with_setup(setup)
 def test_jss_method_constructors():
     skip_these_methods = ['__init__', 'get', 'delete', 'put', 'post', '_error_handler']
     method_constructors = [ m[1] for m in inspect.getmembers(j_global) if inspect.ismethod(m[1]) and m[0] not in skip_these_methods]
@@ -147,7 +150,6 @@ def test_jssobject_unsupported_search_method_error():
 
 
 #TODO: Move to JSSObject subclasses section
-@with_setup(setup)
 def jssobject_runner(object_cls):
     """ Helper function to test individual object classes."""
     obj_list = j_global.factory.get_object(object_cls)
@@ -171,7 +173,6 @@ def test_container_JSSObject_subclasses():
         jssobject_runner(obj)
 
 
-@with_setup(setup)
 def test_jssobject_method_not_allowed():
     # This type of object probably doesn't exist in the wild.
     class NoListObject(JSSObject):
@@ -211,13 +212,11 @@ def test_jssobject_method_not_allowed():
 
 
 #JSSObjectFactory Tests########################################################
-@with_setup(setup)
 def test_JSSObjectFactory_list():
     obj_list = j_global.factory.get_object(Policy)
     assert_is_instance(obj_list, JSSObjectList)
 
 
-@with_setup(setup)
 def test_JSSObjectFactory_JSSObject():
     obj_list = j_global.factory.get_object(Policy, 242)
     assert_is_instance(obj_list, Policy)
@@ -232,3 +231,5 @@ def test_JSSObjectFactory_JSSObject():
 #JSSListData Tests#############################################################
 
 #JSSObjectList Tests###########################################################
+def test_JSSObjectList_JSSListIDError():
+    pass
