@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 """Tests for jss wrapper.
+These tests will FAIL! A few of the tests assert values local to my
+institution. Edit them to work in your environment, or find a better way to do
+it and send me an email!
+
 For test to succeed, you need to set up a preferences file at:
 ~/Library/Preferences/org.da.jss_helper.plist
 
