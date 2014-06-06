@@ -15,6 +15,16 @@ it should be easy for anyone wishing to do so to implement a subclass of
 JSSObjectTemplate for those objects, and I would be happy to include them. Send
 me your pull requests!
 
+Installing:
+The python-jss module can be put wherever you normally install your modules. At
+some point I may get around to making a pip install.
+
+It has one non-included dependency, the requests HTTP module, which you can
+usually obtain by:
+$ pip install requests
+
+(It also uses Greg Neagle's FoundationPlist module to eliminate binary plist issues.)
+
 SSL Errors:
 Warning: Due to SSL bugs, requests can fail with an SSL exception:
 requests.exceptions.SSLError "error:14094410:SSL routines:SSL3_READ_BYTES:sslv3
