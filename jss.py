@@ -286,7 +286,14 @@ class JSSObjectFactory(object):
             if obj_class.can_get:
                 url = obj_class.get_url(data)
                 xmldata = self.jss.get(url)
-                return obj_class(self.jss, xmldata)
+                if xmldata.find('size') is not None:
+                    # Get returned a list.
+                    response_objects = [item for item in xmldata if item is not None and \
+                                        item.tag != 'size']
+                    objects = [JSSListData(obj_class, {i.tag: i.text for i in response_object}) for response_object in response_objects]
+                    return JSSObjectList(self, obj_class, objects)
+                else:
+                    return obj_class(self.jss, xmldata)
             else:
                 raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
         # Create a new object
@@ -338,10 +345,6 @@ class JSSObject(ElementTree.ElementTree):
                 else:
                     raise JSSUnsupportedSearchMethodError("This object cannot"
                             "be queried by %s." % key)
-            # Some objects types can be searched across numerous properties
-            # through the "match" URL.
-            elif 'match' in cls.search_types:
-                return '%s%s%s' % (cls._url, cls.search_types['match'], data)
             # Every object has a "name" search, and this is usually what you
             # would want if not specifying.
             else:
@@ -457,6 +460,10 @@ class Category(JSSObject):
 
 
 class Computer(JSSDeviceObject):
+    """Computer objects include a 'match' search type which queries across
+    multiple properties.
+
+    """
     _url = '/computers'
     search_types = {'name': '/name/', 'serial_number': '/serialnumber/',
                     'udid': '/udid/', 'macaddress': '/macadress/',
@@ -491,6 +498,10 @@ class ComputerGroup(JSSObject):
 
 
 class MobileDevice(JSSDeviceObject):
+    """Mobile Device objects include a 'match' search type which queries across
+    multiple properties.
+
+    """
     _url = '/mobiledevices'
     search_types = {'name': '/name/', 'serial_number': '/serialnumber/',
                     'udid': '/udid/', 'macaddress': '/macadress/',
@@ -504,6 +515,7 @@ class MobileDevice(JSSDeviceObject):
     def bluetooth_mac_address(self):
         return self.findtext('general/bluetooth_mac_address') or \
                 self.findtext('general/mac_address')
+
 
 class MobileDeviceConfigurationProfile(JSSObject):
     _url = '/mobiledeviceconfigurationprofiles'

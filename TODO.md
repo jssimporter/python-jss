@@ -26,6 +26,7 @@
 *JSSObjectTemplate tests
 
 !JSS.py
+*Factor list-making code in Factory
 *match searches return a list type.
 *Groups should be a container type or list type. Then you can retrieve elements.
 *JSSPolicyTemplates

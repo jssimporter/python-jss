@@ -138,7 +138,7 @@ class testJSSObject(object):
         assert_equal(Policy.get_url(None), '/policies')
         assert_equal(Policy.get_url(42), '/policies/id/42')
         assert_equal(Policy.get_url('taco'), '/policies/name/taco')
-        assert_equal(Computer.get_url('taco'), '/computers/match/taco')
+        assert_equal(Computer.get_url('match=taco'), '/computers/match/taco')
         assert_equal(Computer.get_url('udid=taco'), '/computers/udid/taco')
 
     def test_JSSObject_get_post_url(self):
@@ -212,6 +212,8 @@ class testJSSDeviceObjects(object):
         assert_is_instance(computer.mac_addresses, list)
         assert_equal(computer.mac_addresses, ['3C:07:54:6E:8B:14',
                                                 '04:54:53:0F:E9:D1'])
+        match = j_global.Computer('match=craigs-imac')
+        assert_is_instance(match, JSSObjectList)
 
     def test_MobileDevice_properties(self):
         computer = j_global.MobileDevice('name=Testing iPad - 2')
