@@ -35,6 +35,7 @@
 *Devise a test for the rather complicated overload of data in JSSObject.__init__()
 
 !JSS.py
+*match searches return a list type.
 *Groups should be a container type or list type. Then you can retrieve elements.
 *Have JSSObject inherit from Element
 *Looked into using composite pattern on JSSObject/JSSObjectList, but determined that this is innapropriate.

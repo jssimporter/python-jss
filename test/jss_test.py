@@ -201,9 +201,22 @@ class testJSSObjectFactory(object):
         assert_is_instance(obj_list, Policy)
 
 
-class testJSSDeviceObject(object):
-    pass
+class testJSSDeviceObjects(object):
+    def test_JSSDeviceObject_properties(self):
+        computer = j_global.Computer('name=craigs-imac')
+        assert_equal(computer.udid(), '012CDB33-82E1-558F-9F6F-18EAAC05B5AC')
+        assert_equal(computer.serial_number(), 'D25H40JBDHJV')
 
+    def test_Computer_properties(self):
+        computer = j_global.Computer('name=craigs-imac')
+        assert_is_instance(computer.mac_addresses(), list)
+        assert_equal(computer.mac_addresses(), ['3C:07:54:6E:8B:14',
+                                                '04:54:53:0F:E9:D1'])
+
+    def test_MobileDevice_properties(self):
+        computer = j_global.MobileDevice('name=Testing iPad - 2')
+        assert_equal(computer.wifi_mac_address(), '28:6A:BA:11:F0:A3')
+        assert_equal(computer.bluetooth_mac_address(), '28:6A:BA:11:F0:A4')
 
 class testJSSObject_Subclasses(object):
     def jssobject_runner(self, object_cls):
