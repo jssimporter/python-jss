@@ -23,6 +23,8 @@ It has one non-included dependency, the requests HTTP module, which you can
 usually obtain by:
 $ pip install requests
 
+Check it out at http://docs.python-requests.org/en/latest/
+
 (It also uses Greg Neagle's FoundationPlist module to eliminate binary plist issues.)
 
 SSL Errors:
