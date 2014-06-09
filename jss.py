@@ -216,11 +216,23 @@ class JSS(object):
     def AccountGroup(self, data=None):
         return self.factory.get_object(AccountGroup, data)
 
+    def AdvancedComputerSearch(self, data=None):
+        return self.factory.get_object(AdvancedComputerSearch, data)
+
+    def AdvancedMobileDeviceSearch(self, data=None):
+        return self.factory.get_object(AdvancedMobileDeviceSearch, data)
+
     def ActivationCode(self, data=None):
         return self.factory.get_object(ActivationCode, data)
 
+    def Building(self, data=None):
+        return self.factory.get_object(Building, data)
+
     def Category(self, data=None):
         return self.factory.get_object(Category, data)
+
+    def Class(self, data=None):
+        return self.factory.get_object(Class, data)
 
     def Computer(self, data=None):
         return self.factory.get_object(Computer, data)
@@ -231,8 +243,20 @@ class JSS(object):
     def ComputerCommand(self, data=None):
         return self.factory.get_object(ComputerCommand, data)
 
+    def ComputerExtensionAttribute(self, data=None):
+        return self.factory.get_object(ComputerExtensionAttribute, data)
+
     def ComputerGroup(self, data=None):
         return self.factory.get_object(ComputerGroup, data)
+
+    def ComputerInventoryCollection(self, data=None):
+        return self.factory.get_object(ComputerInventoryCollection, data)
+
+    def ComputerInvitation(self, data=None):
+        return self.factory.get_object(ComputerInvitation, data)
+
+    def ComputerReport(self, data=None):
+        return self.factory.get_object(ComputerReport, data)
 
     def MobileDevice(self, data=None):
         return self.factory.get_object(MobileDevice, data)
@@ -486,8 +510,24 @@ class ActivationCode(JSSObject):
     can_list = False
 
 
+class AdvancedComputerSearch(JSSObject):
+    _url = '/advancedcomputersearches'
+
+
+class AdvancedMobileDeviceSearch(JSSObject):
+    _url = '/advancedmobiledevicesearches'
+
+
+class Building(JSSObject):
+    _url = '/buildings'
+
+
 class Category(JSSObject):
     _url = '/categories'
+
+
+class Class(JSSObject):
+    _url = '/classes'
 
 
 class Computer(JSSDeviceObject):
@@ -524,8 +564,32 @@ class ComputerCommand(JSSObject):
     can_put = False
 
 
+class ComputerExtensionAttribute(JSSObject):
+    _url = '/computerextensionattributes'
+
+
 class ComputerGroup(JSSObject):
     _url = '/computergroups'
+
+
+class ComputerInventoryCollection(JSSObject):
+    _url = '/computerinventorycollection'
+    can_list = False
+    can_post = False
+    can_delete = False
+
+
+class ComputerInvitation(JSSObject):
+    _url = '/computerinvitations'
+    can_put = False
+    search_types = {'name': '/name/', 'invitation': '/invitation/'}
+
+
+class ComputerReport(JSSObject):
+    _url = '/computerreports'
+    can_put = False
+    can_post = False
+    can_delete = False
 
 
 class MobileDevice(JSSDeviceObject):
