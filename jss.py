@@ -258,6 +258,42 @@ class JSS(object):
     def ComputerReport(self, data=None):
         return self.factory.get_object(ComputerReport, data)
 
+    def Department(self, data=None):
+        return self.factory.get_object(Department, data)
+
+    def DirectoryBinding(self, data=None):
+        return self.factory.get_object(DirectoryBinding, data)
+
+    def DiskEncryptionConfiguration(self, data=None):
+        return self.factory.get_object(DiskEncryptionConfiguration, data)
+
+    def DistributionPoint(self, data=None):
+        return self.factory.get_object(DistributionPoint, data)
+
+    def DockItem(self, data=None):
+        return self.factory.get_object(DockItem, data)
+
+    def EBook(self, data=None):
+        return self.factory.get_object(EBook, data)
+
+    #def FileUpload(self, data=None):
+    #    return self.factory.get_object(FileUpload, data)
+
+    def GSXConnection(self, data=None):
+        return self.factory.get_object(GSXConnection, data)
+
+    def JSSUser(self, data=None):
+        return self.factory.get_object(JSSUser, data)
+
+    def LDAPServer(self, data=None):
+        return self.factory.get_object(LDAPServer, data)
+
+    def LicensedSoftware(self, data=None):
+        return self.factory.get_object(LicensedSoftware, data)
+
+    def ManagedPreferenceProfile(self, data=None):
+        return self.factory.get_object(ManagedPreferenceProfile, data)
+
     def MobileDevice(self, data=None):
         return self.factory.get_object(MobileDevice, data)
 
@@ -590,6 +626,67 @@ class ComputerReport(JSSObject):
     can_put = False
     can_post = False
     can_delete = False
+
+
+class Department(JSSObject):
+    _url = '/departments'
+
+
+class DirectoryBinding(JSSObject):
+    _url = '/directorybindings'
+
+
+class DiskEncryptionConfiguration(JSSObject):
+    _url = '/diskencryptionconfigurations'
+
+
+class DistributionPoint(JSSObject):
+    _url = '/distributionpoints'
+
+
+class DockItem(JSSObject):
+    _url = '/dockitems'
+
+
+class EBook(JSSObject):
+    _url = '/ebooks'
+
+
+# Need to think about how to handle this.
+#class FileUpload(JSSObject):
+#    _url = '/fileuploads'
+#    can_put = False
+#    can_delete = False
+#    can_get = False
+#    can_list = False
+
+
+class GSXConnection(JSSObject):
+    _url = '/gsxconnection'
+    can_list = False
+    can_post = False
+    can_delete = False
+
+
+class JSSUser(JSSObject):
+    """JSSUser is deprecated."""
+    _url = '/jssuser'
+    can_list = False
+    can_post = False
+    can_put = False
+    can_delete = False
+
+
+class LDAPServer(JSSObject):
+    _url = '/ldapservers'
+
+
+class LicensedSoftware(JSSObject):
+    _url = '/licensedsoftware'
+
+
+class ManagedPreferenceProfile(JSSObject):
+    _url = '/managedpreferenceprofiles'
 
 
 class MobileDevice(JSSDeviceObject):
