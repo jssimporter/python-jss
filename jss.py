@@ -321,8 +321,47 @@ class JSS(object):
     def MobileDeviceProvisioningProfile(self, data=None):
         return self.factory.get_object(MobileDeviceProvisioningProfile, data)
 
+    def NetbootServer(self, data=None):
+        return self.factory.get_object(NetbootServer, data)
+
+    def NetworkSegment(self, data=None):
+        return self.factory.get_object(NetworkSegment, data)
+
+    def OSXConfigurationProfile(self, data=None):
+        return self.factory.get_object(OSXConfigurationProfile, data)
+
+    def Package(self, data=None):
+        return self.factory.get_object(Package, data)
+
+    def Peripheral(self, data=None):
+        return self.factory.get_object(Peripheral, data)
+
+    def PeripheralType(self, data=None):
+        return self.factory.get_object(PeripheralType, data)
+
     def Policy(self, data=None):
         return self.factory.get_object(Policy, data)
+
+    def Printer(self, data=None):
+        return self.factory.get_object(Printer, data)
+
+    def RestrictedSfotware(self, data=None):
+        return self.factory.get_object(RestrictedSoftware, data)
+
+    def RemovableMACAddress(self, data=None):
+        return self.factory.get_object(RemovableMACAddress, data)
+
+    def SavedSearch(self, data=None):
+        return self.factory.get_object(SavedSearch, data)
+
+    def Script(self, data=None):
+        return self.factory.get_object(Script, data)
+
+    def Site(self, data=None):
+        return self.factory.get_object(Site, data)
+
+    def SoftwareUpdateServer(self, data=None):
+        return self.factory.get_object(SoftwareUpdateServer, data)
 
 
 class JSSObjectFactory(object):
@@ -562,6 +601,8 @@ class ActivationCode(JSSObject):
     can_delete = False
     can_post = False
     can_list = False
+    #TODO: Technically you can PUT, but it doesn't go to an ID URL
+    can_put = False
 
 
 class AdvancedComputerSearch(JSSObject):
@@ -610,7 +651,8 @@ class ComputerCheckIn(JSSObject):
     can_delete = False
     can_list = False
     can_post = False
-
+    #TODO: Technically you can PUT, but it doesn't go to an ID URL
+    can_put = False
 
 class ComputerCommand(JSSObject):
     _url = '/computercommands'
@@ -631,6 +673,8 @@ class ComputerInventoryCollection(JSSObject):
     can_list = False
     can_post = False
     can_delete = False
+    #TODO: Technically you can PUT, but it doesn't go to an ID URL
+    can_put = False
 
 
 class ComputerInvitation(JSSObject):
@@ -684,6 +728,8 @@ class GSXConnection(JSSObject):
     can_list = False
     can_post = False
     can_delete = False
+    #TODO: Technically you can PUT, but it doesn't go to an ID URL
+    can_put = False
 
 
 class JSSUser(JSSObject):
@@ -769,8 +815,74 @@ class MobileDeviceProvisioningProfile(JSSObject):
     search_types = {'name': '/name/', 'uuid': '/uuid/'}
 
 
+class NetbootServer(JSSObject):
+    _url = '/netbootservers'
+
+
+class NetworkSegment(JSSObject):
+    _url = '/networksegments'
+
+
+class OSXConfigurationProfile(JSSObject):
+    _url = '/osxconfigurationprofiles'
+
+
+class Package(JSSObject):
+    _url = '/packages'
+
+
+class Peripheral(JSSObject):
+    _url = '/peripherals'
+    search_types = {}
+
+
+class PeripheralType(JSSObject):
+    _url = '/peripheraltypes'
+    search_types = {}
+
+
 class Policy(JSSObject):
     _url = '/policies'
+
+
+class Printer(JSSObject):
+    _url = '/printers'
+
+
+class RestrictedSoftware(JSSObject):
+    _url = '/restrictedsoftware'
+
+
+class RemovableMACAddress(JSSObject):
+    _url = '/removablemacaddresses'
+
+
+class SavedSearch(JSSObject):
+    _url = '/savedsearches'
+    can_put = False
+    can_post = False
+    can_delete = False
+
+
+class Script(JSSObject):
+    _url = '/scripts'
+
+
+class Site(JSSObject):
+    _url = '/sites'
+
+
+class SoftwareUpdateServer(JSSObject):
+    _url = '/softwareupdateservers'
+
+
+class SMTPServer(JSSObject):
+    _url = '/smtpserver'
+    can_list = False
+    can_post = False
+    # TODO: Technically _can_ put; Has no ID to put to, need to implement.
+    can_put = False
+    search_types = {}
 
 
 class JSSObjectTemplate(ElementTree.ElementTree):
