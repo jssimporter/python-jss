@@ -24,7 +24,7 @@ some point I may get around to making a pip install.
 
 It has one non-included dependency, the requests HTTP module, which you can
 usually obtain by:
-$ pip install requests
+```$ pip install requests```
 
 Check it out at http://docs.python-requests.org/en/latest/
 
@@ -189,7 +189,7 @@ Note: All data in the objects are strings! True/False values, int values, etc,
 are all string unless you cast them yourself. The id properties of the various
 objects _do_ convert to int, but otherwise you are on your own.
 
-Creating, Updating, and Delete Objects:
+Creating, Updating, and Deleting Objects:
 =================
 To create a new object, you need to pass an instance of a JSSObjectTemplate.
 JSSObjectTemplate is also an ElementTree, so you can manipulate their data in
