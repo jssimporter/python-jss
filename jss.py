@@ -210,6 +210,12 @@ class JSS(object):
         elif response.status_code >= 400:
             self._error_handler(JSSDeleteError, response)
 
+    def Account(self, data=None):
+        return self.factory.get_object(Account, data)
+
+    def AccountGroup(self, data=None):
+        return self.factory.get_object(AccountGroup, data)
+
     def ActivationCode(self, data=None):
         return self.factory.get_object(ActivationCode, data)
 
@@ -270,8 +276,10 @@ class JSSObjectFactory(object):
         if data is None:
             url = obj_class.get_url(data)
             if obj_class.can_list and obj_class.can_get:
-                xmldata = self.jss.get(url)
-                response_objects = [item for item in xmldata if item is not None and \
+                result = self.jss.get(url)
+                if obj_class.container:
+                    result = result.find(obj_class.container)
+                response_objects = [item for item in result if item is not None and \
                                     item.tag != 'size']
                 objects = [JSSListData(obj_class, {i.tag: i.text for i in response_object}) for response_object in response_objects]
                 return JSSObjectList(self, obj_class, objects)
@@ -287,6 +295,7 @@ class JSSObjectFactory(object):
                 url = obj_class.get_url(data)
                 xmldata = self.jss.get(url)
                 if xmldata.find('size') is not None:
+                    # May need above treatment, with .find(container), and refactoring out this otherwise duplicate code.
                     # Get returned a list.
                     response_objects = [item for item in xmldata if item is not None and \
                                         item.tag != 'size']
@@ -315,6 +324,8 @@ class JSSObject(ElementTree.ElementTree):
     can_put = True
     can_post = True
     can_delete = True
+    id_url = '/id/'
+    container = ''
     search_types = {'name': '/name/'}
 
     def __init__(self, jss, data):
@@ -334,7 +345,7 @@ class JSSObject(ElementTree.ElementTree):
     def get_url(cls, data):
         """Return the URL for a get request based on data type."""
         if isinstance(data, int):
-            return '%s%s%s' % (cls._url, '/id/', data)
+            return '%s%s%s' % (cls._url, cls.id_url, data)
         elif data is None:
             return cls._url
         else:
@@ -353,11 +364,11 @@ class JSSObject(ElementTree.ElementTree):
     @classmethod
     def get_post_url(cls):
         """Return the post URL for this object class."""
-        return '%s%s' % (cls._url, '/id/0')
+        return '%s%s%s' % (cls._url, cls.id_url, '0')
 
     def get_object_url(self):
         """Return the complete API url to this object."""
-        return '%s%s%s' % (self._url, '/id/', self.id)
+        return '%s%s%s' % (self._url, self.id_url, self.id)
 
     def delete(self):
         """Delete this object from the JSS."""
@@ -446,6 +457,26 @@ class JSSDeviceObject(JSSObject):
     @property
     def serial_number(self):
         return self.findtext('general/serial_number')
+
+
+class Account(JSSObject):
+    _url = '/accounts'
+    container = 'users'
+    id_url = '/userid/'
+    search_types = {'userid': '/userid/', 'username': '/username/',
+                    'name': '/username/'}
+
+
+class AccountGroup(JSSObject):
+    """Account groups are groups of users on the JSS. Within the API
+    hierarchy they are actually part of accounts, but I seperated them.
+
+    """
+    _url = '/accounts'
+    container = 'groups'
+    id_url = '/groupid/'
+    search_types = {'groupid': '/groupid/', 'groupname': '/groupname/',
+                    'name': '/groupname/'}
 
 
 class ActivationCode(JSSObject):

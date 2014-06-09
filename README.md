@@ -24,7 +24,9 @@ some point I may get around to making a pip install.
 
 It has one non-included dependency, the requests HTTP module, which you can
 usually obtain by:
-```$ pip install requests```
+```
+$ pip install requests
+```
 
 Check it out at http://docs.python-requests.org/en/latest/
 
