@@ -297,11 +297,29 @@ class JSS(object):
     def MobileDevice(self, data=None):
         return self.factory.get_object(MobileDevice, data)
 
+    def MobileDeviceApplication(self, data=None):
+        return self.factory.get_object(MobileDeviceApplication, data)
+
+    def MobileDeviceCommand(self, data=None):
+        return self.factory.get_object(MobileDeviceCommand, data)
+
     def MobileDeviceConfigurationProfile(self, data=None):
         return self.factory.get_object(MobileDeviceConfigurationProfile, data)
 
+    def MobileDeviceEnrollmentProfile(self, data=None):
+        return self.factory.get_object(MobileDeviceEnrollmentProfile, data)
+
+    def MobileDeviceExtensionAttribute(self, data=None):
+        return self.factory.get_object(MobileDeviceExtensionAttribute, data)
+
+    def MobileDeviceInvitation(self, data=None):
+        return self.factory.get_object(MobileDeviceInvitation, data)
+
     def MobileDeviceGroup(self, data=None):
         return self.factory.get_object(MobileDeviceGroup, data)
+
+    def MobileDeviceProvisioningProfile(self, data=None):
+        return self.factory.get_object(MobileDeviceProvisioningProfile, data)
 
     def Policy(self, data=None):
         return self.factory.get_object(Policy, data)
@@ -709,12 +727,46 @@ class MobileDevice(JSSDeviceObject):
                 self.findtext('general/mac_address')
 
 
+class MobileDeviceApplication(JSSObject):
+    _url = '/mobiledeviceapplications'
+
+
+class MobileDeviceCommand(JSSObject):
+    _url = '/mobiledevicecommands'
+    can_put = False
+    can_delete = False
+    search_types = {'name': '/name/', 'uuid': '/uuid/',
+                    'command': '/command/'}
+    # TODO: This object _can_ post, but it works a little differently
+    can_post = False
+
+
 class MobileDeviceConfigurationProfile(JSSObject):
     _url = '/mobiledeviceconfigurationprofiles'
 
 
+class MobileDeviceEnrollmentProfile(JSSObject):
+    _url = '/mobiledeviceenrollmentprofiles'
+    search_types = {'name': '/name/', 'invitation': '/invitation/'}
+
+
+class MobileDeviceExtensionAttribute(JSSObject):
+    _url = '/mobiledeviceextensionattributes'
+
+
+class MobileDeviceInvitation(JSSObject):
+    _url = '/mobiledeviceinvitations'
+    can_put = False
+    search_types = {'invitation': '/invitation/'}
+
+
 class MobileDeviceGroup(JSSObject):
     _url = '/mobiledevicegroups'
+
+
+class MobileDeviceProvisioningProfile(JSSObject):
+    _url = '/mobiledeviceprovisioningprofiles'
+    search_types = {'name': '/name/', 'uuid': '/uuid/'}
 
 
 class Policy(JSSObject):
