@@ -907,12 +907,103 @@ class JSSObjectTemplate(ElementTree.ElementTree):
     object.
 
     """
-    pass
+    # I don't see that the JSS requires the <?xml version="1.0"
+    # encoding="UTF-8"?> element at the beginning.
+    def _indent(self, elem, level=0, more_sibs=False):
+        """Indent an xml element object to prepare for pretty printing.
+
+        Method is internal to discourage indenting the self._root Element,
+        thus potentially corrupting it.
+
+        """
+        i = "\n"
+        pad = '    '
+        if level:
+            i += (level - 1) * pad
+        num_kids = len(elem)
+        if num_kids:
+            if not elem.text or not elem.text.strip():
+                elem.text = i + pad
+                if level:
+                    elem.text += pad
+            count = 0
+            for kid in elem:
+                self._indent(kid, level+1, count < num_kids - 1)
+                count += 1
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+                if more_sibs:
+                    elem.tail += pad
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i
+                if more_sibs:
+                    elem.tail += pad
+
+    def __repr__(self):
+        """Make our data human readable."""
+        # deepcopy so we don't mess with the valid XML.
+        pretty_data = copy.deepcopy(self._root)
+        self._indent(pretty_data)
+        s = ElementTree.tostring(pretty_data)
+        return s.encode('utf-8')
+
+
+class JSSSimpleTemplate(JSSObjectTemplate):
+    """Abstract class for simple JSS Objects."""
+    template_type = 'abstract_simple_object'
+    def __init__(self, name):
+        self._root = ElementTree.Element(self.template_type)
+        element_name = ElementTree.SubElement(self._root, "name")
+        element_name.text = name
+
+
+class JSSCategoryTemplate(JSSSimpleTemplate):
+    template_type = 'category'
 
 
 class JSSPolicyTemplate(JSSObjectTemplate):
     def __init__(self):
         super(JSSPolicyTemplate, self).__init__(self, file='doc/policy_template.xml')
+
+
+class JSSPackageTemplate(JSSObjectTemplate):
+    """Template for constructing package objects."""
+    def __init__(self, filename, cat_name):
+        self._root = ElementTree.Element("package")
+        name = ElementTree.SubElement(self._root, "name")
+        name.text = filename
+        category = ElementTree.SubElement(self._root, "category")
+        category.text = cat_name
+        fname = ElementTree.SubElement(self._root, "filename")
+        fname.text = filename
+        ElementTree.SubElement(self._root, "info")
+        ElementTree.SubElement(self._root, "notes")
+        priority = ElementTree.SubElement(self._root, "priority")
+        priority.text = "10"
+        reboot = ElementTree.SubElement(self._root, "reboot_required")
+        reboot.text = "false"
+        fut = ElementTree.SubElement(self._root, "fill_user_template")
+        fut.text = "false"
+        feu = ElementTree.SubElement(self._root, "fill_existing_users")
+        feu.text = "false"
+        boot_volume = ElementTree.SubElement(self._root, "boot_volume_required")
+        boot_volume.text = "false"
+        allow_uninstalled = ElementTree.SubElement(self._root, "allow_uninstalled")
+        allow_uninstalled.text = "false"
+        ElementTree.SubElement(self._root, "os_requirements")
+        required_proc = ElementTree.SubElement(self._root, "required_processor")
+        required_proc.text = "None"
+        switch_w_package = ElementTree.SubElement(self._root, "switch_with_package")
+        switch_w_package.text = "Do Not Install"
+        install_if = ElementTree.SubElement(self._root, "install_if_reported_available")
+        install_if.text = "false"
+        reinstall_option = ElementTree.SubElement(self._root, "reinstall_option")
+        reinstall_option.text = "Do Not Reinstall"
+        ElementTree.SubElement(self._root, "triggering_files")
+        send_notification = ElementTree.SubElement(self._root, "send_notification")
+        send_notification.text = "false"
+
 
 
 class JSSListData(dict):
