@@ -363,6 +363,8 @@ class JSS(object):
     def SoftwareUpdateServer(self, data=None):
         return self.factory.get_object(SoftwareUpdateServer, data)
 
+    def SMTPServer(self, data=None):
+        return self.factory.get_object(SMTPServer, data)
 
 class JSSObjectFactory(object):
     """Create JSSObjects intelligently based on a single data argument."""
@@ -443,6 +445,7 @@ class JSSObject(ElementTree.ElementTree):
     can_delete = True
     id_url = '/id/'
     container = ''
+    default_search = 'name'
     search_types = {'name': '/name/'}
 
     def __init__(self, jss, data):
@@ -473,10 +476,8 @@ class JSSObject(ElementTree.ElementTree):
                 else:
                     raise JSSUnsupportedSearchMethodError("This object cannot"
                             "be queried by %s." % key)
-            # Every object has a "name" search, and this is usually what you
-            # would want if not specifying.
             else:
-                return '%s%s%s' % (cls._url, cls.search_types['name'], data)
+                return '%s%s%s' % (cls._url, cls.search_types[cls.default_search], data)
 
     @classmethod
     def get_post_url(cls):
@@ -557,7 +558,10 @@ class JSSObject(ElementTree.ElementTree):
     def id(self):
         """Return object ID or None."""
         # Most objects have ID nested in general. Groups don't.
-        return int(self.findtext('id') or self.findtext('general/id'))
+        result = self.findtext('id') or self.findtext('general/id')
+        if result:
+            result = int(result)
+        return result
 
 
 class JSSDeviceObject(JSSObject):
@@ -574,6 +578,23 @@ class JSSDeviceObject(JSSObject):
     @property
     def serial_number(self):
         return self.findtext('general/serial_number')
+
+
+class JSSFlatObject(JSSObject):
+    """Subclass for JSS objects which do not return a list of objects."""
+    search_types = {}
+    @classmethod
+    def get_url(cls, data):
+        """Return the URL for a get request based on data type."""
+        if data is not None:
+            raise JSSUnsupportedSearchMethodError("This object cannot"
+                    "be queried by %s." % key)
+        else:
+            return cls._url
+
+    def get_object_url(self):
+        """Return the complete API url to this object."""
+        return self.get_url(None)
 
 
 class Account(JSSObject):
@@ -596,13 +617,11 @@ class AccountGroup(JSSObject):
                     'name': '/groupname/'}
 
 
-class ActivationCode(JSSObject):
+class ActivationCode(JSSFlatObject):
     _url = '/activationcode'
     can_delete = False
     can_post = False
     can_list = False
-    #TODO: Technically you can PUT, but it doesn't go to an ID URL
-    can_put = False
 
 
 class AdvancedComputerSearch(JSSObject):
@@ -646,13 +665,11 @@ class Computer(JSSDeviceObject):
             return mac_addresses
 
 
-class ComputerCheckIn(JSSObject):
+class ComputerCheckIn(JSSFlatObject):
     _url = '/computercheckin'
     can_delete = False
     can_list = False
     can_post = False
-    #TODO: Technically you can PUT, but it doesn't go to an ID URL
-    can_put = False
 
 class ComputerCommand(JSSObject):
     _url = '/computercommands'
@@ -668,13 +685,11 @@ class ComputerGroup(JSSObject):
     _url = '/computergroups'
 
 
-class ComputerInventoryCollection(JSSObject):
+class ComputerInventoryCollection(JSSFlatObject):
     _url = '/computerinventorycollection'
     can_list = False
     can_post = False
     can_delete = False
-    #TODO: Technically you can PUT, but it doesn't go to an ID URL
-    can_put = False
 
 
 class ComputerInvitation(JSSObject):
@@ -723,22 +738,21 @@ class EBook(JSSObject):
 #    can_list = False
 
 
-class GSXConnection(JSSObject):
+class GSXConnection(JSSFlatObject):
     _url = '/gsxconnection'
     can_list = False
     can_post = False
     can_delete = False
-    #TODO: Technically you can PUT, but it doesn't go to an ID URL
-    can_put = False
 
 
-class JSSUser(JSSObject):
+class JSSUser(JSSFlatObject):
     """JSSUser is deprecated."""
     _url = '/jssuser'
     can_list = False
     can_post = False
     can_put = False
     can_delete = False
+    search_types = {}
 
 
 class LDAPServer(JSSObject):
@@ -876,12 +890,11 @@ class SoftwareUpdateServer(JSSObject):
     _url = '/softwareupdateservers'
 
 
-class SMTPServer(JSSObject):
+class SMTPServer(JSSFlatObject):
     _url = '/smtpserver'
+    id_url = ''
     can_list = False
     can_post = False
-    # TODO: Technically _can_ put; Has no ID to put to, need to implement.
-    can_put = False
     search_types = {}
 
 
