@@ -993,8 +993,92 @@ class JSSComputerGroupTemplate(JSSObjectTemplate):
 
 
 class JSSPolicyTemplate(JSSObjectTemplate):
-    def __init__(self):
-        super(JSSPolicyTemplate, self).__init__(self, file='doc/policy_template.xml')
+    """<?xml version="1.0" encoding="UTF-8"?>
+    <policy>
+        <general>
+            <name>%SELFSERVE_POLICY%</name>
+            <enabled>true</enabled>
+            <frequency>Once per computer</frequency>
+            <category>
+                <name>%policy_category_name%</name>
+            </category>
+        </general>
+        <scope>
+            <computer_groups>
+                <computer_group>
+                    <id>%grp_id%</id>
+                </computer_group>
+            </computer_groups>
+        </scope>
+        <self_service>
+            <use_for_self_service>true</use_for_self_service>
+        </self_service>
+        <package_configuration>
+            <packages>
+                <size>1</size>
+                <package>
+                    <id>%pkg_id%</id>
+                    <action>Install</action>
+                </package>
+            </packages>
+        </package_configuration>
+        <maintenance>
+            <recon>true</recon>
+        </maintenance>
+    </policy>"""
+    def __init__(self, name, category=None):
+        """Create a barebones policy.
+
+        name:       Policy name
+        category:   An instance of Category
+
+        """
+        self._root = ElementTree.Element("policy")
+        # General
+        self.general = ElementTree.SubElement(self._root, "general")
+        self.name = ElementTree.SubElement(self.general, "name")
+        self.name.text = name
+        self.enabled = ElementTree.SubElement(self.general, "enabled")
+        self.enabled.text = "true"
+        self.frequency = ElementTree.SubElement(self.general, "frequency")
+        self.frequency.text = "Once per computer"
+        self.category = ElementTree.SubElement(self.general, "category")
+        if category:
+            self.category_name = ElementTree.SubElement(self.category, "name")
+            self.category_name.text = category.name
+        # Scope
+        self.scope = ElementTree.SubElement(self._root, "scope")
+        self.computers= ElementTree.SubElement(self.scope, "computers")
+        self.computer_groups = ElementTree.SubElement(self.scope, "computer_groups")
+        self.buildings = ElementTree.SubElement(self.scope, "buldings")
+        self.departments = ElementTree.SubElement(self.scope, "departments")
+
+        # Self Service
+        ElementTree.SubElement(self._root, "self_service")
+        # Package Configuration
+        ElementTree.SubElement(self._root, "package_configuration")
+        # Maintenance
+        ElementTree.SubElement(self._root, "maintenance")
+
+    def add_object_to_scope(self, obj):
+        if isinstance(obj, Computer):
+            computer = ElementTree.SubElement(self.computers, "computer")
+            id_ = ElementTree.SubElement(computer, "id")
+            id_.text = str(obj.id)
+        elif isinstance(obj, ComputerGroup):
+            computer_group = ElementTree.SubElement(self.computer_groups, "computer_group")
+            id_ = ElementTree.SubElement(computer_group, "id")
+            id_.text = str(obj.id)
+        elif isinstance(obj, Building):
+            building = ElementTree.SubElement(self.buildings, "building")
+            id_ = ElementTree.SubElement(building, "id")
+            id_.text = str(obj.id)
+        elif isinstance(obj, Department):
+            department = ElementTree.SubElement(self.computers, "department")
+            id_ = ElementTree.SubElement(department, "id")
+            id_.text = str(obj.id)
+        else:
+            raise TypeError
 
 
 class JSSPackageTemplate(JSSObjectTemplate):
