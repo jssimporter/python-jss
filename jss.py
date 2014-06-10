@@ -172,8 +172,10 @@ class JSS(object):
         # The JSS expects a post to ID 0 to create an object
         url = '%s%s' % (self._url, url)
         data = ElementTree.tostring(data.getroot())
+        headers = {"content-type": 'text/xml'}
         response = requests.post(url, auth=(self.user, self.password),
-                                 data=data, verify=self.ssl_verify)
+                                 data=data, verify=self.ssl_verify,
+                                 headers=headers)
 
         if response.status_code == 201:
             if self.verbose:
@@ -191,8 +193,10 @@ class JSS(object):
         """Updates an object on the JSS."""
         url = '%s%s' % (self._url, url)
         data = ElementTree.tostring(data)
+        headers = {"content-type": 'text/xml'}
         response = requests.put(url, auth=(self.user, self.password),
-                                 verify=self.ssl_verify, data=data)
+                                verify=self.ssl_verify, data=data,
+                                headers=headers)
         if response.status_code == 201:
             if self.verbose:
                 print("PUT: Success.")
