@@ -962,6 +962,36 @@ class JSSCategoryTemplate(JSSSimpleTemplate):
     template_type = 'category'
 
 
+class JSSComputerGroupTemplate(JSSObjectTemplate):
+    def __init__(self, name, smartness=False):
+        """Creates a computer group template.
+
+        Smart groups with no criteria by default select ALL computers.
+
+        """
+        self._root = ElementTree.Element("computer_group")
+        element_name = ElementTree.SubElement(self._root, "name")
+        element_name.text = name
+        is_smart = ElementTree.SubElement(self._root, "is_smart")
+        is_smart.text = str(smartness)
+        if smartness:
+            self.criteria = ElementTree.SubElement(self._root, "criteria")
+
+
+    def add_criterion(self, name, priority, and_or, search_type, value):
+        criterion = ElementTree.SubElement(self.criteria, "criterion")
+        crit_name = ElementTree.SubElement(criterion, "name")
+        crit_name.text = name
+        crit_priority = ElementTree.SubElement(criterion, "priority")
+        crit_priority.text = str(priority)
+        crit_and_or = ElementTree.SubElement(criterion, "and_or")
+        crit_and_or.text = and_or
+        crit_search_type = ElementTree.SubElement(criterion, "search_type")
+        crit_search_type.text = search_type
+        crit_value = ElementTree.SubElement(criterion, "value")
+        crit_value.text = value
+
+
 class JSSPolicyTemplate(JSSObjectTemplate):
     def __init__(self):
         super(JSSPolicyTemplate, self).__init__(self, file='doc/policy_template.xml')
@@ -969,7 +999,7 @@ class JSSPolicyTemplate(JSSObjectTemplate):
 
 class JSSPackageTemplate(JSSObjectTemplate):
     """Template for constructing package objects."""
-    def __init__(self, filename, cat_name):
+    def __init__(self, filename, cat_name="Unknown"):
         self._root = ElementTree.Element("package")
         name = ElementTree.SubElement(self._root, "name")
         name.text = filename
@@ -1003,7 +1033,6 @@ class JSSPackageTemplate(JSSObjectTemplate):
         ElementTree.SubElement(self._root, "triggering_files")
         send_notification = ElementTree.SubElement(self._root, "send_notification")
         send_notification.text = "false"
-
 
 
 class JSSListData(dict):
