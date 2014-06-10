@@ -248,7 +248,34 @@ class testJSSObject_Subclasses(object):
 
 
 class testJSSObjectTemplate(object):
-    pass
+    def test_JSSComputerGroupTemplate(self):
+        cgt = JSSComputerGroupTemplate("Test")
+        assert_is_instance(cgt, JSSComputerGroupTemplate)
+        test_group = j_global.ComputerGroup(cgt)
+        assert_is_instance(test_group, ComputerGroup)
+        test_group.delete()
+
+    def test_JSSComputerGroupTemplate_Smart(self):
+        cgt = JSSComputerGroupTemplate("Test", True)
+        assert_is_instance(cgt, JSSComputerGroupTemplate)
+        cgt.add_criterion("Computer Name", 0, "and", "like", "craigs")
+        test_group = j_global.ComputerGroup(cgt)
+        assert_is_instance(test_group, ComputerGroup)
+        test_group.delete()
+
+    def test_JSSPackageTemplate(self):
+        package_template = JSSPackageTemplate("Taco.pkg")
+        assert_is_instance(package_template, JSSPackageTemplate)
+        package = j_global.Package(package_template)
+        assert_is_instance(package, Package)
+        package.delete()
+
+    def test_JSSSimpleTemplate(self):
+        cat_template = JSSCategoryTemplate("Python JSS Test Category")
+        assert_is_instance(cat_template, JSSCategoryTemplate)
+        category = j_global.Category(cat_template)
+        assert_is_instance(category, Category)
+        category.delete()
 
 
 class testJSSListData(object):
