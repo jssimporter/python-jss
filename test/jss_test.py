@@ -32,6 +32,8 @@ global j_global
 jp = JSSPrefs()
 j_global = JSS(jss_prefs=jp)
 
+TESTPOLICY = 'python-jss Test Policy'
+
 
 def setup():
     """Make sure failed tests that create policies don't hamper our ability
@@ -39,7 +41,7 @@ def setup():
 
     """
     try:
-        cleanup = j_global.Policy('jss python wrapper API test policy')
+        cleanup = j_global.Policy(TESTPOLICY)
         cleanup.delete()
     except JSSGetError:
         pass
@@ -85,26 +87,26 @@ class testJSS(object):
         assert_is_instance(policy, ElementTree.Element)
 
     @with_setup(setup)
-    def test_jss_post(self):
-        pt = JSSPolicyTemplate()
+    def test_JSS_post(self):
+        pt = JSSPolicyTemplate(TESTPOLICY)
         new_policy = j_global.Policy(pt)
         # If successful, we'll get a new ID number
         assert_is_instance(new_policy.id, int)
         new_policy.delete()
 
-    def test_jss_method_constructors(self):
+    def test_JSS_constructor_methods(self):
         skip_these_methods = ['__init__', 'get', 'delete', 'put', 'post', '_error_handler']
-        method_constructors = [ m[1] for m in inspect.getmembers(j_global) if inspect.ismethod(m[1]) and m[0] not in skip_these_methods]
-        for cls in method_constructors:
+        constructor_methods = [ m[1] for m in inspect.getmembers(j_global) if inspect.ismethod(m[1]) and m[0] not in skip_these_methods]
+        for cls in constructor_methods:
             instance = cls()
-            yield self.check_jss_method_constructor, instance
+            yield self.check_JSS_constructor_method, instance
 
-    def check_jss_method_constructor(self, instance):
+    def check_JSS_constructor_method(self, instance):
             assert_true(isinstance(instance, JSSObject) or isinstance(instance, JSSObjectList))
 
     @with_setup(setup)
     def test_jss_put(self):
-        pt = JSSPolicyTemplate()
+        pt = JSSPolicyTemplate(TESTPOLICY)
         new_policy = j_global.Policy(pt)
         id_ = new_policy.id
 
@@ -121,7 +123,7 @@ class testJSS(object):
 
     @with_setup(setup)
     def test_jss_delete(self):
-        pt = JSSPolicyTemplate()
+        pt = JSSPolicyTemplate(TESTPOLICY)
         new_policy = j_global.Policy(pt)
         # If successful, we'll get a new ID number
         assert_is_instance(new_policy.id, int)
@@ -149,7 +151,7 @@ class testJSSObject(object):
         assert_equal(Policy.get_post_url(), '/policies/id/0')
 
     def test_JSSObject_get_object_url(self):
-        pt = JSSPolicyTemplate()
+        pt = JSSPolicyTemplate(TESTPOLICY)
         new_policy = j_global.Policy(pt)
 
         assert_equal(new_policy.get_object_url(), '/policies/id/%s' % 
@@ -258,7 +260,8 @@ class testJSSObjectTemplate(object):
     def test_JSSComputerGroupTemplate_Smart(self):
         cgt = JSSComputerGroupTemplate("Test", True)
         assert_is_instance(cgt, JSSComputerGroupTemplate)
-        cgt.add_criterion("Computer Name", 0, "and", "like", "craigs")
+        criterion = SearchCriteria("Computer Name", 0, "and", "like", "craigs")
+        cgt.add_criterion(criterion)
         test_group = j_global.ComputerGroup(cgt)
         assert_is_instance(test_group, ComputerGroup)
         test_group.delete()

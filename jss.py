@@ -907,6 +907,18 @@ class JSSObjectTemplate(ElementTree.ElementTree):
     object.
 
     """
+
+    def _set_bool(self, element, value):
+        """For an object at path, set the string representation of a boolean
+        value to value. Mostly just to prevent me from forgetting to convert
+        to string.
+
+        """
+        if value == True:
+            element.text = 'true'
+        else:
+            element.text = 'false'
+
     # I don't see that the JSS requires the <?xml version="1.0"
     # encoding="UTF-8"?> element at the beginning.
     def _indent(self, elem, level=0, more_sibs=False):
@@ -973,23 +985,32 @@ class JSSComputerGroupTemplate(JSSObjectTemplate):
         element_name = ElementTree.SubElement(self._root, "name")
         element_name.text = name
         is_smart = ElementTree.SubElement(self._root, "is_smart")
+        self._set_bool(is_smart, smartness)
         is_smart.text = str(smartness)
         if smartness:
             self.criteria = ElementTree.SubElement(self._root, "criteria")
 
+    def add_criterion(self, criterion):
+        self.criteria.append(criterion.criterion)
 
-    def add_criterion(self, name, priority, and_or, search_type, value):
-        criterion = ElementTree.SubElement(self.criteria, "criterion")
-        crit_name = ElementTree.SubElement(criterion, "name")
+
+class SearchCriteria(object):
+    def __init__(self, name, priority, and_or, search_type, value):
+        self._criterion = ElementTree.Element("criterion")
+        crit_name = ElementTree.SubElement(self._criterion, "name")
         crit_name.text = name
-        crit_priority = ElementTree.SubElement(criterion, "priority")
+        crit_priority = ElementTree.SubElement(self._criterion, "priority")
         crit_priority.text = str(priority)
-        crit_and_or = ElementTree.SubElement(criterion, "and_or")
+        crit_and_or = ElementTree.SubElement(self._criterion, "and_or")
         crit_and_or.text = and_or
-        crit_search_type = ElementTree.SubElement(criterion, "search_type")
+        crit_search_type = ElementTree.SubElement(self._criterion, "search_type")
         crit_search_type.text = search_type
-        crit_value = ElementTree.SubElement(criterion, "value")
+        crit_value = ElementTree.SubElement(self._criterion, "value")
         crit_value.text = value
+
+    @property
+    def criterion(self):
+        return self._criterion
 
 
 class JSSPolicyTemplate(JSSObjectTemplate):
@@ -1039,13 +1060,14 @@ class JSSPolicyTemplate(JSSObjectTemplate):
         self.name = ElementTree.SubElement(self.general, "name")
         self.name.text = name
         self.enabled = ElementTree.SubElement(self.general, "enabled")
-        self.enabled.text = "true"
+        self._set_bool(self.enabled, True)
         self.frequency = ElementTree.SubElement(self.general, "frequency")
         self.frequency.text = "Once per computer"
         self.category = ElementTree.SubElement(self.general, "category")
         if category:
             self.category_name = ElementTree.SubElement(self.category, "name")
             self.category_name.text = category.name
+
         # Scope
         self.scope = ElementTree.SubElement(self._root, "scope")
         self.computers= ElementTree.SubElement(self.scope, "computers")
@@ -1054,7 +1076,10 @@ class JSSPolicyTemplate(JSSObjectTemplate):
         self.departments = ElementTree.SubElement(self.scope, "departments")
 
         # Self Service
-        ElementTree.SubElement(self._root, "self_service")
+        self.self_service = ElementTree.SubElement(self._root, "self_service")
+        self.use_for_self_service = ElementTree.SubElement(self.self_service, "use_for_self_service")
+        self._set_bool(self.use_for_self_service, True)
+
         # Package Configuration
         ElementTree.SubElement(self._root, "package_configuration")
         # Maintenance
