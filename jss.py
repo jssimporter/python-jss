@@ -995,6 +995,7 @@ class JSSComputerGroupTemplate(JSSObjectTemplate):
 
 
 class SearchCriteria(object):
+    """Object for encapsulating a smart group search criteria."""
     def __init__(self, name, priority, and_or, search_type, value):
         self._criterion = ElementTree.Element("criterion")
         crit_name = ElementTree.SubElement(self._criterion, "name")
@@ -1010,43 +1011,11 @@ class SearchCriteria(object):
 
     @property
     def criterion(self):
+        # TODO: Couldn't figure out how to do this by just subclassing Element
         return self._criterion
 
 
-class JSSPolicyTemplate(JSSObjectTemplate):
-    """<?xml version="1.0" encoding="UTF-8"?>
-    <policy>
-        <general>
-            <name>%SELFSERVE_POLICY%</name>
-            <enabled>true</enabled>
-            <frequency>Once per computer</frequency>
-            <category>
-                <name>%policy_category_name%</name>
-            </category>
-        </general>
-        <scope>
-            <computer_groups>
-                <computer_group>
-                    <id>%grp_id%</id>
-                </computer_group>
-            </computer_groups>
-        </scope>
-        <self_service>
-            <use_for_self_service>true</use_for_self_service>
-        </self_service>
-        <package_configuration>
-            <packages>
-                <size>1</size>
-                <package>
-                    <id>%pkg_id%</id>
-                    <action>Install</action>
-                </package>
-            </packages>
-        </package_configuration>
-        <maintenance>
-            <recon>true</recon>
-        </maintenance>
-    </policy>"""
+class PolicyTemplate(JSSObjectTemplate):
     def __init__(self, name, category=None):
         """Create a barebones policy.
 
@@ -1081,9 +1050,12 @@ class JSSPolicyTemplate(JSSObjectTemplate):
         self._set_bool(self.use_for_self_service, True)
 
         # Package Configuration
-        ElementTree.SubElement(self._root, "package_configuration")
+        self.pkg_config = ElementTree.SubElement(self._root, "package_configuration")
+        self.pkgs = ElementTree.SubElement(self.pkg_config, "packages")
         # Maintenance
-        ElementTree.SubElement(self._root, "maintenance")
+        self.maintenance = ElementTree.SubElement(self._root, "maintenance")
+        self.recon = ElementTree.SubElement(self.maintenance, "recon")
+        self._set_bool(self.recon, True)
 
     def add_object_to_scope(self, obj):
         if isinstance(obj, Computer):
@@ -1104,6 +1076,22 @@ class JSSPolicyTemplate(JSSObjectTemplate):
             id_.text = str(obj.id)
         else:
             raise TypeError
+
+    def add_pkg(self, pkg):
+        if isinstance(pkg, Package):
+            package = ElementTree.SubElement(self.pkgs, "package")
+            id_ = ElementTree.SubElement(package, "id")
+            id_.text = str(pkg.id)
+            action = ElementTree.SubElement(package, "action")
+            action.text = "Install"
+
+    def set_self_service(self, state=True):
+        """Convenience setter for self_service."""
+        self._set_bool(self.use_for_self_service, state)
+
+    def set_recon(self, state=True):
+        """Convenience setter for recon."""
+        self._set_bool(self.recon, state)
 
 
 class JSSPackageTemplate(JSSObjectTemplate):

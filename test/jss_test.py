@@ -88,7 +88,7 @@ class testJSS(object):
 
     @with_setup(setup)
     def test_JSS_post(self):
-        pt = JSSPolicyTemplate(TESTPOLICY)
+        pt = PolicyTemplate(TESTPOLICY)
         new_policy = j_global.Policy(pt)
         # If successful, we'll get a new ID number
         assert_is_instance(new_policy.id, int)
@@ -106,7 +106,7 @@ class testJSS(object):
 
     @with_setup(setup)
     def test_jss_put(self):
-        pt = JSSPolicyTemplate(TESTPOLICY)
+        pt = PolicyTemplate(TESTPOLICY)
         new_policy = j_global.Policy(pt)
         id_ = new_policy.id
 
@@ -123,7 +123,7 @@ class testJSS(object):
 
     @with_setup(setup)
     def test_jss_delete(self):
-        pt = JSSPolicyTemplate(TESTPOLICY)
+        pt = PolicyTemplate(TESTPOLICY)
         new_policy = j_global.Policy(pt)
         # If successful, we'll get a new ID number
         assert_is_instance(new_policy.id, int)
@@ -151,7 +151,7 @@ class testJSSObject(object):
         assert_equal(Policy.get_post_url(), '/policies/id/0')
 
     def test_JSSObject_get_object_url(self):
-        pt = JSSPolicyTemplate(TESTPOLICY)
+        pt = PolicyTemplate(TESTPOLICY)
         new_policy = j_global.Policy(pt)
 
         assert_equal(new_policy.get_object_url(), '/policies/id/%s' % 
@@ -279,6 +279,45 @@ class testJSSObjectTemplate(object):
         category = j_global.Category(cat_template)
         assert_is_instance(category, Category)
         category.delete()
+
+    def test_PolicyTemplate(self):
+        policy_template = PolicyTemplate(TESTPOLICY)
+        assert_is_instance(policy_template, PolicyTemplate)
+        computer = j_global.Computer('craigs')
+        policy_template.add_object_to_scope(computer)
+        policy_string = r"""<policy>
+    <general>
+        <name>python-jss Test Policy</name>
+        <enabled>true</enabled>
+        <frequency>Once per computer</frequency>
+        <category />
+    </general>
+    <scope>
+        <computers>
+            <computer>
+                <id>454</id>
+            </computer>
+        </computers>
+        <computer_groups />
+        <buldings />
+        <departments />
+    </scope>
+    <self_service>
+        <use_for_self_service>true</use_for_self_service>
+    </self_service>
+    <package_configuration>
+        <packages />
+    </package_configuration>
+    <maintenance>
+        <recon>true</recon>
+    </maintenance>
+</policy>
+"""
+        assert_equal(policy_template.__repr__(), policy_string)
+        # PolicyTemplates are used throughout tests for creating new objects,
+        # so we can be sure it works.
+
+
 
 
 class testJSSListData(object):
