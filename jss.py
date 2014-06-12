@@ -956,7 +956,7 @@ class DataEditor(object):
         """Add an object of type JSSContainerObject to DataEditor's context
         object at "path".
 
-        location can be an Element or as a path argument to find()
+        location can be an Element or a string path argument to find()
 
         """
         if isinstance(location, ElementTree.Element):
@@ -966,20 +966,32 @@ class DataEditor(object):
             if parent is not None:
                 parent.append(obj.as_list_data())
             else:
-                raise ValueError("Path is invalid.")
+                raise ValueError("Invalid path!")
 
-    # Probably use parameter to combine all 3 remove methods
-        #***These remove the ENTIRE list entry
-        #***May just have one method that handles both
-        #***Needs to not be by Object since you wouldn't be able to remove nonexistent/deleted objects
-    def remove_objects_from_list(self, object, path_to_list): # If object in a list at path, remove it
-        pass
+    def remove_object_from_list(self, object, list_element):
+        """Remove an object from a list element.
 
-    def remove_objects_from_list_by_id(self, objectid, path_to_list): # If object in a list at path, remove it
-        pass
+        object:     Accepts JSSObjects, id's, and names
+        list:   Accepts an element or a string path to that element
 
-    def remove_objects_from_list_by_name(self, objectname, path_to_list): # If object in a list at path, remove it
-        pass
+        """
+        if not isinstance(list_element, ElementTree.Element):
+            element = self.context.find(list_element)
+            if element is None:
+                raise ValueError("Invalid path!")
+        else:
+            element = list_element
+
+        if isinstance(object, JSSObject):
+            results = [item for item in element.getchildren() if item.findtext("id") == object.id]
+        elif type(object) in [int, str, unicode]:
+            results = [item for item in element.getchildren() if item.findtext("id") == str(object) or item.findtext("name") == object]
+
+        if len(results) == 1 :
+            element.remove(results[0])
+        else:
+            raise ValueError("There is more than one object at that path!")
+
 
     def clear_list(self, path): # Remove all subelements at path
         pass
