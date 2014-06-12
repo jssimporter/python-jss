@@ -91,7 +91,7 @@ class testJSS(object):
         pt = PolicyTemplate(TESTPOLICY)
         new_policy = j_global.Policy(pt)
         # If successful, we'll get a new ID number
-        assert_is_instance(new_policy.id, int)
+        assert_is_instance(new_policy.id, str)
         new_policy.delete()
 
     def test_JSS_constructor_methods(self):
@@ -126,7 +126,7 @@ class testJSS(object):
         pt = PolicyTemplate(TESTPOLICY)
         new_policy = j_global.Policy(pt)
         # If successful, we'll get a new ID number
-        assert_is_instance(new_policy.id, int)
+        assert_is_instance(new_policy.id, str)
         id_ = new_policy.id
 
         # Test delete. This is of course successful if the previous two tests

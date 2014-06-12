@@ -146,7 +146,7 @@ Querying for Objects:
 >>> mycomputer.name
 'my-computer'
 >>> mycomputer.id
-42
+'42'
 >>> # ...as well as some extra properties on devices
 >>> mycomputer.serial_number
 'WXXXXXXXXXXX'
@@ -210,7 +210,7 @@ helpful in sorting out find() paths and elements of the object's data.
 
 Note: All data in the objects are strings! True/False values, int values, etc,
 are all string unless you cast them yourself. The id properties of the various
-objects _do_ convert to int, but otherwise you are on your own.
+objects are strings!
 
 Creating, Updating, and Deleting Objects:
 =================

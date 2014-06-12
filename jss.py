@@ -413,7 +413,7 @@ class JSSObjectFactory(object):
             else:
                 raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
         # Retrieve individual objects
-        elif type(data) in [str, int]:
+        elif type(data) in [str, int, unicode]:
             if obj_class.can_get:
                 url = obj_class.get_url(data)
                 xmldata = self.jss.get(url)
@@ -468,6 +468,11 @@ class JSSObject(ElementTree.ElementTree):
     @classmethod
     def get_url(cls, data):
         """Return the URL for a get request based on data type."""
+        # Test for a string representation of an integer
+        try:
+            data = int(data)
+        except (ValueError, TypeError):
+            pass
         if isinstance(data, int):
             return '%s%s%s' % (cls._url, cls.id_url, data)
         elif data is None:
@@ -563,8 +568,11 @@ class JSSObject(ElementTree.ElementTree):
         """Return object ID or None."""
         # Most objects have ID nested in general. Groups don't.
         result = self.findtext('id') or self.findtext('general/id')
-        if result:
-            result = int(result)
+        # After much consideration, I will treat id's as strings.
+        #   We can't assign ID's, so there's no need to perform arithmetic on
+        #   them.
+        #   Having to convert to str all over the place is gross.
+        #   str equivalency still works.
         return result
 
 
@@ -579,7 +587,7 @@ class JSSContainerObject(JSSObject):
     def as_list_data(self):
         element = ElementTree.Element(self.list_type)
         id_ = ElementTree.SubElement(element, "id")
-        id_.text = str(self.id)
+        id_.text = self.id
         name = ElementTree.SubElement(element, "name")
         name.text = self.name
         return element
@@ -1117,19 +1125,19 @@ class PolicyTemplate(JSSObjectTemplate):
         if isinstance(obj, Computer):
             computer = ElementTree.SubElement(self.computers, "computer")
             id_ = ElementTree.SubElement(computer, "id")
-            id_.text = str(obj.id)
+            id_.text = obj.id
         elif isinstance(obj, ComputerGroup):
             computer_group = ElementTree.SubElement(self.computer_groups, "computer_group")
             id_ = ElementTree.SubElement(computer_group, "id")
-            id_.text = str(obj.id)
+            id_.text = obj.id
         elif isinstance(obj, Building):
             building = ElementTree.SubElement(self.buildings, "building")
             id_ = ElementTree.SubElement(building, "id")
-            id_.text = str(obj.id)
+            id_.text = obj.id
         elif isinstance(obj, Department):
             department = ElementTree.SubElement(self.computers, "department")
             id_ = ElementTree.SubElement(department, "id")
-            id_.text = str(obj.id)
+            id_.text = obj.id
         else:
             raise TypeError
 
@@ -1137,7 +1145,7 @@ class PolicyTemplate(JSSObjectTemplate):
         if isinstance(pkg, Package):
             package = ElementTree.SubElement(self.pkgs, "package")
             id_ = ElementTree.SubElement(package, "id")
-            id_.text = str(pkg.id)
+            id_.text = pkg.id
             action = ElementTree.SubElement(package, "action")
             action.text = "Install"
 
