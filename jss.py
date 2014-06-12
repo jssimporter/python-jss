@@ -509,7 +509,7 @@ class JSSObject(ElementTree.ElementTree):
         """Delete this object from the JSS."""
         if not self.can_delete:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
-        return self.jss.delete(self.get_object_url())
+        self.jss.delete(self.get_object_url())
 
     def update(self):
         """Update this object on the JSS.
@@ -521,7 +521,8 @@ class JSSObject(ElementTree.ElementTree):
             raise JSSMethodNotAllowedError(self.__class__.__name__)
 
         url = self.get_object_url()
-        return self.jss.put(url, self.getroot())
+        self.jss.put(url, self.getroot())
+        self._root = self.jss.get(url)
 
     def _indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing.
