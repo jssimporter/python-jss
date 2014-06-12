@@ -460,10 +460,18 @@ class JSSObject(ElementTree.ElementTree):
 
         """
         self.jss = jss
+        self.get_editor()
         if not isinstance(data, ElementTree.Element):
             raise TypeError("JSSObjects data argument must be of type "
                             "xml.etree.ElemenTree.Element")
         super(JSSObject, self).__init__(element=data)
+
+    def get_editor(self):
+        """Set up a DataEditor.
+
+        Intended to be overriden by classes which need it.
+        """
+        self.editor = DataEditor(self)
 
     @classmethod
     def get_url(cls, data):
@@ -929,9 +937,25 @@ class SMTPServer(JSSFlatObject):
 
 
 class DataEditor(object):
+    """DataEditor provides convenient wrappers for manipulating XML data in
+    JSSObjects and JSSObjectTemplates and their subclasses.
+
+    DataEditors can be subclassed to provide wrappers for these methods to
+    further enable context-class-specific behavior.
+
+    """
     def __init__(self, context):
-        #TODO: May not need 2-way communication.
         self.context = context
+
+    def search(self, tag):
+        """Return elements with tag using getiterator."""
+        return self.context.getiterator(tag)
+
+    def search_and_set(self, tag, value): # Set text at path to value
+        pass
+
+    def toggle(self, element): # Set false to true and true to false for element.
+        pass
 
     def add_objects_at_path(self, object, path): # Add a hierarchical object, like <computer><id>5</id><name>craigs</name</computer>
         pass
@@ -939,12 +963,6 @@ class DataEditor(object):
         #***Subclasses add helper methods like: add_object_to_scope (wrapper for add_object_at_path)
         #    ***wrapped method is hidden, so clients never need to interact with DataEditor
         #    ***This can probably be implemented as a closure
-
-    def search(self, tag):  # Return elements with tag using getiterator
-        pass
-
-    def search_and_set(self, tag, value): # Set text at path to value
-        pass
 
     # Probably use parameter to combine all 3 remove methods
         #***These remove the ENTIRE list entry
@@ -960,9 +978,6 @@ class DataEditor(object):
         pass
 
     def clear_list(self, path): # Remove all subelements at path
-        pass
-
-    def toggle(self, element): # Set false to true and true to false for element.
         pass
 
 
