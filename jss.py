@@ -992,9 +992,20 @@ class DataEditor(object):
         else:
             raise ValueError("There is more than one object at that path!")
 
+    def clear_list(self, list_element): # Remove all subelements at path
+        """Clear all list items from path.
 
-    def clear_list(self, path): # Remove all subelements at path
-        pass
+        list_element can be a string argument to find(), or an element.
+
+        """
+        if not isinstance(list_element, ElementTree.Element):
+            element = self.context.find(list_element)
+            if element is None:
+                raise ValueError("Invalid path!")
+        else:
+            element = list_element
+
+        element.clear()
 
 
 class JSSObjectTemplate(ElementTree.ElementTree):
