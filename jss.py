@@ -990,9 +990,9 @@ class DataEditor(object):
         if len(results) == 1 :
             element.remove(results[0])
         else:
-            raise ValueError("There is more than one object at that path!")
+            raise ValueError("There is either more than one object, or no matches at that path!")
 
-    def clear_list(self, list_element): # Remove all subelements at path
+    def clear_list(self, list_element):
         """Clear all list items from path.
 
         list_element can be a string argument to find(), or an element.
