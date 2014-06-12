@@ -568,7 +568,24 @@ class JSSObject(ElementTree.ElementTree):
         return result
 
 
-class JSSDeviceObject(JSSObject):
+class JSSContainerObject(JSSObject):
+    """Subclass for object types which can contain lists.
+
+    e.g. Computers, Policies.
+
+    """
+    list_type = 'JSSContainerObject'
+
+    def as_list_data(self):
+        element = ElementTree.Element(self.list_type)
+        id_ = ElementTree.SubElement(element, "id")
+        id_.text = str(self.id)
+        name = ElementTree.SubElement(element, "name")
+        name.text = self.name
+        return element
+
+
+class JSSDeviceObject(JSSContainerObject):
     """Provides convenient accessors for properties of devices.
 
     This is helpful since Computers and MobileDevices allow us to query
@@ -653,6 +670,7 @@ class Computer(JSSDeviceObject):
     multiple properties.
 
     """
+    list_type = 'computer'
     _url = '/computers'
     search_types = {'name': '/name/', 'serial_number': '/serialnumber/',
                     'udid': '/udid/', 'macaddress': '/macadress/',
@@ -900,6 +918,44 @@ class SMTPServer(JSSFlatObject):
     can_list = False
     can_post = False
     search_types = {}
+
+
+class DataEditor(object):
+    def __init__(self, context):
+        #TODO: May not need 2-way communication.
+        self.context = context
+
+    def add_objects_at_path(self, object, path): # Add a hierarchical object, like <computer><id>5</id><name>craigs</name</computer>
+        pass
+        #***find(path).append(object.get_as_container_element)
+        #***Subclasses add helper methods like: add_object_to_scope (wrapper for add_object_at_path)
+        #    ***wrapped method is hidden, so clients never need to interact with DataEditor
+        #    ***This can probably be implemented as a closure
+
+    def search(self, tag):  # Return elements with tag using getiterator
+        pass
+
+    def search_and_set(self, tag, value): # Set text at path to value
+        pass
+
+    # Probably use parameter to combine all 3 remove methods
+        #***These remove the ENTIRE list entry
+        #***May just have one method that handles both
+        #***Needs to not be by Object since you wouldn't be able to remove nonexistent/deleted objects
+    def remove_objects_from_list(self, object, path_to_list): # If object in a list at path, remove it
+        pass
+
+    def remove_objects_from_list_by_id(self, objectid, path_to_list): # If object in a list at path, remove it
+        pass
+
+    def remove_objects_from_list_by_name(self, objectname, path_to_list): # If object in a list at path, remove it
+        pass
+
+    def clear_list(self, path): # Remove all subelements at path
+        pass
+
+    def toggle(self, element): # Set false to true and true to false for element.
+        pass
 
 
 class JSSObjectTemplate(ElementTree.ElementTree):
