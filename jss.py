@@ -986,6 +986,16 @@ class JSSObjectTemplate(ElementTree.ElementTree):
     object.
 
     """
+    def __init__(self, **kwargs):
+        self.get_editor()
+        super(JSSObjectTemplate, self).__init__(**kwargs)
+
+    def get_editor(self):
+        """Set up a DataEditor.
+
+        Intended to be overriden by classes which need it.
+        """
+        self.editor = DataEditor(self)
 
     def _set_bool(self, element, value):
         """For an object at path, set the string representation of a boolean
