@@ -952,18 +952,21 @@ class DataEditor(object):
         """Return elements with tag using getiterator."""
         return self.context.getiterator(tag)
 
-    def search_and_set(self, tag, value): # Set text at path to value
-        pass
+    def add_object_to_path(self, obj, location):
+        """Add an object of type JSSContainerObject to DataEditor's context
+        object at "path".
 
-    def toggle(self, element): # Set false to true and true to false for element.
-        pass
+        location can be an Element or as a path argument to find()
 
-    def add_objects_at_path(self, object, path): # Add a hierarchical object, like <computer><id>5</id><name>craigs</name</computer>
-        pass
-        #***find(path).append(object.get_as_container_element)
-        #***Subclasses add helper methods like: add_object_to_scope (wrapper for add_object_at_path)
-        #    ***wrapped method is hidden, so clients never need to interact with DataEditor
-        #    ***This can probably be implemented as a closure
+        """
+        if isinstance(location, ElementTree.Element):
+            location.append(obj.as_list_data())
+        else:
+            parent = self.context.find(location)
+            if parent is not None:
+                parent.append(obj.as_list_data())
+            else:
+                raise ValueError("Path is invalid.")
 
     # Probably use parameter to combine all 3 remove methods
         #***These remove the ENTIRE list entry
