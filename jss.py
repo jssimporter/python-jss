@@ -618,7 +618,7 @@ class JSSFlatObject(JSSObject):
         return self.get_url(None)
 
 
-class Account(JSSObject):
+class Account(JSSContainerObject):
     _url = '/accounts'
     container = 'users'
     id_url = '/userid/'
@@ -626,7 +626,7 @@ class Account(JSSObject):
                     'name': '/username/'}
 
 
-class AccountGroup(JSSObject):
+class AccountGroup(JSSContainerObject):
     """Account groups are groups of users on the JSS. Within the API
     hierarchy they are actually part of accounts, but I seperated them.
 
@@ -645,23 +645,23 @@ class ActivationCode(JSSFlatObject):
     can_list = False
 
 
-class AdvancedComputerSearch(JSSObject):
+class AdvancedComputerSearch(JSSContainerObject):
     _url = '/advancedcomputersearches'
 
 
-class AdvancedMobileDeviceSearch(JSSObject):
+class AdvancedMobileDeviceSearch(JSSContainerObject):
     _url = '/advancedmobiledevicesearches'
 
 
-class Building(JSSObject):
+class Building(JSSContainerObject):
     _url = '/buildings'
 
 
-class Category(JSSObject):
+class Category(JSSContainerObject):
     _url = '/categories'
 
 
-class Class(JSSObject):
+class Class(JSSContainerObject):
     _url = '/classes'
 
 
@@ -693,17 +693,17 @@ class ComputerCheckIn(JSSFlatObject):
     can_list = False
     can_post = False
 
-class ComputerCommand(JSSObject):
+class ComputerCommand(JSSContainerObject):
     _url = '/computercommands'
     can_delete = False
     can_put = False
 
 
-class ComputerExtensionAttribute(JSSObject):
+class ComputerExtensionAttribute(JSSContainerObject):
     _url = '/computerextensionattributes'
 
 
-class ComputerGroup(JSSObject):
+class ComputerGroup(JSSContainerObject):
     _url = '/computergroups'
 
 
@@ -714,40 +714,40 @@ class ComputerInventoryCollection(JSSFlatObject):
     can_delete = False
 
 
-class ComputerInvitation(JSSObject):
+class ComputerInvitation(JSSContainerObject):
     _url = '/computerinvitations'
     can_put = False
     search_types = {'name': '/name/', 'invitation': '/invitation/'}
 
 
-class ComputerReport(JSSObject):
+class ComputerReport(JSSContainerObject):
     _url = '/computerreports'
     can_put = False
     can_post = False
     can_delete = False
 
 
-class Department(JSSObject):
+class Department(JSSContainerObject):
     _url = '/departments'
 
 
-class DirectoryBinding(JSSObject):
+class DirectoryBinding(JSSContainerObject):
     _url = '/directorybindings'
 
 
-class DiskEncryptionConfiguration(JSSObject):
+class DiskEncryptionConfiguration(JSSContainerObject):
     _url = '/diskencryptionconfigurations'
 
 
-class DistributionPoint(JSSObject):
+class DistributionPoint(JSSContainerObject):
     _url = '/distributionpoints'
 
 
-class DockItem(JSSObject):
+class DockItem(JSSContainerObject):
     _url = '/dockitems'
 
 
-class EBook(JSSObject):
+class EBook(JSSContainerObject):
     _url = '/ebooks'
 
 
@@ -777,15 +777,15 @@ class JSSUser(JSSFlatObject):
     search_types = {}
 
 
-class LDAPServer(JSSObject):
+class LDAPServer(JSSContainerObject):
     _url = '/ldapservers'
 
 
-class LicensedSoftware(JSSObject):
+class LicensedSoftware(JSSContainerObject):
     _url = '/licensedsoftware'
 
 
-class ManagedPreferenceProfile(JSSObject):
+class ManagedPreferenceProfile(JSSContainerObject):
     _url = '/managedpreferenceprofiles'
 
 
@@ -809,11 +809,11 @@ class MobileDevice(JSSDeviceObject):
                 self.findtext('general/mac_address')
 
 
-class MobileDeviceApplication(JSSObject):
+class MobileDeviceApplication(JSSContainerObject):
     _url = '/mobiledeviceapplications'
 
 
-class MobileDeviceCommand(JSSObject):
+class MobileDeviceCommand(JSSContainerObject):
     _url = '/mobiledevicecommands'
     can_put = False
     can_delete = False
@@ -823,92 +823,92 @@ class MobileDeviceCommand(JSSObject):
     can_post = False
 
 
-class MobileDeviceConfigurationProfile(JSSObject):
+class MobileDeviceConfigurationProfile(JSSContainerObject):
     _url = '/mobiledeviceconfigurationprofiles'
 
 
-class MobileDeviceEnrollmentProfile(JSSObject):
+class MobileDeviceEnrollmentProfile(JSSContainerObject):
     _url = '/mobiledeviceenrollmentprofiles'
     search_types = {'name': '/name/', 'invitation': '/invitation/'}
 
 
-class MobileDeviceExtensionAttribute(JSSObject):
+class MobileDeviceExtensionAttribute(JSSContainerObject):
     _url = '/mobiledeviceextensionattributes'
 
 
-class MobileDeviceInvitation(JSSObject):
+class MobileDeviceInvitation(JSSContainerObject):
     _url = '/mobiledeviceinvitations'
     can_put = False
     search_types = {'invitation': '/invitation/'}
 
 
-class MobileDeviceGroup(JSSObject):
+class MobileDeviceGroup(JSSContainerObject):
     _url = '/mobiledevicegroups'
 
 
-class MobileDeviceProvisioningProfile(JSSObject):
+class MobileDeviceProvisioningProfile(JSSContainerObject):
     _url = '/mobiledeviceprovisioningprofiles'
     search_types = {'name': '/name/', 'uuid': '/uuid/'}
 
 
-class NetbootServer(JSSObject):
+class NetbootServer(JSSContainerObject):
     _url = '/netbootservers'
 
 
-class NetworkSegment(JSSObject):
+class NetworkSegment(JSSContainerObject):
     _url = '/networksegments'
 
 
-class OSXConfigurationProfile(JSSObject):
+class OSXConfigurationProfile(JSSContainerObject):
     _url = '/osxconfigurationprofiles'
 
 
-class Package(JSSObject):
+class Package(JSSContainerObject):
     _url = '/packages'
 
 
-class Peripheral(JSSObject):
+class Peripheral(JSSContainerObject):
     _url = '/peripherals'
     search_types = {}
 
 
-class PeripheralType(JSSObject):
+class PeripheralType(JSSContainerObject):
     _url = '/peripheraltypes'
     search_types = {}
 
 
-class Policy(JSSObject):
+class Policy(JSSContainerObject):
     _url = '/policies'
 
 
-class Printer(JSSObject):
+class Printer(JSSContainerObject):
     _url = '/printers'
 
 
-class RestrictedSoftware(JSSObject):
+class RestrictedSoftware(JSSContainerObject):
     _url = '/restrictedsoftware'
 
 
-class RemovableMACAddress(JSSObject):
+class RemovableMACAddress(JSSContainerObject):
     _url = '/removablemacaddresses'
 
 
-class SavedSearch(JSSObject):
+class SavedSearch(JSSContainerObject):
     _url = '/savedsearches'
     can_put = False
     can_post = False
     can_delete = False
 
 
-class Script(JSSObject):
+class Script(JSSContainerObject):
     _url = '/scripts'
 
 
-class Site(JSSObject):
+class Site(JSSContainerObject):
     _url = '/sites'
 
 
-class SoftwareUpdateServer(JSSObject):
+class SoftwareUpdateServer(JSSContainerObject):
     _url = '/softwareupdateservers'
 
 
