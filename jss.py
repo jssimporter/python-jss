@@ -425,6 +425,15 @@ class XMLEditor(object):
         s = ElementTree.tostring(pretty_data)
         return s.encode('utf-8')
 
+    def _handle_location(self, location):
+        if not isinstance(location, ElementTree.Element):
+            element = self.find(location)
+            if element is None:
+                raise ValueError("Invalid path!")
+        else:
+            element = location
+        return element
+
     def search(self, tag):
         """Return elements with tag using getiterator."""
         return self.getiterator(tag)
@@ -447,14 +456,8 @@ class XMLEditor(object):
         location can be an Element or a string path argument to find()
 
         """
-        if isinstance(location, ElementTree.Element):
-            location.append(obj.as_list_data())
-        else:
-            parent = self.find(location)
-            if parent is not None:
-                parent.append(obj.as_list_data())
-            else:
-                raise ValueError("Invalid path!")
+        location = self._handle_location(location)
+        location.append(obj.as_list_data())
 
     def remove_object_from_list(self, object, list_element):
         """Remove an object from a list element.
@@ -463,20 +466,15 @@ class XMLEditor(object):
         list:   Accepts an element or a string path to that element
 
         """
-        if not isinstance(list_element, ElementTree.Element):
-            element = self.find(list_element)
-            if element is None:
-                raise ValueError("Invalid path!")
-        else:
-            element = list_element
+        list_element = self._handle_location(list_element)
 
         if isinstance(object, JSSObject):
-            results = [item for item in element.getchildren() if item.findtext("id") == object.id]
+            results = [item for item in list_element.getchildren() if item.findtext("id") == object.id]
         elif type(object) in [int, str, unicode]:
-            results = [item for item in element.getchildren() if item.findtext("id") == str(object) or item.findtext("name") == object]
+            results = [item for item in list_element.getchildren() if item.findtext("id") == str(object) or item.findtext("name") == object]
 
         if len(results) == 1 :
-            element.remove(results[0])
+            list_element.remove(results[0])
         else:
             raise ValueError("There is either more than one object, or no matches at that path!")
 
@@ -486,14 +484,8 @@ class XMLEditor(object):
         list_element can be a string argument to find(), or an element.
 
         """
-        if not isinstance(list_element, ElementTree.Element):
-            element = self.find(list_element)
-            if element is None:
-                raise ValueError("Invalid path!")
-        else:
-            element = list_element
-
-        element.clear()
+        list_element = self._handle_location(list_element)
+        list_element.clear()
 
 
 class JSSObjectFactory():
