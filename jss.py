@@ -438,12 +438,13 @@ class XMLEditor(object):
         """Return elements with tag using getiterator."""
         return self.getiterator(tag)
 
-    def set_bool(self, element, value):
+    def set_bool(self, location, value):
         """For an object at path, set the string representation of a boolean
         value to value. Mostly just to prevent me from forgetting to convert
         to string.
 
         """
+        element = self._handle_location(location)
         if value == True:
             element.text = 'true'
         else:
@@ -486,6 +487,34 @@ class XMLEditor(object):
         """
         list_element = self._handle_location(list_element)
         list_element.clear()
+
+
+class GroupEditor(XMLEditor):
+    def add_criterion(self, name, priority, and_or, search_type, value):
+        criterion = SearchCriteria(name, priority, and_or, search_type, value)
+        self.criteria.append(criterion)
+
+    def set_is_smart(self, value):
+        self.set_bool("is_smart", value)
+        if value is True:
+            if self.find("criteria") is None:
+                self.criteria = ElementTree.SubElement(self, "criteria")
+
+    def add_device(self, device, container):
+        """Add a device to a group. Wraps XMLEditor.add_object_toPath.
+
+        device can be a JSSObject, and ID value, or the name of a valid
+        object.
+
+        """
+        # There is a size tag which the JSS manages for us, so we can ignore
+        # it.
+        if self.findtext("is_smart") == 'false':
+            self.add_object_to_path(device, container)
+        else:
+            # Technically this isn't true. It will strangely accept them, and
+            # they even show up as members of the group!
+            raise ValueError("Devices may not be added to smart groups.")
 
 
 class JSSObjectFactory():
@@ -584,6 +613,9 @@ class JSSObject(ElementTree.Element):
         super(JSSObject, self).__init__(tag=data.tag)
         for child in data.getchildren():
             self.append(child)
+
+    def makeelement(self, tag, attrib):
+        return ElementTree.Element(tag, attrib)
 
     @classmethod
     def get_url(cls, data):
@@ -793,8 +825,11 @@ class ComputerExtensionAttribute(XMLEditor, JSSContainerObject):
     _url = '/computerextensionattributes'
 
 
-class ComputerGroup(XMLEditor, JSSContainerObject):
+class ComputerGroup(GroupEditor, JSSContainerObject):
     _url = '/computergroups'
+
+    def add_computer(self, device):
+        super(ComputerGroup, self).add_device(device, "computers")
 
 
 class ComputerInventoryCollection(XMLEditor, JSSFlatObject):
@@ -932,8 +967,11 @@ class MobileDeviceInvitation(XMLEditor, JSSContainerObject):
     search_types = {'invitation': '/invitation/'}
 
 
-class MobileDeviceGroup(XMLEditor, JSSContainerObject):
+class MobileDeviceGroup(GroupEditor, JSSContainerObject):
     _url = '/mobiledevicegroups'
+
+    def add_mobile_device(self, device):
+        super(ComputerGroup, self).add_device(device, "mobile_devices")
 
 
 class MobileDeviceProvisioningProfile(XMLEditor, JSSContainerObject):
@@ -1036,7 +1074,7 @@ class JSSCategoryTemplate(XMLEditor, JSSSimpleTemplate):
     template_type = 'category'
 
 
-class JSSComputerGroupTemplate(XMLEditor, JSSObjectTemplate):
+class JSSComputerGroupTemplate(GroupEditor, JSSObjectTemplate):
     template_type = "computer_group"
     def __init__(self, name, smartness=False):
         """Creates a computer group template.
@@ -1047,13 +1085,13 @@ class JSSComputerGroupTemplate(XMLEditor, JSSObjectTemplate):
         super(JSSComputerGroupTemplate, self).__init__()
         element_name = ElementTree.SubElement(self, "name")
         element_name.text = name
-        is_smart = ElementTree.SubElement(self, "is_smart")
-        self.set_bool(is_smart, smartness)
+        self.is_smart = ElementTree.SubElement(self, "is_smart")
+        self.set_bool(self.is_smart, smartness)
         if smartness:
             self.criteria = ElementTree.SubElement(self, "criteria")
 
-    def add_criterion(self, criterion):
-        self.criteria.append(criterion)
+    def add_computer(self, device):
+        super(JSSComputerGroupTemplate, self).add_device(device, "computers")
 
 
 class SearchCriteria(JSSObjectTemplate):
