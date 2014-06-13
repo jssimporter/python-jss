@@ -260,8 +260,7 @@ class testJSSObjectTemplate(object):
     def test_JSSComputerGroupTemplate_Smart(self):
         cgt = JSSComputerGroupTemplate("Test", True)
         assert_is_instance(cgt, JSSComputerGroupTemplate)
-        criterion = SearchCriteria("Computer Name", 0, "and", "like", "craigs")
-        cgt.add_criterion(criterion)
+        cgt.add_criterion("Computer Name", 0, "and", "like", "craigs")
         test_group = j_global.ComputerGroup(cgt)
         assert_is_instance(test_group, ComputerGroup)
         test_group.delete()
