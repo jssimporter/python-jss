@@ -517,6 +517,22 @@ class GroupEditor(XMLEditor):
             raise ValueError("Devices may not be added to smart groups.")
 
 
+class ComputerGroupEditor(GroupEditor):
+    def add_computer(self, device):
+        super(ComputerGroupEditor, self).add_device(device, "computers")
+
+    def remove_computer(self, device):
+        super(ComputerGroupEditor, self).remove_object_from_list(device, "computers")
+
+
+class MobileDeviceGroupEditor(GroupEditor):
+    def add_mobile_device(self, device):
+        super(MobileDeviceGroupEditor, self).add_device(device, "mobile_devices")
+
+    def remove_mobile_device(self, device):
+        super(MobileDeviceGroupEditor, self).remove_object_from_list(device, "mobile_devices")
+
+
 class JSSObjectFactory():
     """Create JSSObjects intelligently based on a single data argument."""
     def __init__(self, jss):
@@ -825,11 +841,8 @@ class ComputerExtensionAttribute(XMLEditor, JSSContainerObject):
     _url = '/computerextensionattributes'
 
 
-class ComputerGroup(GroupEditor, JSSContainerObject):
+class ComputerGroup(ComputerGroupEditor, JSSContainerObject):
     _url = '/computergroups'
-
-    def add_computer(self, device):
-        super(ComputerGroup, self).add_device(device, "computers")
 
 
 class ComputerInventoryCollection(XMLEditor, JSSFlatObject):
@@ -967,11 +980,8 @@ class MobileDeviceInvitation(XMLEditor, JSSContainerObject):
     search_types = {'invitation': '/invitation/'}
 
 
-class MobileDeviceGroup(GroupEditor, JSSContainerObject):
+class MobileDeviceGroup(MobileDeviceGroupEditor, JSSContainerObject):
     _url = '/mobiledevicegroups'
-
-    def add_mobile_device(self, device):
-        super(ComputerGroup, self).add_device(device, "mobile_devices")
 
 
 class MobileDeviceProvisioningProfile(XMLEditor, JSSContainerObject):
@@ -1074,7 +1084,7 @@ class JSSCategoryTemplate(XMLEditor, JSSSimpleTemplate):
     template_type = 'category'
 
 
-class JSSComputerGroupTemplate(GroupEditor, JSSObjectTemplate):
+class JSSComputerGroupTemplate(ComputerGroupEditor, JSSObjectTemplate):
     template_type = "computer_group"
     def __init__(self, name, smartness=False):
         """Creates a computer group template.
