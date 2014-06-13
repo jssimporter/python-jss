@@ -1107,28 +1107,28 @@ class JSSComputerGroupTemplate(JSSObjectTemplate):
             self.criteria = ElementTree.SubElement(self._root, "criteria")
 
     def add_criterion(self, criterion):
-        self.criteria.append(criterion.criterion)
+        self.criteria.append(criterion)
 
 
-class SearchCriteria(object):
+class SearchCriteria(ElementTree.Element):
     """Object for encapsulating a smart group search criteria."""
     def __init__(self, name, priority, and_or, search_type, value):
-        self._criterion = ElementTree.Element("criterion")
-        crit_name = ElementTree.SubElement(self._criterion, "name")
+        super(SearchCriteria, self).__init__("criterion")
+        crit_name = ElementTree.Element("name")
         crit_name.text = name
-        crit_priority = ElementTree.SubElement(self._criterion, "priority")
+        self.append(crit_name)
+        crit_priority = ElementTree.Element("priority")
         crit_priority.text = str(priority)
-        crit_and_or = ElementTree.SubElement(self._criterion, "and_or")
+        self.append(crit_priority)
+        crit_and_or = ElementTree.Element("and_or")
         crit_and_or.text = and_or
-        crit_search_type = ElementTree.SubElement(self._criterion, "search_type")
+        self.append(crit_and_or)
+        crit_search_type = ElementTree.Element("search_type")
         crit_search_type.text = search_type
-        crit_value = ElementTree.SubElement(self._criterion, "value")
+        self.append(crit_search_type)
+        crit_value = ElementTree.Element("value")
         crit_value.text = value
-
-    @property
-    def criterion(self):
-        # TODO: Couldn't figure out how to do this by just subclassing Element
-        return self._criterion
+        self.append(crit_value)
 
 
 class PolicyTemplate(JSSObjectTemplate):
