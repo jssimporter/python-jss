@@ -370,7 +370,133 @@ class JSS(object):
     def SMTPServer(self, data=None):
         return self.factory.get_object(SMTPServer, data)
 
-class JSSObjectFactory(object):
+
+class XMLEditor(object):
+    """XMLEditor provides convenient methods for manipulating XML data.
+
+    It is used as an abstract class from which we subclass JSSObjects and
+    JSSObjectTemplates.
+
+    XMLEditors can be subclassed to provide wrappers for these methods to
+    further enable context-class-specific behavior.
+
+    I use multiple-inheritance rather than composition here to avoid multiple
+    dot sequences in calls.
+
+    NOTE: XMLEditor has no ElementTree, so on its own, its methods will fail!
+
+    """
+    def _indent(self, elem, level=0, more_sibs=False):
+        """Indent an xml element object to prepare for pretty printing.
+
+        Method is internal to discourage indenting the self._root Element,
+        thus potentially corrupting it.
+
+        """
+        i = "\n"
+        pad = '    '
+        if level:
+            i += (level - 1) * pad
+        num_kids = len(elem)
+        if num_kids:
+            if not elem.text or not elem.text.strip():
+                elem.text = i + pad
+                if level:
+                    elem.text += pad
+            count = 0
+            for kid in elem:
+                self._indent(kid, level+1, count < num_kids - 1)
+                count += 1
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+                if more_sibs:
+                    elem.tail += pad
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i
+                if more_sibs:
+                    elem.tail += pad
+
+    def __repr__(self):
+        """Make our data human readable."""
+        # deepcopy so we don't mess with the valid XML.
+        pretty_data = copy.deepcopy(self._root)
+        self._indent(pretty_data)
+        s = ElementTree.tostring(pretty_data)
+        return s.encode('utf-8')
+
+    def search(self, tag):
+        """Return elements with tag using getiterator."""
+        return self.getiterator(tag)
+
+    def set_bool(self, element, value):
+        """For an object at path, set the string representation of a boolean
+        value to value. Mostly just to prevent me from forgetting to convert
+        to string.
+
+        """
+        if value == True:
+            element.text = 'true'
+        else:
+            element.text = 'false'
+
+    def add_object_to_path(self, obj, location):
+        """Add an object of type JSSContainerObject to XMLEditor's context
+        object at "path".
+
+        location can be an Element or a string path argument to find()
+
+        """
+        if isinstance(location, ElementTree.Element):
+            location.append(obj.as_list_data())
+        else:
+            parent = self.find(location)
+            if parent is not None:
+                parent.append(obj.as_list_data())
+            else:
+                raise ValueError("Invalid path!")
+
+    def remove_object_from_list(self, object, list_element):
+        """Remove an object from a list element.
+
+        object:     Accepts JSSObjects, id's, and names
+        list:   Accepts an element or a string path to that element
+
+        """
+        if not isinstance(list_element, ElementTree.Element):
+            element = self.find(list_element)
+            if element is None:
+                raise ValueError("Invalid path!")
+        else:
+            element = list_element
+
+        if isinstance(object, JSSObject):
+            results = [item for item in element.getchildren() if item.findtext("id") == object.id]
+        elif type(object) in [int, str, unicode]:
+            results = [item for item in element.getchildren() if item.findtext("id") == str(object) or item.findtext("name") == object]
+
+        if len(results) == 1 :
+            element.remove(results[0])
+        else:
+            raise ValueError("There is either more than one object, or no matches at that path!")
+
+    def clear_list(self, list_element):
+        """Clear all list items from path.
+
+        list_element can be a string argument to find(), or an element.
+
+        """
+        if not isinstance(list_element, ElementTree.Element):
+            element = self.find(list_element)
+            if element is None:
+                raise ValueError("Invalid path!")
+        else:
+            element = list_element
+
+        element.clear()
+
+
+class JSSObjectFactory():
     """Create JSSObjects intelligently based on a single data argument."""
     def __init__(self, jss):
         self.jss = jss
@@ -437,7 +563,7 @@ class JSSObjectFactory(object):
                 raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
 
 
-class JSSObject(ElementTree.ElementTree):
+class JSSObject(ElementTree.ElementTree, XMLEditor):
     """Base class for representing all available JSS API objects.
 
     """
@@ -460,18 +586,10 @@ class JSSObject(ElementTree.ElementTree):
 
         """
         self.jss = jss
-        self.get_editor()
         if not isinstance(data, ElementTree.Element):
             raise TypeError("JSSObjects data argument must be of type "
                             "xml.etree.ElemenTree.Element")
         super(JSSObject, self).__init__(element=data)
-
-    def get_editor(self):
-        """Set up a DataEditor.
-
-        Intended to be overriden by classes which need it.
-        """
-        self.editor = DataEditor(self)
 
     @classmethod
     def get_url(cls, data):
@@ -523,45 +641,6 @@ class JSSObject(ElementTree.ElementTree):
         url = self.get_object_url()
         self.jss.put(url, self.getroot())
         self._root = self.jss.get(url)
-
-    def _indent(self, elem, level=0, more_sibs=False):
-        """Indent an xml element object to prepare for pretty printing.
-
-        Method is internal to discourage indenting the self._root Element,
-        thus potentially corrupting it.
-
-        """
-        i = "\n"
-        pad = '    '
-        if level:
-            i += (level - 1) * pad
-        num_kids = len(elem)
-        if num_kids:
-            if not elem.text or not elem.text.strip():
-                elem.text = i + pad
-                if level:
-                    elem.text += pad
-            count = 0
-            for kid in elem:
-                self._indent(kid, level+1, count < num_kids - 1)
-                count += 1
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-                if more_sibs:
-                    elem.tail += pad
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = i
-                if more_sibs:
-                    elem.tail += pad
-
-    def __repr__(self):
-        """Make our data human readable."""
-        # deepcopy so we don't mess with the valid XML.
-        pretty_data = copy.deepcopy(self._root)
-        self._indent(pretty_data)
-        s = ElementTree.tostring(pretty_data)
-        return s.encode('utf-8')
 
     # Shared properties:
     # Almost all JSSObjects have at least name and id properties, so provide a
@@ -937,144 +1016,13 @@ class SMTPServer(JSSFlatObject):
     search_types = {}
 
 
-class DataEditor(object):
-    """DataEditor provides convenient wrappers for manipulating XML data in
-    JSSObjects and JSSObjectTemplates and their subclasses.
-
-    DataEditors can be subclassed to provide wrappers for these methods to
-    further enable context-class-specific behavior.
-
-    """
-    def __init__(self, context):
-        self.context = context
-
-    def search(self, tag):
-        """Return elements with tag using getiterator."""
-        return self.context.getiterator(tag)
-
-    def add_object_to_path(self, obj, location):
-        """Add an object of type JSSContainerObject to DataEditor's context
-        object at "path".
-
-        location can be an Element or a string path argument to find()
-
-        """
-        if isinstance(location, ElementTree.Element):
-            location.append(obj.as_list_data())
-        else:
-            parent = self.context.find(location)
-            if parent is not None:
-                parent.append(obj.as_list_data())
-            else:
-                raise ValueError("Invalid path!")
-
-    def remove_object_from_list(self, object, list_element):
-        """Remove an object from a list element.
-
-        object:     Accepts JSSObjects, id's, and names
-        list:   Accepts an element or a string path to that element
-
-        """
-        if not isinstance(list_element, ElementTree.Element):
-            element = self.context.find(list_element)
-            if element is None:
-                raise ValueError("Invalid path!")
-        else:
-            element = list_element
-
-        if isinstance(object, JSSObject):
-            results = [item for item in element.getchildren() if item.findtext("id") == object.id]
-        elif type(object) in [int, str, unicode]:
-            results = [item for item in element.getchildren() if item.findtext("id") == str(object) or item.findtext("name") == object]
-
-        if len(results) == 1 :
-            element.remove(results[0])
-        else:
-            raise ValueError("There is either more than one object, or no matches at that path!")
-
-    def clear_list(self, list_element):
-        """Clear all list items from path.
-
-        list_element can be a string argument to find(), or an element.
-
-        """
-        if not isinstance(list_element, ElementTree.Element):
-            element = self.context.find(list_element)
-            if element is None:
-                raise ValueError("Invalid path!")
-        else:
-            element = list_element
-
-        element.clear()
-
-
-class JSSObjectTemplate(ElementTree.ElementTree):
+class JSSObjectTemplate(ElementTree.ElementTree, XMLEditor):
     """Base class for generating the skeleton XML required to post a new
     object.
 
     """
     def __init__(self, **kwargs):
-        self.get_editor()
         super(JSSObjectTemplate, self).__init__(**kwargs)
-
-    def get_editor(self):
-        """Set up a DataEditor.
-
-        Intended to be overriden by classes which need it.
-        """
-        self.editor = DataEditor(self)
-
-    def _set_bool(self, element, value):
-        """For an object at path, set the string representation of a boolean
-        value to value. Mostly just to prevent me from forgetting to convert
-        to string.
-
-        """
-        if value == True:
-            element.text = 'true'
-        else:
-            element.text = 'false'
-
-    # I don't see that the JSS requires the <?xml version="1.0"
-    # encoding="UTF-8"?> element at the beginning.
-    def _indent(self, elem, level=0, more_sibs=False):
-        """Indent an xml element object to prepare for pretty printing.
-
-        Method is internal to discourage indenting the self._root Element,
-        thus potentially corrupting it.
-
-        """
-        i = "\n"
-        pad = '    '
-        if level:
-            i += (level - 1) * pad
-        num_kids = len(elem)
-        if num_kids:
-            if not elem.text or not elem.text.strip():
-                elem.text = i + pad
-                if level:
-                    elem.text += pad
-            count = 0
-            for kid in elem:
-                self._indent(kid, level+1, count < num_kids - 1)
-                count += 1
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-                if more_sibs:
-                    elem.tail += pad
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = i
-                if more_sibs:
-                    elem.tail += pad
-
-    def __repr__(self):
-        """Make our data human readable."""
-        # deepcopy so we don't mess with the valid XML.
-        pretty_data = copy.deepcopy(self._root)
-        self._indent(pretty_data)
-        s = ElementTree.tostring(pretty_data)
-        return s.encode('utf-8')
 
 
 class JSSSimpleTemplate(JSSObjectTemplate):
@@ -1101,7 +1049,7 @@ class JSSComputerGroupTemplate(JSSObjectTemplate):
         element_name = ElementTree.SubElement(self._root, "name")
         element_name.text = name
         is_smart = ElementTree.SubElement(self._root, "is_smart")
-        self._set_bool(is_smart, smartness)
+        self.set_bool(is_smart, smartness)
         is_smart.text = str(smartness)
         if smartness:
             self.criteria = ElementTree.SubElement(self._root, "criteria")
@@ -1145,7 +1093,7 @@ class PolicyTemplate(JSSObjectTemplate):
         self.name = ElementTree.SubElement(self.general, "name")
         self.name.text = name
         self.enabled = ElementTree.SubElement(self.general, "enabled")
-        self._set_bool(self.enabled, True)
+        self.set_bool(self.enabled, True)
         self.frequency = ElementTree.SubElement(self.general, "frequency")
         self.frequency.text = "Once per computer"
         self.category = ElementTree.SubElement(self.general, "category")
@@ -1163,7 +1111,7 @@ class PolicyTemplate(JSSObjectTemplate):
         # Self Service
         self.self_service = ElementTree.SubElement(self._root, "self_service")
         self.use_for_self_service = ElementTree.SubElement(self.self_service, "use_for_self_service")
-        self._set_bool(self.use_for_self_service, True)
+        self.set_bool(self.use_for_self_service, True)
 
         # Package Configuration
         self.pkg_config = ElementTree.SubElement(self._root, "package_configuration")
@@ -1171,7 +1119,7 @@ class PolicyTemplate(JSSObjectTemplate):
         # Maintenance
         self.maintenance = ElementTree.SubElement(self._root, "maintenance")
         self.recon = ElementTree.SubElement(self.maintenance, "recon")
-        self._set_bool(self.recon, True)
+        self.set_bool(self.recon, True)
 
     def add_object_to_scope(self, obj):
         if isinstance(obj, Computer):
@@ -1203,11 +1151,11 @@ class PolicyTemplate(JSSObjectTemplate):
 
     def set_self_service(self, state=True):
         """Convenience setter for self_service."""
-        self._set_bool(self.use_for_self_service, state)
+        self.set_bool(self.use_for_self_service, state)
 
     def set_recon(self, state=True):
         """Convenience setter for recon."""
-        self._set_bool(self.recon, state)
+        self.set_bool(self.recon, state)
 
 
 class JSSPackageTemplate(JSSObjectTemplate):
