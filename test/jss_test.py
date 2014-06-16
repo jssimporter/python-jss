@@ -250,31 +250,31 @@ class testJSSObject_Subclasses(object):
 
 
 class testJSSObjectTemplate(object):
-    def test_JSSComputerGroupTemplate(self):
-        cgt = JSSComputerGroupTemplate("Test")
-        assert_is_instance(cgt, JSSComputerGroupTemplate)
+    def test_ComputerGroupTemplate(self):
+        cgt = ComputerGroupTemplate("Test")
+        assert_is_instance(cgt, ComputerGroupTemplate)
         test_group = j_global.ComputerGroup(cgt)
         assert_is_instance(test_group, ComputerGroup)
         test_group.delete()
 
-    def test_JSSComputerGroupTemplate_Smart(self):
-        cgt = JSSComputerGroupTemplate("Test", True)
-        assert_is_instance(cgt, JSSComputerGroupTemplate)
+    def test_ComputerGroupTemplate_Smart(self):
+        cgt = ComputerGroupTemplate("Test", True)
+        assert_is_instance(cgt, ComputerGroupTemplate)
         cgt.add_criterion("Computer Name", 0, "and", "like", "craigs")
         test_group = j_global.ComputerGroup(cgt)
         assert_is_instance(test_group, ComputerGroup)
         test_group.delete()
 
-    def test_JSSPackageTemplate(self):
-        package_template = JSSPackageTemplate("Taco.pkg")
-        assert_is_instance(package_template, JSSPackageTemplate)
+    def test_PackageTemplate(self):
+        package_template = PackageTemplate("Taco.pkg")
+        assert_is_instance(package_template, PackageTemplate)
         package = j_global.Package(package_template)
         assert_is_instance(package, Package)
         package.delete()
 
     def test_JSSSimpleTemplate(self):
-        cat_template = JSSCategoryTemplate("Python JSS Test Category")
-        assert_is_instance(cat_template, JSSCategoryTemplate)
+        cat_template = CategoryTemplate("Python JSS Test Category")
+        assert_is_instance(cat_template, CategoryTemplate)
         category = j_global.Category(cat_template)
         assert_is_instance(category, Category)
         category.delete()

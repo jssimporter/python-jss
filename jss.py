@@ -548,6 +548,19 @@ class PolicyEditor(XMLEditor):
         else:
             raise TypeError
 
+    def clear_scope(self):
+        """Clear all objects from the scope, including exclusions."""
+        clear_list = ["computers", "computer_groups", "buildings",
+                      "departments", "limit_to_users/user_groups",
+                      "limitations/users", "limitations/user_groups",
+                     "limitations/network_segments", "exclusions/computers",
+                     "exclusions/computer_groups", "exclusions/buildings",
+                     "exclusions/departments", "exclusions/users",
+                     "exclusions/user_groups", "exclusions/network_segments"]
+        for section in clear_list:
+            self.clear_list("%s%s" % ("scope/", section))
+
+
     def add_object_to_exclusions(self, obj):
         """Add an object 'obj' to the appropriate scope exclusions block.
 
@@ -1173,11 +1186,11 @@ class JSSSimpleTemplate(JSSObjectTemplate):
         element_name.text = name
 
 
-class JSSCategoryTemplate(XMLEditor, JSSSimpleTemplate):
+class CategoryTemplate(XMLEditor, JSSSimpleTemplate):
     template_type = 'category'
 
 
-class JSSComputerGroupTemplate(ComputerGroupEditor, JSSObjectTemplate):
+class ComputerGroupTemplate(ComputerGroupEditor, JSSObjectTemplate):
     template_type = "computer_group"
     def __init__(self, name, smartness=False):
         """Creates a computer group template.
@@ -1185,7 +1198,7 @@ class JSSComputerGroupTemplate(ComputerGroupEditor, JSSObjectTemplate):
         Smart groups with no criteria by default select ALL computers.
 
         """
-        super(JSSComputerGroupTemplate, self).__init__()
+        super(ComputerGroupTemplate, self).__init__()
         element_name = ElementTree.SubElement(self, "name")
         element_name.text = name
         self.is_smart = ElementTree.SubElement(self, "is_smart")
@@ -1194,7 +1207,7 @@ class JSSComputerGroupTemplate(ComputerGroupEditor, JSSObjectTemplate):
             self.criteria = ElementTree.SubElement(self, "criteria")
 
     def add_computer(self, device):
-        super(JSSComputerGroupTemplate, self).add_device(device, "computers")
+        super(ComputerGroupTemplate, self).add_device(device, "computers")
 
 
 class SearchCriteria(JSSObjectTemplate):
@@ -1267,11 +1280,11 @@ class PolicyTemplate(PolicyEditor, JSSObjectTemplate):
         self.set_bool(self.recon, True)
 
 
-class JSSPackageTemplate(PackageEditor, JSSObjectTemplate):
+class PackageTemplate(PackageEditor, JSSObjectTemplate):
     template_type = "package"
     """Template for constructing package objects."""
     def __init__(self, filename, cat_name="Unknown"):
-        super(JSSPackageTemplate, self).__init__()
+        super(PackageTemplate, self).__init__()
         name = ElementTree.SubElement(self, "name")
         name.text = filename
         category = ElementTree.SubElement(self, "category")
