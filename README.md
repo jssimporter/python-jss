@@ -1,4 +1,4 @@
-python-jss:
+python-jss Introduction:
 =================
 This project provides a python wrapper for the Jamf JSS API.
 
@@ -7,15 +7,14 @@ was facing in administering our macs in more efficient ways. Increased use of
 autopkg to automate our software deployment also led to an interest in the API
 that Jamf provides. While this project aims to offer simple, elegant, pythonic
 access to the JSS, the level of data construction and validation that may be
-required of a full-featured wrapper will probably lag behind that which I
-actually use.
+required for tasks beyond policy, package, and computer management may be
+lacking.
 
-A concrete example is the template system. While I use this for
-automating policy creation frequently, in my day-to-day usage, I will not need
-implementations for MobileDeviceInvitations. However, based on the code here,
-it should be easy for anyone wishing to do so to implement a subclass of
-JSSObjectTemplate for those objects, and I would be happy to include them. Send
-me your pull requests!
+A concrete example is the template system. While I rely heavily on automating
+policy creation, I will not need implementations for MobileDeviceInvitations.
+However, based on the code here, it should be easy for anyone wishing to do so
+to implement a subclass of XMLEditor for those objects, and I would be
+happy to include them. Send me your pull requests!
 
 Installing:
 =================
@@ -52,6 +51,10 @@ validation on any JSSObjectTemplate or JSSObject xml prior to POST or PUT
 operations. However, the JSS handles all of this nicely, and ElementTree should
 keep you from creating improperly formatted XML.
 
+The JSS also handles filling in missing information pretty well. For example,
+in a policy scope, if you provide the id of a computer to scope to, it will add
+the name.
+
 Basics-Connecting to the JSS:
 =================
 ```
@@ -60,6 +63,7 @@ Basics-Connecting to the JSS:
 >>> jss_prefs = jss.JSSPrefs()
 >>> j = jss.JSS(jss_prefs)
 ```
+
 Supplying Credentials to the JSSPrefs object:
 =================
 The preferred method for specifying credentials is to create a preferences file
@@ -203,37 +207,95 @@ Of course, you can get a list like this as well:
 
 Manipulating JSSObjects:
 =================
-JSSObject inherits xml.etree.ElementTree, so all xml data can be manipulated
-per that module. Simply print() the object or call it in the interpretor to
-print a nicely indented representation of the internal xml. This can be very
-helpful in sorting out find() paths and elements of the object's data.
+The JSS works with data as XML, and as such, python-jss's objects all inherit
+from xml.etree.ElementTree. Users familiar with Elements will find manipulating
+the data very easy. Those unfamiliar with ElementTree should check out
+https://docs.python.org/2/library/xml.etree.elementtree.html and
+http://effbot.org/zone/element-index.htm for great introductions to this useful
+module.
+
+python-jss adds a better __repr__ method to its JSSObjects and
+JSSObjectTemplates, however. Simply print() or call an object in the
+interpretor to see a nicely indented representation of the Element. This aids
+in quickly experimenting with and manipulating data in the interpretor.
+
+In addition the various methods of Element, JSSObjects and JSSObjectTemplates
+also inherit methods of XMLEditor, a class which adds helper methods to wrap
+some of the more common tasks. Policies, for example, include a PolicyEditor,
+which adds methods for add_object_to_scope(), add_object_to_exclusions(),
+set_recon(), set_set_service(), etc.
+
+To see a full list of methods available for an object type, as well as their
+signatures and docstrings:
+```
+>>> help(jss.Policy)
+class Policy(PolicyEditor, JSSContainerObject)
+ |  Method resolution order:
+ |      Policy
+ |      PolicyEditor
+ |      XMLEditor
+ |      JSSContainerObject
+ |      JSSObject
+ |      xml.etree.ElementTree.Element
+ |      __builtin__.object
+ |
+ |  Methods inherited from PolicyEditor:
+ |
+ |  add_object_to_exclusions(self, obj)
+ |      Add an object 'obj' to the appropriate scope exclusions block.
+ |
+ |      obj should be an instance of Computer, ComputerGroup, Building,
+ |      or Department.
+ |
+ |  add_object_to_scope(self, obj)
+ |      Add an object 'obj' to the appropriate scope block.
+ |
+ |  add_package(self, pkg)
+ |      Add a jss.Package object to the policy with action=install.
+ |
+ |      obj should be an instance of Computer, ComputerGroup, Building,
+ |      or Department.
+#...more methods and properties
+```
 
 Note: All data in the objects are strings! True/False values, int values, etc,
 are all string unless you cast them yourself. The id properties of the various
 objects are strings!
 
+Note: At the moment I'm using multiple-inheritence to add the XMLEditor
+methods. This leaves me uneasy. The benefit is that you can avoid a
+"middle-man" dot reference to editor (e.g.
+policy.editor.add_object_to_scope()), but the downside is that it's ugly, and
+as the Zen of Python states, "Beautiful is better than ugly" ```import this```.
+
 Creating, Updating, and Deleting Objects:
 =================
 To create a new object, you need to pass an instance of a JSSObjectTemplate.
-JSSObjectTemplate is also an ElementTree, so you can manipulate their data in
-the same way.  
+JSSObjectTemplate is also an ElementTree Element, so you can manipulate its data in
+the same way.
 
 Modify the template to your needs and then call the method
-constructor on the JSS instance.  
+constructor on the JSS instance.
 
 ```
 >>> new_policy_data = jss.JSSPolicyTemplate()
->>> new_policy_data.find['enabled'].text = 'false'
->>> # The constructor will return your new object...
+>>>
+>>> # Manipulate with Element methods
+>>> new_policy_data.find('enabled').text = 'false'
+
+>>> # Add a computer to the scope (accepts Computer objects, or ID or name)
+>>> # First, let's grab a computer to scope to...
+>>> myIIGS = j.Computer("myIIGS")
+>>> # ...and add it to our policy's scope:
+>>> new_policy_data.add_object_to_scope(myIIGS)
+>>> # The constructor will return your new object, so assign it to a variable
+>>> # if you want to further manipulate it.
 >>> new_policy = j.Policy(new_policy_data)
-POST: Success
 
 >>> # To change and update this object:
 >>> new_policy.find('general/name').text = 'Install Taco Software'
 >>> new_policy.update()
-PUT: Success
 
 >>> # ...and to delete it:
 >>> new_policy.delete()
-DEL: Success
 ```

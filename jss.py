@@ -534,7 +534,9 @@ class MobileDeviceGroupEditor(GroupEditor):
 
 
 class PolicyEditor(XMLEditor):
+    """Adds methods for manipulating common Policy elements."""
     def add_object_to_scope(self, obj):
+        """Add an object 'obj' to the appropriate scope block."""
         if isinstance(obj, Computer):
             self.add_object_to_path(obj, "scope/computers")
         elif isinstance(obj, ComputerGroup):
@@ -547,6 +549,12 @@ class PolicyEditor(XMLEditor):
             raise TypeError
 
     def add_object_to_exclusions(self, obj):
+        """Add an object 'obj' to the appropriate scope exclusions block.
+
+        obj should be an instance of Computer, ComputerGroup, Building,
+        or Department.
+
+        """
         if isinstance(obj, Computer):
             self.add_object_to_path(obj, "scope/exclusions/computers")
         elif isinstance(obj, ComputerGroup):
@@ -559,6 +567,12 @@ class PolicyEditor(XMLEditor):
             raise TypeError
 
     def add_package(self, pkg):
+        """Add a jss.Package object to the policy with action=install.
+
+        obj should be an instance of Computer, ComputerGroup, Building,
+        or Department.
+
+        """
         if isinstance(pkg, Package):
             self.add_object_to_path(pkg, "package_configuration/packages")
             package = ElementTree.Element("package")
@@ -597,7 +611,7 @@ class PackageEditor(XMLEditor):
     def set_category(self, category):
         """Sets package category to 'category', which can be a string of an
         existing category's name, or a Category object.
-        
+
         """
         # For some reason, packages only have the category name, not the ID.
         if isinstance(category, Category):
