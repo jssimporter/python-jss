@@ -586,6 +586,27 @@ class PolicyEditor(XMLEditor):
         name.text = category.name
 
 
+class PackageEditor(XMLEditor):
+    def set_os_requirements(self, requirements):
+        """Sets package OS Requirements. Pass in a string of comma seperated
+        OS versions. A lowercase 'x' is allowed as a wildcard, e.g. '10.9.x'
+
+        """
+        self.find("os_requirements").text = requirements
+
+    def set_category(self, category):
+        """Sets package category to 'category', which can be a string of an
+        existing category's name, or a Category object.
+        
+        """
+        # For some reason, packages only have the category name, not the ID.
+        if isinstance(category, Category):
+            name = category.name
+        else:
+            name = category
+        self.find("category").text = name
+
+
 class JSSObjectFactory():
     """Create JSSObjects intelligently based on a single data argument."""
     def __init__(self, jss):
@@ -1058,7 +1079,7 @@ class OSXConfigurationProfile(XMLEditor, JSSContainerObject):
     _url = '/osxconfigurationprofiles'
 
 
-class Package(XMLEditor, JSSContainerObject):
+class Package(PackageEditor, JSSContainerObject):
     _url = '/packages'
     list_type = 'package'
 
@@ -1232,7 +1253,7 @@ class PolicyTemplate(PolicyEditor, JSSObjectTemplate):
         self.set_bool(self.recon, True)
 
 
-class JSSPackageTemplate(XMLEditor, JSSObjectTemplate):
+class JSSPackageTemplate(PackageEditor, JSSObjectTemplate):
     template_type = "package"
     """Template for constructing package objects."""
     def __init__(self, filename, cat_name="Unknown"):
