@@ -295,11 +295,18 @@ class testJSSObjectTemplate(object):
         <computers>
             <computer>
                 <id>454</id>
+                <name>craigs</name>
             </computer>
         </computers>
         <computer_groups />
         <buldings />
         <departments />
+        <exclusions>
+            <computers />
+            <computer_groups />
+            <buildings />
+            <departments />
+        </exclusions>
     </scope>
     <self_service>
         <use_for_self_service>true</use_for_self_service>

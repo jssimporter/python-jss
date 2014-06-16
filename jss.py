@@ -226,6 +226,9 @@ class JSS(object):
     def AdvancedMobileDeviceSearch(self, data=None):
         return self.factory.get_object(AdvancedMobileDeviceSearch, data)
 
+    def AdvancedUserSearch(self, data=None):
+        return self.factory.get_object(AdvancedUserSearch, data)
+
     def ActivationCode(self, data=None):
         return self.factory.get_object(ActivationCode, data)
 
@@ -369,6 +372,15 @@ class JSS(object):
 
     def SMTPServer(self, data=None):
         return self.factory.get_object(SMTPServer, data)
+
+    def UserExtensionAttribute(self, data=None):
+        return self.factory.get_object(UserExtensionAttribute, data)
+
+    def User(self, data=None):
+        return self.factory.get_object(User, data)
+
+    def UserGroup(self, data=None):
+        return self.factory.get_object(UserGroup, data)
 
 
 class XMLEditor(object):
@@ -892,6 +904,10 @@ class AdvancedMobileDeviceSearch(XMLEditor, JSSContainerObject):
     _url = '/advancedmobiledevicesearches'
 
 
+class AdvancedUserSearch(XMLEditor, JSSContainerObject):
+    _url = '/advancedusersearches'
+
+
 class Building(XMLEditor, JSSContainerObject):
     _url = '/buildings'
     list_type = 'building'
@@ -1162,6 +1178,18 @@ class SMTPServer(XMLEditor, JSSFlatObject):
     can_list = False
     can_post = False
     search_types = {}
+
+
+class UserExtensionAttribute(XMLEditor, JSSContainerObject):
+    _url = '/userextensionattributes'
+
+
+class User(XMLEditor, JSSContainerObject):
+    _url = '/users'
+
+
+class UserGroup(XMLEditor, JSSContainerObject):
+    _url = '/usergroups'
 
 
 class JSSObjectTemplate(ElementTree.Element):
