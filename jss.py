@@ -445,7 +445,7 @@ class XMLEditor(object):
 
         """
         element = self._handle_location(location)
-        if value == True:
+        if bool(value) == True:
             element.text = 'true'
         else:
             element.text = 'false'
@@ -531,6 +531,59 @@ class MobileDeviceGroupEditor(GroupEditor):
 
     def remove_mobile_device(self, device):
         super(MobileDeviceGroupEditor, self).remove_object_from_list(device, "mobile_devices")
+
+
+class PolicyEditor(XMLEditor):
+    def add_object_to_scope(self, obj):
+        if isinstance(obj, Computer):
+            self.add_object_to_path(obj, "scope/computers")
+        elif isinstance(obj, ComputerGroup):
+            self.add_object_to_path(obj, "scope/computer_groups")
+        elif isinstance(obj, Building):
+            self.add_object_to_path(obj, "scope/buildings")
+        elif isinstance(obj, Department):
+            self.add_object_to_path(obj, "scope/departments")
+        else:
+            raise TypeError
+
+    def add_object_to_exclusions(self, obj):
+        if isinstance(obj, Computer):
+            self.add_object_to_path(obj, "scope/exclusions/computers")
+        elif isinstance(obj, ComputerGroup):
+            self.add_object_to_path(obj, "scope/exclusions/computer_groups")
+        elif isinstance(obj, Building):
+            self.add_object_to_path(obj, "scope/exclusions/buildings")
+        elif isinstance(obj, Department):
+            self.add_object_to_path(obj, "scope/exclusions/departments")
+        else:
+            raise TypeError
+
+    def add_package(self, pkg):
+        if isinstance(pkg, Package):
+            self.add_object_to_path(pkg, "package_configuration/packages")
+            package = ElementTree.Element("package")
+            id_ = ElementTree.SubElement(package, "id")
+            id_.text = pkg.id
+            name = ElementTree.SubElement(package, "name")
+            name.text = pkg.name
+            action = ElementTree.SubElement(package, "action")
+            action.text = "Install"
+
+    def set_self_service(self, state=True):
+        """Convenience setter for self_service."""
+        self.set_bool(self.find("self_service/use_for_self_service"), state)
+
+    def set_recon(self, state=True):
+        """Convenience setter for recon."""
+        self.set_bool(self.find("maintenance/recon"), state)
+
+    def set_category(self, category):
+        pcategory = self.find("general/category")
+        pcategory.clear()
+        id_ = ElementTree.SubElement(pcategory, "id")
+        id_.text = category.id
+        name = ElementTree.SubElement(pcategory, "name")
+        name.text = category.name
 
 
 class JSSObjectFactory():
@@ -793,6 +846,7 @@ class AdvancedMobileDeviceSearch(XMLEditor, JSSContainerObject):
 
 class Building(XMLEditor, JSSContainerObject):
     _url = '/buildings'
+    list_type = 'building'
 
 
 class Category(XMLEditor, JSSContainerObject):
@@ -843,6 +897,7 @@ class ComputerExtensionAttribute(XMLEditor, JSSContainerObject):
 
 class ComputerGroup(ComputerGroupEditor, JSSContainerObject):
     _url = '/computergroups'
+    list_type = 'computer_group'
 
 
 class ComputerInventoryCollection(XMLEditor, JSSFlatObject):
@@ -867,7 +922,7 @@ class ComputerReport(XMLEditor, JSSContainerObject):
 
 class Department(XMLEditor, JSSContainerObject):
     _url = '/departments'
-
+    list_type = 'department'
 
 class DirectoryBinding(XMLEditor, JSSContainerObject):
     _url = '/directorybindings'
@@ -933,6 +988,7 @@ class MobileDevice(XMLEditor, JSSDeviceObject):
 
     """
     _url = '/mobiledevices'
+    list_type = 'mobile_device'
     search_types = {'name': '/name/', 'serial_number': '/serialnumber/',
                     'udid': '/udid/', 'macaddress': '/macadress/',
                     'match': '/match/'}
@@ -982,6 +1038,7 @@ class MobileDeviceInvitation(XMLEditor, JSSContainerObject):
 
 class MobileDeviceGroup(MobileDeviceGroupEditor, JSSContainerObject):
     _url = '/mobiledevicegroups'
+    list_type = 'mobile_device_group'
 
 
 class MobileDeviceProvisioningProfile(XMLEditor, JSSContainerObject):
@@ -1003,6 +1060,7 @@ class OSXConfigurationProfile(XMLEditor, JSSContainerObject):
 
 class Package(XMLEditor, JSSContainerObject):
     _url = '/packages'
+    list_type = 'package'
 
 
 class Peripheral(XMLEditor, JSSContainerObject):
@@ -1015,7 +1073,7 @@ class PeripheralType(XMLEditor, JSSContainerObject):
     search_types = {}
 
 
-class Policy(XMLEditor, JSSContainerObject):
+class Policy(PolicyEditor, JSSContainerObject):
     _url = '/policies'
 
 
@@ -1121,7 +1179,7 @@ class SearchCriteria(JSSObjectTemplate):
         crit_value.text = value
 
 
-class PolicyTemplate(XMLEditor, JSSObjectTemplate):
+class PolicyTemplate(PolicyEditor, JSSObjectTemplate):
     template_type = "policy"
 
     def __init__(self, name, category=None):
@@ -1142,6 +1200,8 @@ class PolicyTemplate(XMLEditor, JSSObjectTemplate):
         self.frequency.text = "Once per computer"
         self.category = ElementTree.SubElement(self.general, "category")
         if category:
+            # Without a category, the JSS will add an id of -1, with name
+            # "Unknown".
             self.category_name = ElementTree.SubElement(self.category, "name")
             self.category_name.text = category.name
 
@@ -1151,6 +1211,11 @@ class PolicyTemplate(XMLEditor, JSSObjectTemplate):
         self.computer_groups = ElementTree.SubElement(self.scope, "computer_groups")
         self.buildings = ElementTree.SubElement(self.scope, "buldings")
         self.departments = ElementTree.SubElement(self.scope, "departments")
+        self.exclusions = ElementTree.SubElement(self.scope, "exclusions")
+        self.excluded_computers = ElementTree.SubElement(self.exclusions, "computers")
+        self.excluded_computer_groups = ElementTree.SubElement(self.exclusions, "computer_groups")
+        self.excluded_buildings = ElementTree.SubElement(self.exclusions, "buildings")
+        self.excluded_departments = ElementTree.SubElement(self.exclusions, "departments")
 
         # Self Service
         self.self_service = ElementTree.SubElement(self, "self_service")
@@ -1160,46 +1225,11 @@ class PolicyTemplate(XMLEditor, JSSObjectTemplate):
         # Package Configuration
         self.pkg_config = ElementTree.SubElement(self, "package_configuration")
         self.pkgs = ElementTree.SubElement(self.pkg_config, "packages")
+
         # Maintenance
         self.maintenance = ElementTree.SubElement(self, "maintenance")
         self.recon = ElementTree.SubElement(self.maintenance, "recon")
         self.set_bool(self.recon, True)
-
-    def add_object_to_scope(self, obj):
-        if isinstance(obj, Computer):
-            computer = ElementTree.SubElement(self.computers, "computer")
-            id_ = ElementTree.SubElement(computer, "id")
-            id_.text = obj.id
-        elif isinstance(obj, ComputerGroup):
-            computer_group = ElementTree.SubElement(self.computer_groups, "computer_group")
-            id_ = ElementTree.SubElement(computer_group, "id")
-            id_.text = obj.id
-        elif isinstance(obj, Building):
-            building = ElementTree.SubElement(self.buildings, "building")
-            id_ = ElementTree.SubElement(building, "id")
-            id_.text = obj.id
-        elif isinstance(obj, Department):
-            department = ElementTree.SubElement(self.computers, "department")
-            id_ = ElementTree.SubElement(department, "id")
-            id_.text = obj.id
-        else:
-            raise TypeError
-
-    def add_pkg(self, pkg):
-        if isinstance(pkg, Package):
-            package = ElementTree.SubElement(self.pkgs, "package")
-            id_ = ElementTree.SubElement(package, "id")
-            id_.text = pkg.id
-            action = ElementTree.SubElement(package, "action")
-            action.text = "Install"
-
-    def set_self_service(self, state=True):
-        """Convenience setter for self_service."""
-        self.set_bool(self.use_for_self_service, state)
-
-    def set_recon(self, state=True):
-        """Convenience setter for recon."""
-        self.set_bool(self.recon, state)
 
 
 class JSSPackageTemplate(XMLEditor, JSSObjectTemplate):
