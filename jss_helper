@@ -7,9 +7,6 @@ Shea Craig 2014
 
 """
 
-# After a major refactor on jss module, this needs some work.
-# That's next in the queue ;)
-
 import argparse
 import sys
 
@@ -21,9 +18,9 @@ from jss import *
 def print_object(objs):
     if isinstance(objs, list):
         for obj in objs:
-            print("ID: %s\t\tNAME: %s" % (obj['id'], obj['name']))
+            print("ID: %s\t\tNAME: %s" % (obj.id, obj.name))
     else:
-        objs.pprint()
+        print(objs)
 
 
 def create_func(obj_method):
@@ -50,12 +47,12 @@ def get_group_policies(j, args):
         px = None
         while px is None:
             try:
-                px = j.Policy(p.id())
+                px = j.Policy(p.id)
                 search = 'scope/computer_groups/computer_group'
                 for computer_group in px.findall(search):
                     if computer_group.findtext('name') == args.group or \
                        computer_group.findtext('id') == args.group:
-                        results.append((p.id(), p.name()))
+                        results.append((p.id, p.name))
             except requests.exceptions.SSLError as e:
                 print("Failed... Trying again in a moment.")
 
@@ -71,12 +68,12 @@ def get_md_configp_group(j, args):
         px = None
         while px is None:
             try:
-                px = j.MobileDeviceConfigurationProfile(p.id())
+                px = j.MobileDeviceConfigurationProfile(p.id)
                 search = 'scope/mobile_device_groups/mobile_device_group'
-                for md_group in px.xml.findall(search):
+                for md_group in px.findall(search):
                     if md_group.findtext('name') == args.group or \
                        md_group.findtext('id') == args.group:
-                        results.append((p['id'], p['name']))
+                        results.append((p.id, p.name))
             except requests.exceptions.SSLError as e:
                 print("Failed... Trying again in a moment.")
 
