@@ -113,6 +113,28 @@ def get_group_policy_diff(j, args):
     subprocess.call(['diff', '-y', file1, file2])
 
 
+def get_md_configp_diff(j, args):
+    search = 'scope/mobile_device_groups/mobile_device_group'
+    profiles = j.MobileDeviceConfigurationProfile()
+    group1 = j.MobileDeviceGroup(args.group1)
+    group2 = j.MobileDeviceGroup(args.group2)
+    results1 = get_objects_by_scoped_group(profiles, search, group1)
+    results2 = get_objects_by_scoped_group(profiles, search, group2)
+
+    # I tried to do this with the tempfile module, but the files always ended
+    # up being size 0 and dissappearing, despite delete=False.
+    with open('/tmp/file1', mode='w') as f1:
+        output = build_scope_results("Profiles", args.group1, results1)
+        f1.write(output)
+        file1 = f1.name
+    with open('/tmp/file2', mode='w') as f2:
+        output = build_scope_results("Profiles", args.group2, results2)
+        f2.write(output)
+        file2 = f2.name
+
+    subprocess.call(['diff', '-y', file1, file2])
+
+
 def create_subparser(parser, name, help, func, **kwargs):
     """Create subparsers for our interface."""
     subparser = parser.add_parser(name, help=help)
@@ -186,6 +208,14 @@ def main():
                                         'func': get_md_configp_group,
                                         'kwargs': {'group': 'Group name to '
                                                    'query.'}}
+    subparsers['md_configp_diff'] = {'help': "Lists the differnces between"
+                                         "all mobile configuration profiles"
+                                         "scoped to the provided groups.",
+                                        'func': get_md_configp_diff,
+                                        'kwargs': {'group1': 'Group name to '\
+                                                   'query.', 'group2':
+                                                    'Group name to query.'}
+                                        }
 
     for name, d in subparsers.items():
         create_subparser(subparser, name, d['help'], d['func'], **d['kwargs'])
