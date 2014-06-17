@@ -1,3 +1,7 @@
 *.pyc
 *.swp
 /test/startup.py
+/dist
+/build
+MANIFEST
+/python_jss.egg-info
