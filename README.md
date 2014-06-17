@@ -18,11 +18,15 @@ happy to include them. Send me your pull requests!
 
 Installing:
 =================
-The python-jss module can be put wherever you normally install your modules. At
-some point I may get around to making a pip install.
+The easiest method is to use pip to grab python-jss and its dependencies:
+```
+$ pip install python-jss
+```
+
+Alternately, the python-jss module can be put wherever you normally install your modules.
 
 It has one non-included dependency, the requests HTTP module, which you can
-usually obtain by:
+obtain by:
 ```
 $ pip install requests
 ```
