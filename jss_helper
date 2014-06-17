@@ -8,6 +8,7 @@ Shea Craig 2014
 """
 
 import argparse
+import subprocess
 import sys
 
 import requests.exceptions
@@ -42,44 +43,74 @@ def create_func(obj_method):
 
 def get_group_policies(j, args):
     """Find all policies scoped to a group."""
-    results = []
-    for p in j.Policy():
-        px = None
-        while px is None:
-            try:
-                px = j.Policy(p.id)
-                search = 'scope/computer_groups/computer_group'
-                for computer_group in px.findall(search):
-                    if computer_group.findtext('name') == args.group or \
-                       computer_group.findtext('id') == args.group:
-                        results.append((p.id, p.name))
-            except requests.exceptions.SSLError as e:
-                print("Failed... Trying again in a moment.")
+    search = 'scope/computer_groups/computer_group'
+    policies = j.Policy()
+    group = j.ComputerGroup(args.group)
+    results = get_objects_by_scoped_group(policies, search, group)
 
-    print("Policies in scope for %s:" % args.group)
+    output = build_scope_results('Policies', args.group, results)
+    print(output)
+
+
+def get_objects_by_scoped_group(objs, search, group):
+    """Get all objects scoped to Group object group.
+
+    objs:   A list of objects to check.
+    search: an xpath string to the list container for that scoping type.
+    group: A Group object to search by.
+
+    Returns a list of results.
+
+    """
+    results = []
+    full_objects = objs.retrieve_all()
+    for obj in full_objects:
+        for scope_group in obj.findall(search):
+            if scope_group.findtext('id') == group.id or \
+                    scope_group.findtext('name') == group.name:
+                results.append((obj.id, obj.name))
+    return results
+
+
+def build_scope_results(type, group, results):
+    """Print a list of results for type."""
+    s = "%s in scope for %s:\n" % (type, group)
     for i in results:
-        print("ID: %s\t\tNAME: %s" % (i[0], i[1]))
+        s += "ID: %s\t\tNAME: %s\n" % (i[0], i[1])
+    return s
 
 
 def get_md_configp_group(j, args):
     """Find all mobile device configuration profiles scoped to a group."""
-    results = []
-    for p in j.MobileDeviceConfigurationProfile():
-        px = None
-        while px is None:
-            try:
-                px = j.MobileDeviceConfigurationProfile(p.id)
-                search = 'scope/mobile_device_groups/mobile_device_group'
-                for md_group in px.findall(search):
-                    if md_group.findtext('name') == args.group or \
-                       md_group.findtext('id') == args.group:
-                        results.append((p.id, p.name))
-            except requests.exceptions.SSLError as e:
-                print("Failed... Trying again in a moment.")
+    search = 'scope/mobile_device_groups/mobile_device_group'
+    configps = j.MobileDeviceConfigurationProfile()
+    group = j.MobileDeviceGroup(args.group)
+    results = get_objects_by_scoped_group(configps, search, group)
 
-    print("Profiles in scope for %s:" % args.group)
-    for i in results:
-        print("ID: %s\t\tNAME: %s" % (i[0], i[1]))
+    output = build_scope_results('Profiles', args.group, results)
+    print(output)
+
+
+def get_group_policy_diff(j, args):
+    search = 'scope/computer_groups/computer_group'
+    policies = j.Policy()
+    group1 = j.ComputerGroup(args.group1)
+    group2 = j.ComputerGroup(args.group2)
+    results1 = get_objects_by_scoped_group(policies, search, group1)
+    results2 = get_objects_by_scoped_group(policies, search, group2)
+
+    # I tried to do this with the tempfile module, but the files always ended
+    # up being size 0 and dissappearing, despite delete=False.
+    with open('/tmp/file1', mode='w') as f1:
+        output = build_scope_results("Policies", args.group1, results1)
+        f1.write(output)
+        file1 = f1.name
+    with open('/tmp/file2', mode='w') as f2:
+        output = build_scope_results("Policies", args.group2, results2)
+        f2.write(output)
+        file2 = f2.name
+
+    subprocess.call(['diff', '-y', file1, file2])
 
 
 def create_subparser(parser, name, help, func, **kwargs):
@@ -122,6 +153,11 @@ def main():
                             "provided group.",
                               'func': get_group_policies,
                               'kwargs': {'group': 'Group name to query.'}}
+    subparsers['group_policy_diff'] = {'help': "Lists all policies scoped to "
+                            "two provided groups, highlighting the "
+                            "differences.", 'func': get_group_policy_diff,
+                              'kwargs': {'group1': 'Group name to query.',
+                                         'group2': 'Group name to query.'}}
     subparsers['category'] = {'help': "Get a list of all categories' names and "
                             "IDs.",
                               'func': create_func(j.Category),
