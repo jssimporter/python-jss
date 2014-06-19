@@ -79,15 +79,15 @@ class JSSPrefs(object):
 
         """
         if preferences_file is None:
-            path = '~/Library/Preferences/org.da.python-jss.plist'
-            preferences_file = os.path.expanduser(path)
+            preferences_file = '~/Library/Preferences/org.da.python-jss.plist'
+        preferences_file = os.path.expanduser(preferences_file)
         if os.path.exists(preferences_file):
             try:
-                prefs = FoundationPlist.readPlist(os.path.expanduser(preferences_file))
+                prefs = FoundationPlist.readPlist(preferences_file)
             except NameError:
                 # Plist files are probably not binary on non-OS X machines, so
                 # this should be safe.
-                prefs = plistlib.readPlist(os.path.expanduser(preferences_file))
+                prefs = plistlib.readPlist(preferences_file)
             try:
                 self.user = prefs['jss_user']
                 self.password = prefs['jss_pass']
@@ -482,14 +482,18 @@ class XMLEditor(object):
         list_element = self._handle_location(list_element)
 
         if isinstance(object, JSSObject):
-            results = [item for item in list_element.getchildren() if item.findtext("id") == object.id]
+            results = [item for item in list_element.getchildren() if
+                       item.findtext("id") == object.id]
         elif type(object) in [int, str, unicode]:
-            results = [item for item in list_element.getchildren() if item.findtext("id") == str(object) or item.findtext("name") == object]
+            results = [item for item in list_element.getchildren() if
+                       item.findtext("id") == str(object) or
+                       item.findtext("name") == object]
 
         if len(results) == 1 :
             list_element.remove(results[0])
         else:
-            raise ValueError("There is either more than one object, or no matches at that path!")
+            raise ValueError("There is either more than one object, or no "
+                             "matches at that path!")
 
     def clear_list(self, list_element):
         """Clear all list items from path.
@@ -534,15 +538,18 @@ class ComputerGroupEditor(GroupEditor):
         super(ComputerGroupEditor, self).add_device(device, "computers")
 
     def remove_computer(self, device):
-        super(ComputerGroupEditor, self).remove_object_from_list(device, "computers")
+        super(ComputerGroupEditor, self).remove_object_from_list(device,
+                                                                 "computers")
 
 
 class MobileDeviceGroupEditor(GroupEditor):
     def add_mobile_device(self, device):
-        super(MobileDeviceGroupEditor, self).add_device(device, "mobile_devices")
+        super(MobileDeviceGroupEditor, self).add_device(device,
+                                                        "mobile_devices")
 
     def remove_mobile_device(self, device):
-        super(MobileDeviceGroupEditor, self).remove_object_from_list(device, "mobile_devices")
+        super(MobileDeviceGroupEditor, self).remove_object_from_list(device,
+                "mobile_devices")
 
 
 class PolicyEditor(XMLEditor):
@@ -678,9 +685,13 @@ class JSSObjectFactory():
                 result = self.jss.get(url)
                 if obj_class.container:
                     result = result.find(obj_class.container)
-                response_objects = [item for item in result if item is not None and \
-                                    item.tag != 'size']
-                objects = [JSSListData(obj_class, {i.tag: i.text for i in response_object}) for response_object in response_objects]
+                response_objects = [item for item in result if item is not None
+                                    and item.tag != 'size']
+                objects = [JSSListData(obj_class,
+                                       {i.tag: i.text for i
+                                        in response_object})
+                           for response_object in response_objects]
+
                 return JSSObjectList(self, obj_class, objects)
             elif obj_class.can_get:
                 # Single object
@@ -694,11 +705,18 @@ class JSSObjectFactory():
                 url = obj_class.get_url(data)
                 xmldata = self.jss.get(url)
                 if xmldata.find('size') is not None:
-                    # May need above treatment, with .find(container), and refactoring out this otherwise duplicate code.
+                    # May need above treatment, with .find(container), and
+                    # refactoring out this otherwise duplicate code.
+
                     # Get returned a list.
-                    response_objects = [item for item in xmldata if item is not None and \
+                    response_objects = [item for item in xmldata
+                                        if item is not None and
                                         item.tag != 'size']
-                    objects = [JSSListData(obj_class, {i.tag: i.text for i in response_object}) for response_object in response_objects]
+                    objects = [JSSListData(obj_class,
+                                           {i.tag: i.text for i
+                                            in response_object})
+                               for response_object in response_objects]
+
                     return JSSObjectList(self, obj_class, objects)
                 else:
                     return obj_class(self.jss, xmldata)
@@ -767,7 +785,8 @@ class JSSObject(ElementTree.Element):
                     raise JSSUnsupportedSearchMethodError("This object cannot"
                             "be queried by %s." % key)
             else:
-                return '%s%s%s' % (cls._url, cls.search_types[cls.default_search], data)
+                return '%s%s%s' % (cls._url,
+                                   cls.search_types[cls.default_search], data)
 
     @classmethod
     def get_post_url(cls):
@@ -1284,18 +1303,24 @@ class PolicyTemplate(PolicyEditor, JSSObjectTemplate):
         # Scope
         self.scope = ElementTree.SubElement(self, "scope")
         self.computers= ElementTree.SubElement(self.scope, "computers")
-        self.computer_groups = ElementTree.SubElement(self.scope, "computer_groups")
+        self.computer_groups = ElementTree.SubElement(self.scope,
+                                                      "computer_groups")
         self.buildings = ElementTree.SubElement(self.scope, "buldings")
         self.departments = ElementTree.SubElement(self.scope, "departments")
         self.exclusions = ElementTree.SubElement(self.scope, "exclusions")
-        self.excluded_computers = ElementTree.SubElement(self.exclusions, "computers")
-        self.excluded_computer_groups = ElementTree.SubElement(self.exclusions, "computer_groups")
-        self.excluded_buildings = ElementTree.SubElement(self.exclusions, "buildings")
-        self.excluded_departments = ElementTree.SubElement(self.exclusions, "departments")
+        self.excluded_computers = ElementTree.SubElement(self.exclusions,
+                                                         "computers")
+        self.excluded_computer_groups = ElementTree.SubElement(self.exclusions,
+                "computer_groups")
+        self.excluded_buildings = ElementTree.SubElement(self.exclusions,
+                                                         "buildings")
+        self.excluded_departments = ElementTree.SubElement(self.exclusions,
+                                                           "departments")
 
         # Self Service
         self.self_service = ElementTree.SubElement(self, "self_service")
-        self.use_for_self_service = ElementTree.SubElement(self.self_service, "use_for_self_service")
+        self.use_for_self_service = ElementTree.SubElement(self.self_service,
+                "use_for_self_service")
         self.set_bool(self.use_for_self_service, True)
 
         # Package Configuration
@@ -1338,7 +1363,8 @@ class PackageTemplate(PackageEditor, JSSObjectTemplate):
         required_proc.text = "None"
         switch_w_package = ElementTree.SubElement(self, "switch_with_package")
         switch_w_package.text = "Do Not Install"
-        install_if = ElementTree.SubElement(self, "install_if_reported_available")
+        install_if = ElementTree.SubElement(self,
+                                            "install_if_reported_available")
         install_if.text = "false"
         reinstall_option = ElementTree.SubElement(self, "reinstall_option")
         reinstall_option.text = "Do Not Reinstall"
@@ -1426,7 +1452,8 @@ class JSSObjectList(list):
             result = []
             while result == []:
                 try:
-                    result = self.factory.get_object(self.obj_class, int(self[i]['id']))
+                    result = self.factory.get_object(self.obj_class,
+                                                     int(self[i]['id']))
                 except requests.exceptions.SSLError as e:
                     print("SSL Exception: %s\nTrying again." % e)
 
