@@ -214,6 +214,8 @@ class JSS(object):
         elif response.status_code >= 400:
             self._error_handler(JSSDeleteError, response)
 
+    # Constructor methods for all JSSObject types #############################
+
     def Account(self, data=None):
         return self.factory.get_object(Account, data)
 
@@ -398,6 +400,11 @@ class XMLEditor(object):
     NOTE: XMLEditor has no ElementTree, so on its own, its methods will fail!
 
     """
+
+    # There are some ElementTree.Element methods in here. As XMLEditor is an
+    # abstract class to be inherited by classes which also inherit Element,
+    # this works, although it's not very clear.
+
     def _indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing.
 
@@ -434,10 +441,15 @@ class XMLEditor(object):
         # deepcopy so we don't mess with the valid XML.
         pretty_data = copy.deepcopy(self)
         self._indent(pretty_data)
-        s = ElementTree.tostring(pretty_data)
-        return s.encode('utf-8')
+        elementstring = ElementTree.tostring(pretty_data)
+        return elementstring.encode('utf-8')
 
     def _handle_location(self, location):
+        """Return an element located at location.
+
+        Handles a string xpath as per ElementTree.find or an element.
+
+        """
         if not isinstance(location, ElementTree.Element):
             element = self.find(location)
             if element is None:
@@ -472,7 +484,7 @@ class XMLEditor(object):
         location = self._handle_location(location)
         location.append(obj.as_list_data())
 
-    def remove_object_from_list(self, object, list_element):
+    def remove_object_from_list(self, obj, list_element):
         """Remove an object from a list element.
 
         object:     Accepts JSSObjects, id's, and names
@@ -483,11 +495,11 @@ class XMLEditor(object):
 
         if isinstance(object, JSSObject):
             results = [item for item in list_element.getchildren() if
-                       item.findtext("id") == object.id]
-        elif type(object) in [int, str, unicode]:
+                       item.findtext("id") == obj.id]
+        elif type(obj) in [int, str, unicode]:
             results = [item for item in list_element.getchildren() if
-                       item.findtext("id") == str(object) or
-                       item.findtext("name") == object]
+                       item.findtext("id") == str(obj) or
+                       item.findtext("name") == obj]
 
         if len(results) == 1 :
             list_element.remove(results[0])
@@ -506,11 +518,14 @@ class XMLEditor(object):
 
 
 class GroupEditor(XMLEditor):
+    """Abstract XMLEditor for ComputerGroup and MobileDeviceGroup."""
     def add_criterion(self, name, priority, and_or, search_type, value):
+        """Add a search criteria object to a smart group."""
         criterion = SearchCriteria(name, priority, and_or, search_type, value)
         self.criteria.append(criterion)
 
     def set_is_smart(self, value):
+        """Set whether a group is smart or not."""
         self.set_bool("is_smart", value)
         if value is True:
             if self.find("criteria") is None:
@@ -534,20 +549,26 @@ class GroupEditor(XMLEditor):
 
 
 class ComputerGroupEditor(GroupEditor):
+    """Add methods for ComputerGroups."""
     def add_computer(self, device):
+        """Add a computer to the group."""
         super(ComputerGroupEditor, self).add_device(device, "computers")
 
     def remove_computer(self, device):
+        """Remove a computer from the group."""
         super(ComputerGroupEditor, self).remove_object_from_list(device,
                                                                  "computers")
 
 
 class MobileDeviceGroupEditor(GroupEditor):
+    """Add methods for MobileDeviceGroups."""
     def add_mobile_device(self, device):
+        """Add a mobile_device to the group."""
         super(MobileDeviceGroupEditor, self).add_device(device,
                                                         "mobile_devices")
 
     def remove_mobile_device(self, device):
+        """Remove a mobile_device from the group."""
         super(MobileDeviceGroupEditor, self).remove_object_from_list(device,
                 "mobile_devices")
 
@@ -624,6 +645,11 @@ class PolicyEditor(XMLEditor):
         self.set_bool(self.find("maintenance/recon"), state)
 
     def set_category(self, category):
+        """Set the policy's category.
+
+        category should be a category object.
+
+        """
         pcategory = self.find("general/category")
         pcategory.clear()
         id_ = ElementTree.SubElement(pcategory, "id")
@@ -633,6 +659,7 @@ class PolicyEditor(XMLEditor):
 
 
 class PackageEditor(XMLEditor):
+    """Editor methods for Packages."""
     def set_os_requirements(self, requirements):
         """Sets package OS Requirements. Pass in a string of comma seperated
         OS versions. A lowercase 'x' is allowed as a wildcard, e.g. '10.9.x'
@@ -653,7 +680,7 @@ class PackageEditor(XMLEditor):
         self.find("category").text = name
 
 
-class JSSObjectFactory():
+class JSSObjectFactory(object):
     """Create JSSObjects intelligently based on a single data argument."""
     def __init__(self, jss):
         self.jss = jss
@@ -762,6 +789,12 @@ class JSSObject(ElementTree.Element):
             self.append(child)
 
     def makeelement(self, tag, attrib):
+        """Return an Element."""
+        # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
+        # super() call to its __class__.makeelement(), which will fail due to
+        # the method resolution order / multiple inheritence of our objects
+        #(they have an editor AND a template or JSSObject parent class).
+        # This handles that issue.
         return ElementTree.Element(tag, attrib)
 
     @classmethod
@@ -847,6 +880,7 @@ class JSSContainerObject(JSSObject):
     list_type = 'JSSContainerObject'
 
     def as_list_data(self):
+        """Return an Element with id and name data for adding to lists."""
         element = ElementTree.Element(self.list_type)
         id_ = ElementTree.SubElement(element, "id")
         id_.text = self.id
@@ -864,22 +898,25 @@ class JSSDeviceObject(JSSContainerObject):
     """
     @property
     def udid(self):
+        """Return device's UDID or None."""
         return self.findtext('general/udid')
 
     @property
     def serial_number(self):
+        """Return device's serial number or None."""
         return self.findtext('general/serial_number')
 
 
 class JSSFlatObject(JSSObject):
     """Subclass for JSS objects which do not return a list of objects."""
     search_types = {}
+
     @classmethod
     def get_url(cls, data):
         """Return the URL for a get request based on data type."""
         if data is not None:
             raise JSSUnsupportedSearchMethodError("This object cannot"
-                    "be queried by %s." % key)
+                    "be queried by %s." % data)
         else:
             return cls._url
 
@@ -1078,10 +1115,12 @@ class MobileDevice(XMLEditor, JSSDeviceObject):
 
     @property
     def wifi_mac_address(self):
+        """Return device's WIFI MAC address or None."""
         return self.findtext('general/wifi_mac_address')
 
     @property
     def bluetooth_mac_address(self):
+        """Return device's Bluetooth MAC address or None."""
         return self.findtext('general/bluetooth_mac_address') or \
                 self.findtext('general/mac_address')
 
@@ -1218,9 +1257,17 @@ class JSSObjectTemplate(ElementTree.Element):
     """
     template_type = 'abstract_object_template'
     def __init__(self, **kwargs):
-        super(JSSObjectTemplate, self).__init__(tag=self.template_type)
+        """Init an Element with the right template_type."""
+        super(JSSObjectTemplate, self).__init__(tag=self.template_type,
+                                                **kwargs)
 
     def makeelement(self, tag, attrib):
+        """Return an element."""
+        # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
+        # super() call to its __class__.makeelement(), which will fail due to
+        # the method resolution order / multiple inheritence of our objects
+        #(they have an editor AND a template or JSSObject parent class).
+        # This handles that issue.
         return ElementTree.Element(tag, attrib)
 
 
@@ -1254,6 +1301,7 @@ class ComputerGroupTemplate(ComputerGroupEditor, JSSObjectTemplate):
             self.criteria = ElementTree.SubElement(self, "criteria")
 
     def add_computer(self, device):
+        """Add a computer to the group."""
         super(ComputerGroupTemplate, self).add_device(device, "computers")
 
 
@@ -1275,6 +1323,7 @@ class SearchCriteria(JSSObjectTemplate):
 
 
 class PolicyTemplate(PolicyEditor, JSSObjectTemplate):
+    """Object for adding policy methods."""
     template_type = "policy"
 
     def __init__(self, name, category=None):
@@ -1302,7 +1351,7 @@ class PolicyTemplate(PolicyEditor, JSSObjectTemplate):
 
         # Scope
         self.scope = ElementTree.SubElement(self, "scope")
-        self.computers= ElementTree.SubElement(self.scope, "computers")
+        self.computers = ElementTree.SubElement(self.scope, "computers")
         self.computer_groups = ElementTree.SubElement(self.scope,
                                                       "computer_groups")
         self.buildings = ElementTree.SubElement(self.scope, "buldings")
@@ -1334,8 +1383,8 @@ class PolicyTemplate(PolicyEditor, JSSObjectTemplate):
 
 
 class PackageTemplate(PackageEditor, JSSObjectTemplate):
-    template_type = "package"
     """Template for constructing package objects."""
+    template_type = "package"
     def __init__(self, filename, cat_name="Unknown"):
         super(PackageTemplate, self).__init__()
         name = ElementTree.SubElement(self, "name")
@@ -1411,19 +1460,20 @@ class JSSObjectList(list):
 
         """
         delimeter = 50 * '-' + '\n'
-        s = delimeter
-        for object in self:
-            s += "List index: \t%s\n" % self.index(object)
-            for k, v in object.items():
-                s += "%s:\t\t%s\n" % (k, v)
-            s += delimeter
-        return s.encode('utf-8')
+        output_string = delimeter
+        for obj in self:
+            output_string += "List index: \t%s\n" % self.index(obj)
+            for k, v in obj.items():
+                output_string += "%s:\t\t%s\n" % (k, v)
+            output_string += delimeter
+        return output_string.encode('utf-8')
 
     def sort(self):
         """Sort list elements by ID."""
         super(JSSObjectList, self).sort(key=lambda k: k.id)
 
     def sort_by_name(self):
+        """Sort list elements by name."""
         super(JSSObjectList, self).sort(key=lambda k: k.name)
 
     def retrieve(self, index):
@@ -1441,7 +1491,7 @@ class JSSObjectList(list):
         """Return a list of all JSSListData elements as full JSSObjects.
 
         At least on my JSS, I end up with some harmless SSL errors, which are
-        dealth with.
+        dealt with.
 
         Note: This can take a long time given a large number of objects, and
         depending on the size of each object.
