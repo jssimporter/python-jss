@@ -1326,7 +1326,7 @@ class PolicyTemplate(PolicyEditor, JSSObjectTemplate):
     """Object for adding policy methods."""
     template_type = "policy"
 
-    def __init__(self, name, category=None):
+    def __init__(self, name='Unknown', category=None):
         """Create a barebones policy.
 
         name:       Policy name
@@ -1420,6 +1420,27 @@ class PackageTemplate(PackageEditor, JSSObjectTemplate):
         ElementTree.SubElement(self, "triggering_files")
         send_notification = ElementTree.SubElement(self, "send_notification")
         send_notification.text = "false"
+
+
+class TemplateFromFile(XMLEditor, JSSObjectTemplate):
+    """Generic template class for filling by an external file."""
+    def __init__(self, filename):
+        tree = ElementTree.parse(filename)
+        root = tree.getroot()
+        tag = root.tag
+        super(TemplateFromFile, self).__init__()
+        self.tag = tag
+        self._children = root._children
+
+
+class TemplateFromString(XMLEditor, JSSObjectTemplate):
+    """Generic template class for filling with a passed string."""
+    def __init__(self, data):
+        root = ElementTree.fromstring(data)
+        tag = root.tag
+        super(TemplateFromString, self).__init__()
+        self.tag = tag
+        self._children = root._children
 
 
 class JSSListData(dict):
