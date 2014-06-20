@@ -101,7 +101,6 @@ def batch_scope(j, args):
         policy = j.Policy(int(policy_query))
         policy.add_object_to_scope(group)
         policy.update()
-        #scopes = [scope.findtext('name') for scope in policy.find("scope/computer_groups")]
         print("%s: Success." % policy.name)
 
 
