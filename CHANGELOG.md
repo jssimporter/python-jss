@@ -2,15 +2,15 @@
 
 ADDITIONS:
 
-	- Adds TemplateFromFile and TemplateFromString objects for using external template files and strings. 
-	- Adds batch_scope feature to jss_helper.
+- Adds TemplateFromFile and TemplateFromString objects for using external template files and strings. 
+- Adds batch_scope feature to jss_helper.
 
 CHANGES:
 
-	- Will refactor to use urllib2 instead of requests. No longer need requests module as a dependency.
+- Will refactor to use urllib2 instead of requests. No longer need requests module as a dependency.
 
 ### 0.2.0 (June 18, 2014)
 
 FEATURES:
 
-	- Initial release.
+- Initial release.
