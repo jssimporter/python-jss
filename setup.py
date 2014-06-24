@@ -11,7 +11,7 @@ except ImportError:
     read_md = lambda f: open(f, 'r').read()
 
 setup(name='python-jss',
-      version='0.2',
+      version='0.2.1',
       #py_modules=['jss', 'FoundationPlist'],
       packages=find_packages(),
       description='Python wrapper for JSS API.',
@@ -21,7 +21,7 @@ setup(name='python-jss',
       url='https://github.com/sheagcraig/python-jss/',
       scripts=['jss_helper'],
       license='GPLv3',
-      install_requires=["requests"],
+      #install_requires=["requests"],
       classifiers=[
           'Development Status :: 4 - Beta',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)']
