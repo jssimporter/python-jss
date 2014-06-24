@@ -24,9 +24,9 @@ import os
 import re
 import copy
 
-import requests
+from .contrib import requests
 try:
-    import FoundationPlist
+    from .contrib import FoundationPlist
 except ImportError:
     import plistlib
 
