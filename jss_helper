@@ -24,8 +24,6 @@ import argparse
 import subprocess
 import sys
 
-import requests.exceptions
-
 from jss import *
 
 
