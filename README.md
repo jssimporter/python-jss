@@ -18,34 +18,17 @@ happy to include them. Send me your pull requests!
 
 Installing:
 =================
-The easiest method is to use pip to grab python-jss and its dependencies:
+The easiest method is to use pip to grab python-jss:
 ```
 $ pip install python-jss
 ```
 
-Alternately, the python-jss module can be put wherever you normally install your modules.
+Alternately, the python-jss package can be put wherever you normally install your modules.
 
-It has one non-included dependency, the requests HTTP module, which you can
-obtain by:
-```
-$ pip install requests
-```
-
-Check it out at http://docs.python-requests.org/en/latest/
-
-(It also uses Greg Neagle's FoundationPlist module to eliminate binary plist issues.)
-
-SSL Errors:
-=================
-Warning: Due to SSL bugs, requests can fail with an SSL exception:
-```requests.exceptions.SSLError "error:14094410:SSL routines:SSL3_READ_BYTES:sslv3```
-alert handshake failure"
-
-This usually isn't a problem for single calls, but when rapidly making multiple
-calls, is nearly inevitable. Planning for failure is prudent, and when
-anticipating large numbers of api requests, the best solution I have come up
-with is to wrap these sorts of situations in a while, with a try/except block
-to handle the exception.
+Behind the scenes, python-jss uses requests and Greg Neagle's FoundationPlist.
+Check them out at:
+requests: http://docs.python-requests.org/en/latest/
+FoundationPlist is part of Munki: https://code.google.com/p/munki/
 
 Data Validation:
 =================
@@ -303,3 +286,31 @@ constructor on the JSS instance.
 >>> # ...and to delete it:
 >>> new_policy.delete()
 ```
+
+SSL Errors:
+=================
+Requests is in the process of integrating changes to urllib3 to support Server Name Indication ('SNI') for python 2.x versions. If you are requesting SSL verification (which is on by default in python-jss), _and_ your JSS uses SNI, you will probably get Tracebacks that look like this:
+```
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "requests/api.py", line 55, in get
+    return request('get', url, **kwargs)
+  File "requests/api.py", line 44, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "requests/sessions.py", line 461, in request
+    resp = self.send(prep, **send_kwargs)
+  File "requests/sessions.py", line 567, in send
+    r = adapter.send(request, **kwargs)
+  File "requests/adapters.py", line 399, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: hostname 'testssl-expire.disig.sk' doesn't match 'testssl-valid.disig.sk'
+```
+
+Installing and/or upgrading the following packages should solve the problem:
+- pyOpenSSL
+- ndg-httpsclient
+- pyasn1
+
+Supposedly, requests with py3.x does not have this problem, so developing with that environment may be a possibility for you as well.
+
+Hopefully this is temporary, although requests' changelog does claim to have "Fix(ed) previously broken SNI support." at version 2.1.0 (Current included version is 2.3.0).
