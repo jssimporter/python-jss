@@ -5,12 +5,12 @@ institution. Edit them to work in your environment, or find a better way to do
 it and send me an email!
 
 For test to succeed, you need to set up a preferences file at:
-~/Library/Preferences/org.da.jss_helper.plist
+~/Library/Preferences/com.github.sheagcraig.python-jss.plist
 
 Create a plist file with the API username and password like so:
-defaults write org.da.jss_helper jss_user <username>
-defaults write org.da.jss_helper jss_pass <password>
-defaults write org.da.jss_helper jss_url <URL to JSS>
+defaults write com.github.sheagcraig.python-jss jss_user <username>
+defaults write com.github.sheagcraig.python-jss jss_pass <password>
+defaults write com.github.sheagcraig.python-jss jss_url <URL to JSS>
 
 The JSS itself does validation on any data passed to it, so for the most part
 we are only concerned with testing for interactions between the wrapper
@@ -51,11 +51,11 @@ class testJSSPrefs(object):
 
     def test_jssprefs(self):
         jp = JSSPrefs()
-        result = subprocess.check_output(['defaults', 'read', 'org.da.python-jss', 'jss_user'])
+        result = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_user'])
         assert_in(jp.user, result)
-        result = subprocess.check_output(['defaults', 'read', 'org.da.python-jss', 'jss_pass'])
+        result = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_pass'])
         assert_in(jp.password, result)
-        result = subprocess.check_output(['defaults', 'read', 'org.da.python-jss', 'jss_url'])
+        result = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_url'])
         assert_in(jp.url, result)
 
     def test_jssprefs_missing_file_error(self):
@@ -73,9 +73,9 @@ class testJSS(object):
         assert_is_instance(j, JSS)
 
     def test_jss_with_args(self):
-        authUser = subprocess.check_output(['defaults', 'read', 'org.da.python-jss', 'jss_user'])
-        authPass = subprocess.check_output(['defaults', 'read', 'org.da.python-jss', 'jss_pass'])
-        repoUrl = subprocess.check_output(['defaults', 'read', 'org.da.python-jss', 'jss_url'])
+        authUser = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_user'])
+        authPass = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_pass'])
+        repoUrl = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_url'])
         j = JSS(url=repoUrl, user=authUser, password=authPass)
         assert_is_instance(j, JSS)
 
