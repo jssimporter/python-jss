@@ -20,14 +20,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from xml.etree import ElementTree
+from xml.parsers.expat import ExpatError
 import os
 import re
 import copy
+import subprocess
 
 from .contrib import requests
 try:
     from .contrib import FoundationPlist
-except ImportError:
+except ImportError as e:
+    if os.uname()[0] == 'Darwin':
+        print("Warning: Import of FoundationPlist failed: %s" % e)
+        print("See README for information on this issue.")
     import plistlib
 
 
@@ -87,7 +92,11 @@ class JSSPrefs(object):
             except NameError:
                 # Plist files are probably not binary on non-OS X machines, so
                 # this should be safe.
-                prefs = plistlib.readPlist(preferences_file)
+                try:
+                    prefs = plistlib.readPlist(preferences_file)
+                except ExpatError:
+                    subprocess.call(['plutil', '-convert', 'xml1', preferences_file])
+                    prefs = plistlib.readPlist(preferences_file)
             try:
                 self.user = prefs['jss_user']
                 self.password = prefs['jss_pass']

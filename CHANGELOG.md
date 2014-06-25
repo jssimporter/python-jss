@@ -8,6 +8,8 @@ ADDITIONS:
 CHANGES:
 
 - Added requests and FoundationPlist to contrib folder of package. No longer need separate installation.
+- Should now "just work" even if PyObjC/Foundation are not available. (See end of README).
+- Renamed the default preferences file to reference github.
 
 FIXES:
 

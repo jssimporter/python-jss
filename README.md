@@ -54,15 +54,15 @@ Basics-Connecting to the JSS:
 Supplying Credentials to the JSSPrefs object:
 =================
 The preferred method for specifying credentials is to create a preferences file
-at "~/Library/Preferences/org.da.python-jss.plist".  Required keys include:
+at "~/Library/Preferences/com.github.sheagcraig.python-jss.plist".  Required keys include:
 jss_user
 jss_pass
 jss_url (Should be full URL with port, e.g. "https://myjss.domain.org:8443"
 and can be set with:
 ```
-defaults write ~/Library/Preferences/org.da.jss_helper.plist jss_user <username>
-defaults write ~/Library/Preferences/org.da.jss_helper.plist jss_password <password>
-defaults write ~/Library/Preferences/org.da.jss_helper.plist jss_url <url>
+defaults write ~/Library/Preferences/com.github.sheagcraig.python-jss.plist jss_user <username>
+defaults write ~/Library/Preferences/com.github.sheagcraig.python-jss.plist jss_password <password>
+defaults write ~/Library/Preferences/com.github.sheagcraig.python-jss.plist jss_url <url>
 ```
 If you are working on a non-OS X machine, the JSSPrefs object falls back to
 using plistlib, although it's up to you to create the proper xml file.
@@ -314,3 +314,16 @@ Installing and/or upgrading the following packages should solve the problem:
 Supposedly, requests with py3.x does not have this problem, so developing with that environment may be a possibility for you as well.
 
 Hopefully this is temporary, although requests' changelog does claim to have "Fix(ed) previously broken SNI support." at version 2.1.0 (Current included version is 2.3.0).
+
+FoundationPlist, binary plists, and Python:
+=================
+python-jss should handle all plist operations correctly. However, you may see a warning about FoundationPlist not importing.
+
+OS X converts plists to binary these days, which will make the standard library plistlib fail, assuming the plist is "badly formed." Thus, python-jss includes FoundationPlist. However, if you have installed python from a non-Apple source (i.e. python.org), FoundationPlist's dependencies will not be met, and python-jss will fall back to using plistlib. This will also happen on non-OS X machines, where it should not be a problem, since they shouldn't be converting it to binary when you aren't looking.
+
+To include binary plist support, you will need to ensure that python-jss/FoundationPlist have access to the PyObjC package, and specifically the Foundation module. In some circumstances, it can be as easy as adding the path to the Apple-installed PyObjC to your PYTHONPATH. On my machine:
+```
+export PYTHONPATH=$PYTHONPATH:/System/Library/Frameworks/Python.framework/Versions/Current/Extras/lib/python/PyObjC:/System/Library/Frameworks/Python.framework/Versions/Current/Extras/lib/python
+```
+
+This won't work for Python3.x, and may not work for some setups of 2.x. You should either try to install PyObjC ```sudo pip install pyobjc```, create a plist file by hand rather than by using ```defaults``` (you could create the file as described above and then ```plutil -convert xml1 plist_filename``` , or just use the username and password arguments to the JSS constructor and avoid using the JSSPrefs object.
