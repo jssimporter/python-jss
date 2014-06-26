@@ -1,3 +1,18 @@
+### 0.2.2 (UNRELEASED)
+
+ADDITIONS:
+
+- jss_helper now has a promotion feature.
+
+CHANGES:
+
+- XMLEditor.add_object_to_list() now returns the element added.
+
+FIXES:
+
+- XMLEditor.add_object_to_list() fixed.
+- PolicyEditor.add_package() fixed.
+
 ### 0.2.1 (June 25, 2014)
 
 ADDITIONS:
