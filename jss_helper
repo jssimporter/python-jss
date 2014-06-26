@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import argparse
+import re
 import subprocess
 import sys
 
@@ -136,6 +137,35 @@ def get_group_policy_diff(j, args):
     subprocess.call(['diff', '-y', file1, file2])
 
 
+def promote(j, args):
+    """Replace a package in a policy with another package.
+
+    Designed with the intention of facilitating promotion from development
+    to production of a package.
+
+    """
+    old_package = j.Package(args.old_package)
+    new_package = j.Package(args.new_package)
+    policy = j.Policy(args.policy)
+    package_config = policy.find('package_configuration/packages')
+    policy.remove_object_from_list(old_package, package_config)
+    policy.add_package(new_package)
+    # This is probably super situational for my organization...
+    # Looks for the version number at the end of the name of the policy
+    # (doesn't support anything but numbers and dots) and tries to sub it with
+    # a version number from the package's name. I name all of our packages to
+    # include the version number, so this works for me.
+    if args.update_version_in_name:
+        policy_name_element = policy.find('general/name')
+        old_version = re.search(r'[\s\-]([0-9.]+)$', policy_name_element.text).group(1)
+        new_version = re.search(r'([0-9.]*[0-9]+)\.pkg$', new_package.name).group(1)
+        print(old_version, new_version)
+        name = policy_name_element.text
+        name = name.replace(old_version, new_version)
+        policy_name_element.text = name
+    policy.update()
+
+
 def get_md_configp_diff(j, args):
     search = 'scope/mobile_device_groups/mobile_device_group'
     profiles = j.MobileDeviceConfigurationProfile()
@@ -244,6 +274,8 @@ def main():
         create_subparser(subparser, name, d['help'], d['func'], **d['kwargs'])
 
     # More complicated parsers.
+
+    # Batch Scope
     help = "Scope a list of policies to a group."
     batch_scope_subparser = subparser.add_parser('batch_scope', help=help)
     batch_scope_subparser.add_argument('group', help="Name of group to scope "
@@ -251,6 +283,19 @@ def main():
     help = "A space delimited list of policy IDs."
     batch_scope_subparser.add_argument('policies', help=help, nargs='*')
     batch_scope_subparser.set_defaults(func=batch_scope)
+
+    # Promote
+    help = "Promote a package from development to production by updating an" \
+            "existing production policy with a newer package."
+    promote_subparser = subparser.add_parser('promote', help=help)
+    promote_subparser.add_argument('old_package', help='Package name or ID.')
+    promote_subparser.add_argument('new_package', help='Package name or ID.')
+    promote_subparser.add_argument('policy', help='Policy name or ID.')
+    help = 'If policy name includes a package version number, update it ' \
+            'with the new version number.'
+    promote_subparser.add_argument('--update-version-in-name', help=help,
+                                   action='store_true')
+    promote_subparser.set_defaults(func=promote)
 
     args = parser.parse_args()
     if args.v:
