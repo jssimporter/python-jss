@@ -7,11 +7,13 @@ ADDITIONS:
 CHANGES:
 
 - XMLEditor.add_object_to_list() now returns the element added.
+- JSSObject.update() now accepts a template as a parameter (defaults to None) to replace instance's data from a template.
 
 FIXES:
 
 - XMLEditor.add_object_to_list() fixed.
 - PolicyEditor.add_package() fixed.
+- JSSObject.update() did not properly update instance's data.
 
 ### 0.2.1 (June 25, 2014)
 
