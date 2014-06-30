@@ -8,6 +8,7 @@ CHANGES:
 
 - XMLEditor.add_object_to_list() now returns the element added.
 - JSSObject.update() now accepts a template as a parameter (defaults to None) to replace instance's data from a template.
+- Removing jss_helper to its own project, here: https://github.com/sheagcraig/jss_helper
 
 FIXES:
 
