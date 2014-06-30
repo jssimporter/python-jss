@@ -2,7 +2,7 @@
 
 ADDITIONS:
 
-- jss_helper now has a promotion feature.
+- jss_helper now has a promotion feature... Except see CHANGES below.
 
 CHANGES:
 
