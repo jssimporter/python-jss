@@ -156,7 +156,7 @@ class JSS(object):
 
         error = '\n'.join(error)
         raise exception_cls('JSS ERROR. Response Code: %s\tResponse: %s' %
-                          (response.status_code, error))
+                            (response.status_code, error))
 
     def get(self, url):
         """Get a url, handle errors, and return an etree from the XML data."""
@@ -194,7 +194,7 @@ class JSS(object):
 
         # Get the ID of the new object. JSS returns xml encoded in utf-8
         jss_results = response.text.encode('utf-8')
-        id_ =  int(re.search(r'<id>([0-9]+)</id>', jss_results).group(1))
+        id_ = int(re.search(r'<id>([0-9]+)</id>', jss_results).group(1))
 
         return self.factory.get_object(obj_class, id_)
 
@@ -292,7 +292,7 @@ class JSS(object):
     def EBook(self, data=None):
         return self.factory.get_object(EBook, data)
 
-    #def FileUpload(self, data=None):
+    # def FileUpload(self, data=None):
     #    return self.factory.get_object(FileUpload, data)
 
     def GSXConnection(self, data=None):
@@ -476,7 +476,7 @@ class XMLEditor(object):
 
         """
         element = self._handle_location(location)
-        if bool(value) == True:
+        if bool(value) is True:
             element.text = 'true'
         else:
             element.text = 'false'
@@ -511,7 +511,7 @@ class XMLEditor(object):
                        item.findtext("id") == str(obj) or
                        item.findtext("name") == obj]
 
-        if len(results) == 1 :
+        if len(results) == 1:
             list_element.remove(results[0])
         else:
             raise ValueError("There is either more than one object, or no "
@@ -579,8 +579,8 @@ class MobileDeviceGroupEditor(GroupEditor):
 
     def remove_mobile_device(self, device):
         """Remove a mobile_device from the group."""
-        super(MobileDeviceGroupEditor, self).remove_object_from_list(device,
-                "mobile_devices")
+        super(MobileDeviceGroupEditor, self).remove_object_from_list(
+            device, "mobile_devices")
 
 
 class PolicyEditor(XMLEditor):
@@ -603,13 +603,12 @@ class PolicyEditor(XMLEditor):
         clear_list = ["computers", "computer_groups", "buildings",
                       "departments", "limit_to_users/user_groups",
                       "limitations/users", "limitations/user_groups",
-                     "limitations/network_segments", "exclusions/computers",
-                     "exclusions/computer_groups", "exclusions/buildings",
-                     "exclusions/departments", "exclusions/users",
-                     "exclusions/user_groups", "exclusions/network_segments"]
+                      "limitations/network_segments", "exclusions/computers",
+                      "exclusions/computer_groups", "exclusions/buildings",
+                      "exclusions/departments", "exclusions/users",
+                      "exclusions/user_groups", "exclusions/network_segments"]
         for section in clear_list:
             self.clear_list("%s%s" % ("scope/", section))
-
 
     def add_object_to_exclusions(self, obj):
         """Add an object 'obj' to the appropriate scope exclusions block.
@@ -793,7 +792,7 @@ class JSSObject(ElementTree.Element):
         # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
         # super() call to its __class__.makeelement(), which will fail due to
         # the method resolution order / multiple inheritence of our objects
-        #(they have an editor AND a template or JSSObject parent class).
+        # (they have an editor AND a template or JSSObject parent class).
         # This handles that issue.
         return ElementTree.Element(tag, attrib)
 
@@ -815,8 +814,8 @@ class JSSObject(ElementTree.Element):
                 if key in cls.search_types:
                     return '%s%s%s' % (cls._url, cls.search_types[key], value)
                 else:
-                    raise JSSUnsupportedSearchMethodError("This object cannot"
-                            "be queried by %s." % key)
+                    raise JSSUnsupportedSearchMethodError(
+                        "This object cannot" "be queried by %s." % key)
             else:
                 return '%s%s%s' % (cls._url,
                                    cls.search_types[cls.default_search], data)
@@ -866,8 +865,7 @@ class JSSObject(ElementTree.Element):
     @property
     def name(self):
         """Return object name or None."""
-        return self.findtext('name') or \
-                    self.findtext('general/name')
+        return self.findtext('name') or self.findtext('general/name')
 
     @property
     def id(self):
@@ -926,8 +924,8 @@ class JSSFlatObject(JSSObject):
     def get_url(cls, data):
         """Return the URL for a get request based on data type."""
         if data is not None:
-            raise JSSUnsupportedSearchMethodError("This object cannot"
-                    "be queried by %s." % data)
+            raise JSSUnsupportedSearchMethodError(
+                "This object cannot be queried by %s." % data)
         else:
             return cls._url
 
@@ -1005,8 +1003,7 @@ class Computer(XMLEditor, JSSDeviceObject):
         # Computers don't tell you which network device is which.
         mac_addresses = [self.findtext('general/mac_address')]
         if self.findtext('general/alt_mac_address'):
-            mac_addresses.append(self.findtext(\
-                    'general/alt_mac_address'))
+            mac_addresses.append(self.findtext('general/alt_mac_address'))
             return mac_addresses
 
 
@@ -1015,6 +1012,7 @@ class ComputerCheckIn(XMLEditor, JSSFlatObject):
     can_delete = False
     can_list = False
     can_post = False
+
 
 class ComputerCommand(XMLEditor, JSSContainerObject):
     _url = '/computercommands'
@@ -1055,6 +1053,7 @@ class Department(XMLEditor, JSSContainerObject):
     _url = '/departments'
     list_type = 'department'
 
+
 class DirectoryBinding(XMLEditor, JSSContainerObject):
     _url = '/directorybindings'
 
@@ -1076,7 +1075,7 @@ class EBook(XMLEditor, JSSContainerObject):
 
 
 # Need to think about how to handle this.
-#class FileUpload(JSSObject):
+# class FileUpload(JSSObject):
 #    _url = '/fileuploads'
 #    can_put = False
 #    can_delete = False
@@ -1133,7 +1132,7 @@ class MobileDevice(XMLEditor, JSSDeviceObject):
     def bluetooth_mac_address(self):
         """Return device's Bluetooth MAC address or None."""
         return self.findtext('general/bluetooth_mac_address') or \
-                self.findtext('general/mac_address')
+            self.findtext('general/mac_address')
 
 
 class MobileDeviceApplication(XMLEditor, JSSContainerObject):
@@ -1268,6 +1267,7 @@ class JSSObjectTemplate(ElementTree.Element):
 
     """
     template_type = 'abstract_object_template'
+
     def __init__(self, **kwargs):
         """Init an Element with the right template_type."""
         super(JSSObjectTemplate, self).__init__(tag=self.template_type,
@@ -1278,7 +1278,7 @@ class JSSObjectTemplate(ElementTree.Element):
         # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
         # super() call to its __class__.makeelement(), which will fail due to
         # the method resolution order / multiple inheritence of our objects
-        #(they have an editor AND a template or JSSObject parent class).
+        # (they have an editor AND a template or JSSObject parent class).
         # This handles that issue.
         return ElementTree.Element(tag, attrib)
 
@@ -1286,6 +1286,7 @@ class JSSObjectTemplate(ElementTree.Element):
 class JSSSimpleTemplate(JSSObjectTemplate):
     """Abstract class for simple JSS Objects."""
     template_type = 'abstract_simple_object'
+
     def __init__(self, name, **kwargs):
         super(JSSSimpleTemplate, self).__init__(**kwargs)
         element_name = ElementTree.SubElement(self, "name")
@@ -1298,6 +1299,7 @@ class CategoryTemplate(XMLEditor, JSSSimpleTemplate):
 
 class ComputerGroupTemplate(ComputerGroupEditor, JSSObjectTemplate):
     template_type = "computer_group"
+
     def __init__(self, name, smartness=False):
         """Creates a computer group template.
 
@@ -1320,6 +1322,7 @@ class ComputerGroupTemplate(ComputerGroupEditor, JSSObjectTemplate):
 class SearchCriteria(JSSObjectTemplate):
     """Object for encapsulating a smart group search criteria."""
     template_type = "criterion"
+
     def __init__(self, name, priority, and_or, search_type, value):
         super(SearchCriteria, self).__init__()
         crit_name = ElementTree.SubElement(self, "name")
@@ -1371,17 +1374,17 @@ class PolicyTemplate(PolicyEditor, JSSObjectTemplate):
         self.exclusions = ElementTree.SubElement(self.scope, "exclusions")
         self.excluded_computers = ElementTree.SubElement(self.exclusions,
                                                          "computers")
-        self.excluded_computer_groups = ElementTree.SubElement(self.exclusions,
-                "computer_groups")
-        self.excluded_buildings = ElementTree.SubElement(self.exclusions,
-                                                         "buildings")
+        self.excluded_computer_groups = ElementTree.SubElement(
+            self.exclusions, "computer_groups")
+        self.excluded_buildings = ElementTree.SubElement(
+            self.exclusions, "buildings")
         self.excluded_departments = ElementTree.SubElement(self.exclusions,
                                                            "departments")
 
         # Self Service
         self.self_service = ElementTree.SubElement(self, "self_service")
-        self.use_for_self_service = ElementTree.SubElement(self.self_service,
-                "use_for_self_service")
+        self.use_for_self_service = ElementTree.SubElement(
+            self.self_service, "use_for_self_service")
         self.set_bool(self.use_for_self_service, True)
 
         # Package Configuration
@@ -1397,6 +1400,7 @@ class PolicyTemplate(PolicyEditor, JSSObjectTemplate):
 class PackageTemplate(PackageEditor, JSSObjectTemplate):
     """Template for constructing package objects."""
     template_type = "package"
+
     def __init__(self, filename, cat_name="Unknown"):
         super(PackageTemplate, self).__init__()
         name = ElementTree.SubElement(self, "name")
@@ -1469,6 +1473,7 @@ class JSSListData(dict):
     def name(self):
         return self['name']
 
+
 class JSSObjectList(list):
     """A list style collection of JSSObjects.
 
@@ -1483,7 +1488,6 @@ class JSSObjectList(list):
         self.factory = factory
         self.obj_class = obj_class
         super(JSSObjectList, self).__init__(objects)
-
 
     def __repr__(self):
         """Make our data human readable.
