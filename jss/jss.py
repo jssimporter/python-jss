@@ -771,6 +771,7 @@ class JSSObject(ElementTree.Element):
     container = ''
     default_search = 'name'
     search_types = {'name': '/name/'}
+    list_type = 'JSSObject'
 
     def __init__(self, jss, data):
         """Initialize a new JSSObject
@@ -780,12 +781,20 @@ class JSSObject(ElementTree.Element):
 
         """
         self.jss = jss
-        if not isinstance(data, ElementTree.Element):
+        if type(data) in [str, unicode]:
+            super(JSSObject, self).__init__(tag=self.list_type)
+            self.new(data)
+        elif isinstance(data, ElementTree.Element):
+            super(JSSObject, self).__init__(tag=data.tag)
+            for child in data.getchildren():
+                self.append(child)
+        else:
             raise TypeError("JSSObjects data argument must be of type "
-                            "xml.etree.ElemenTree.Element")
-        super(JSSObject, self).__init__(tag=data.tag)
-        for child in data.getchildren():
-            self.append(child)
+                            "xml.etree.ElemenTree.Element, or a string for the"
+                            " name.")
+
+    def new(self, name):
+        raise NotImplementedError
 
     def makeelement(self, tag, attrib):
         """Return an Element."""
@@ -888,6 +897,10 @@ class JSSContainerObject(JSSObject):
     """
     list_type = 'JSSContainerObject'
 
+    def new(self, name):
+        name_element = ElementTree.SubElement(self, "name")
+        name_element.text = name
+
     def as_list_data(self):
         """Return an Element with id and name data for adding to lists."""
         element = ElementTree.Element(self.list_type)
@@ -917,8 +930,17 @@ class JSSDeviceObject(JSSContainerObject):
 
 
 class JSSFlatObject(JSSObject):
-    """Subclass for JSS objects which do not return a list of objects."""
+    """Subclass for JSS objects which do not return a list of objects.
+
+    These objects have in common that they cannot be created. They can, however,
+    be updated.
+
+    """
     search_types = {}
+
+    def new(self, name):
+        """JSSFlatObjects and their subclasses cannot be created."""
+        raise JSSPostError("This object type cannot be created.")
 
     @classmethod
     def get_url(cls, data):
@@ -956,6 +978,7 @@ class AccountGroup(XMLEditor, JSSContainerObject):
 
 class ActivationCode(XMLEditor, JSSFlatObject):
     _url = '/activationcode'
+    type = 'activation_code'
     can_delete = False
     can_post = False
     can_list = False

@@ -136,6 +136,9 @@ class testJSS(object):
 
 
 class testJSSObject(object):
+    def test_JSSObject_new(self):
+        assert_raises(NotImplementedError, JSSObject, j_global, "Test")
+
     def test_jssobject_unsupported_search_method_error(self):
         assert_raises(JSSUnsupportedSearchMethodError,
                       j_global.Policy, 'taco=alpastor')
@@ -154,7 +157,7 @@ class testJSSObject(object):
         pt = PolicyTemplate(TESTPOLICY)
         new_policy = j_global.Policy(pt)
 
-        assert_equal(new_policy.get_object_url(), '/policies/id/%s' % 
+        assert_equal(new_policy.get_object_url(), '/policies/id/%s' %
                      new_policy.id)
 
         new_policy.delete()
@@ -206,6 +209,11 @@ class testJSSObjectFactory(object):
         obj_list = j_global.factory.get_object(Policy, 242)
         assert_is_instance(obj_list, Policy)
 
+
+
+class testJSSFlatObject(object):
+    def test_JSSFlatObject_new(self):
+        assert_raises(JSSPostError, ActivationCode, j_global, "Test")
 
 class testJSSDeviceObjects(object):
     def test_JSSDeviceObject_properties(self):
