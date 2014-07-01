@@ -88,8 +88,8 @@ class testJSS(object):
 
     @with_setup(setup)
     def test_JSS_post(self):
-        pt = PolicyTemplate(TESTPOLICY)
-        new_policy = j_global.Policy(pt)
+        new_policy = Policy(j_global, TESTPOLICY)
+        new_policy.update()
         # If successful, we'll get a new ID number
         assert_is_instance(new_policy.id, str)
         new_policy.delete()
@@ -106,8 +106,8 @@ class testJSS(object):
 
     @with_setup(setup)
     def test_jss_put(self):
-        pt = PolicyTemplate(TESTPOLICY)
-        new_policy = j_global.Policy(pt)
+        new_policy = Policy(j_global, TESTPOLICY)
+        new_policy.update()
         id_ = new_policy.id
 
         # Change the policy.
@@ -123,10 +123,8 @@ class testJSS(object):
 
     @with_setup(setup)
     def test_jss_delete(self):
-        pt = PolicyTemplate(TESTPOLICY)
-        new_policy = j_global.Policy(pt)
-        # If successful, we'll get a new ID number
-        assert_is_instance(new_policy.id, str)
+        new_policy = Policy(j_global, TESTPOLICY)
+        new_policy.update()
         id_ = new_policy.id
 
         # Test delete. This is of course successful if the previous two tests
@@ -154,8 +152,8 @@ class testJSSObject(object):
         assert_equal(Policy.get_post_url(), '/policies/id/0')
 
     def test_JSSObject_get_object_url(self):
-        pt = PolicyTemplate(TESTPOLICY)
-        new_policy = j_global.Policy(pt)
+        new_policy = Policy(j_global, TESTPOLICY)
+        new_policy.update()
 
         assert_equal(new_policy.get_object_url(), '/policies/id/%s' %
                      new_policy.id)
@@ -176,12 +174,12 @@ class testJSSObject(object):
 
         class NoPutObject(JSSObject):
             can_put = False
-            def __init__(self):
+            def new(self, name):
                 pass
 
         class NoDeleteObject(JSSObject):
             can_delete = False
-            def __init__(self):
+            def new(self, name):
                 pass
 
         assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
@@ -193,10 +191,10 @@ class testJSSObject(object):
         assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
                       NoPostObject, bad_policy)
 
-        np = NoPutObject()
+        np = NoPutObject(j_global, "TestNoPut")
         assert_raises(JSSMethodNotAllowedError, np.update)
 
-        nd = NoDeleteObject()
+        nd = NoDeleteObject(j_global, "TestNoDelete")
         assert_raises(JSSMethodNotAllowedError, nd.delete)
 
 
@@ -210,9 +208,9 @@ class testJSSObjectFactory(object):
         assert_is_instance(obj_list, Policy)
 
 
-
 class testJSSFlatObject(object):
     def test_JSSFlatObject_new(self):
+        """Ensure we cannot create new objects of this type."""
         assert_raises(JSSPostError, ActivationCode, j_global, "Test")
 
 class testJSSDeviceObjects(object):
@@ -259,19 +257,18 @@ class testJSSObject_Subclasses(object):
 
 class testJSSObjectTemplate(object):
     def test_ComputerGroupTemplate(self):
-        cgt = ComputerGroupTemplate("Test")
-        assert_is_instance(cgt, ComputerGroupTemplate)
-        test_group = j_global.ComputerGroup(cgt)
-        assert_is_instance(test_group, ComputerGroup)
-        test_group.delete()
+        cg = ComputerGroup(j_global, "Test")
+        cg.update()
+        assert_is_instance(cg, ComputerGroup)
+        cg.delete()
 
-    def test_ComputerGroupTemplate_Smart(self):
-        cgt = ComputerGroupTemplate("Test", True)
-        assert_is_instance(cgt, ComputerGroupTemplate)
-        cgt.add_criterion("Computer Name", 0, "and", "like", "craigs")
-        test_group = j_global.ComputerGroup(cgt)
-        assert_is_instance(test_group, ComputerGroup)
-        test_group.delete()
+    #def test_ComputerGroupTemplate_Smart(self):
+    #    cg = ComputerGroup(j_global, "Test")
+    #    cg.update()
+    #    #cg.add_criterion("Computer Name", 0, "and", "like", "craigs")
+    #    #cg.update()
+    #    assert_is_instance(cg, ComputerGroup)
+    #    cg.delete()
 
     def test_PackageTemplate(self):
         package_template = PackageTemplate("Taco.pkg")
@@ -287,14 +284,14 @@ class testJSSObjectTemplate(object):
         assert_is_instance(category, Category)
         category.delete()
 
-    def test_PolicyTemplate(self):
-        policy_template = PolicyTemplate(TESTPOLICY)
-        assert_is_instance(policy_template, PolicyTemplate)
+    def test_Policy_new(self):
+        policy = Policy(j_global, "python-jss-test-policy")
+        assert_is_instance(policy, Policy)
         computer = j_global.Computer('craigs')
-        policy_template.add_object_to_scope(computer)
+        policy.add_object_to_scope(computer)
         policy_string = r"""<policy>
     <general>
-        <name>python-jss Test Policy</name>
+        <name>python-jss-test-policy</name>
         <enabled>true</enabled>
         <frequency>Once per computer</frequency>
         <category />
@@ -327,11 +324,13 @@ class testJSSObjectTemplate(object):
     </maintenance>
 </policy>
 """
-        assert_equal(policy_template.__repr__(), policy_string)
-        # PolicyTemplates are used throughout tests for creating new objects,
-        # so we can be sure it works.
-
-
+        assert_equal(policy.__repr__(), policy_string)
+        policy.update()
+        # Test whether JSS accepts our new() object. Will throw an exception if
+        # it doesn't work; replaces data if it does, thus they should no longer
+        # match.
+        assert_not_equal(policy.__repr__(), policy_string)
+        policy.delete()
 
 
 class testJSSListData(object):
