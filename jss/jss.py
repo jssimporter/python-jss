@@ -590,7 +590,7 @@ class JSSObject(ElementTree.Element):
     search_types = {'name': '/name/'}
     list_type = 'JSSObject'
 
-    def __init__(self, jss, data):
+    def __init__(self, jss, data, **kwargs):
         """Initialize a new JSSObject
 
         jss:    JSS object.
@@ -600,7 +600,7 @@ class JSSObject(ElementTree.Element):
         self.jss = jss
         if type(data) in [str, unicode]:
             super(JSSObject, self).__init__(tag=self.list_type)
-            self.new(data)
+            self.new(data, **kwargs)
         elif isinstance(data, ElementTree.Element):
             super(JSSObject, self).__init__(tag=data.tag)
             for child in data.getchildren():
@@ -610,7 +610,7 @@ class JSSObject(ElementTree.Element):
                             "xml.etree.ElemenTree.Element, or a string for the"
                             " name.")
 
-    def new(self, name):
+    def new(self, name, **kwargs):
         raise NotImplementedError
 
     def makeelement(self, tag, attrib):
@@ -1023,7 +1023,7 @@ class ComputerGroup(JSSGroupObject):
     _url = '/computergroups'
     list_type = 'computer_group'
 
-    def new(self, name):
+    def new(self, name, **kwargs):
         """Creates a computer group template.
 
         Smart groups with no criteria by default select ALL computers.
@@ -1032,10 +1032,12 @@ class ComputerGroup(JSSGroupObject):
         element_name = ElementTree.SubElement(self, "name")
         element_name.text = name
         self.is_smart = ElementTree.SubElement(self, "is_smart")
-        self.set_bool(self.is_smart, False)
-        #self.set_bool(self.is_smart, smartness)
-        #if smartness:
-        #    self.criteria = ElementTree.SubElement(self, "criteria")
+        if 'smart' in kwargs.keys():
+            smartness = kwargs['smart']
+        else:
+            smartness = False
+        self.set_bool(self.is_smart, smartness)
+        self.criteria = ElementTree.SubElement(self, "criteria")
 
     def add_computer(self, device):
         """Add a computer to the group."""
@@ -1091,13 +1093,16 @@ class EBook(XMLEditor, JSSContainerObject):
     _url = '/ebooks'
 
 
-# Need to think about how to handle this.
-# class FileUpload(JSSObject):
-#    _url = '/fileuploads'
-#    can_put = False
-#    can_delete = False
-#    can_get = False
-#    can_list = False
+class FileUpload(JSSObject):
+    # Need to think about how to handle this.
+    def __init__(self):
+        raise NotImplementedError
+
+    # _url = '/fileuploads'
+    # can_put = False
+    # can_delete = False
+    # can_get = False
+    # can_list = False
 
 
 class GSXConnection(XMLEditor, JSSFlatObject):
@@ -1185,9 +1190,18 @@ class MobileDeviceInvitation(XMLEditor, JSSContainerObject):
     search_types = {'invitation': '/invitation/'}
 
 
-class MobileDeviceGroup(MobileDeviceGroupEditor, JSSContainerObject):
+class MobileDeviceGroup(JSSContainerObject):
     _url = '/mobiledevicegroups'
     list_type = 'mobile_device_group'
+
+    def add_mobile_device(self, device):
+        """Add a mobile_device to the group."""
+        super(MobileDeviceGroup, self).add_device(device, "mobile_devices")
+
+    def remove_mobile_device(self, device):
+        """Remove a mobile_device from the group."""
+        super(MobileDeviceGroup, self).remove_object_from_list(
+            device, "mobile_devices")
 
 
 class MobileDeviceProvisioningProfile(XMLEditor, JSSContainerObject):
@@ -1440,34 +1454,12 @@ class CategoryTemplate(XMLEditor, JSSSimpleTemplate):
     template_type = 'category'
 
 
-class ComputerGroupTemplate(ComputerGroupEditor, JSSObjectTemplate):
-    template_type = "computer_group"
-
-    def __init__(self, name, smartness=False):
-        """Creates a computer group template.
-
-        Smart groups with no criteria by default select ALL computers.
-
-        """
-        super(ComputerGroupTemplate, self).__init__()
-        element_name = ElementTree.SubElement(self, "name")
-        element_name.text = name
-        self.is_smart = ElementTree.SubElement(self, "is_smart")
-        self.set_bool(self.is_smart, smartness)
-        if smartness:
-            self.criteria = ElementTree.SubElement(self, "criteria")
-
-    def add_computer(self, device):
-        """Add a computer to the group."""
-        super(ComputerGroupTemplate, self).add_device(device, "computers")
-
-
-class SearchCriteria(JSSObjectTemplate):
+class SearchCriteria(ElementTree.Element):
     """Object for encapsulating a smart group search criteria."""
     template_type = "criterion"
 
     def __init__(self, name, priority, and_or, search_type, value):
-        super(SearchCriteria, self).__init__()
+        super(SearchCriteria, self).__init__(tag=self.template_type)
         crit_name = ElementTree.SubElement(self, "name")
         crit_name.text = name
         crit_priority = ElementTree.SubElement(self, "priority")
@@ -1479,65 +1471,14 @@ class SearchCriteria(JSSObjectTemplate):
         crit_value = ElementTree.SubElement(self, "value")
         crit_value.text = value
 
-
-class PolicyTemplate(PolicyEditor, JSSObjectTemplate):
-    """Object for adding policy methods."""
-    template_type = "policy"
-
-    def __init__(self, name='Unknown', category=None):
-        """Create a barebones policy.
-
-        name:       Policy name
-        category:   An instance of Category
-
-        """
-        super(PolicyTemplate, self).__init__()
-        # General
-        self.general = ElementTree.SubElement(self, "general")
-        self.name = ElementTree.SubElement(self.general, "name")
-        self.name.text = name
-        self.enabled = ElementTree.SubElement(self.general, "enabled")
-        self.set_bool(self.enabled, True)
-        self.frequency = ElementTree.SubElement(self.general, "frequency")
-        self.frequency.text = "Once per computer"
-        self.category = ElementTree.SubElement(self.general, "category")
-        if category:
-            # Without a category, the JSS will add an id of -1, with name
-            # "Unknown".
-            self.category_name = ElementTree.SubElement(self.category, "name")
-            self.category_name.text = category.name
-
-        # Scope
-        self.scope = ElementTree.SubElement(self, "scope")
-        self.computers = ElementTree.SubElement(self.scope, "computers")
-        self.computer_groups = ElementTree.SubElement(self.scope,
-                                                      "computer_groups")
-        self.buildings = ElementTree.SubElement(self.scope, "buldings")
-        self.departments = ElementTree.SubElement(self.scope, "departments")
-        self.exclusions = ElementTree.SubElement(self.scope, "exclusions")
-        self.excluded_computers = ElementTree.SubElement(self.exclusions,
-                                                         "computers")
-        self.excluded_computer_groups = ElementTree.SubElement(
-            self.exclusions, "computer_groups")
-        self.excluded_buildings = ElementTree.SubElement(
-            self.exclusions, "buildings")
-        self.excluded_departments = ElementTree.SubElement(self.exclusions,
-                                                           "departments")
-
-        # Self Service
-        self.self_service = ElementTree.SubElement(self, "self_service")
-        self.use_for_self_service = ElementTree.SubElement(
-            self.self_service, "use_for_self_service")
-        self.set_bool(self.use_for_self_service, True)
-
-        # Package Configuration
-        self.pkg_config = ElementTree.SubElement(self, "package_configuration")
-        self.pkgs = ElementTree.SubElement(self.pkg_config, "packages")
-
-        # Maintenance
-        self.maintenance = ElementTree.SubElement(self, "maintenance")
-        self.recon = ElementTree.SubElement(self.maintenance, "recon")
-        self.set_bool(self.recon, True)
+    def makeelement(self, tag, attrib):
+        """Return an Element."""
+        # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
+        # super() call to its __class__.makeelement(), which will fail due to
+        # the method resolution order / multiple inheritence of our objects
+        # (they have an editor AND a template or JSSObject parent class).
+        # This handles that issue.
+        return ElementTree.Element(tag, attrib)
 
 
 class PackageTemplate(PackageEditor, JSSObjectTemplate):

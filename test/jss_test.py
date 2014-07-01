@@ -33,6 +33,7 @@ jp = JSSPrefs()
 j_global = JSS(jss_prefs=jp)
 
 TESTPOLICY = 'python-jss Test Policy'
+TESTGROUP = 'python-jss Test Group'
 
 
 def setup():
@@ -42,6 +43,8 @@ def setup():
     """
     try:
         cleanup = j_global.Policy(TESTPOLICY)
+        cleanup.delete()
+        cleanup = j_global.ComputerGroup(TESTGROUP)
         cleanup.delete()
     except JSSGetError:
         pass
@@ -256,19 +259,24 @@ class testJSSObject_Subclasses(object):
 
 
 class testJSSObjectTemplate(object):
-    def test_ComputerGroupTemplate(self):
-        cg = ComputerGroup(j_global, "Test")
+
+    @with_setup(setup)
+    def test_ComputerGroupNew(self):
+        cg = ComputerGroup(j_global, TESTGROUP)
         cg.update()
         assert_is_instance(cg, ComputerGroup)
         cg.delete()
 
-    #def test_ComputerGroupTemplate_Smart(self):
-    #    cg = ComputerGroup(j_global, "Test")
-    #    cg.update()
-    #    #cg.add_criterion("Computer Name", 0, "and", "like", "craigs")
-    #    #cg.update()
-    #    assert_is_instance(cg, ComputerGroup)
-    #    cg.delete()
+    @with_setup(setup)
+    def test_ComputerGroup_Smart(self):
+        cg = ComputerGroup(j_global, TESTGROUP, smart=True)
+        cg.add_criterion("Computer Name", 0, "and", "like", "craigs")
+        cg.findtext("criteria/criterion/name")
+        cg.update()
+        assert_is_instance(cg, ComputerGroup)
+        assert_true(bool(cg.findtext("is_smart")))
+        assert_equals(cg.findtext("criteria/criterion/name"), "Computer Name")
+        cg.delete()
 
     def test_PackageTemplate(self):
         package_template = PackageTemplate("Taco.pkg")

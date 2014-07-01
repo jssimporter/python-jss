@@ -1,3 +1,21 @@
+### 0.3 (UNRELEASED)
+
+CHANGES:
+
+- Removed Templates and XMLEditor classes.
+  - All editor behaviors / methods moved into appropriate JSSObject subclasses.
+  - For example, Policies gain all of their previously inherited PolicyEditor methods.
+  - Templates' __init__ methods have become the new() method on objects.
+  - Only implemented the existing set of: Category, ComputerGroup, MobileDeviceGroup, Package, Policy
+  - SearchCriteria remains an object, although no longer inherits from a template.
+- Creating new objects has changed as a result
+  - To create an object now, use the class constructor with the string argument "name", configure as before, and then update().
+  - i.e.
+    ```
+	policy = Policy(jss_instance, "Install Adventure")
+	policy.update()
+	```
+
 ### 0.2.2 (UNRELEASED)
 
 ADDITIONS:
