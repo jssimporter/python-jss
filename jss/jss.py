@@ -411,120 +411,7 @@ class XMLEditor(object):
     # There are some ElementTree.Element methods in here. As XMLEditor is an
     # abstract class to be inherited by classes which also inherit Element,
     # this works, although it's not very clear.
-
-    def _indent(self, elem, level=0, more_sibs=False):
-        """Indent an xml element object to prepare for pretty printing.
-
-        Method is internal to discourage indenting the self._root Element,
-        thus potentially corrupting it.
-
-        """
-        i = "\n"
-        pad = '    '
-        if level:
-            i += (level - 1) * pad
-        num_kids = len(elem)
-        if num_kids:
-            if not elem.text or not elem.text.strip():
-                elem.text = i + pad
-                if level:
-                    elem.text += pad
-            count = 0
-            for kid in elem:
-                self._indent(kid, level+1, count < num_kids - 1)
-                count += 1
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-                if more_sibs:
-                    elem.tail += pad
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = i
-                if more_sibs:
-                    elem.tail += pad
-
-    def __repr__(self):
-        """Make our data human readable."""
-        # deepcopy so we don't mess with the valid XML.
-        pretty_data = copy.deepcopy(self)
-        self._indent(pretty_data)
-        elementstring = ElementTree.tostring(pretty_data)
-        return elementstring.encode('utf-8')
-
-    def _handle_location(self, location):
-        """Return an element located at location.
-
-        Handles a string xpath as per ElementTree.find or an element.
-
-        """
-        if not isinstance(location, ElementTree.Element):
-            element = self.find(location)
-            if element is None:
-                raise ValueError("Invalid path!")
-        else:
-            element = location
-        return element
-
-    def search(self, tag):
-        """Return elements with tag using getiterator."""
-        return self.getiterator(tag)
-
-    def set_bool(self, location, value):
-        """For an object at path, set the string representation of a boolean
-        value to value. Mostly just to prevent me from forgetting to convert
-        to string.
-
-        """
-        element = self._handle_location(location)
-        if bool(value) is True:
-            element.text = 'true'
-        else:
-            element.text = 'false'
-
-    def add_object_to_path(self, obj, location):
-        """Add an object of type JSSContainerObject to XMLEditor's context
-        object at "path".
-
-        location can be an Element or a string path argument to find()
-
-        """
-        location = self._handle_location(location)
-        location.append(obj.as_list_data())
-        results = [item for item in location.getchildren() if
-                   item.findtext("id") == obj.id][0]
-        return results
-
-    def remove_object_from_list(self, obj, list_element):
-        """Remove an object from a list element.
-
-        object:     Accepts JSSObjects, id's, and names
-        list:   Accepts an element or a string path to that element
-
-        """
-        list_element = self._handle_location(list_element)
-
-        if isinstance(obj, JSSObject):
-            results = [item for item in list_element.getchildren() if
-                       item.findtext("id") == obj.id]
-        elif type(obj) in [int, str, unicode]:
-            results = [item for item in list_element.getchildren() if
-                       item.findtext("id") == str(obj) or
-                       item.findtext("name") == obj]
-
-        if len(results) == 1:
-            list_element.remove(results[0])
-        else:
-            raise ValueError("There is either more than one object, or no "
-                             "matches at that path!")
-
-    def clear_list(self, list_element):
-        """Clear all list items from path.
-
-        list_element can be a string argument to find(), or an element.
-
-        """
-        list_element = self._handle_location(list_element)
-        list_element.clear()
+    pass
 
 
 class GroupEditor(XMLEditor):
@@ -585,76 +472,6 @@ class MobileDeviceGroupEditor(GroupEditor):
 
 class PolicyEditor(XMLEditor):
     """Adds methods for manipulating common Policy elements."""
-    def add_object_to_scope(self, obj):
-        """Add an object 'obj' to the appropriate scope block."""
-        if isinstance(obj, Computer):
-            self.add_object_to_path(obj, "scope/computers")
-        elif isinstance(obj, ComputerGroup):
-            self.add_object_to_path(obj, "scope/computer_groups")
-        elif isinstance(obj, Building):
-            self.add_object_to_path(obj, "scope/buildings")
-        elif isinstance(obj, Department):
-            self.add_object_to_path(obj, "scope/departments")
-        else:
-            raise TypeError
-
-    def clear_scope(self):
-        """Clear all objects from the scope, including exclusions."""
-        clear_list = ["computers", "computer_groups", "buildings",
-                      "departments", "limit_to_users/user_groups",
-                      "limitations/users", "limitations/user_groups",
-                      "limitations/network_segments", "exclusions/computers",
-                      "exclusions/computer_groups", "exclusions/buildings",
-                      "exclusions/departments", "exclusions/users",
-                      "exclusions/user_groups", "exclusions/network_segments"]
-        for section in clear_list:
-            self.clear_list("%s%s" % ("scope/", section))
-
-    def add_object_to_exclusions(self, obj):
-        """Add an object 'obj' to the appropriate scope exclusions block.
-
-        obj should be an instance of Computer, ComputerGroup, Building,
-        or Department.
-
-        """
-        if isinstance(obj, Computer):
-            self.add_object_to_path(obj, "scope/exclusions/computers")
-        elif isinstance(obj, ComputerGroup):
-            self.add_object_to_path(obj, "scope/exclusions/computer_groups")
-        elif isinstance(obj, Building):
-            self.add_object_to_path(obj, "scope/exclusions/buildings")
-        elif isinstance(obj, Department):
-            self.add_object_to_path(obj, "scope/exclusions/departments")
-        else:
-            raise TypeError
-
-    def add_package(self, pkg):
-        """Add a jss.Package object to the policy with action=install."""
-        if isinstance(pkg, Package):
-            package = self.add_object_to_path(pkg, "package_configuration/packages")
-            action = ElementTree.SubElement(package, "action")
-            action.text = "Install"
-
-    def set_self_service(self, state=True):
-        """Convenience setter for self_service."""
-        self.set_bool(self.find("self_service/use_for_self_service"), state)
-
-    def set_recon(self, state=True):
-        """Convenience setter for recon."""
-        self.set_bool(self.find("maintenance/recon"), state)
-
-    def set_category(self, category):
-        """Set the policy's category.
-
-        category should be a category object.
-
-        """
-        pcategory = self.find("general/category")
-        pcategory.clear()
-        id_ = ElementTree.SubElement(pcategory, "id")
-        id_.text = category.id
-        name = ElementTree.SubElement(pcategory, "name")
-        name.text = category.name
 
 
 class PackageEditor(XMLEditor):
@@ -853,18 +670,28 @@ class JSSObject(ElementTree.Element):
         Data validation is up to the client.
 
         """
-        if not self.can_put:
-            raise JSSMethodNotAllowedError(self.__class__.__name__)
 
-        url = self.get_object_url()
-        if template is not None:
-            self.jss.put(url, template)
+        if self.can_post:
+            url = self.get_post_url()
+            try:
+                if template is not None:
+                    updated_data = self.jss.post(self.__class__, url, template)
+                else:
+                    updated_data = self.jss.post(self.__class__, url, self)
+            except JSSPostError:
+                # Object already exists
+                if not self.can_put:
+                    raise JSSMethodNotAllowedError(self.__class__.__name__)
+                url = self.get_object_url()
+                if template is not None:
+                    self.jss.put(url, template)
+                else:
+                    self.jss.put(url, self)
+                updated_data = self.jss.get(url)
         else:
-            self.jss.put(url, self)
-
+            raise JSSMethodNotAllowedError(self.__class__.__name__)
         # Replace current instance's data with new, JSS-filled data.
         self.clear()
-        updated_data = self.jss.get(url)
         for child in updated_data.getchildren():
             self._children.append(child)
 
@@ -888,6 +715,120 @@ class JSSObject(ElementTree.Element):
         #   str equivalency still works.
         return result
 
+    def _indent(self, elem, level=0, more_sibs=False):
+        """Indent an xml element object to prepare for pretty printing.
+
+        Method is internal to discourage indenting the self._root Element,
+        thus potentially corrupting it.
+
+        """
+        i = "\n"
+        pad = '    '
+        if level:
+            i += (level - 1) * pad
+        num_kids = len(elem)
+        if num_kids:
+            if not elem.text or not elem.text.strip():
+                elem.text = i + pad
+                if level:
+                    elem.text += pad
+            count = 0
+            for kid in elem:
+                self._indent(kid, level+1, count < num_kids - 1)
+                count += 1
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+                if more_sibs:
+                    elem.tail += pad
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i
+                if more_sibs:
+                    elem.tail += pad
+
+    def __repr__(self):
+        """Make our data human readable."""
+        # deepcopy so we don't mess with the valid XML.
+        pretty_data = copy.deepcopy(self)
+        self._indent(pretty_data)
+        elementstring = ElementTree.tostring(pretty_data)
+        return elementstring.encode('utf-8')
+
+    def _handle_location(self, location):
+        """Return an element located at location.
+
+        Handles a string xpath as per ElementTree.find or an element.
+
+        """
+        if not isinstance(location, ElementTree.Element):
+            element = self.find(location)
+            if element is None:
+                raise ValueError("Invalid path!")
+        else:
+            element = location
+        return element
+
+    def search(self, tag):
+        """Return elements with tag using getiterator."""
+        return self.getiterator(tag)
+
+    def set_bool(self, location, value):
+        """For an object at path, set the string representation of a boolean
+        value to value. Mostly just to prevent me from forgetting to convert
+        to string.
+
+        """
+        element = self._handle_location(location)
+        if bool(value) is True:
+            element.text = 'true'
+        else:
+            element.text = 'false'
+
+    def add_object_to_path(self, obj, location):
+        """Add an object of type JSSContainerObject to XMLEditor's context
+        object at "path".
+
+        location can be an Element or a string path argument to find()
+
+        """
+        location = self._handle_location(location)
+        location.append(obj.as_list_data())
+        results = [item for item in location.getchildren() if
+                   item.findtext("id") == obj.id][0]
+        return results
+
+    def remove_object_from_list(self, obj, list_element):
+        """Remove an object from a list element.
+
+        object:     Accepts JSSObjects, id's, and names
+        list:   Accepts an element or a string path to that element
+
+        """
+        list_element = self._handle_location(list_element)
+
+        if isinstance(obj, JSSObject):
+            results = [item for item in list_element.getchildren() if
+                       item.findtext("id") == obj.id]
+        elif type(obj) in [int, str, unicode]:
+            results = [item for item in list_element.getchildren() if
+                       item.findtext("id") == str(obj) or
+                       item.findtext("name") == obj]
+
+        if len(results) == 1:
+            list_element.remove(results[0])
+        else:
+            raise ValueError("There is either more than one object, or no "
+                             "matches at that path!")
+
+    def clear_list(self, list_element):
+        """Clear all list items from path.
+
+        list_element can be a string argument to find(), or an element.
+
+        """
+        list_element = self._handle_location(list_element)
+        list_element.clear()
+
 
 class JSSContainerObject(JSSObject):
     """Subclass for object types which can contain lists.
@@ -909,6 +850,37 @@ class JSSContainerObject(JSSObject):
         name = ElementTree.SubElement(element, "name")
         name.text = self.name
         return element
+
+
+class JSSGroupObject(JSSContainerObject):
+    """Abstract XMLEditor for ComputerGroup and MobileDeviceGroup."""
+    def add_criterion(self, name, priority, and_or, search_type, value):
+        """Add a search criteria object to a smart group."""
+        criterion = SearchCriteria(name, priority, and_or, search_type, value)
+        self.criteria.append(criterion)
+
+    def set_is_smart(self, value):
+        """Set whether a group is smart or not."""
+        self.set_bool("is_smart", value)
+        if value is True:
+            if self.find("criteria") is None:
+                self.criteria = ElementTree.SubElement(self, "criteria")
+
+    def add_device(self, device, container):
+        """Add a device to a group. Wraps XMLEditor.add_object_toPath.
+
+        device can be a JSSObject, and ID value, or the name of a valid
+        object.
+
+        """
+        # There is a size tag which the JSS manages for us, so we can ignore
+        # it.
+        if self.findtext("is_smart") == 'false':
+            self.add_object_to_path(device, container)
+        else:
+            # Technically this isn't true. It will strangely accept them, and
+            # they even show up as members of the group!
+            raise ValueError("Devices may not be added to smart groups.")
 
 
 class JSSDeviceObject(JSSContainerObject):
@@ -1047,9 +1019,31 @@ class ComputerExtensionAttribute(XMLEditor, JSSContainerObject):
     _url = '/computerextensionattributes'
 
 
-class ComputerGroup(ComputerGroupEditor, JSSContainerObject):
+class ComputerGroup(JSSGroupObject):
     _url = '/computergroups'
     list_type = 'computer_group'
+
+    def new(self, name):
+        """Creates a computer group template.
+
+        Smart groups with no criteria by default select ALL computers.
+
+        """
+        element_name = ElementTree.SubElement(self, "name")
+        element_name.text = name
+        self.is_smart = ElementTree.SubElement(self, "is_smart")
+        self.set_bool(self.is_smart, False)
+        #self.set_bool(self.is_smart, smartness)
+        #if smartness:
+        #    self.criteria = ElementTree.SubElement(self, "criteria")
+
+    def add_computer(self, device):
+        """Add a computer to the group."""
+        super(ComputerGroup, self).add_device(device, "computers")
+
+    def remove_computer(self, device):
+        """Remove a computer from the group."""
+        super(ComputerGroup, self).remove_object_from_list(device, "computers")
 
 
 class ComputerInventoryCollection(XMLEditor, JSSFlatObject):
@@ -1228,8 +1222,134 @@ class PeripheralType(XMLEditor, JSSContainerObject):
     search_types = {}
 
 
-class Policy(PolicyEditor, JSSContainerObject):
+class Policy(JSSContainerObject):
     _url = '/policies'
+    list_type = 'policy'
+
+    def new(self, name='Unknown', category=None):
+        """Create a barebones policy.
+
+        name:       Policy name
+        category:   An instance of Category
+
+        """
+        # General
+        self.general = ElementTree.SubElement(self, "general")
+        self.name_element = ElementTree.SubElement(self.general, "name")
+        self.name_element.text = name
+        self.enabled = ElementTree.SubElement(self.general, "enabled")
+        self.set_bool(self.enabled, True)
+        self.frequency = ElementTree.SubElement(self.general, "frequency")
+        self.frequency.text = "Once per computer"
+        self.category = ElementTree.SubElement(self.general, "category")
+        if category:
+            # Without a category, the JSS will add an id of -1, with name
+            # "Unknown".
+            self.category_name = ElementTree.SubElement(self.category, "name")
+            self.category_name.text = category.name
+
+        # Scope
+        self.scope = ElementTree.SubElement(self, "scope")
+        self.computers = ElementTree.SubElement(self.scope, "computers")
+        self.computer_groups = ElementTree.SubElement(self.scope,
+                                                      "computer_groups")
+        self.buildings = ElementTree.SubElement(self.scope, "buldings")
+        self.departments = ElementTree.SubElement(self.scope, "departments")
+        self.exclusions = ElementTree.SubElement(self.scope, "exclusions")
+        self.excluded_computers = ElementTree.SubElement(self.exclusions,
+                                                         "computers")
+        self.excluded_computer_groups = ElementTree.SubElement(
+            self.exclusions, "computer_groups")
+        self.excluded_buildings = ElementTree.SubElement(
+            self.exclusions, "buildings")
+        self.excluded_departments = ElementTree.SubElement(self.exclusions,
+                                                           "departments")
+
+        # Self Service
+        self.self_service = ElementTree.SubElement(self, "self_service")
+        self.use_for_self_service = ElementTree.SubElement(
+            self.self_service, "use_for_self_service")
+        self.set_bool(self.use_for_self_service, True)
+
+        # Package Configuration
+        self.pkg_config = ElementTree.SubElement(self, "package_configuration")
+        self.pkgs = ElementTree.SubElement(self.pkg_config, "packages")
+
+        # Maintenance
+        self.maintenance = ElementTree.SubElement(self, "maintenance")
+        self.recon = ElementTree.SubElement(self.maintenance, "recon")
+        self.set_bool(self.recon, True)
+
+    def add_object_to_scope(self, obj):
+        """Add an object 'obj' to the appropriate scope block."""
+        if isinstance(obj, Computer):
+            self.add_object_to_path(obj, "scope/computers")
+        elif isinstance(obj, ComputerGroup):
+            self.add_object_to_path(obj, "scope/computer_groups")
+        elif isinstance(obj, Building):
+            self.add_object_to_path(obj, "scope/buildings")
+        elif isinstance(obj, Department):
+            self.add_object_to_path(obj, "scope/departments")
+        else:
+            raise TypeError
+
+    def clear_scope(self):
+        """Clear all objects from the scope, including exclusions."""
+        clear_list = ["computers", "computer_groups", "buildings",
+                      "departments", "limit_to_users/user_groups",
+                      "limitations/users", "limitations/user_groups",
+                      "limitations/network_segments", "exclusions/computers",
+                      "exclusions/computer_groups", "exclusions/buildings",
+                      "exclusions/departments", "exclusions/users",
+                      "exclusions/user_groups", "exclusions/network_segments"]
+        for section in clear_list:
+            self.clear_list("%s%s" % ("scope/", section))
+
+    def add_object_to_exclusions(self, obj):
+        """Add an object 'obj' to the appropriate scope exclusions block.
+
+        obj should be an instance of Computer, ComputerGroup, Building,
+        or Department.
+
+        """
+        if isinstance(obj, Computer):
+            self.add_object_to_path(obj, "scope/exclusions/computers")
+        elif isinstance(obj, ComputerGroup):
+            self.add_object_to_path(obj, "scope/exclusions/computer_groups")
+        elif isinstance(obj, Building):
+            self.add_object_to_path(obj, "scope/exclusions/buildings")
+        elif isinstance(obj, Department):
+            self.add_object_to_path(obj, "scope/exclusions/departments")
+        else:
+            raise TypeError
+
+    def add_package(self, pkg):
+        """Add a jss.Package object to the policy with action=install."""
+        if isinstance(pkg, Package):
+            package = self.add_object_to_path(pkg, "package_configuration/packages")
+            action = ElementTree.SubElement(package, "action")
+            action.text = "Install"
+
+    def set_self_service(self, state=True):
+        """Convenience setter for self_service."""
+        self.set_bool(self.find("self_service/use_for_self_service"), state)
+
+    def set_recon(self, state=True):
+        """Convenience setter for recon."""
+        self.set_bool(self.find("maintenance/recon"), state)
+
+    def set_category(self, category):
+        """Set the policy's category.
+
+        category should be a category object.
+
+        """
+        pcategory = self.find("general/category")
+        pcategory.clear()
+        id_ = ElementTree.SubElement(pcategory, "id")
+        id_.text = category.id
+        name = ElementTree.SubElement(pcategory, "name")
+        name.text = category.name
 
 
 class Printer(XMLEditor, JSSContainerObject):
