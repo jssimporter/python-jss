@@ -174,6 +174,9 @@ class testJSSObject(object):
         class NoPostObject(JSSObject):
             can_post = False
 
+            def new(self, name, **kwargs):
+                pass
+
         class NoPutObject(JSSObject):
             can_put = False
 
@@ -190,10 +193,9 @@ class testJSSObject(object):
                       NoListObject, None)
         assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
                       NoGetObject, None)
-        bad_policy = Policy(j_global, "No workie")
-        # assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
-        #               NoPostObject, bad_policy)
-        assert_raises(JSSMethodNotAllowedError, bad_policy.save())
+        bad_policy = NoPostObject(j_global, "No workie")
+        print(bad_policy)
+        assert_raises(JSSMethodNotAllowedError, bad_policy.save)
 
         np = NoPutObject(j_global, "TestNoPut")
         assert_raises(JSSMethodNotAllowedError, np.save)
