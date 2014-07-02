@@ -392,110 +392,6 @@ class JSS(object):
         return self.factory.get_object(UserGroup, data)
 
 
-class XMLEditor(object):
-    """XMLEditor provides convenient methods for manipulating XML data.
-
-    It is used as an abstract class from which we subclass JSSObjects and
-    JSSObjectTemplates.
-
-    XMLEditors can be subclassed to provide wrappers for these methods to
-    further enable context-class-specific behavior.
-
-    I use multiple-inheritance rather than composition here to avoid multiple
-    dot sequences in calls.
-
-    NOTE: XMLEditor has no ElementTree, so on its own, its methods will fail!
-
-    """
-
-    # There are some ElementTree.Element methods in here. As XMLEditor is an
-    # abstract class to be inherited by classes which also inherit Element,
-    # this works, although it's not very clear.
-    pass
-
-
-class GroupEditor(XMLEditor):
-    """Abstract XMLEditor for ComputerGroup and MobileDeviceGroup."""
-    def add_criterion(self, name, priority, and_or, search_type, value):
-        """Add a search criteria object to a smart group."""
-        criterion = SearchCriteria(name, priority, and_or, search_type, value)
-        self.criteria.append(criterion)
-
-    def set_is_smart(self, value):
-        """Set whether a group is smart or not."""
-        self.set_bool("is_smart", value)
-        if value is True:
-            if self.find("criteria") is None:
-                self.criteria = ElementTree.SubElement(self, "criteria")
-
-    def add_device(self, device, container):
-        """Add a device to a group. Wraps XMLEditor.add_object_toPath.
-
-        device can be a JSSObject, and ID value, or the name of a valid
-        object.
-
-        """
-        # There is a size tag which the JSS manages for us, so we can ignore
-        # it.
-        if self.findtext("is_smart") == 'false':
-            self.add_object_to_path(device, container)
-        else:
-            # Technically this isn't true. It will strangely accept them, and
-            # they even show up as members of the group!
-            raise ValueError("Devices may not be added to smart groups.")
-
-
-class ComputerGroupEditor(GroupEditor):
-    """Add methods for ComputerGroups."""
-    def add_computer(self, device):
-        """Add a computer to the group."""
-        super(ComputerGroupEditor, self).add_device(device, "computers")
-
-    def remove_computer(self, device):
-        """Remove a computer from the group."""
-        super(ComputerGroupEditor, self).remove_object_from_list(device,
-                                                                 "computers")
-
-
-class MobileDeviceGroupEditor(GroupEditor):
-    """Add methods for MobileDeviceGroups."""
-    def add_mobile_device(self, device):
-        """Add a mobile_device to the group."""
-        super(MobileDeviceGroupEditor, self).add_device(device,
-                                                        "mobile_devices")
-
-    def remove_mobile_device(self, device):
-        """Remove a mobile_device from the group."""
-        super(MobileDeviceGroupEditor, self).remove_object_from_list(
-            device, "mobile_devices")
-
-
-class PolicyEditor(XMLEditor):
-    """Adds methods for manipulating common Policy elements."""
-
-
-class PackageEditor(XMLEditor):
-    """Editor methods for Packages."""
-    def set_os_requirements(self, requirements):
-        """Sets package OS Requirements. Pass in a string of comma seperated
-        OS versions. A lowercase 'x' is allowed as a wildcard, e.g. '10.9.x'
-
-        """
-        self.find("os_requirements").text = requirements
-
-    def set_category(self, category):
-        """Sets package category to 'category', which can be a string of an
-        existing category's name, or a Category object.
-
-        """
-        # For some reason, packages only have the category name, not the ID.
-        if isinstance(category, Category):
-            name = category.name
-        else:
-            name = category
-        self.find("category").text = name
-
-
 class JSSObjectFactory(object):
     """Create JSSObjects intelligently based on a single data argument."""
     def __init__(self, jss):
@@ -566,12 +462,12 @@ class JSSObjectFactory(object):
             else:
                 raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
         # Create a new object
-        elif isinstance(data, JSSObjectTemplate):
-            if obj_class.can_post:
-                url = obj_class.get_post_url()
-                return self.jss.post(obj_class, url, data)
-            else:
-                raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
+        # elif isinstance(data, JSSObjectTemplate):
+        #     if obj_class.can_post:
+        #         url = obj_class.get_post_url()
+        #         return self.jss.post(obj_class, url, data)
+        #     else:
+        #         raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
 
 
 class JSSObject(ElementTree.Element):
@@ -928,7 +824,7 @@ class JSSFlatObject(JSSObject):
         return self.get_url(None)
 
 
-class Account(XMLEditor, JSSContainerObject):
+class Account(JSSContainerObject):
     _url = '/accounts'
     container = 'users'
     id_url = '/userid/'
@@ -936,7 +832,7 @@ class Account(XMLEditor, JSSContainerObject):
                     'name': '/username/'}
 
 
-class AccountGroup(XMLEditor, JSSContainerObject):
+class AccountGroup(JSSContainerObject):
     """Account groups are groups of users on the JSS. Within the API
     hierarchy they are actually part of accounts, but I seperated them.
 
@@ -948,7 +844,7 @@ class AccountGroup(XMLEditor, JSSContainerObject):
                     'name': '/groupname/'}
 
 
-class ActivationCode(XMLEditor, JSSFlatObject):
+class ActivationCode(JSSFlatObject):
     _url = '/activationcode'
     type = 'activation_code'
     can_delete = False
@@ -956,19 +852,19 @@ class ActivationCode(XMLEditor, JSSFlatObject):
     can_list = False
 
 
-class AdvancedComputerSearch(XMLEditor, JSSContainerObject):
+class AdvancedComputerSearch(JSSContainerObject):
     _url = '/advancedcomputersearches'
 
 
-class AdvancedMobileDeviceSearch(XMLEditor, JSSContainerObject):
+class AdvancedMobileDeviceSearch(JSSContainerObject):
     _url = '/advancedmobiledevicesearches'
 
 
-class AdvancedUserSearch(XMLEditor, JSSContainerObject):
+class AdvancedUserSearch(JSSContainerObject):
     _url = '/advancedusersearches'
 
 
-class Building(XMLEditor, JSSContainerObject):
+class Building(JSSContainerObject):
     _url = '/buildings'
     list_type = 'building'
 
@@ -978,11 +874,11 @@ class Category(JSSContainerObject):
     list_type = 'category'
 
 
-class Class(XMLEditor, JSSContainerObject):
+class Class(JSSContainerObject):
     _url = '/classes'
 
 
-class Computer(XMLEditor, JSSDeviceObject):
+class Computer(JSSDeviceObject):
     """Computer objects include a 'match' search type which queries across
     multiple properties.
 
@@ -1003,20 +899,20 @@ class Computer(XMLEditor, JSSDeviceObject):
             return mac_addresses
 
 
-class ComputerCheckIn(XMLEditor, JSSFlatObject):
+class ComputerCheckIn(JSSFlatObject):
     _url = '/computercheckin'
     can_delete = False
     can_list = False
     can_post = False
 
 
-class ComputerCommand(XMLEditor, JSSContainerObject):
+class ComputerCommand(JSSContainerObject):
     _url = '/computercommands'
     can_delete = False
     can_put = False
 
 
-class ComputerExtensionAttribute(XMLEditor, JSSContainerObject):
+class ComputerExtensionAttribute(JSSContainerObject):
     _url = '/computerextensionattributes'
 
 
@@ -1049,48 +945,48 @@ class ComputerGroup(JSSGroupObject):
         super(ComputerGroup, self).remove_object_from_list(device, "computers")
 
 
-class ComputerInventoryCollection(XMLEditor, JSSFlatObject):
+class ComputerInventoryCollection(JSSFlatObject):
     _url = '/computerinventorycollection'
     can_list = False
     can_post = False
     can_delete = False
 
 
-class ComputerInvitation(XMLEditor, JSSContainerObject):
+class ComputerInvitation(JSSContainerObject):
     _url = '/computerinvitations'
     can_put = False
     search_types = {'name': '/name/', 'invitation': '/invitation/'}
 
 
-class ComputerReport(XMLEditor, JSSContainerObject):
+class ComputerReport(JSSContainerObject):
     _url = '/computerreports'
     can_put = False
     can_post = False
     can_delete = False
 
 
-class Department(XMLEditor, JSSContainerObject):
+class Department(JSSContainerObject):
     _url = '/departments'
     list_type = 'department'
 
 
-class DirectoryBinding(XMLEditor, JSSContainerObject):
+class DirectoryBinding(JSSContainerObject):
     _url = '/directorybindings'
 
 
-class DiskEncryptionConfiguration(XMLEditor, JSSContainerObject):
+class DiskEncryptionConfiguration(JSSContainerObject):
     _url = '/diskencryptionconfigurations'
 
 
-class DistributionPoint(XMLEditor, JSSContainerObject):
+class DistributionPoint(JSSContainerObject):
     _url = '/distributionpoints'
 
 
-class DockItem(XMLEditor, JSSContainerObject):
+class DockItem(JSSContainerObject):
     _url = '/dockitems'
 
 
-class EBook(XMLEditor, JSSContainerObject):
+class EBook(JSSContainerObject):
     _url = '/ebooks'
 
 
@@ -1106,14 +1002,14 @@ class FileUpload(JSSObject):
     # can_list = False
 
 
-class GSXConnection(XMLEditor, JSSFlatObject):
+class GSXConnection(JSSFlatObject):
     _url = '/gsxconnection'
     can_list = False
     can_post = False
     can_delete = False
 
 
-class JSSUser(XMLEditor, JSSFlatObject):
+class JSSUser(JSSFlatObject):
     """JSSUser is deprecated."""
     _url = '/jssuser'
     can_list = False
@@ -1123,19 +1019,19 @@ class JSSUser(XMLEditor, JSSFlatObject):
     search_types = {}
 
 
-class LDAPServer(XMLEditor, JSSContainerObject):
+class LDAPServer(JSSContainerObject):
     _url = '/ldapservers'
 
 
-class LicensedSoftware(XMLEditor, JSSContainerObject):
+class LicensedSoftware(JSSContainerObject):
     _url = '/licensedsoftware'
 
 
-class ManagedPreferenceProfile(XMLEditor, JSSContainerObject):
+class ManagedPreferenceProfile(JSSContainerObject):
     _url = '/managedpreferenceprofiles'
 
 
-class MobileDevice(XMLEditor, JSSDeviceObject):
+class MobileDevice(JSSDeviceObject):
     """Mobile Device objects include a 'match' search type which queries across
     multiple properties.
 
@@ -1158,11 +1054,11 @@ class MobileDevice(XMLEditor, JSSDeviceObject):
             self.findtext('general/mac_address')
 
 
-class MobileDeviceApplication(XMLEditor, JSSContainerObject):
+class MobileDeviceApplication(JSSContainerObject):
     _url = '/mobiledeviceapplications'
 
 
-class MobileDeviceCommand(XMLEditor, JSSContainerObject):
+class MobileDeviceCommand(JSSContainerObject):
     _url = '/mobiledevicecommands'
     can_put = False
     can_delete = False
@@ -1172,20 +1068,20 @@ class MobileDeviceCommand(XMLEditor, JSSContainerObject):
     can_post = False
 
 
-class MobileDeviceConfigurationProfile(XMLEditor, JSSContainerObject):
+class MobileDeviceConfigurationProfile(JSSContainerObject):
     _url = '/mobiledeviceconfigurationprofiles'
 
 
-class MobileDeviceEnrollmentProfile(XMLEditor, JSSContainerObject):
+class MobileDeviceEnrollmentProfile(JSSContainerObject):
     _url = '/mobiledeviceenrollmentprofiles'
     search_types = {'name': '/name/', 'invitation': '/invitation/'}
 
 
-class MobileDeviceExtensionAttribute(XMLEditor, JSSContainerObject):
+class MobileDeviceExtensionAttribute(JSSContainerObject):
     _url = '/mobiledeviceextensionattributes'
 
 
-class MobileDeviceInvitation(XMLEditor, JSSContainerObject):
+class MobileDeviceInvitation(JSSContainerObject):
     _url = '/mobiledeviceinvitations'
     can_put = False
     search_types = {'invitation': '/invitation/'}
@@ -1205,20 +1101,20 @@ class MobileDeviceGroup(JSSContainerObject):
             device, "mobile_devices")
 
 
-class MobileDeviceProvisioningProfile(XMLEditor, JSSContainerObject):
+class MobileDeviceProvisioningProfile(JSSContainerObject):
     _url = '/mobiledeviceprovisioningprofiles'
     search_types = {'name': '/name/', 'uuid': '/uuid/'}
 
 
-class NetbootServer(XMLEditor, JSSContainerObject):
+class NetbootServer(JSSContainerObject):
     _url = '/netbootservers'
 
 
-class NetworkSegment(XMLEditor, JSSContainerObject):
+class NetworkSegment(JSSContainerObject):
     _url = '/networksegments'
 
 
-class OSXConfigurationProfile(XMLEditor, JSSContainerObject):
+class OSXConfigurationProfile(JSSContainerObject):
     _url = '/osxconfigurationprofiles'
 
 
@@ -1281,12 +1177,12 @@ class Package(JSSContainerObject):
         self.find("category").text = name
 
 
-class Peripheral(XMLEditor, JSSContainerObject):
+class Peripheral(JSSContainerObject):
     _url = '/peripherals'
     search_types = {}
 
 
-class PeripheralType(XMLEditor, JSSContainerObject):
+class PeripheralType(JSSContainerObject):
     _url = '/peripheraltypes'
     search_types = {}
 
@@ -1421,39 +1317,39 @@ class Policy(JSSContainerObject):
         name.text = category.name
 
 
-class Printer(XMLEditor, JSSContainerObject):
+class Printer(JSSContainerObject):
     _url = '/printers'
 
 
-class RestrictedSoftware(XMLEditor, JSSContainerObject):
+class RestrictedSoftware(JSSContainerObject):
     _url = '/restrictedsoftware'
 
 
-class RemovableMACAddress(XMLEditor, JSSContainerObject):
+class RemovableMACAddress(JSSContainerObject):
     _url = '/removablemacaddresses'
 
 
-class SavedSearch(XMLEditor, JSSContainerObject):
+class SavedSearch(JSSContainerObject):
     _url = '/savedsearches'
     can_put = False
     can_post = False
     can_delete = False
 
 
-class Script(XMLEditor, JSSContainerObject):
+class Script(JSSContainerObject):
     _url = '/scripts'
     list_type = 'script'
 
 
-class Site(XMLEditor, JSSContainerObject):
+class Site(JSSContainerObject):
     _url = '/sites'
 
 
-class SoftwareUpdateServer(XMLEditor, JSSContainerObject):
+class SoftwareUpdateServer(JSSContainerObject):
     _url = '/softwareupdateservers'
 
 
-class SMTPServer(XMLEditor, JSSFlatObject):
+class SMTPServer(JSSFlatObject):
     _url = '/smtpserver'
     id_url = ''
     can_list = False
@@ -1461,52 +1357,16 @@ class SMTPServer(XMLEditor, JSSFlatObject):
     search_types = {}
 
 
-class UserExtensionAttribute(XMLEditor, JSSContainerObject):
+class UserExtensionAttribute(JSSContainerObject):
     _url = '/userextensionattributes'
 
 
-class User(XMLEditor, JSSContainerObject):
+class User(JSSContainerObject):
     _url = '/users'
 
 
-class UserGroup(XMLEditor, JSSContainerObject):
+class UserGroup(JSSContainerObject):
     _url = '/usergroups'
-
-
-class JSSObjectTemplate(ElementTree.Element):
-    """Base class for generating the skeleton XML required to post a new
-    object.
-
-    """
-    template_type = 'abstract_object_template'
-
-    def __init__(self, **kwargs):
-        """Init an Element with the right template_type."""
-        super(JSSObjectTemplate, self).__init__(tag=self.template_type,
-                                                **kwargs)
-
-    def makeelement(self, tag, attrib):
-        """Return an element."""
-        # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
-        # super() call to its __class__.makeelement(), which will fail due to
-        # the method resolution order / multiple inheritence of our objects
-        # (they have an editor AND a template or JSSObject parent class).
-        # This handles that issue.
-        return ElementTree.Element(tag, attrib)
-
-
-class JSSSimpleTemplate(JSSObjectTemplate):
-    """Abstract class for simple JSS Objects."""
-    template_type = 'abstract_simple_object'
-
-    def __init__(self, name, **kwargs):
-        super(JSSSimpleTemplate, self).__init__(**kwargs)
-        element_name = ElementTree.SubElement(self, "name")
-        element_name.text = name
-
-
-class CategoryTemplate(XMLEditor, JSSSimpleTemplate):
-    template_type = 'category'
 
 
 class SearchCriteria(ElementTree.Element):
@@ -1536,66 +1396,25 @@ class SearchCriteria(ElementTree.Element):
         return ElementTree.Element(tag, attrib)
 
 
-class PackageTemplate(PackageEditor, JSSObjectTemplate):
-    """Template for constructing package objects."""
-    template_type = "package"
-
-    def __init__(self, filename, cat_name="Unknown"):
-        super(PackageTemplate, self).__init__()
-        name = ElementTree.SubElement(self, "name")
-        name.text = filename
-        category = ElementTree.SubElement(self, "category")
-        category.text = cat_name
-        fname = ElementTree.SubElement(self, "filename")
-        fname.text = filename
-        ElementTree.SubElement(self, "info")
-        ElementTree.SubElement(self, "notes")
-        priority = ElementTree.SubElement(self, "priority")
-        priority.text = "10"
-        reboot = ElementTree.SubElement(self, "reboot_required")
-        reboot.text = "false"
-        fut = ElementTree.SubElement(self, "fill_user_template")
-        fut.text = "false"
-        feu = ElementTree.SubElement(self, "fill_existing_users")
-        feu.text = "false"
-        boot_volume = ElementTree.SubElement(self, "boot_volume_required")
-        boot_volume.text = "false"
-        allow_uninstalled = ElementTree.SubElement(self, "allow_uninstalled")
-        allow_uninstalled.text = "false"
-        ElementTree.SubElement(self, "os_requirements")
-        required_proc = ElementTree.SubElement(self, "required_processor")
-        required_proc.text = "None"
-        switch_w_package = ElementTree.SubElement(self, "switch_with_package")
-        switch_w_package.text = "Do Not Install"
-        install_if = ElementTree.SubElement(self,
-                                            "install_if_reported_available")
-        install_if.text = "false"
-        reinstall_option = ElementTree.SubElement(self, "reinstall_option")
-        reinstall_option.text = "Do Not Reinstall"
-        ElementTree.SubElement(self, "triggering_files")
-        send_notification = ElementTree.SubElement(self, "send_notification")
-        send_notification.text = "false"
-
-
-class TemplateFromFile(XMLEditor, JSSObjectTemplate):
-    """Generic template class for filling by an external file."""
-    def __init__(self, filename):
-        tree = ElementTree.parse(filename)
-        root = tree.getroot()
-        tag = root.tag
-        super(TemplateFromFile, self).__init__()
-        self.tag = tag
-        self._children = root._children
-
-
-class TemplateFromString(XMLEditor, JSSObjectTemplate):
-    """Generic template class for filling with a passed string."""
-    def __init__(self, data):
-        root = ElementTree.fromstring(data)
-        tag = root.tag
-        super(TemplateFromString, self).__init__()
-        self.tag = tag
-        self._children = root._children
+# class TemplateFromFile(JSSObjectTemplate):
+#     """Generic template class for filling by an external file."""
+#     def __init__(self, filename):
+#         tree = ElementTree.parse(filename)
+#         root = tree.getroot()
+#         tag = root.tag
+#         super(TemplateFromFile, self).__init__()
+#         self.tag = tag
+#         self._children = root._children
+#
+#
+# class TemplateFromString(JSSObjectTemplate):
+#     """Generic template class for filling with a passed string."""
+#     def __init__(self, data):
+#         root = ElementTree.fromstring(data)
+#         tag = root.tag
+#         super(TemplateFromString, self).__init__()
+#         self.tag = tag
+#         self._children = root._children
 
 
 class JSSListData(dict):

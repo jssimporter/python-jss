@@ -190,10 +190,10 @@ class testJSSObject(object):
                       NoListObject, None)
         assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
                       NoGetObject, None)
-        bad_element = ElementTree.fromstring("<xml>No workie.</xml>")
-        bad_policy = JSSObjectTemplate(element=bad_element)
-        assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
-                      NoPostObject, bad_policy)
+        bad_policy = Policy(j_global, "No workie")
+        # assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
+        #               NoPostObject, bad_policy)
+        assert_raises(JSSMethodNotAllowedError, bad_policy.update())
 
         np = NoPutObject(j_global, "TestNoPut")
         assert_raises(JSSMethodNotAllowedError, np.update)
