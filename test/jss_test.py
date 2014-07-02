@@ -291,9 +291,8 @@ class TestJSSObjectNewMethods(object):
         package.delete()
 
     def test_JSSSimpleTemplate(self):
-        cat_template = CategoryTemplate("Python JSS Test Category")
-        assert_is_instance(cat_template, CategoryTemplate)
-        category = j_global.Category(cat_template)
+        category = Category(j_global, "Python JSS Test Category")
+        category.update()
         assert_is_instance(category, Category)
         category.delete()
 

@@ -838,7 +838,7 @@ class JSSContainerObject(JSSObject):
     """
     list_type = 'JSSContainerObject'
 
-    def new(self, name):
+    def new(self, name, **kwargs):
         name_element = ElementTree.SubElement(self, "name")
         name_element.text = name
 
@@ -973,8 +973,9 @@ class Building(XMLEditor, JSSContainerObject):
     list_type = 'building'
 
 
-class Category(XMLEditor, JSSContainerObject):
+class Category(JSSContainerObject):
     _url = '/categories'
+    list_type = 'category'
 
 
 class Class(XMLEditor, JSSContainerObject):
