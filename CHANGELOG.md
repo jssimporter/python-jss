@@ -21,25 +21,25 @@ CHANGES:
 
 ADDITIONS:
 
-- jss_helper now has a promotion feature... Except see CHANGES below.
+- ```jss_helper``` now has a promotion feature... Except see CHANGES below.
 
 CHANGES:
 
-- XMLEditor.add_object_to_list() now returns the element added.
-- JSSObject.update() now accepts a template as a parameter (defaults to None) to replace instance's data from a template.
-- Removing jss_helper to its own project, here: https://github.com/sheagcraig/jss_helper
+- ```XMLEditor.add_object_to_list()``` now returns the element added.
+- ```JSSObject.update()``` now accepts a template as a parameter (defaults to None) to replace instance's data from a template.
+- Removing ```jss_helper``` to its own project, here: https://github.com/sheagcraig/jss_helper
 
 FIXES:
 
-- XMLEditor.add_object_to_list() fixed.
-- PolicyEditor.add_package() fixed.
-- JSSObject.update() did not properly update instance's data.
+- ```XMLEditor.add_object_to_list()``` fixed.
+- ```PolicyEditor.add_package()``` fixed.
+- ```JSSObject.update()``` did not properly update instance's data.
 
 ### 0.2.1 (June 25, 2014)
 
 ADDITIONS:
 
-- Adds TemplateFromFile and TemplateFromString objects for using external template files and strings. 
+- Adds ```TemplateFromFile``` and ```TemplateFromString``` classes for using external template files and strings.
 - Adds batch_scope feature to jss_helper.
 
 CHANGES:
