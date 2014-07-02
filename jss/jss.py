@@ -1221,9 +1221,63 @@ class OSXConfigurationProfile(XMLEditor, JSSContainerObject):
     _url = '/osxconfigurationprofiles'
 
 
-class Package(PackageEditor, JSSContainerObject):
+class Package(JSSContainerObject):
     _url = '/packages'
     list_type = 'package'
+
+    def new(self, filename, **kwargs):
+        name = ElementTree.SubElement(self, "name")
+        name.text = filename
+        category = ElementTree.SubElement(self, "category")
+        category.text = kwargs.get('cat_name')
+        fname = ElementTree.SubElement(self, "filename")
+        fname.text = filename
+        ElementTree.SubElement(self, "info")
+        ElementTree.SubElement(self, "notes")
+        priority = ElementTree.SubElement(self, "priority")
+        priority.text = "10"
+        reboot = ElementTree.SubElement(self, "reboot_required")
+        reboot.text = "false"
+        fut = ElementTree.SubElement(self, "fill_user_template")
+        fut.text = "false"
+        feu = ElementTree.SubElement(self, "fill_existing_users")
+        feu.text = "false"
+        boot_volume = ElementTree.SubElement(self, "boot_volume_required")
+        boot_volume.text = "false"
+        allow_uninstalled = ElementTree.SubElement(self, "allow_uninstalled")
+        allow_uninstalled.text = "false"
+        ElementTree.SubElement(self, "os_requirements")
+        required_proc = ElementTree.SubElement(self, "required_processor")
+        required_proc.text = "None"
+        switch_w_package = ElementTree.SubElement(self, "switch_with_package")
+        switch_w_package.text = "Do Not Install"
+        install_if = ElementTree.SubElement(self,
+                                            "install_if_reported_available")
+        install_if.text = "false"
+        reinstall_option = ElementTree.SubElement(self, "reinstall_option")
+        reinstall_option.text = "Do Not Reinstall"
+        ElementTree.SubElement(self, "triggering_files")
+        send_notification = ElementTree.SubElement(self, "send_notification")
+        send_notification.text = "false"
+
+    def set_os_requirements(self, requirements):
+        """Sets package OS Requirements. Pass in a string of comma seperated
+        OS versions. A lowercase 'x' is allowed as a wildcard, e.g. '10.9.x'
+
+        """
+        self.find("os_requirements").text = requirements
+
+    def set_category(self, category):
+        """Sets package category to 'category', which can be a string of an
+        existing category's name, or a Category object.
+
+        """
+        # For some reason, packages only have the category name, not the ID.
+        if isinstance(category, Category):
+            name = category.name
+        else:
+            name = category
+        self.find("category").text = name
 
 
 class Peripheral(XMLEditor, JSSContainerObject):
