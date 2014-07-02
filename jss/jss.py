@@ -718,6 +718,26 @@ class JSSObject(ElementTree.Element):
         list_element = self._handle_location(list_element)
         list_element.clear()
 
+    @classmethod
+    def from_file(cls, jss, filename):
+        """Creates a new JSSObject from an external XML file."""
+        tree = ElementTree.parse(filename)
+        root = tree.getroot()
+        new_object = cls(jss, data=root)
+        #new_object.clear()
+        #for child in root.getchildren():
+        #    new_object._children.append(child)
+        return new_object
+
+    #@classmethod
+    #def from_string(cls, data):
+    #    """Creates a new JSSObject from an XML string."""
+    #    root = ElementTree.fromstring(data)
+    #    tag = root.tag
+    #    super(TemplateFromString, self).__init__()
+    #    self.tag = tag
+    #    self._children = root._children
+
 
 class JSSContainerObject(JSSObject):
     """Subclass for object types which can contain lists.
@@ -1387,27 +1407,6 @@ class SearchCriteria(ElementTree.Element):
         # (they have an editor AND a template or JSSObject parent class).
         # This handles that issue.
         return ElementTree.Element(tag, attrib)
-
-
-# class TemplateFromFile(JSSObjectTemplate):
-#     """Generic template class for filling by an external file."""
-#     def __init__(self, filename):
-#         tree = ElementTree.parse(filename)
-#         root = tree.getroot()
-#         tag = root.tag
-#         super(TemplateFromFile, self).__init__()
-#         self.tag = tag
-#         self._children = root._children
-#
-#
-# class TemplateFromString(JSSObjectTemplate):
-#     """Generic template class for filling with a passed string."""
-#     def __init__(self, data):
-#         root = ElementTree.fromstring(data)
-#         tag = root.tag
-#         super(TemplateFromString, self).__init__()
-#         self.tag = tag
-#         self._children = root._children
 
 
 class JSSListData(dict):
