@@ -557,11 +557,8 @@ class JSSObject(ElementTree.Element):
             raise JSSMethodNotAllowedError(self.__class__.__name__)
         self.jss.delete(self.get_object_url())
 
-    def update(self, template=None):
-        """Update this object on the JSS.
-
-        template:   If passed a template object, the update will replace the
-                    current data with the templated data.
+    def save(self):
+        """Update existing objects or create new object on the JSS.
 
         Data validation is up to the client.
 

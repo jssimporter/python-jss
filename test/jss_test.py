@@ -91,7 +91,7 @@ class testJSS(object):
     @with_setup(setup)
     def test_JSS_post(self):
         new_policy = Policy(j_global, TESTPOLICY)
-        new_policy.update()
+        new_policy.save()
         # If successful, we'll get a new ID number
         assert_is_instance(new_policy.id, str)
         new_policy.delete()
@@ -109,14 +109,14 @@ class testJSS(object):
     @with_setup(setup)
     def test_jss_put(self):
         new_policy = Policy(j_global, TESTPOLICY)
-        new_policy.update()
+        new_policy.save()
         id_ = new_policy.id
 
         # Change the policy.
         recon = new_policy.find('maintenance/recon')
         # This is str, not bool...
         recon.text = 'false'
-        new_policy.update()
+        new_policy.save()
 
         test_policy = j_global.Policy(id_)
         assert_equal(test_policy.find('maintenance/recon').text, 'false')
@@ -126,7 +126,7 @@ class testJSS(object):
     @with_setup(setup)
     def test_jss_delete(self):
         new_policy = Policy(j_global, TESTPOLICY)
-        new_policy.update()
+        new_policy.save()
         id_ = new_policy.id
 
         # Test delete. This is of course successful if the previous two tests
@@ -155,7 +155,7 @@ class testJSSObject(object):
 
     def test_JSSObject_get_object_url(self):
         new_policy = Policy(j_global, TESTPOLICY)
-        new_policy.update()
+        new_policy.save()
 
         assert_equal(new_policy.get_object_url(), '/policies/id/%s' %
                      new_policy.id)
@@ -193,10 +193,10 @@ class testJSSObject(object):
         bad_policy = Policy(j_global, "No workie")
         # assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
         #               NoPostObject, bad_policy)
-        assert_raises(JSSMethodNotAllowedError, bad_policy.update())
+        assert_raises(JSSMethodNotAllowedError, bad_policy.save())
 
         np = NoPutObject(j_global, "TestNoPut")
-        assert_raises(JSSMethodNotAllowedError, np.update)
+        assert_raises(JSSMethodNotAllowedError, np.save)
 
         nd = NoDeleteObject(j_global, "TestNoDelete")
         assert_raises(JSSMethodNotAllowedError, nd.delete)
@@ -269,7 +269,7 @@ class TestJSSObjectNewMethods(object):
     @with_setup(setup)
     def test_ComputerGroupNew(self):
         cg = ComputerGroup(j_global, TESTGROUP)
-        cg.update()
+        cg.save()
         assert_is_instance(cg, ComputerGroup)
         cg.delete()
 
@@ -278,7 +278,7 @@ class TestJSSObjectNewMethods(object):
         cg = ComputerGroup(j_global, TESTGROUP, smart=True)
         cg.add_criterion("Computer Name", 0, "and", "like", "craigs")
         cg.findtext("criteria/criterion/name")
-        cg.update()
+        cg.save()
         assert_is_instance(cg, ComputerGroup)
         assert_true(bool(cg.findtext("is_smart")))
         assert_equals(cg.findtext("criteria/criterion/name"), "Computer Name")
@@ -286,13 +286,13 @@ class TestJSSObjectNewMethods(object):
 
     def test_PackageTemplate(self):
         package = Package(j_global, "Taco.pkg", cat_name="Testing")
-        package.update()
+        package.save()
         assert_is_instance(package, Package)
         package.delete()
 
     def test_JSSSimpleTemplate(self):
         category = Category(j_global, "Python JSS Test Category")
-        category.update()
+        category.save()
         assert_is_instance(category, Category)
         category.delete()
 
@@ -337,7 +337,7 @@ class TestJSSObjectNewMethods(object):
 </policy>
 """
         assert_equal(policy.__repr__(), policy_string)
-        policy.update()
+        policy.save()
         # Test whether JSS accepts our new() object. Will throw an exception if
         # it doesn't work; replaces data if it does, thus they should no longer
         # match.

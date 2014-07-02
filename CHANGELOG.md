@@ -8,13 +8,14 @@ CHANGES:
   - Templates' __init__ methods have become the new() method on objects.
   - Only implemented the existing set of: Category, ComputerGroup, MobileDeviceGroup, Package, Policy
   - SearchCriteria remains an object, although no longer inherits from a template.
+- Renamed ```JSSObject.update()``` to ```JSSObject.save()``` to represent its added responsibilities (it can now post new objects as well)
 - Creating new objects has changed as a result
-  - To create an object now, use the class constructor with the string argument "name", configure as before, and then update().
+  - To create an object now, use the class constructor with the string argument "name", configure as before, and then save().
   - i.e.
     ```
 	policy = Policy(jss_instance, "Install Adventure")  
-	policy.update()  
-	```
+	policy.save()
+    ```
 
 ### 0.2.2 (UNRELEASED)
 
