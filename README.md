@@ -13,7 +13,7 @@ lacking.
 A concrete example is the template system. While I rely heavily on automating
 policy creation, I will not need implementations for MobileDeviceInvitations.
 However, based on the code here, it should be easy for anyone wishing to do so
-to implement a subclass of XMLEditor for those objects, and I would be
+to implement a new() method for those objects, and I would be
 happy to include them. Send me your pull requests!
 
 Installing:
@@ -23,7 +23,8 @@ The easiest method is to use pip to grab python-jss:
 $ pip install python-jss
 ```
 
-Alternately, the python-jss package can be put wherever you normally install your modules.
+Alternately, the python-jss package can be put wherever you normally install
+your modules.
 
 Behind the scenes, python-jss uses requests and Greg Neagle's FoundationPlist.
 Check them out at:
@@ -34,9 +35,10 @@ Data Validation:
 =================
 The wrapper prevents you from trying to delete object types that can't be
 deleted, and from POSTing to objects that can't be created. It does zero
-validation on any JSSObjectTemplate or JSSObject xml prior to POST or PUT
-operations. However, the JSS handles all of this nicely, and ElementTree should
-keep you from creating improperly formatted XML.
+validation on any xml prior to POST or PUT operations. However, the JSS handles
+all of this nicely, and ElementTree should keep you from creating improperly
+formatted XML. If you get an exception, chances are good the structure of the
+XML is off a bit.
 
 The JSS also handles filling in missing information pretty well. For example,
 in a policy scope, if you provide the id of a computer to scope to, it will add
@@ -44,6 +46,10 @@ the name.
 
 Basics-Connecting to the JSS:
 =================
+Prior to doing anything else, you need a JSS object, representing one server.
+Note, it's quite possible to have active connections to multiple servers for
+transferring data between them!
+
 ```
 # Connect to the JSS
 >>> import jss
@@ -54,71 +60,92 @@ Basics-Connecting to the JSS:
 Supplying Credentials to the JSSPrefs object:
 =================
 The preferred method for specifying credentials is to create a preferences file
-at "~/Library/Preferences/com.github.sheagcraig.python-jss.plist".  Required keys include:
-jss_user
-jss_pass
-jss_url (Should be full URL with port, e.g. "https://myjss.domain.org:8443"
+at "~/Library/Preferences/com.github.sheagcraig.python-jss.plist".  Required
+keys include:
+- jss_user
+- jss_pass
+- jss_url (Should be full URL with port, e.g. "https://myjss.domain.org:8443"
 and can be set with:
 ```
 defaults write ~/Library/Preferences/com.github.sheagcraig.python-jss.plist jss_user <username>
 defaults write ~/Library/Preferences/com.github.sheagcraig.python-jss.plist jss_password <password>
 defaults write ~/Library/Preferences/com.github.sheagcraig.python-jss.plist jss_url <url>
 ```
+
 If you are working on a non-OS X machine, the JSSPrefs object falls back to
 using plistlib, although it's up to you to create the proper xml file.
 
 Interacting with the JSS:
 =================
-In general, you should use the constructor methods on the JSS to query
-for existing objects and create new objects. The JSS will return either an
-object subclassed from JSSObject, or a list of JSSListData objects.
+In general, you should use the following workflow:
+- To query for existing objects, use the factory methods on the server
+  instance. For each object type listed in the API reference, there is a
+  corresponding method: JSS.Package, JSS.MobileDeviceConfigurationProfile, etc.
+  If the query is successful, it will return an object of the appropriate class,
+  or for listing operations (no argument), it will return a list of objects.
 
-Updating existing objects and deleting objects should be handled through the
-methods.
+  After careful consideration, I decided to do it this way rather than by using
+  the composite pattern to treat lists and single objects similarly. In thinking
+  about what operations I would want to perform, deleting ALL computers at once,
+  or updating all policies at once, for example, seemed both dangerous and
+  unnecessary.
+  
+  Also, the JSS returns different data structures for an object type
+  depending on the context. A "full" object listing is _not_ the same thing as
+  the greatly abbreviated data returned by a listing operation or a "match"
+  search.  Likewise, trying to PUT a new object by just editing the full XML
+  retrieved from an already existing object would fail. (For example, the ID
+  property is assigned by the JSS, not you.)
+  
+  Therefore, there are a couple of object classes for each type of data:
+  * JSSObject: All data on a single object, like a single computer, the activation
+  code, or a policy.
+  * JSSObjectList: A list of JSSListData objects, containing only the most
+  important information on an object.
+  
+  I.e.:
 
-After careful consideration, I decided to do it this way rather than by using
-the composite pattern to treat lists and single objects similarly. In thinking
-about what operations I would want to perform, deleting ALL computers at once,
-or updating all policies at once, for example, seemed both dangerous and
-unnecessary.
+  ```
+  >>> # To query, provide a search argument:
+  >>> existing_policy = j.Policy("Install Adobe Flash Player-14.0.0.125")
+  >>> # To list, don't provide any arguments:
+  >>> all_policies = j.Policy()
+  ```
 
-Also, the JSS returns different data structures for an object type
-depending on the context. A "full" object listing is _not_ the same thing as the
-greatly abbreviated data returned by a listing operation or a "match" search.
-Likewise, trying to PUT a new object by just editing the full XML retrieved
-from an already existing object would fail. (For example, the ID is assigned by
-the JSS, not you.)
+- For creating new objects (of classes which allow it) instantiate an object of
+  the desired type directly. I.e.: 
 
-Therefore, there are a few object classes for each type of data:
-* JSSObject: All data on a single object, like a single computer, the activation
-code, or a policy.
-* JSSObjectList: A list of JSSListData objects, containing only the most
-important information on an object.
-* JSSObjectTemplate: An snippet of XML sufficient to create a new object of that
-class
+  ```
+  >>> # This creates a new Policy object with the basic required XML.
+  >>> new_policy = jss.Policy(j, "Al Pastor")
+  >>> # When you are ready to add it to the server, perform a save...
+  >>> new_policy.save()
+  ```
 
-I.e.:
+  Notice that with _new_ objects you have to pass a reference to the server
+  object to the object constructor. Think of this as associating this new
+  object, in this case a Policy, with a server.
 
-To GET an existing object (JSS constructor)
-```
->>> computers = j.Computer()
->>> computer = j.Computer(25)
-```
-Create a new object (JSS constructor)
-```
->>> j.Computer(computer_template)
-```
-Once you have the JSSObject you can update/delete it. In this example, the
-objects are of type Computer.
-```
->>> computer.update()
-POST: Success
->>> computer.delete()
-DEL: Success
-```
+- Any time you want to save changes to an existing policy or upload a new one,
+  call the .save() method on it. Continuing from above...
+
+  ```
+  >>> existing_policy.find('general/name').text = "Install Adobe Flash Player 202.0.0.14"
+  >>> existing_policy.save()
+  ```
+
+- Deleting an object is a method on the object for those types which support it.
+
+  ```
+  >>> new_policy.delete()
+  ```
 
 Querying for Objects:
 =================
+
+Different objects allow different kinds of searches. Most objects allow you to
+search by ID or by name.
+
 ```
 >>> # Find a computer (returns a Computer object, which prints itself if not
 >>> # assigned
@@ -174,7 +201,22 @@ id:		455
 name:		USLab-test
 --------------------------------------------------
 ... # Results go on...
+```
 
+Working with JSSObjectList(s):
+=================
+
+You can sort lists of objects, which by default uses the ID property. You can
+also sort by name. Also, objects referenced in a list can be "converted" to full
+objects by using the retrieve method.
+
+Again, listing operations don't retrieve full information. A list of computers
+returns only their names and ID's. A list of mobile devices returns a bit more
+info: Serial number, mac addresses, UDID, and a few others. Obviously, the JSS
+stores a lot more information on these devices, and indeed, pulling the "full"
+object allows you to access that information.
+
+```
 >>> # Objects can be retrieved from this list by specifying an id or list index:
 >>> myimac = computers.retrieve(438) # same as computers.retrieve_by_id(454)
 
@@ -189,7 +231,8 @@ for mobiledeviceconfigurationprofiles.
 
 Of course, you can get a list like this as well:
 ```
->>> dir(jss.JSS)
+>>> help(jss)
+>>> help(jss.JSS) # For factory method names...
 ```
 
 Manipulating JSSObjects:
@@ -201,47 +244,45 @@ https://docs.python.org/2/library/xml.etree.elementtree.html and
 http://effbot.org/zone/element-index.htm for great introductions to this useful
 module.
 
-python-jss adds a better __repr__ method to its JSSObjects and
-JSSObjectTemplates, however. Simply print() or call an object in the
-interpretor to see a nicely indented representation of the Element. This aids
-in quickly experimenting with and manipulating data in the interpretor.
+python-jss adds a better __repr__ method to its JSSObjects and, however. Simply
+print() or call an object in the interpretor to see a nicely indented
+representation of the Element. This aids in quickly experimenting with and
+manipulating data in the interpretor.
 
-In addition the various methods of Element, JSSObjects and JSSObjectTemplates
-also inherit methods of XMLEditor, a class which adds helper methods to wrap
-some of the more common tasks. Policies, for example, include a PolicyEditor,
-which adds methods for add_object_to_scope(), add_object_to_exclusions(),
-set_recon(), set_set_service(), etc.
+In addition to the various methods of Element, JSSObjects also provides helper
+methods to wrap some of the more common tasks. Policies, for example, includes
+methods for add_object_to_scope(), add_object_to_exclusions(), set_recon(),
+set_set_service(), etc.
 
 To see a full list of methods available for an object type, as well as their
 signatures and docstrings:
 ```
->>> help(jss.Policy)
-class Policy(PolicyEditor, JSSContainerObject)
+Help on class Policy in module jss.jss:
+
+class Policy(JSSContainerObject)
  |  Method resolution order:
  |      Policy
- |      PolicyEditor
- |      XMLEditor
  |      JSSContainerObject
  |      JSSObject
  |      xml.etree.ElementTree.Element
  |      __builtin__.object
- |
- |  Methods inherited from PolicyEditor:
- |
+ |  
+ |  Methods defined here:
+ |  
  |  add_object_to_exclusions(self, obj)
  |      Add an object 'obj' to the appropriate scope exclusions block.
- |
+ |      
  |      obj should be an instance of Computer, ComputerGroup, Building,
  |      or Department.
- |
+ |  
  |  add_object_to_scope(self, obj)
  |      Add an object 'obj' to the appropriate scope block.
- |
+ |  
  |  add_package(self, pkg)
  |      Add a jss.Package object to the policy with action=install.
- |
- |      obj should be an instance of Computer, ComputerGroup, Building,
- |      or Department.
+ |  
+ |  clear_scope(self)
+ |      Clear all objects from the scope, including exclusions.
 #...more methods and properties
 ```
 
@@ -249,39 +290,31 @@ Note: All data in the objects are strings! True/False values, int values, etc,
 are all string unless you cast them yourself. The id properties of the various
 objects are strings!
 
-Note: At the moment I'm using multiple-inheritance to add the XMLEditor
-methods. This leaves me uneasy. The benefit is that you can avoid a
-"middle-man" dot reference to editor (e.g.
-policy.editor.add_object_to_scope()), but the downside is that it's ugly, and
-as the Zen of Python states, "Beautiful is better than ugly" ```import this```.
-
-Creating, Updating, and Deleting Objects:
+Example: Creating, Updating, and Deleting Objects:
 =================
-To create a new object, you need to pass an instance of a JSSObjectTemplate.
-JSSObjectTemplate is also an ElementTree Element, so you can manipulate its data in
-the same way.
+To create a new object, you need to instantiate the desired object type with a
+reference to the JSS server you plan to upload to, and a name. Some object
+types include extra keyword arguments to speed up initial setup.
 
-Modify the template to your needs and then call the method
-constructor on the JSS instance.
+Next, modify the object to your needs and then call the ```save()``` method.
 
 ```
->>> new_policy_data = jss.JSSPolicyTemplate()
->>>
+>>> new_policy = jss.Policy(j, "New Policy")
+
 >>> # Manipulate with Element methods
->>> new_policy_data.find('enabled').text = 'false'
+>>> new_policy.find('enabled').text = 'false'
 
 >>> # Add a computer to the scope (accepts Computer objects, or ID or name)
 >>> # First, let's grab a computer to scope to...
 >>> myIIGS = j.Computer("myIIGS")
 >>> # ...and add it to our policy's scope:
->>> new_policy_data.add_object_to_scope(myIIGS)
->>> # The constructor will return your new object, so assign it to a variable
->>> # if you want to further manipulate it.
->>> new_policy = j.Policy(new_policy_data)
+>>> new_policy.add_object_to_scope(myIIGS)
+>>> # Up to this point, the object is not on the server. To upload it...
+>>> new_policy.save()
 
->>> # To change and update this object:
+>>> # Subsequent changes must also be saved:
 >>> new_policy.find('general/name').text = 'Install Taco Software'
->>> new_policy.update()
+>>> new_policy.save()
 
 >>> # ...and to delete it:
 >>> new_policy.delete()
@@ -289,7 +322,11 @@ constructor on the JSS instance.
 
 SSL Errors:
 =================
-Requests is in the process of integrating changes to urllib3 to support Server Name Indication ('SNI') for python 2.x versions. If you are requesting SSL verification (which is on by default in python-jss), _and_ your JSS uses SNI, you will probably get Tracebacks that look like this:
+Requests is in the process of integrating changes to urllib3 to support Server
+Name Indication ('SNI') for python 2.x versions. If you are requesting SSL
+verification (which is on by default in python-jss), _and_ your JSS uses SNI,
+you will probably get Tracebacks that look like this:
+
 ```
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
@@ -317,13 +354,29 @@ Hopefully this is temporary, although requests' changelog does claim to have "Fi
 
 FoundationPlist, binary plists, and Python:
 =================
-python-jss should handle all plist operations correctly. However, you may see a warning about FoundationPlist not importing.
+python-jss should handle all plist operations correctly. However, you may see a
+warning about FoundationPlist not importing.
 
-OS X converts plists to binary these days, which will make the standard library plistlib fail, assuming the plist is "badly formed." Thus, python-jss includes FoundationPlist. However, if you have installed python from a non-Apple source (i.e. python.org), FoundationPlist's dependencies will not be met, and python-jss will fall back to using plistlib. This will also happen on non-OS X machines, where it should not be a problem, since they shouldn't be converting it to binary when you aren't looking.
+OS X converts plists to binary these days, which will make the standard library
+plistlib fail, claiming that the plist is "badly formed." Thus, python-jss
+includes FoundationPlist. However, if you have installed python from a
+non-Apple source (i.e. python.org), FoundationPlist's dependencies will not be
+met, and python-jss will fall back to using plistlib. This will also happen on
+non-OS X machines, where it should not be a problem, since they shouldn't be
+secertly converting preferences to binary when you aren't looking.
 
-To include binary plist support, you will need to ensure that python-jss/FoundationPlist have access to the PyObjC package, and specifically the Foundation module. In some circumstances, it can be as easy as adding the path to the Apple-installed PyObjC to your PYTHONPATH. On my machine:
+To include binary plist support, you will need to ensure that
+python-jss/FoundationPlist have access to the PyObjC package, and specifically
+the Foundation module. In some circumstances, it can be as easy as adding the
+path to the Apple-installed PyObjC to your PYTHONPATH. On my machine:
+
 ```
 export PYTHONPATH=$PYTHONPATH:/System/Library/Frameworks/Python.framework/Versions/Current/Extras/lib/python/PyObjC:/System/Library/Frameworks/Python.framework/Versions/Current/Extras/lib/python
 ```
 
-This won't work for Python3.x, and may not work for some setups of 2.x. You should either try to install PyObjC ```sudo pip install pyobjc```, create a plist file by hand rather than by using ```defaults``` (you could create the file as described above and then ```plutil -convert xml1 plist_filename``` , or just use the username and password arguments to the JSS constructor and avoid using the JSSPrefs object.
+This won't work for Python3.x, and may not work for some setups of 2.x. You
+should either try to install PyObjC ```sudo pip install pyobjc```, create a
+plist file by hand rather than by using ```defaults``` (you could create the
+file as described above and then ```plutil -convert xml1 plist_filename``` , or
+just use the username and password arguments to the JSS constructor and avoid
+using the JSSPrefs object.

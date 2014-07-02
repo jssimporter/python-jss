@@ -49,7 +49,7 @@ def setup():
         pass
 
 
-class testJSSPrefs(object):
+class TestJSSPrefs(object):
 
     def test_jssprefs(self):
         jp = JSSPrefs()
@@ -67,7 +67,7 @@ class testJSSPrefs(object):
         assert_raises(JSSPrefsMissingKeyError, JSSPrefs, 'test/incomplete_preferences.plist')
 
 
-class testJSS(object):
+class TestJSS(object):
 
     def test_jss_with_jss_prefs(self):
         jp = JSSPrefs()
@@ -135,7 +135,17 @@ class testJSS(object):
         assert_raises(JSSGetError, j_global.Policy, id_)
 
 
-class testJSSObject(object):
+class TestJSSObjectFactory(object):
+    def test_JSSObjectFactory_list(self):
+        obj_list = j_global.factory.get_object(Policy)
+        assert_is_instance(obj_list, JSSObjectList)
+
+    def test_JSSObjectFactory_JSSObject(self):
+        obj_list = j_global.factory.get_object(Policy, 242)
+        assert_is_instance(obj_list, Policy)
+
+
+class TestJSSObject(object):
     def test_JSSObject_new(self):
         assert_raises(NotImplementedError, JSSObject, j_global, "Test")
 
@@ -204,23 +214,13 @@ class testJSSObject(object):
         assert_raises(JSSMethodNotAllowedError, nd.delete)
 
 
-class testJSSObjectFactory(object):
-    def test_JSSObjectFactory_list(self):
-        obj_list = j_global.factory.get_object(Policy)
-        assert_is_instance(obj_list, JSSObjectList)
-
-    def test_JSSObjectFactory_JSSObject(self):
-        obj_list = j_global.factory.get_object(Policy, 242)
-        assert_is_instance(obj_list, Policy)
-
-
-class testJSSFlatObject(object):
+class TestJSSFlatObject(object):
     def test_JSSFlatObject_new(self):
         """Ensure we cannot create new objects of this type."""
         assert_raises(JSSPostError, ActivationCode, j_global, "Test")
 
 
-class testJSSDeviceObjects(object):
+class TestJSSDeviceObjects(object):
     def test_JSSDeviceObject_properties(self):
         computer = j_global.Computer('name=craigs-imac')
         assert_equal(computer.udid, '012CDB33-82E1-558F-9F6F-18EAAC05B5AC')
@@ -240,7 +240,7 @@ class testJSSDeviceObjects(object):
         assert_equal(computer.bluetooth_mac_address, '28:6A:BA:11:F0:A4')
 
 
-class testJSSObject_Subclasses(object):
+class TestJSSObject_Subclasses(object):
     def jssobject_runner(self, object_cls):
         """ Helper function to test individual object classes."""
         obj_list = j_global.factory.get_object(object_cls)
@@ -347,13 +347,13 @@ class TestJSSObjectNewMethods(object):
         policy.delete()
 
 
-class testJSSListData(object):
+class TestJSSListData(object):
     # The methods on JSSListData are indirectly tested in many of the above
     # tests.
     pass
 
 
-class testJSSObjectList(object):
+class TestJSSObjectList(object):
     def test_retrieve(self):
         computers = j_global.Computer()
         assert_is_instance(computers.retrieve(1), Computer)
