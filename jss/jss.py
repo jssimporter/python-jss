@@ -724,19 +724,14 @@ class JSSObject(ElementTree.Element):
         tree = ElementTree.parse(filename)
         root = tree.getroot()
         new_object = cls(jss, data=root)
-        #new_object.clear()
-        #for child in root.getchildren():
-        #    new_object._children.append(child)
         return new_object
 
-    #@classmethod
-    #def from_string(cls, data):
-    #    """Creates a new JSSObject from an XML string."""
-    #    root = ElementTree.fromstring(data)
-    #    tag = root.tag
-    #    super(TemplateFromString, self).__init__()
-    #    self.tag = tag
-    #    self._children = root._children
+    @classmethod
+    def from_string(cls, jss, xml_string):
+        """Creates a new JSSObject from an XML string."""
+        root = ElementTree.fromstring(xml_string)
+        new_object = cls(jss, data=root)
+        return new_object
 
 
 class JSSContainerObject(JSSObject):
