@@ -1,4 +1,4 @@
-### 0.2.2 (UNRELEASED)
+### 0.2.2 (July 2, 2014)
 
 ADDITIONS:
 
