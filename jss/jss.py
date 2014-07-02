@@ -513,7 +513,7 @@ class JSSObject(ElementTree.Element):
         """Return an Element."""
         # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
         # super() call to its __class__.makeelement(), which will fail due to
-        # the method resolution order / multiple inheritence of our objects
+        # the method resolution order / multiple inheritance of our objects
         # (they have an editor AND a template or JSSObject parent class).
         # This handles that issue.
         return ElementTree.Element(tag, attrib)
@@ -1390,7 +1390,7 @@ class SearchCriteria(ElementTree.Element):
         """Return an Element."""
         # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
         # super() call to its __class__.makeelement(), which will fail due to
-        # the method resolution order / multiple inheritence of our objects
+        # the method resolution order / multiple inheritance of our objects
         # (they have an editor AND a template or JSSObject parent class).
         # This handles that issue.
         return ElementTree.Element(tag, attrib)

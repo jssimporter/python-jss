@@ -249,7 +249,7 @@ Note: All data in the objects are strings! True/False values, int values, etc,
 are all string unless you cast them yourself. The id properties of the various
 objects are strings!
 
-Note: At the moment I'm using multiple-inheritence to add the XMLEditor
+Note: At the moment I'm using multiple-inheritance to add the XMLEditor
 methods. This leaves me uneasy. The benefit is that you can avoid a
 "middle-man" dot reference to editor (e.g.
 policy.editor.add_object_to_scope()), but the downside is that it's ugly, and
