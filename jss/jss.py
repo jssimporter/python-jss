@@ -493,6 +493,8 @@ class JSSObject(ElementTree.Element):
         data:   Valid XML.
 
         """
+        if not isinstance(jss, JSS):
+            raise TypeError("Argument jss must be an instance of JSS.")
         self.jss = jss
         if type(data) in [str, unicode]:
             super(JSSObject, self).__init__(tag=self.list_type)
@@ -567,19 +569,13 @@ class JSSObject(ElementTree.Element):
         if self.can_post:
             url = self.get_post_url()
             try:
-                if template is not None:
-                    updated_data = self.jss.post(self.__class__, url, template)
-                else:
-                    updated_data = self.jss.post(self.__class__, url, self)
+                updated_data = self.jss.post(self.__class__, url, self)
             except JSSPostError:
                 # Object already exists
                 if not self.can_put:
                     raise JSSMethodNotAllowedError(self.__class__.__name__)
                 url = self.get_object_url()
-                if template is not None:
-                    self.jss.put(url, template)
-                else:
-                    self.jss.put(url, self)
+                self.jss.put(url, self)
                 updated_data = self.jss.get(url)
         else:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
@@ -803,7 +799,7 @@ class JSSFlatObject(JSSObject):
     """
     search_types = {}
 
-    def new(self, name):
+    def new(self, name, **kwargs):
         """JSSFlatObjects and their subclasses cannot be created."""
         raise JSSPostError("This object type cannot be created.")
 
@@ -1368,10 +1364,10 @@ class UserGroup(JSSContainerObject):
 
 class SearchCriteria(ElementTree.Element):
     """Object for encapsulating a smart group search criteria."""
-    template_type = "criterion"
+    list_type = "criterion"
 
     def __init__(self, name, priority, and_or, search_type, value):
-        super(SearchCriteria, self).__init__(tag=self.template_type)
+        super(SearchCriteria, self).__init__(tag=self.list_type)
         crit_name = ElementTree.SubElement(self, "name")
         crit_name.text = name
         crit_priority = ElementTree.SubElement(self, "priority")
