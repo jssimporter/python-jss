@@ -12,8 +12,8 @@ CHANGES:
   - To create an object now, use the class constructor with the string argument "name", configure as before, and then update().
   - i.e.
     ```
-	policy = Policy(jss_instance, "Install Adventure")
-	policy.update()
+	policy = Policy(jss_instance, "Install Adventure")  
+	policy.update()  
 	```
 
 ### 0.2.2 (UNRELEASED)
