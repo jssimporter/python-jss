@@ -19,7 +19,6 @@ objects.
 """
 
 import subprocess
-import base64
 import inspect
 from xml.etree import ElementTree
 
@@ -99,7 +98,7 @@ class testJSS(object):
 
     def test_JSS_constructor_methods(self):
         skip_these_methods = ['__init__', 'get', 'delete', 'put', 'post', '_error_handler']
-        constructor_methods = [ m[1] for m in inspect.getmembers(j_global) if inspect.ismethod(m[1]) and m[0] not in skip_these_methods]
+        constructor_methods = [m[1] for m in inspect.getmembers(j_global) if inspect.ismethod(m[1]) and m[0] not in skip_these_methods]
         for cls in constructor_methods:
             instance = cls()
             yield self.check_JSS_constructor_method, instance
@@ -177,11 +176,13 @@ class testJSSObject(object):
 
         class NoPutObject(JSSObject):
             can_put = False
+
             def new(self, name):
                 pass
 
         class NoDeleteObject(JSSObject):
             can_delete = False
+
             def new(self, name):
                 pass
 
@@ -216,6 +217,7 @@ class testJSSFlatObject(object):
         """Ensure we cannot create new objects of this type."""
         assert_raises(JSSPostError, ActivationCode, j_global, "Test")
 
+
 class testJSSDeviceObjects(object):
     def test_JSSDeviceObject_properties(self):
         computer = j_global.Computer('name=craigs-imac')
@@ -225,8 +227,8 @@ class testJSSDeviceObjects(object):
     def test_Computer_properties(self):
         computer = j_global.Computer('name=craigs-imac')
         assert_is_instance(computer.mac_addresses, list)
-        assert_equal(computer.mac_addresses, ['3C:07:54:6E:8B:14',
-                                                '04:54:53:0F:E9:D1'])
+        assert_equal(computer.mac_addresses, [
+            '3C:07:54:6E:8B:14', '04:54:53:0F:E9:D1'])
         match = j_global.Computer('match=craigs-imac')
         assert_is_instance(match, JSSObjectList)
 
@@ -234,6 +236,7 @@ class testJSSDeviceObjects(object):
         computer = j_global.MobileDevice('name=Testing iPad - 2')
         assert_equal(computer.wifi_mac_address, '28:6A:BA:11:F0:A3')
         assert_equal(computer.bluetooth_mac_address, '28:6A:BA:11:F0:A4')
+
 
 class testJSSObject_Subclasses(object):
     def jssobject_runner(self, object_cls):
@@ -245,7 +248,7 @@ class testJSSObject_Subclasses(object):
         id_ = obj_list[0].id
         obj = j_global.factory.get_object(object_cls, id_)
         assert_is_instance(obj, object_cls, msg='The object of type %s was not '
-                          'expected.' % type(obj))
+                           'expected.' % type(obj))
 
     def test_container_JSSObject_subclasses(self):
         """Test for factory to return objects of each of our JSSObject
@@ -258,7 +261,10 @@ class testJSSObject_Subclasses(object):
             yield self.jssobject_runner, obj
 
 
-class testJSSObjectTemplate(object):
+class TestJSSObjectNewMethods(object):
+    """Tests for ensuring that objects covered by new methods work as expected.
+
+    """
 
     @with_setup(setup)
     def test_ComputerGroupNew(self):
@@ -279,9 +285,8 @@ class testJSSObjectTemplate(object):
         cg.delete()
 
     def test_PackageTemplate(self):
-        package_template = PackageTemplate("Taco.pkg")
-        assert_is_instance(package_template, PackageTemplate)
-        package = j_global.Package(package_template)
+        package = Package(j_global, "Taco.pkg", cat_name="Testing")
+        package.update()
         assert_is_instance(package, Package)
         package.delete()
 
@@ -359,7 +364,7 @@ class testJSSObjectList(object):
 
     def test_retrieve_all(self):
         # We use policies since they're smaller, and hopefully smaller in
-        #number
+        # number
         policies = j_global.Policy()
         full_policies = policies.retrieve_all()
         assert_is_instance(full_policies, list)
