@@ -19,7 +19,6 @@ objects.
 """
 
 import subprocess
-import base64
 import inspect
 from xml.etree import ElementTree
 
@@ -33,6 +32,7 @@ jp = JSSPrefs()
 j_global = JSS(jss_prefs=jp)
 
 TESTPOLICY = 'python-jss Test Policy'
+TESTGROUP = 'python-jss Test Group'
 
 
 def setup():
@@ -43,11 +43,13 @@ def setup():
     try:
         cleanup = j_global.Policy(TESTPOLICY)
         cleanup.delete()
+        cleanup = j_global.ComputerGroup(TESTGROUP)
+        cleanup.delete()
     except JSSGetError:
         pass
 
 
-class testJSSPrefs(object):
+class TestJSSPrefs(object):
 
     def test_jssprefs(self):
         jp = JSSPrefs()
@@ -65,7 +67,7 @@ class testJSSPrefs(object):
         assert_raises(JSSPrefsMissingKeyError, JSSPrefs, 'test/incomplete_preferences.plist')
 
 
-class testJSS(object):
+class TestJSS(object):
 
     def test_jss_with_jss_prefs(self):
         jp = JSSPrefs()
@@ -88,15 +90,15 @@ class testJSS(object):
 
     @with_setup(setup)
     def test_JSS_post(self):
-        pt = PolicyTemplate(TESTPOLICY)
-        new_policy = j_global.Policy(pt)
+        new_policy = Policy(j_global, TESTPOLICY)
+        new_policy.save()
         # If successful, we'll get a new ID number
         assert_is_instance(new_policy.id, str)
         new_policy.delete()
 
     def test_JSS_constructor_methods(self):
         skip_these_methods = ['__init__', 'get', 'delete', 'put', 'post', '_error_handler']
-        constructor_methods = [ m[1] for m in inspect.getmembers(j_global) if inspect.ismethod(m[1]) and m[0] not in skip_these_methods]
+        constructor_methods = [m[1] for m in inspect.getmembers(j_global) if inspect.ismethod(m[1]) and m[0] not in skip_these_methods]
         for cls in constructor_methods:
             instance = cls()
             yield self.check_JSS_constructor_method, instance
@@ -106,15 +108,15 @@ class testJSS(object):
 
     @with_setup(setup)
     def test_jss_put(self):
-        pt = PolicyTemplate(TESTPOLICY)
-        new_policy = j_global.Policy(pt)
+        new_policy = Policy(j_global, TESTPOLICY)
+        new_policy.save()
         id_ = new_policy.id
 
         # Change the policy.
         recon = new_policy.find('maintenance/recon')
         # This is str, not bool...
         recon.text = 'false'
-        new_policy.update()
+        new_policy.save()
 
         test_policy = j_global.Policy(id_)
         assert_equal(test_policy.find('maintenance/recon').text, 'false')
@@ -123,10 +125,8 @@ class testJSS(object):
 
     @with_setup(setup)
     def test_jss_delete(self):
-        pt = PolicyTemplate(TESTPOLICY)
-        new_policy = j_global.Policy(pt)
-        # If successful, we'll get a new ID number
-        assert_is_instance(new_policy.id, str)
+        new_policy = Policy(j_global, TESTPOLICY)
+        new_policy.save()
         id_ = new_policy.id
 
         # Test delete. This is of course successful if the previous two tests
@@ -135,7 +135,20 @@ class testJSS(object):
         assert_raises(JSSGetError, j_global.Policy, id_)
 
 
-class testJSSObject(object):
+class TestJSSObjectFactory(object):
+    def test_JSSObjectFactory_list(self):
+        obj_list = j_global.factory.get_object(Policy)
+        assert_is_instance(obj_list, JSSObjectList)
+
+    def test_JSSObjectFactory_JSSObject(self):
+        obj_list = j_global.factory.get_object(Policy, 242)
+        assert_is_instance(obj_list, Policy)
+
+
+class TestJSSObject(object):
+    def test_JSSObject_new(self):
+        assert_raises(NotImplementedError, JSSObject, j_global, "Test")
+
     def test_jssobject_unsupported_search_method_error(self):
         assert_raises(JSSUnsupportedSearchMethodError,
                       j_global.Policy, 'taco=alpastor')
@@ -151,10 +164,10 @@ class testJSSObject(object):
         assert_equal(Policy.get_post_url(), '/policies/id/0')
 
     def test_JSSObject_get_object_url(self):
-        pt = PolicyTemplate(TESTPOLICY)
-        new_policy = j_global.Policy(pt)
+        new_policy = Policy(j_global, TESTPOLICY)
+        new_policy.save()
 
-        assert_equal(new_policy.get_object_url(), '/policies/id/%s' % 
+        assert_equal(new_policy.get_object_url(), '/policies/id/%s' %
                      new_policy.id)
 
         new_policy.delete()
@@ -171,43 +184,43 @@ class testJSSObject(object):
         class NoPostObject(JSSObject):
             can_post = False
 
+            def new(self, name, **kwargs):
+                pass
+
         class NoPutObject(JSSObject):
             can_put = False
-            def __init__(self):
+
+            def new(self, name):
                 pass
 
         class NoDeleteObject(JSSObject):
             can_delete = False
-            def __init__(self):
+
+            def new(self, name):
                 pass
 
         assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
                       NoListObject, None)
         assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
                       NoGetObject, None)
-        bad_element = ElementTree.fromstring("<xml>No workie.</xml>")
-        bad_policy = JSSObjectTemplate(element=bad_element)
-        assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
-                      NoPostObject, bad_policy)
+        bad_policy = NoPostObject(j_global, "No workie")
+        print(bad_policy)
+        assert_raises(JSSMethodNotAllowedError, bad_policy.save)
 
-        np = NoPutObject()
-        assert_raises(JSSMethodNotAllowedError, np.update)
+        np = NoPutObject(j_global, "TestNoPut")
+        assert_raises(JSSMethodNotAllowedError, np.save)
 
-        nd = NoDeleteObject()
+        nd = NoDeleteObject(j_global, "TestNoDelete")
         assert_raises(JSSMethodNotAllowedError, nd.delete)
 
 
-class testJSSObjectFactory(object):
-    def test_JSSObjectFactory_list(self):
-        obj_list = j_global.factory.get_object(Policy)
-        assert_is_instance(obj_list, JSSObjectList)
-
-    def test_JSSObjectFactory_JSSObject(self):
-        obj_list = j_global.factory.get_object(Policy, 242)
-        assert_is_instance(obj_list, Policy)
+class TestJSSFlatObject(object):
+    def test_JSSFlatObject_new(self):
+        """Ensure we cannot create new objects of this type."""
+        assert_raises(JSSPostError, ActivationCode, j_global, "Test")
 
 
-class testJSSDeviceObjects(object):
+class TestJSSDeviceObjects(object):
     def test_JSSDeviceObject_properties(self):
         computer = j_global.Computer('name=craigs-imac')
         assert_equal(computer.udid, '012CDB33-82E1-558F-9F6F-18EAAC05B5AC')
@@ -216,8 +229,8 @@ class testJSSDeviceObjects(object):
     def test_Computer_properties(self):
         computer = j_global.Computer('name=craigs-imac')
         assert_is_instance(computer.mac_addresses, list)
-        assert_equal(computer.mac_addresses, ['3C:07:54:6E:8B:14',
-                                                '04:54:53:0F:E9:D1'])
+        assert_equal(computer.mac_addresses, [
+            '3C:07:54:6E:8B:14', '04:54:53:0F:E9:D1'])
         match = j_global.Computer('match=craigs-imac')
         assert_is_instance(match, JSSObjectList)
 
@@ -226,7 +239,8 @@ class testJSSDeviceObjects(object):
         assert_equal(computer.wifi_mac_address, '28:6A:BA:11:F0:A3')
         assert_equal(computer.bluetooth_mac_address, '28:6A:BA:11:F0:A4')
 
-class testJSSObject_Subclasses(object):
+
+class TestJSSObject_Subclasses(object):
     def jssobject_runner(self, object_cls):
         """ Helper function to test individual object classes."""
         obj_list = j_global.factory.get_object(object_cls)
@@ -236,7 +250,7 @@ class testJSSObject_Subclasses(object):
         id_ = obj_list[0].id
         obj = j_global.factory.get_object(object_cls, id_)
         assert_is_instance(obj, object_cls, msg='The object of type %s was not '
-                          'expected.' % type(obj))
+                           'expected.' % type(obj))
 
     def test_container_JSSObject_subclasses(self):
         """Test for factory to return objects of each of our JSSObject
@@ -249,44 +263,49 @@ class testJSSObject_Subclasses(object):
             yield self.jssobject_runner, obj
 
 
-class testJSSObjectTemplate(object):
-    def test_ComputerGroupTemplate(self):
-        cgt = ComputerGroupTemplate("Test")
-        assert_is_instance(cgt, ComputerGroupTemplate)
-        test_group = j_global.ComputerGroup(cgt)
-        assert_is_instance(test_group, ComputerGroup)
-        test_group.delete()
+class TestJSSObjectNewMethods(object):
+    """Tests for ensuring that objects covered by new methods work as expected.
 
-    def test_ComputerGroupTemplate_Smart(self):
-        cgt = ComputerGroupTemplate("Test", True)
-        assert_is_instance(cgt, ComputerGroupTemplate)
-        cgt.add_criterion("Computer Name", 0, "and", "like", "craigs")
-        test_group = j_global.ComputerGroup(cgt)
-        assert_is_instance(test_group, ComputerGroup)
-        test_group.delete()
+    """
+
+    @with_setup(setup)
+    def test_ComputerGroupNew(self):
+        cg = ComputerGroup(j_global, TESTGROUP)
+        cg.save()
+        assert_is_instance(cg, ComputerGroup)
+        cg.delete()
+
+    @with_setup(setup)
+    def test_ComputerGroup_Smart(self):
+        cg = ComputerGroup(j_global, TESTGROUP, smart=True)
+        cg.add_criterion("Computer Name", 0, "and", "like", "craigs")
+        cg.findtext("criteria/criterion/name")
+        cg.save()
+        assert_is_instance(cg, ComputerGroup)
+        assert_true(bool(cg.findtext("is_smart")))
+        assert_equals(cg.findtext("criteria/criterion/name"), "Computer Name")
+        cg.delete()
 
     def test_PackageTemplate(self):
-        package_template = PackageTemplate("Taco.pkg")
-        assert_is_instance(package_template, PackageTemplate)
-        package = j_global.Package(package_template)
+        package = Package(j_global, "Taco.pkg", cat_name="Testing")
+        package.save()
         assert_is_instance(package, Package)
         package.delete()
 
     def test_JSSSimpleTemplate(self):
-        cat_template = CategoryTemplate("Python JSS Test Category")
-        assert_is_instance(cat_template, CategoryTemplate)
-        category = j_global.Category(cat_template)
+        category = Category(j_global, "Python JSS Test Category")
+        category.save()
         assert_is_instance(category, Category)
         category.delete()
 
-    def test_PolicyTemplate(self):
-        policy_template = PolicyTemplate(TESTPOLICY)
-        assert_is_instance(policy_template, PolicyTemplate)
+    def test_Policy_new(self):
+        policy = Policy(j_global, "python-jss-test-policy")
+        assert_is_instance(policy, Policy)
         computer = j_global.Computer('craigs')
-        policy_template.add_object_to_scope(computer)
+        policy.add_object_to_scope(computer)
         policy_string = r"""<policy>
     <general>
-        <name>python-jss Test Policy</name>
+        <name>python-jss-test-policy</name>
         <enabled>true</enabled>
         <frequency>Once per computer</frequency>
         <category />
@@ -319,20 +338,22 @@ class testJSSObjectTemplate(object):
     </maintenance>
 </policy>
 """
-        assert_equal(policy_template.__repr__(), policy_string)
-        # PolicyTemplates are used throughout tests for creating new objects,
-        # so we can be sure it works.
+        assert_equal(policy.__repr__(), policy_string)
+        policy.save()
+        # Test whether JSS accepts our new() object. Will throw an exception if
+        # it doesn't work; replaces data if it does, thus they should no longer
+        # match.
+        assert_not_equal(policy.__repr__(), policy_string)
+        policy.delete()
 
 
-
-
-class testJSSListData(object):
+class TestJSSListData(object):
     # The methods on JSSListData are indirectly tested in many of the above
     # tests.
     pass
 
 
-class testJSSObjectList(object):
+class TestJSSObjectList(object):
     def test_retrieve(self):
         computers = j_global.Computer()
         assert_is_instance(computers.retrieve(1), Computer)
@@ -344,7 +365,7 @@ class testJSSObjectList(object):
 
     def test_retrieve_all(self):
         # We use policies since they're smaller, and hopefully smaller in
-        #number
+        # number
         policies = j_global.Policy()
         full_policies = policies.retrieve_all()
         assert_is_instance(full_policies, list)
