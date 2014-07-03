@@ -1,3 +1,16 @@
+### 0.3.1 (UNRELEASED)
+
+CHANGES:
+
+- ```JSS._error_handler()``` now adds a ```status_code``` attribute to exceptions.
+
+FIXES:
+
+- ```JSSObject.save()``` was confusing. If you created a new object with 
+  ```JSSObject()``` that conflicted with an existing object on the JSS, the save
+  would fail with a ```JSSPutError```. Now we check for conflicts and instead return
+  a ```JSSPostError``` with a more helpful error message.
+
 ### 0.3 (July 3, 2014)
 
 CHANGES:
