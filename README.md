@@ -68,7 +68,7 @@ keys include:
 and can be set with:
 ```
 defaults write ~/Library/Preferences/com.github.sheagcraig.python-jss.plist jss_user <username>
-defaults write ~/Library/Preferences/com.github.sheagcraig.python-jss.plist jss_password <password>
+defaults write ~/Library/Preferences/com.github.sheagcraig.python-jss.plist jss_pass <password>
 defaults write ~/Library/Preferences/com.github.sheagcraig.python-jss.plist jss_url <url>
 ```
 

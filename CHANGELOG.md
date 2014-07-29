@@ -12,10 +12,11 @@ CHANGES:
 
 FIXES:
 
-- ```JSSObject.save()``` was confusing. If you created a new object with 
+- ```JSSObject.save()``` was confusing. If you created a new object with
   ```JSSObject()``` that conflicted with an existing object on the JSS, the save
   would fail with a ```JSSPutError```. Now we check for conflicts and instead return
   a ```JSSPostError``` with a more helpful error message.
+- I mistakenly listed the preference key as ```jss_password``` in the README. Now the code and README agree: ```jss_pass``` is the correct key.
 
 ### 0.3 (July 3, 2014)
 
