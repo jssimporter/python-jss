@@ -1,4 +1,10 @@
-### 0.3.1 (UNRELEASED)
+### 0.3.2 (July 29, 2014)
+
+FIXES:
+
+- Fixed error where pypi packages did not include the cacert.pem file included with requests.
+
+### 0.3.1 (July 17, 2014)
 
 CHANGES:
 

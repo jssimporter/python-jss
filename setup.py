@@ -14,6 +14,10 @@ setup(name='python-jss',
       version='0.3',
       #py_modules=['jss', 'FoundationPlist'],
       packages=find_packages(),
+      package_data = {
+          # Make sure to include Requests cacert.cer file
+          '': ['*.pem', '*.md'],
+      },
       description='Python wrapper for JSS API.',
       long_description=read_md('README.md'),
       author='Shea G. Craig',
