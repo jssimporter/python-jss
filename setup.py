@@ -11,7 +11,7 @@ except ImportError:
     read_md = lambda f: open(f, 'r').read()
 
 setup(name='python-jss',
-      version='0.3.1',
+      version='0.3.2',
       #py_modules=['jss', 'FoundationPlist'],
       packages=find_packages(),
       package_data = {
