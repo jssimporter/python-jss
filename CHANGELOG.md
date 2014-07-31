@@ -1,3 +1,9 @@
+### 0.3.3 (UNREALESED)
+
+CHANGES:
+
+- Reorganized ```JSSObject.save()``` logic to try to update first. Trying to create a new object first with existing objects results in a name conflict exception, which you then have to catch. But when you DO have a name conflict, you really would like to know. This saves the need to wrap save calls in a try/except for updating existing objects. E.g. batch_scope verb of jss_helper.
+
 ### 0.3.2 (July 29, 2014)
 
 FIXES:
