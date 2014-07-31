@@ -1,4 +1,4 @@
-### 0.3.3 (UNREALESED)
+### 0.3.3 (July 31, 2014)
 
 CHANGES:
 
