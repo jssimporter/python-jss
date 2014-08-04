@@ -183,7 +183,7 @@ search by ID or by name.
 >>> myipad.bluetooth_mac_address
 'C3:PO:XX:XX:XX:X2'
 
->>> # Providing no arguments to the method constructor returns a list.
+>>> # Providing no arguments to the factory method returns a list.
 >>> # (Some object types return only a set of data, like ActivationCode).
 >>> computers = j.Computer()
 >>> computers
