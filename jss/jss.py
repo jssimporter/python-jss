@@ -36,6 +36,13 @@ except ImportError as e:
     import plistlib
 
 
+VERSION = "0.3.4"
+
+
+def get_version():
+    return VERSION
+
+
 class JSSPrefsMissingFileError(Exception):
     pass
 

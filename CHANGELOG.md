@@ -1,3 +1,13 @@
+### 0.3.4 (Unreleased)
+
+NOTES:
+
+- The interface will stay the same now. Only new features and fixes from here on out.
+
+CHANGES:
+
+- Add ```get_version()``` method to module.
+
 ### 0.3.3 (July 31, 2014)
 
 CHANGES:
