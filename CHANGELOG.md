@@ -1,4 +1,4 @@
-### 0.3.4 (Unreleased)
+### 0.3.4 (August 8, 2014)
 
 NOTES:
 
@@ -6,7 +6,7 @@ NOTES:
 
 CHANGES:
 
-- Add ```get_version()``` method to module.
+- Add ```__version__``` property to module. Use for version checking if needed.
 
 ### 0.3.3 (July 31, 2014)
 
