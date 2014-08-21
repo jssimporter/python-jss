@@ -1,3 +1,9 @@
+### 0.3.5 (August 21, 2014)
+
+CHANGES:
+
+- Implemented FileUpload. They are kind of unique in the way they operate, so check the docstring for more info.
+
 ### 0.3.4 (August 8, 2014)
 
 NOTES:
