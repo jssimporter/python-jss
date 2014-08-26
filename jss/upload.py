@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 import os
+import shutil
 import subprocess
 
 from . import jss
@@ -94,7 +95,7 @@ class Repository(object):
     # Not really needed, since all subclasses implement this.
     # Placeholder for whether I do want to formally specify the interface
     # like this.
-    def copy(self, filename):
+    def _copy(self, filename):
         raise NotImplementedError("Base class 'Repository' should not be used "
                                   "for copying!")
 
@@ -124,6 +125,27 @@ class MountedRepository(Repository):
         # If not mounted, don't bother.
         if os.path.exists(self.connection['mount_point']):
             subprocess.check_call(['umount', self.connection['mount_point']])
+
+    def copy_pkg(self, filename):
+        """Copy a package to the reo's subdirectory."""
+        basename = os.path.basename(filename)
+        self._copy(filename, os.path.join(self.connection['mount_point'],
+                                          'Packages', basename))
+
+    def copy_script(self, filename):
+        """Copy a script to the repo's Script subdirectory."""
+        basename = os.path.basename(filename)
+        self._copy(filename, os.path.join(self.connection['mount_point'],
+                                          'Scripts', basename))
+
+    def _copy(self, filename, destination):
+        """Copy a file to the repository. Handles folders and single files."""
+        full_filename = os.path.abspath(os.path.expanduser(filename))
+
+        if os.path.isdir(full_filename):
+            shutil.copytree(full_filename, destination)
+        elif os.path.isfile(full_filename):
+            shutil.copyfile(full_filename, destination)
 
 
 class AFPRepository(MountedRepository):
