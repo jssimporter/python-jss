@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 """
+python-jss
+
 Copyright (C) 2014 Shea G Craig <shea.craig@da.org>
 
 This program is free software: you can redistribute it and/or modify
