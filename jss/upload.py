@@ -49,6 +49,21 @@ class FileUploader(object):
         for repo in repos:
             self.repos.append(repo)
 
+    def copy(self, filename):
+        """Copy file to all repos, guessing file type and destination based
+        on its extension.
+
+        filename:       String path to the local file to copy.
+
+        """
+        extension = os.path.splitext(filename)[1].upper()
+        for repo in self.repos:
+            if extension in ['PKG', 'DMG']:
+                repo.copy_pkg(filename)
+            else:
+                # All other file types can go to scripts.
+                repo.copy_script(filename)
+
     def copy_pkg(self, filename):
         """Copy a pkg or dmg to all repositories.
 
