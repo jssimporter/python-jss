@@ -129,16 +129,16 @@ class MountedRepository(Repository):
     def mount(self):
         """Mount the repository."""
         # Is this volume already mounted; if so, we're done.
-        # NOT IMPLEMENTED YET.
+        if not self.is_mounted():
 
-        # First, ensure the mountpoint exists
-        if not os.path.exists(self.connection['mount_point']):
-            os.mkdir(self.connection['mount_point'])
+            # First, ensure the mountpoint exists
+            if not os.path.exists(self.connection['mount_point']):
+                os.mkdir(self.connection['mount_point'])
 
-        # Try to mount
-        subprocess.check_call(['mount', '-t', self.protocol,
-                               self.connection['mount_url'],
-                               self.connection['mount_point']])
+            # Try to mount
+            subprocess.check_call(['mount', '-t', self.protocol,
+                                   self.connection['mount_url'],
+                                   self.connection['mount_point']])
 
     def umount(self):
         """Try to unmount our mount point."""
