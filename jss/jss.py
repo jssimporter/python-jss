@@ -555,6 +555,14 @@ class JSSObject(ElementTree.Element):
     def new(self, name, **kwargs):
         raise NotImplementedError
 
+    def makeelement(self, tag, attrib):
+        """Return an Element."""
+        # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
+        # super() call to its __class__.makeelement(), which will fail due to
+        # the class NOT being Element.
+        # This handles that issue.
+        return ElementTree.Element(tag, attrib)
+
     @classmethod
     def get_url(cls, data):
         """Return the URL for a get request based on data type."""
