@@ -22,8 +22,6 @@ import os
 import shutil
 import subprocess
 
-from . import jss
-
 
 class FileUploader(object):
     """FileUploader provides a unified object for copying, deleting, and moving
@@ -41,26 +39,33 @@ class FileUploader(object):
     type-specific properties and configuration.
 
     """
-    def __init__(self, jss=None, repos=None):
+    def __init__(self, jss=[], repos=[]):
         """Pass a JSS object to define a destination as configured by that
         object, OR pass a list of Repository objects to consider as targets.
 
         """
-        pass
+        self.repos = []
+        repos = jss.repos + repos
+        for repo in repos:
+            self.repos.append(repo)
 
-    def copy(self, filename, repo=None):
-        """Copy a file to all repositories, or to a single repository.
+    def copy_pkg(self, filename):
+        """Copy a pkg or dmg to all repositories.
 
         filename:       String path to the local file to copy.
-        repo:       Optional Repository object specifying a single repo on
-                    which to operate.
 
         """
-        if repo:
-            repo.copy(filename)
-        else:
-            for repo in self.jss.repositories:
-                repo.copy(filename)
+        for repo in self.repos:
+            repo.copy_pkg(filename)
+
+    def copy_script(self, filename):
+        """Copy a script to all repositories.
+
+        filename:       String path to the local file to copy.
+
+        """
+        for repo in self.repos:
+            repo.copy_script(filename)
 
     def delete(self, filename, repo=None):
         """Delete a file from all repositories, or a single repository.
@@ -126,6 +131,10 @@ class MountedRepository(Repository):
         if os.path.exists(self.connection['mount_point']):
             subprocess.check_call(['umount', self.connection['mount_point']])
 
+    def is_mounted(self):
+        """Test for whether a mount point is mounted."""
+        return os.path.ismount(self.connection['mount_point'])
+
     def copy_pkg(self, filename):
         """Copy a package to the reo's subdirectory."""
         basename = os.path.basename(filename)
@@ -139,7 +148,13 @@ class MountedRepository(Repository):
                                           'Scripts', basename))
 
     def _copy(self, filename, destination):
-        """Copy a file to the repository. Handles folders and single files."""
+        """Copy a file to the repository. Handles folders and single files.
+        Will mount if needed.
+
+        """
+        if not self.is_mounted():
+            self.mount()
+
         full_filename = os.path.abspath(os.path.expanduser(filename))
 
         if os.path.isdir(full_filename):
