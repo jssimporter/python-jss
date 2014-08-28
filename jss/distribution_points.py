@@ -230,12 +230,20 @@ class AFPDistributionPoint(MountedRepository):
     def _build_url(self):
         """Helper method for building mount URL strings."""
         if self.connection.get('username') and self.connection.get('password'):
-            self.connection['mount_url'] = '%s://%s:%s@%s' % \
-                    (self.protocol, self.connection['username'],
-                     self.connection['password'], self.connection['URL'])
+            auth = "%s:%s@" % (self.connection['username'],
+                               self.connection['password'])
         else:
-            self.connection['mount_url'] = '%s://%s' % \
-                    (self.protocol, self.connection['URL'])
+            auth = ''
+
+        # Optional port number
+        if self.connection.get('port'):
+            port = ":%s" % self.connection['port']
+        else:
+            port = ''
+
+        self.connection['mount_url'] = '%s://%s%s%s/%s' % (
+            self.protocol, auth, self.connection['URL'], port,
+            self.connection['share_name'])
 
 
 class SMBDistributionPoint(MountedRepository):
@@ -258,20 +266,24 @@ class SMBDistributionPoint(MountedRepository):
 
     def _build_url(self):
         """Helper method for building mount URL strings."""
+        # Build auth string
         if self.connection.get('username') and self.connection.get('password'):
-            if self.connection.get('user_domain'):
-                auth = r"%s;%s:%s" % (self.connection['user_domain'],
-                                        self.connection['username'],
-                                        self.connection['password'])
-            else:
-                auth = "%s:%s" % (self.connection['username'],
-                                  self.connection['password'])
-            self.connection['mount_url'] = '//%s@%s/%s' % (
-                auth, self.connection['URL'], self.connection['share_name'])
-
+            auth = "%s:%s@" % (self.connection['username'],
+                               self.connection['password'])
+            if self.connection.get('domain'):
+                auth = r"%s;%s" % (self.connection['domain'], auth)
         else:
-            self.connection['mount_url'] = '//%s/%s' % (
-                self.connection['URL'], self.connection['share_name'])
+            auth = ''
+
+        # Optional port number
+        if self.connection.get('port'):
+            port = ":%s" % self.connection['port']
+        else:
+            port = ''
+
+        # Construct mount_url
+        self.connection['mount_url'] = '//%s%s%s/%s' % (
+            auth, self.connection['URL'], port, self.connection['share_name'])
 
 
 class HTTPRepository(Repository):
