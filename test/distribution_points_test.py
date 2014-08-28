@@ -8,6 +8,7 @@ it and send me an email!
 
 
 from nose.tools import *
+import os.path
 
 import jss
 
@@ -23,5 +24,6 @@ class TestJSSPrefs(object):
         # Make sure that if you don't specify any repository information in
         # your preference file, everything still works correctly (just no
         # repos)
-        jssPrefs = jss.JSSPrefs('test/no-repos-prefs.plist')
+        jssPrefs = jss.JSSPrefs(
+            os.path.expanduser('~/Library/Preferences/com.github.sheagcraig.python-jss-no-repos.plist'))
         assert_is_instance(jssPrefs, jss.JSSPrefs)

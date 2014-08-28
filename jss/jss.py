@@ -118,7 +118,7 @@ class JSSPrefs(object):
                                               "preferences!")
             # Optional file repository array. Defaults to empty list.
             self.repos = []
-            for repo in prefs.get('repos'):
+            for repo in prefs.get('repos', []):
                 self.repos.append(dict(repo))
         else:
             raise JSSPrefsMissingFileError("Preferences file not found!")
