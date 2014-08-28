@@ -26,7 +26,7 @@ import re
 import copy
 import subprocess
 
-from . import upload
+from . import distribution_points
 from .contrib import requests
 try:
     from .contrib import FoundationPlist
@@ -87,18 +87,12 @@ class JSSPrefs(object):
             jss_user:       API username to use.
             jss_password:   API password.
             repos:          (Optional) An array of file repositories dicts to
-                            connect to.
+                            connect.
 
-        Repository Data (See Repository docs for more info):
-            repo_type:      Valid values: 'SMB', 'AFP', 'HTTP',
-                            'HTTPS', 'JDS'.
-            URL:            URL to your repo, with share, excluding protocol.
-                            e.g. 'myrepo.domain.com/jamf'
-            mount_point:    (String) path to your desired mount point. Usually
-                            '/Volumes/<name_of_share>'
-            user_domain     Domain to use for SMB authentication.
-            username:       For repository types requiring authentication.
-            password:       For repository types requiring authentication.
+        repos Data (See distribution_points package for more info):
+            name:           String name of the distribution point. Must match
+                            the value on the JSS.
+            password:       For types requiring authentication.
 
         """
         if preferences_file is None:
@@ -120,10 +114,12 @@ class JSSPrefs(object):
                 self.password = prefs['jss_pass']
                 self.url = prefs['jss_url']
             except KeyError:
-                raise JSSPrefsMissingKeyError("Please provide all required"
-                                              " preferences!")
+                raise JSSPrefsMissingKeyError("Please provide all required "
+                                              "preferences!")
             # Optional file repository array. Defaults to empty list.
-            self.repos = prefs.get('repos', [])
+            self.repos = []
+            for repo in prefs.get('repos'):
+                self.repos.append(dict(repo))
         else:
             raise JSSPrefsMissingFileError("Preferences file not found!")
 
@@ -141,7 +137,8 @@ class JSS(object):
         password:   API Password.
         ssl_verify: Boolean indicating whether to verify SSL certificates.
                     Defaults to True.
-        repos:      A list of Repository objects to associate with the JSS.
+        repos:      A list of distribution point objects to associate with the
+                    JSS.
         verbose:    Boolean indicating the level of logging. (Doesn't do much.)
 
         """
@@ -155,7 +152,7 @@ class JSS(object):
         self.user = user
         self.password = password
         self.ssl_verify = ssl_verify
-        self.repos = self._add_repos(repos)
+        self.repos = repos
         self.verbose = verbose
         self.factory = JSSObjectFactory(self)
         self.session = requests.Session()
@@ -188,15 +185,15 @@ class JSS(object):
         output = []
         for repo in repos:
             if repo['repo_type'] == 'AFP':
-                repo_object = upload.AFPRepository(repo)
+                repo_object = distribution_points.AFPRepository(**repo)
             elif repo['repo_type'] == 'SMB':
-                repo_object = upload.SMBRepository(**repo)
+                repo_object = distribution_points.SMBRepository(**repo)
             elif repo['repo_type'] == 'HTTP':
-                repo_object = upload.HTTPRepository(repo)
+                repo_object = distribution_points.HTTPRepository(repo)
             elif repo['repo_type'] == 'HTTPS':
-                repo_object = upload.HTTPRepository(repo)
+                repo_object = distribution_points.HTTPRepository(repo)
             elif repo['repo_type'] == 'JDS':
-                repo_object = upload.JDSRepository(repo)
+                repo_object = distribution_points.JDSRepository(repo)
 
             output.append(repo_object)
 

@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-"""upload.py
+"""distribution_points.py
 
-File upload utility classes for python-jss.
+Utility classes for synchronizing packages and scripts to Jamf file
+repositories.
+
 Copyright (C) 2014 Shea G Craig <shea.craig@da.org>
 
 This program is free software: you can redistribute it and/or modify
@@ -18,9 +20,50 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+
+
 import os
 import shutil
 import subprocess
+
+
+class DistributionPoints(object):
+    """DistributionPoints is an object which reads DistributionPoint
+    configuration data from the JSS and serves as a container for objects
+    representing the configured distribution points.
+
+    """
+    def __init__(self, j):
+        """Populate our distribution point dict from a JSS server's
+        DistributionPoints.
+
+        jss:      JSS server object
+
+        """
+        self.children = []
+
+        self.response = j.DistributionPoint().retrieve_all()
+        for distribution_point in self.response:
+            name = distribution_point.findtext('name')
+            URL = distribution_point.findtext('ip_address')
+            connection_type = distribution_point.findtext('connection_type')
+            share_name = distribution_point.findtext('share_name')
+            domain = distribution_point.findtext('workgroup_or_domain')
+            port = distribution_point.findtext('share_port')
+            username = distribution_point.findtext('read_write_username')
+            for dpref in j.repos:
+                if dpref['name'] == name:
+                    password = dpref['password']
+                    break
+            mount_point = os.path.join('/Volumes', (name + share_name).replace(' ', ''))
+
+            if connection_type == 'AFP':
+                dp = AFPDistributionPoint(URL=URL, port=port, share_name=share_name, mount_point=mount_point, username=username, password=password)
+            elif connection_type == 'SMB':
+                dp = SMBDistributionPoint(URL=URL, port=port, share_name=share_name, mount_point=mount_point, domain=domain, username=username, password=password)
+
+            self.children.append(dp)
+
 
 
 class FileUploader(object):
@@ -178,7 +221,7 @@ class MountedRepository(Repository):
             shutil.copyfile(full_filename, destination)
 
 
-class AFPRepository(MountedRepository):
+class AFPDistributionPoint(MountedRepository):
     """Represents an AFP repository.
 
     Please note: OS X seems to cache credentials when you use mount_afp like
@@ -200,7 +243,7 @@ class AFPRepository(MountedRepository):
         password:       For shares requiring authentication, the password.
 
         """
-        super(AFPRepository, self).__init__(**connection_args)
+        super(AFPDistributionPoint, self).__init__(**connection_args)
 
     def _build_url(self):
         """Helper method for building mount URL strings."""
@@ -213,7 +256,7 @@ class AFPRepository(MountedRepository):
                     (self.protocol, self.connection['URL'])
 
 
-class SMBRepository(MountedRepository):
+class SMBDistributionPoint(MountedRepository):
     protocol = 'smbfs'
 
     def __init__(self, **connection_args):
@@ -229,7 +272,7 @@ class SMBRepository(MountedRepository):
         password:       For shares requiring authentication, the password.
 
         """
-        super(SMBRepository, self).__init__(**connection_args)
+        super(SMBDistributionPoint, self).__init__(**connection_args)
 
     def _build_url(self):
         """Helper method for building mount URL strings."""
@@ -241,11 +284,12 @@ class SMBRepository(MountedRepository):
             else:
                 auth = "%s:%s" % (self.connection['username'],
                                   self.connection['password'])
-            self.connection['mount_url'] = '//%s@%s' % (auth,
-                                                        self.connection['URL'])
+            self.connection['mount_url'] = '//%s@%s/%s' % (
+                auth, self.connection['URL'], self.connection['share_name'])
 
         else:
-            self.connection['mount_url'] = '//%s' % self.connection['URL']
+            self.connection['mount_url'] = '//%s/%s' % (
+                self.connection['URL'], self.connection['share_name'])
 
 
 class HTTPRepository(Repository):

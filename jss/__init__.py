@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
 python-jss
+Python wrapper for JSS API.
 
 Copyright (C) 2014 Shea G Craig <shea.craig@da.org>
 
@@ -21,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 from jss import *
-from .upload import FileUploader, AFPRepository, SMBRepository
+from distribution_points import (DistributionPoints, FileUploader, AFPDistributionPoint, SMBDistributionPoint)
 
-
-__version__ = "0.3.5"
+__version__ = "0.3.6"
