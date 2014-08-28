@@ -32,6 +32,19 @@ class DistributionPoints(object):
     configuration data from the JSS and serves as a container for objects
     representing the configured distribution points.
 
+    This class provides a unified object for copying, deleting, and moving
+    packages and dmg's to file repositories.
+
+    Support for AFP/SMB shares, HTTP(S) distribution points, and JDS' are
+    included, and are selected based on configuration files.
+
+    This object can copy files to multiple repositories, avoiding the need to
+    use Casper Admin to "Replicate" from one repository to another, as long as
+    the repositories are all configured correctly.
+
+    See the individual Repository subclasses for information regarding
+    type-specific properties and configuration.
+
     """
     def __init__(self, j):
         """Populate our distribution point dict from a JSS server's
@@ -40,7 +53,7 @@ class DistributionPoints(object):
         jss:      JSS server object
 
         """
-        self.children = []
+        self._children = []
 
         self.response = j.DistributionPoint().retrieve_all()
         for distribution_point in self.response:
@@ -51,10 +64,11 @@ class DistributionPoints(object):
             domain = distribution_point.findtext('workgroup_or_domain')
             port = distribution_point.findtext('share_port')
             username = distribution_point.findtext('read_write_username')
-            for dpref in j.repos:
-                if dpref['name'] == name:
-                    password = dpref['password']
-                    break
+            if j.repo_prefs:
+                for dpref in j.repo_prefs:
+                    if dpref['name'] == name:
+                        password = dpref['password']
+                        break
             mount_point = os.path.join('/Volumes', (name + share_name).replace(' ', ''))
 
             if connection_type == 'AFP':
@@ -62,35 +76,7 @@ class DistributionPoints(object):
             elif connection_type == 'SMB':
                 dp = SMBDistributionPoint(URL=URL, port=port, share_name=share_name, mount_point=mount_point, domain=domain, username=username, password=password)
 
-            self.children.append(dp)
-
-
-
-class FileUploader(object):
-    """FileUploader provides a unified object for copying, deleting, and moving
-    packages and dmg's to file repositories.
-
-    Support for AFP/SMB shares, HTTP(S) distribution points, and JDS' are
-    included, and are selected based on configuration files or can be overriden
-    when the object is instantiated.
-
-    This object can copy files to multiple repositories, avoiding the need to
-    use Casper Admin to "Replicate" from one repository to another, as long as
-    the repositories are all configured correctly.
-
-    See the individual Repository subclasses for information regarding
-    type-specific properties and configuration.
-
-    """
-    def __init__(self, jss=[], repos=[]):
-        """Pass a JSS object to define a destination as configured by that
-        object, OR pass a list of Repository objects to consider as targets.
-
-        """
-        self.repos = []
-        repos = jss.repos + repos
-        for repo in repos:
-            self.repos.append(repo)
+            self._children.append(dp)
 
     def copy(self, filename):
         """Copy file to all repos, guessing file type and destination based
@@ -100,7 +86,7 @@ class FileUploader(object):
 
         """
         extension = os.path.splitext(filename)[1].upper()
-        for repo in self.repos:
+        for repo in self._children:
             if extension in ['PKG', 'DMG']:
                 repo.copy_pkg(filename)
             else:
@@ -113,7 +99,7 @@ class FileUploader(object):
         filename:       String path to the local file to copy.
 
         """
-        for repo in self.repos:
+        for repo in self._children:
             repo.copy_pkg(filename)
 
     def copy_script(self, filename):
@@ -122,28 +108,23 @@ class FileUploader(object):
         filename:       String path to the local file to copy.
 
         """
-        for repo in self.repos:
+        for repo in self._children:
             repo.copy_script(filename)
 
-    def delete(self, filename, repo=None):
-        """Delete a file from all repositories, or a single repository.
+    def __repr__(self):
+        """Nice display of our file shares."""
+        output = ''
+        for child in self._children:
+            output += 79 * '-'
+            output += "\nDistribution Point: %s\nMounted: %s\n" % (
+                child.connection['URL'],
+                os.path.ismount(child.connection['mount_point']))
+            output += "Connection information:\n"
+            for key, val in child.connection.items():
+                output += "\t%s: %s\n" % (key, val)
 
-        file:       String filename of the file to delete.
-        repo:       Optional Repository object specifying a single repo on
-                    which to operate.
+        return output
 
-        """
-        pass
-
-    def move(self, oldfilename, newfilename, repo=None):
-        """Rename a file on all repositories, or a single repository.
-
-        file:       String filename of the file to delete.
-        repo:       Optional Repository object specifying a single repo on
-                    which to operate.
-
-        """
-        pass
 
 class Repository(object):
     """Base class for file repositories."""
@@ -161,6 +142,7 @@ class Repository(object):
     def _copy(self, filename):
         raise NotImplementedError("Base class 'Repository' should not be used "
                                   "for copying!")
+
 
 class MountedRepository(Repository):
     def __init__(self, **connection_args):

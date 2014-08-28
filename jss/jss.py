@@ -127,7 +127,7 @@ class JSSPrefs(object):
 class JSS(object):
     """Connect to a JSS and handle API requests."""
     def __init__(self, jss_prefs=None, url=None, user=None, password=None,
-                 ssl_verify=True, repos=[], verbose=False):
+                 repo_prefs=[], ssl_verify=True, verbose=False):
         """Provide either a JSSPrefs object OR specify url, user, and password
         to init.
 
@@ -135,10 +135,10 @@ class JSS(object):
         url:        Path with port to a JSS. See JSSPrefs.__doc__
         user:       API Username.
         password:   API Password.
+        repo_prefs: A list of dicts with repository names and passwords. See
+                    JSSPrefs.
         ssl_verify: Boolean indicating whether to verify SSL certificates.
                     Defaults to True.
-        repos:      A list of distribution point objects to associate with the
-                    JSS.
         verbose:    Boolean indicating the level of logging. (Doesn't do much.)
 
         """
@@ -146,20 +146,24 @@ class JSS(object):
             url = jss_prefs.url
             user = jss_prefs.user
             password = jss_prefs.password
-            repos = jss_prefs.repos
+            repo_prefs = jss_prefs.repos
 
         self._url = '%s/JSSResource' % url
         self.user = user
         self.password = password
+        self.repo_prefs = repo_prefs
         self.ssl_verify = ssl_verify
-        self.repos = repos
         self.verbose = verbose
-        self.factory = JSSObjectFactory(self)
         self.session = requests.Session()
         self.session.auth = (self.user, self.password)
         self.session.verify = self.ssl_verify
         headers = {"content-type": 'text/xml', 'Accept': 'application/xml'}
         self.session.headers.update(headers)
+        self.factory = JSSObjectFactory(self)
+        # If JSS created with arguments, and no repos provided, don't try to
+        # create them.
+        if self.repo_prefs:
+            self.distribution_points = distribution_points.DistributionPoints(self)
 
     def _error_handler(self, exception_cls, response):
         """Generic error handler. Converts html responses to friendlier
@@ -180,24 +184,6 @@ class JSS(object):
                                   (response.status_code, error))
         exception.status_code = response.status_code
         raise exception
-
-    def _add_repos(self, repos):
-        output = []
-        for repo in repos:
-            if repo['repo_type'] == 'AFP':
-                repo_object = distribution_points.AFPRepository(**repo)
-            elif repo['repo_type'] == 'SMB':
-                repo_object = distribution_points.SMBRepository(**repo)
-            elif repo['repo_type'] == 'HTTP':
-                repo_object = distribution_points.HTTPRepository(repo)
-            elif repo['repo_type'] == 'HTTPS':
-                repo_object = distribution_points.HTTPRepository(repo)
-            elif repo['repo_type'] == 'JDS':
-                repo_object = distribution_points.JDSRepository(repo)
-
-            output.append(repo_object)
-
-        return output
 
     def get(self, url):
         """Get a url, handle errors, and return an etree from the XML data."""
