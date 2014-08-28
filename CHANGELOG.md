@@ -1,3 +1,12 @@
+### 0.3.6 (UNRELEASED)
+
+CHANGES:
+
+- Add module ```upload```. Provides:
+  - ```FileUploader``` to handle copying packages and scripts across all configured repositories.
+  - ```AFPRepository```, ```SMBRepository```, ```HTTPRepository```, ```HTTPSRepository```, and ```JDSRepository```. (Only AFP and SMB implemented currently-HTTP(S) and JDS coming soon.)
+- Add handling of ```repos``` preference key in com.github.sheagcraig.python-jss.plist. See README.
+
 ### 0.3.5 (August 21, 2014)
 
 CHANGES:

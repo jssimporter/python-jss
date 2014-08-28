@@ -59,6 +59,10 @@ transferring data between them!
 
 Supplying Credentials to the JSSPrefs object:
 =================
+You need a user account with API privileges on your JSS to connect and do anything useful. It is recommended that you create a user specifically for API access, with only the privileges required for the task at hand. For testing purposes, a fully-enabled admin account is fine, but for production, permissions should be finely controlled.
+
+These settings are in the JSS System Settings=>JSS User Accounts & Groups panel.
+
 The preferred method for specifying credentials is to create a preferences file
 at "~/Library/Preferences/com.github.sheagcraig.python-jss.plist".  Required
 keys include:
@@ -89,20 +93,20 @@ In general, you should use the following workflow:
   about what operations I would want to perform, deleting ALL computers at once,
   or updating all policies at once, for example, seemed both dangerous and
   unnecessary.
-  
+
   Also, the JSS returns different data structures for an object type
   depending on the context. A "full" object listing is _not_ the same thing as
   the greatly abbreviated data returned by a listing operation or a "match"
   search.  Likewise, trying to PUT a new object by just editing the full XML
   retrieved from an already existing object would fail. (For example, the ID
   property is assigned by the JSS, not you.)
-  
+
   Therefore, there are a couple of object classes for each type of data:
   * JSSObject: All data on a single object, like a single computer, the activation
   code, or a policy.
   * JSSObjectList: A list of JSSListData objects, containing only the most
   important information on an object.
-  
+
   I.e.:
 
   ```
@@ -113,7 +117,7 @@ In general, you should use the following workflow:
   ```
 
 - For creating new objects (of classes which allow it) instantiate an object of
-  the desired type directly. I.e.: 
+  the desired type directly. I.e.:
 
   ```
   >>> # This creates a new Policy object with the basic required XML.
@@ -271,7 +275,7 @@ class Policy(JSSContainerObject)
  |  
  |  add_object_to_exclusions(self, obj)
  |      Add an object 'obj' to the appropriate scope exclusions block.
- |      
+ |
  |      obj should be an instance of Computer, ComputerGroup, Building,
  |      or Department.
  |  
