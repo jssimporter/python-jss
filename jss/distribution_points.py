@@ -151,8 +151,12 @@ class MountedRepository(Repository):
     def _build_url(self):
         pass
 
-    def mount(self):
-        """Mount the repository."""
+    def mount(self, nobrowse=False):
+        """Mount the repository.
+
+        If you want it to be hidden from the GUI, pass nobrowse=True.
+
+        """
         # Is this volume already mounted; if so, we're done.
         if not self.is_mounted():
 
@@ -161,9 +165,13 @@ class MountedRepository(Repository):
                 os.mkdir(self.connection['mount_point'])
 
             # Try to mount
-            subprocess.check_call(['mount', '-t', self.protocol,
-                                   self.connection['mount_url'],
-                                   self.connection['mount_point']])
+            args = ['mount', '-t', self.protocol, self.connection['mount_url'],
+                    self.connection['mount_point']]
+            if nobrowse:
+                args.insert(1, '-o')
+                args.insert(2, 'nobrowse')
+
+            subprocess.check_call(args)
 
     def umount(self):
         """Try to unmount our mount point."""
