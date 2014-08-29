@@ -22,6 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 from jss import *
-from distribution_points import (DistributionPoints, AFPDistributionPoint, SMBDistributionPoint)
+from distribution_points import DistributionPoints
 
 __version__ = "0.3.6"

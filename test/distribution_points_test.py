@@ -42,7 +42,6 @@ class TestDistributionPoints(object):
             os.path.join(d.connection['mount_point'], 'Scripts',
                          os.path.basename(filename))
             for d in j_global.distribution_points._children]
-        print(copied_filenames)
         j_global.distribution_points.copy(filename)
         # Cleanup
         for f in copied_filenames:
