@@ -1,11 +1,22 @@
-### 0.3.6 (UNRELEASED)
+### 0.3.6 (August 29, 2014)
+
+ADDITIONS:
+
+- Add module ```distribution_points```. Provides:
+  - ```DistributionPoints``` to handle copying packages and scripts across all configured repositories.
+	- Distribution points are automatically configured (except for password until I can figure out the hashing) based on your JSS's data.
+	- copy copies a file to the directory indicated by the file extension (.pkg, .dmg to Packages, everything else to Scripts) of all distribution points.
+	- copy_pkg copies a .pkg or .dmg to the Packages directory of all distribution points.
+	- copy_script copies a script to the Scripts directory of all distribution points.
+	- Distribution points are mounted prior to copy operations if they aren't already.
+  - ```AFPRepository```, ```SMBRepository```, ```HTTPRepository```, ```HTTPSRepository```, and ```JDSRepository```. (Only AFP and SMB implemented currently-HTTP(S) and JDS coming soon.)
+	- mount (Has option to mount -o nobrowse, so disk doesn't appear in GUI)
+	- umount
 
 CHANGES:
 
-- Add module ```upload```. Provides:
-  - ```FileUploader``` to handle copying packages and scripts across all configured repositories.
-  - ```AFPRepository```, ```SMBRepository```, ```HTTPRepository```, ```HTTPSRepository```, and ```JDSRepository```. (Only AFP and SMB implemented currently-HTTP(S) and JDS coming soon.)
 - Add handling of ```repos``` preference key in com.github.sheagcraig.python-jss.plist. See README.
+- JSS objects now have a DistributionPoint property included at init time, so you don't need to instantiate one. Just delegate!
 
 ### 0.3.5 (August 21, 2014)
 

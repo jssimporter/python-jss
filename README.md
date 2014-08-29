@@ -324,6 +324,44 @@ Next, modify the object to your needs and then call the ```save()``` method.
 >>> new_policy.delete()
 ```
 
+Distribution Points:
+=================
+The JSS stores all of the information about your file share "Distribution Points" in an API object named, appropriately "DistributionPoints". These repositories contain the packages and scripts that are deployed with policies, and are normally managed with the Casper Admin application.
+
+python-jss includes objects to help handle these repositories. When you create a JSS object, it includes a DistributionPoint object to delegate copying to as a property, named .distribution_points. e.g. ```my_jss.distribution_points```. For this to be useful, you'll have to include some extra information in your ```com.github.sheagcraig.python-jss.plist``` file. Add a key ```repos```, with an array as its value. The array should contain dictionaries containing ```name``` (which corresponds to the name field on the JSS Computer Management->File Share Distribution Points->Display Name field), and ```password```. It should look like this:
+
+```
+	<key>repos</key>
+	<array>
+		<dict>
+			<key>name</key>
+			<string>Repo1</string>
+			<key>password</key>
+			<string>xyzzy</string>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Repo2</string>
+			<key>password</key>
+			<string>abc123</string>
+		</dict>
+	</array>
+```
+
+Once this is in place, the JSS object can be used to copy files to the distribution points with the copy methods. In general, ```copy()``` should be used, as it will enforce putting pkg and dmg files into Packages, and everything else into Scripts automatically. There are ```copy_pkg()``` and ```copy_script()``` methods too, however.
+
+If the DP isn't mounted, the copy operation will mount it automatically. If it's important to keep the mount from appearing in the GUI, you can use the ```nobrowse=True``` parameter to the mount methods on the individual DP's.
+
+Please note: Copying a file to the distribution points does not create a Package or Script object! You must also use the python-jss ```Package.new()``` and ```Script.new()``` to create the objects in the database. The Packages and Scripts directories must be flat, meaning no subdirectories (although technically, bundle-style packages are directories, but this is not an issue). When specifying the filename, the JSS will assume a package is in the Packages directory, and a script in the Scripts directory, so only specify the basename of the file (i.e. Correct: 'my_package.pkg' Incorrect: 'jamf/Packages/my_package.pkg').
+
+It's not really important which order you do this in, with the only realy side effect being that Casper Admin will report missing files if the Package/Script object has been created before it has been copied to the file shares.
+
+Configuring the permissions correctly on your file share can be important to prevent unexpected freakouts!
+
+As soon as the ability to mount using the hashed passwords from the ```DistributionPoints``` works, the need to specify the passwords in the preferences file will go away.
+
+Finally, you can always ignore the delegate ```JSS.distribution_points``` and just set up your own, or even instantiate individual repositories and copy/mount/etc to them manually.
+
 SSL Errors:
 =================
 Requests is in the process of integrating changes to urllib3 to support Server
