@@ -87,7 +87,7 @@ class DistributionPoints(object):
         """
         extension = os.path.splitext(filename)[1].upper()
         for repo in self._children:
-            if extension in ['PKG', 'DMG']:
+            if extension in ['.PKG', '.DMG']:
                 repo.copy_pkg(filename)
             else:
                 # All other file types can go to scripts.
@@ -110,6 +110,16 @@ class DistributionPoints(object):
         """
         for repo in self._children:
             repo.copy_script(filename)
+
+    def mount(self):
+        """Mount all mountable distribution points."""
+        for child in self._children:
+            child.mount()
+
+    def umount(self):
+        """Umount all mountable distribution points."""
+        for child in self._children:
+            child.umount()
 
     def __repr__(self):
         """Nice display of our file shares."""
