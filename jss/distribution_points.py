@@ -121,6 +121,28 @@ class DistributionPoints(object):
         for child in self._children:
             child.umount()
 
+    def exists(self, filename):
+        """Report whether a file exists on all distribution points. Determines
+        file type by extension.
+
+        filename:       Filename you wish to check. (No path! e.g.:
+                        "AdobeFlashPlayer-14.0.0.176.pkg")
+
+        """
+        result = True
+        extension = os.path.splitext(filename)[1].upper()
+        for repo in self._children:
+            if extension in ['.PKG', '.DMG']:
+                filepath = os.path.join(repo.connection['mount_point'],
+                                        'Packages', filename)
+            else:
+                filepath = os.path.join(repo.connection['mount_point'],
+                                        'Scripts', filename)
+            if not os.path.exists(filepath):
+                result = False
+
+        return result
+
     def __repr__(self):
         """Nice display of our file shares."""
         output = ''

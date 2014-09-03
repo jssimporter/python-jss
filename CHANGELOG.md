@@ -1,3 +1,9 @@
+### 0.3.8 (September 3, 2014)
+
+ADDITIONS:
+
+- Add method ```DistributionPoints.exists()``` for testing for the existence of a script/pkg across all distribution points.
+
 ### 0.3.7 (August 29, 2014)
 
 ADDITIONS:
