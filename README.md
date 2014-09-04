@@ -392,7 +392,7 @@ Installing and/or upgrading the following packages should solve the problem:
 
 Supposedly, requests with py3.x does not have this problem, so developing with that environment may be a possibility for you as well.
 
-Hopefully this is temporary, although requests' changelog does claim to have "Fix(ed) previously broken SNI support." at version 2.1.0 (Current included version is 2.3.0).
+Hopefully this is temporary, although requests' changelog does claim to have "Fix(ed) previously broken SNI support." at version 2.1.0 (Current included version is 2.4.0).
 
 FoundationPlist, binary plists, and Python:
 =================

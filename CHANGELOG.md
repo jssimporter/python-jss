@@ -1,10 +1,16 @@
+### 0.3.9 (September 3, 2014) Chorizo
+
+FIXES:
+
+- Fix resource name when using FileUpload. Previous behavior was to give resource the full upload path as a name. Switched to just os.path.basename()
+
 ### 0.3.8 (September 3, 2014)
 
 ADDITIONS:
 
 - Add method ```DistributionPoints.exists()``` for testing for the existence of a script/pkg across all distribution points.
 
-### 0.3.7 (August 29, 2014)
+### 0.3.7 (August 29, 2014) Hot Dog Sundae
 
 ADDITIONS:
 
@@ -24,7 +30,7 @@ CHANGES:
 - Add handling of ```repos``` preference key in com.github.sheagcraig.python-jss.plist. See README.
 - JSS objects now have a DistributionPoint property included at init time, so you don't need to instantiate one. Just delegate!
 
-### 0.3.5 (August 21, 2014)
+### 0.3.5 (August 21, 2014) Retcon Cheese Sauce
 
 CHANGES:
 
