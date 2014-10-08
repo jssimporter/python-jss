@@ -1,8 +1,15 @@
+### 0.3.10 (October 8, 2014) Offal Sliders
+
+FIXES:
+
+- ```FileUploads``` were sent using a non-session request because I couldn't get it working with a session. I got it working with a session.
+- ```FileUploads``` non-session request lacked the verify parameter, thus, even if SSL verification was turned off in the JSS object, it still tried to verify SSL.
+
 ### 0.3.9 (September 3, 2014) Chorizo
 
 FIXES:
 
-- Fix resource name when using FileUpload. Previous behavior was to give resource the full upload path as a name. Switched to just os.path.basename()
+- Fix resource name when using ```FileUpload```. Previous behavior was to give resource the full upload path as a name. Switched to just os.path.basename()
 
 ADDITIONS:
 

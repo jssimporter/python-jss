@@ -1110,12 +1110,9 @@ class FileUpload(object):
 
     def save(self):
         """POST the object to the JSS."""
-        # Until I figure out how to do this using the already established
-        # session, I will just create a one-off post request directly.
         try:
-            response = requests.post(self._upload_url,
-                                     auth=self.jss.session.auth,
-                                     files=self.resource)
+            response = self.j.session.post(self._upload_url,
+                                           data=self.resource)
         except JSSPostError as e:
             if e.status_code == 409:
                 raise JSSPostError("Object Conflict! If trying to post a "
