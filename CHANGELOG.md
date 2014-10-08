@@ -1,3 +1,9 @@
+### 0.3.11 (October 8, 2014) Offal Sliders 2
+
+FIXES:
+
+- Except I screwed it up. *Now* ```FileUploads``` is squared away.
+
 ### 0.3.10 (October 8, 2014) Offal Sliders
 
 FIXES:
