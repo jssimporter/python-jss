@@ -114,12 +114,14 @@ class DistributionPoints(object):
     def mount(self):
         """Mount all mountable distribution points."""
         for child in self._children:
-            child.mount()
+            if hasattr(child, 'mount'):
+                child.mount()
 
     def umount(self):
         """Umount all mountable distribution points."""
         for child in self._children:
-            child.umount()
+            if hasattr(child, 'umount'):
+                child.umount()
 
     def exists(self, filename):
         """Report whether a file exists on all distribution points. Determines
@@ -132,13 +134,7 @@ class DistributionPoints(object):
         result = True
         extension = os.path.splitext(filename)[1].upper()
         for repo in self._children:
-            if extension in ['.PKG', '.DMG']:
-                filepath = os.path.join(repo.connection['mount_point'],
-                                        'Packages', filename)
-            else:
-                filepath = os.path.join(repo.connection['mount_point'],
-                                        'Scripts', filename)
-            if not os.path.exists(filepath):
+            if not repo.exists(filename):
                 result = False
 
         return result
@@ -171,10 +167,9 @@ class Repository(object):
     # Not really needed, since all subclasses implement this.
     # Placeholder for whether I do want to formally specify the interface
     # like this.
-    def _copy(self, filename):
-        raise NotImplementedError("Base class 'Repository' should not be used "
-                                  "for copying!")
-
+    #def _copy(self, filename):
+    #    raise NotImplementedError("Base class 'Repository' should not be used "
+    #                              "for copying!")
 
 class MountedRepository(Repository):
     def __init__(self, **connection_args):
@@ -216,7 +211,7 @@ class MountedRepository(Repository):
         return os.path.ismount(self.connection['mount_point'])
 
     def copy_pkg(self, filename):
-        """Copy a package to the reo's subdirectory."""
+        """Copy a package to the repo's subdirectory."""
         basename = os.path.basename(filename)
         self._copy(filename, os.path.join(self.connection['mount_point'],
                                           'Packages', basename))
@@ -242,6 +237,23 @@ class MountedRepository(Repository):
         elif os.path.isfile(full_filename):
             shutil.copyfile(full_filename, destination)
 
+    def exists(self, filename):
+        """Report whether a file exists on the distribution point. Determines
+        file type by extension.
+
+        filename:       Filename you wish to check. (No path! e.g.:
+                        "AdobeFlashPlayer-14.0.0.176.pkg")
+
+        """
+        extension = os.path.splitext(filename)[1].upper()
+        if extension in ['.PKG', '.DMG']:
+            filepath = os.path.join(self.connection['mount_point'],
+                                    'Packages', filename)
+        else:
+            filepath = os.path.join(self.connection['mount_point'],
+                                    'Scripts', filename)
+        print(filepath)
+        return os.path.exists(filepath)
 
 class AFPDistributionPoint(MountedRepository):
     """Represents an AFP repository.
