@@ -148,6 +148,9 @@ class JSS(object):
             password = jss_prefs.password
             repo_prefs = jss_prefs.repos
 
+        # Used by some non-API methods.
+        self.base_url = url
+        # Used for all API calls.
         self._url = '%s/JSSResource' % url
         self.user = user
         self.password = password
