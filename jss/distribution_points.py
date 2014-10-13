@@ -72,9 +72,18 @@ class DistributionPoints(object):
             mount_point = os.path.join('/Volumes', (name + share_name).replace(' ', ''))
 
             if connection_type == 'AFP':
-                dp = AFPDistributionPoint(URL=URL, port=port, share_name=share_name, mount_point=mount_point, username=username, password=password)
+                dp = AFPDistributionPoint(URL=URL, port=port,
+                                          share_name=share_name,
+                                          mount_point=mount_point,
+                                          username=username,
+                                          password=password)
             elif connection_type == 'SMB':
-                dp = SMBDistributionPoint(URL=URL, port=port, share_name=share_name, mount_point=mount_point, domain=domain, username=username, password=password)
+                dp = SMBDistributionPoint(URL=URL, port=port,
+                                          share_name=share_name,
+                                          mount_point=mount_point,
+                                          domain=domain,
+                                          username=username,
+                                          password=password)
 
             self._children.append(dp)
 
