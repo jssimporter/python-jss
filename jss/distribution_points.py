@@ -49,46 +49,109 @@ class DistributionPoints(object):
     type-specific properties and configuration.
 
     """
-    def __init__(self, j):
-        """Populate our distribution point dict from a JSS server's
-        DistributionPoints.
+    def __init__(self, jss):
+        """Populate our distribution point dict from our configuration file.
+
+        The JSS server's DistributionPoints is used to automatically configure
+        AFP and SMB shares. To make use of this, the repo's dictionary should
+        contain only the name of the repo, as found in the web interface, and
+        the password for the RW user. This method is deprecated, and you should
+        fully specify the required connection arguments for each DP in the
+        future.
 
         jss:      JSS server object
 
         """
+        self.jss = jss
         self._children = []
+        self.dp_info = self.jss.DistributionPoint().retrieve_all()
 
-        self.response = j.DistributionPoint().retrieve_all()
-        for distribution_point in self.response:
-            name = distribution_point.findtext('name')
-            URL = distribution_point.findtext('ip_address')
-            connection_type = distribution_point.findtext('connection_type')
-            share_name = distribution_point.findtext('share_name')
-            domain = distribution_point.findtext('workgroup_or_domain')
-            port = distribution_point.findtext('share_port')
-            username = distribution_point.findtext('read_write_username')
-            if j.repo_prefs:
-                for dpref in j.repo_prefs:
-                    if dpref['name'] == name:
-                        password = dpref['password']
-                        break
-            mount_point = os.path.join('/Volumes', (name + share_name).replace(' ', ''))
+        # If no distribution points are configured, there's nothing to do here.
+        if self.jss.repo_prefs:
+            for repo in self.jss.repo_prefs:
+                # Handle AFP/SMB shares, as they can be auto-configured.
+                # Legacy system did not require explicit type key.
+                if not repo.get('type'):
+                    # Must be AFP or SMB.
+                    # Use JSS.DistributionPoints information to automatically
+                    # configure this DP.
+                    for dp_object in self.dp_info:
+                        if repo['name'] == dp_object.findtext('name'):
+                            name = dp_object.findtext('name')
+                            URL = dp_object.findtext('ip_address')
+                            connection_type = dp_object.findtext('connection_type')
+                            share_name = dp_object.findtext('share_name')
+                            domain = dp_object.findtext('workgroup_or_domain')
+                            port = dp_object.findtext('share_port')
+                            username = dp_object.findtext('read_write_username')
+                            password = repo.get('password')
 
-            if connection_type == 'AFP':
-                dp = AFPDistributionPoint(URL=URL, port=port,
-                                          share_name=share_name,
-                                          mount_point=mount_point,
-                                          username=username,
-                                          password=password)
-            elif connection_type == 'SMB':
-                dp = SMBDistributionPoint(URL=URL, port=port,
-                                          share_name=share_name,
-                                          mount_point=mount_point,
-                                          domain=domain,
-                                          username=username,
-                                          password=password)
+                            mount_point = os.path.join('/Volumes',
+                                    (name + share_name).replace(' ', ''))
 
-            self._children.append(dp)
+                            if connection_type == 'AFP':
+                                dp = AFPDistributionPoint(URL=URL, port=port,
+                                                        share_name=share_name,
+                                                        mount_point=mount_point,
+                                                        username=username,
+                                                        password=password)
+                            elif connection_type == 'SMB':
+                                dp = SMBDistributionPoint(URL=URL, port=port,
+                                                        share_name=share_name,
+                                                        mount_point=mount_point,
+                                                        domain=domain,
+                                                        username=username,
+                                                        password=password)
+
+                            # No need to keep looping.
+                            break
+
+                # Handle Explictly declared DP's.
+                elif repo.get('type') in ['AFP', 'SMB']:
+                    name = repo['name']
+                    URL = repo['URL']
+                    connection_type = repo['type']
+                    share_name = repo['share_name']
+                    # Domain is not used for AFP.
+                    domain = repo.get('workgroup_or_domain')
+                    # If port isn't given, assume it's the std of 139.
+                    port = repo.get('share_port') or '139'
+                    username = repo['username']
+                    password = repo['password']
+
+                    mount_point = os.path.join('/Volumes',
+                            (name + share_name).replace(' ', ''))
+
+                    if connection_type == 'AFP':
+                        dp = AFPDistributionPoint(URL=URL, port=port,
+                                                share_name=share_name,
+                                                mount_point=mount_point,
+                                                username=username,
+                                                password=password)
+                    elif connection_type == 'SMB':
+                        dp = SMBDistributionPoint(URL=URL, port=port,
+                                                share_name=share_name,
+                                                mount_point=mount_point,
+                                                domain=domain,
+                                                username=username,
+                                                password=password)
+
+                elif repo.get('type') == 'JDS':
+                    dp = JDS(URL=repo['URL'], username=repo['username'],
+                             password=repo['password'])
+                else:
+                    raise ValueError('Distribution Point Type not recognized.')
+
+                # Add the DP to the list.
+                self._children.append(dp)
+
+    def add_distribution_point(self, dp):
+        """Add a distribution point to the list."""
+        self._children.append(dp)
+
+    def remove_distribution_point(self, index):
+        """Remove a distribution point by index."""
+        self._children.pop(index)
 
     def copy(self, filename):
         """Copy file to all repos, guessing file type and destination based
@@ -377,7 +440,7 @@ class JDS(Repository):
     def __init__(self, **connection_args):
         """Set up a connection to a JDS.
         Required connection arguments:
-            jss:            A JSS object.
+            URL:            URL to the JSS to upload to.
             username:       The read/write account name.
             password:       Password for above.
 
@@ -387,7 +450,7 @@ class JDS(Repository):
     def _build_url(self):
         """Builds the URL to POST files to."""
         self.connection['upload_url'] = '%s/%s' % \
-                (self.connection['jss'].base_url, 'dbfileupload')
+                (self.connection.get('URL'), 'dbfileupload')
 
     def copy_pkg(self, filename, _id='-1'):
         """Copy a package to the JDS.
