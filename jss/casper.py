@@ -3,6 +3,9 @@
 
 Utility class for getting and presenting information from casper.jxml.
 
+The results from casper.jxml are undocumented and thus quite likely to be
+removed. Do not rely on its continued existence!
+
 Copyright (C) 2014 Shea G Craig <shea.craig@da.org>
 
 This program is free software: you can redistribute it and/or modify
@@ -93,6 +96,7 @@ class Casper(ElementTree.Element):
         return ElementTree.Element(tag, attrib)
 
     def update(self):
+        """Request an updated set of data from casper.jxml."""
         response = requests.post(self.url, data=self.auth)
         response_xml = ElementTree.fromstring(response.text)
 

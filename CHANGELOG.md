@@ -1,3 +1,9 @@
+### 0.4 (UNRELEASED) Mayonnaise-Olive Parfait
+
+ADDITIONS:
+
+- Adds class ```casper```. This class pulls the information returned from POSTing to the undocumented casper.jxml. At some point I would like this to allow for automatic configuration of all repository information (provided an appropriately authentication by a privileged user). However, due to its undocumented nature, I don't want to rely on it until I can get some confirmation from JAMF that this is 'OK'.
+
 ### 0.3.11 (October 8, 2014) Offal Sliders 2
 
 FIXES:
