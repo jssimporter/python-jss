@@ -26,6 +26,8 @@ import os
 import shutil
 import subprocess
 
+import requests
+
 
 class DistributionPoints(object):
     """DistributionPoints is an object which reads DistributionPoint
@@ -347,13 +349,79 @@ class SMBDistributionPoint(MountedRepository):
             auth, self.connection['URL'], port, self.connection['share_name'])
 
 
+class JDS(Repository):
+    """Class for representing a JDS and associated repositories.
+
+    The JDS has a folder to which packages and scripts are uploaded. From
+    there, the JDS handles the distribution to its managed distribution points.
+
+    """
+    def __init__(self, **connection_args):
+        """Set up a connection to a JDS.
+        Required connection arguments:
+            jss:            A JSS object.
+            username:       The read/write account name.
+            password:       Password for above.
+
+        """
+        super(JDS, self).__init__(**connection_args)
+
+    def _build_url(self):
+        """Builds the URL to POST files to."""
+        self.connection['upload_url'] = '%s/%s' % \
+                (self.connection['jss'].base_url, 'dbfileupload')
+
+    def copy_pkg(self, filename, _id='-1'):
+        """Copy a package to the JDS.
+
+        Required Parameters:
+        filename:           Full path to file to upload.
+        _id:                ID of Package object to associate with, or '-1' for
+                            new packages (default).
+
+        """
+        self._copy(filename, _id)
+
+    def copy_script(self, filename, _id='-1'):
+        """Copy a script to the JDS."""
+        #self._copy(filename)
+        raise NotImplementedError
+
+    def _copy(self, filename, _id='-1'):
+        """Upload a file to the JDS."""
+        basefname = os.path.basename(filename)
+        extension = os.path.splitext(basefname)[1].upper()
+
+        if extension in ('.PKG', '.DMG'):
+            file_type = '0'
+        else:
+            # Haven't tested uploading scripts yet. file_type of 1 is just a
+            # guess. There's also the potential for type 1 to be "In-House
+            # Apps" and type 2 to be "eBooks".
+            #file_type = '1'
+            raise NotImplementedError
+
+        resource = {basefname: open(filename, 'rb')}
+        headers = {'Content-Type': 'text/xml', 'DESTINATION': '1',
+                   'OBJECT_ID': str(_id), 'FILE_TYPE': file_type,
+                   'FILE_NAME': basefname}
+        response = requests.post(url=self.connection['upload_url'],
+                                 files=resource,
+                                 auth=(self.connection['username'],
+                                       self.connection['password']),
+                                 headers=headers)
+        print(response, response.text)
+        return response
+
+    def exists(self, filename):
+        """Check for the existence of a file on the JDS."""
+        # This gets tricky-have to use casper.jxml output to determine this.
+        pass
+
+
 class HTTPRepository(Repository):
     pass
 
 
 class HTTPSRepository(Repository):
-    pass
-
-
-class JDSRepository(Repository):
     pass
