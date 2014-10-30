@@ -34,11 +34,12 @@ class DistributionPoints(object):
     configuration data from the JSS and serves as a container for objects
     representing the configured distribution points.
 
-    This class provides a unified object for copying, deleting, and moving
-    packages and dmg's to file repositories.
+    This class provides a unified object for uploading packages and dmg's to
+    file repositories.
 
-    Support for AFP/SMB shares, HTTP(S) distribution points, and JDS' are
-    included, and are selected based on configuration files.
+    Support for AFP/SMB shares and JDS' are included, and are selected based on
+    configuration files. Planned support for HTTP(S) and CDP types will come
+    later.
 
     This object can copy files to multiple repositories, avoiding the need to
     use Casper Admin to "Replicate" from one repository to another, as long as
@@ -153,8 +154,12 @@ class DistributionPoints(object):
     def __repr__(self):
         """Nice display of our file shares."""
         output = ''
+        index = 0
         for child in self._children:
+            output += 79 * '-' + '\n'
+            output += 'Index: %s' % index
             output += child.__repr__()
+            index += 1
 
         return output
 
@@ -178,9 +183,9 @@ class Repository(object):
 
     def __repr__(self):
         output = ''
-        output += 79 * '-'
         output += "\nDistribution Point: %s\n" % self.connection['URL']
-        output += "Connection information:\n"
+        output += "Type: %s\n" % type(self)
+        output += "Connection Information:\n"
         for key, val in self.connection.items():
             output += "\t%s: %s\n" % (key, val)
 
@@ -274,7 +279,7 @@ class MountedRepository(Repository):
     def __repr__(self):
         """Add mount status to output."""
         output = super(MountedRepository, self).__repr__()
-        output +=  "Mounted: %s\n" % \
+        output += "Mounted: %s\n" % \
             os.path.ismount(self.connection['mount_point'])
         return output
 
