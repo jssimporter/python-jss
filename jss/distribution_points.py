@@ -64,19 +64,26 @@ class DistributionPoints(object):
             domain = distribution_point.findtext('workgroup_or_domain')
             port = distribution_point.findtext('share_port')
             username = distribution_point.findtext('read_write_username')
+            password = None
             if j.repo_prefs:
                 for dpref in j.repo_prefs:
                     if dpref['name'] == name:
                         password = dpref['password']
                         break
-            mount_point = os.path.join('/Volumes', (name + share_name).replace(' ', ''))
+                        
+            if username and not password:
+                # If a read-write user is specified, but the password is empty,
+                # do not try and mount the dp or add it to the children array.
+                pass
+            else:
+                mount_point = os.path.join('/Volumes', (name + share_name).replace(' ', ''))
 
-            if connection_type == 'AFP':
-                dp = AFPDistributionPoint(URL=URL, port=port, share_name=share_name, mount_point=mount_point, username=username, password=password)
-            elif connection_type == 'SMB':
-                dp = SMBDistributionPoint(URL=URL, port=port, share_name=share_name, mount_point=mount_point, domain=domain, username=username, password=password)
+                if connection_type == 'AFP':
+                    dp = AFPDistributionPoint(URL=URL, port=port, share_name=share_name, mount_point=mount_point, username=username, password=password)
+                elif connection_type == 'SMB':
+                    dp = SMBDistributionPoint(URL=URL, port=port, share_name=share_name, mount_point=mount_point, domain=domain, username=username, password=password)
 
-            self._children.append(dp)
+                self._children.append(dp)
 
     def copy(self, filename):
         """Copy file to all repos, guessing file type and destination based
