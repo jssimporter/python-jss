@@ -2,7 +2,19 @@
 
 ADDITIONS:
 
-- Adds class ```casper```. This class pulls the information returned from POSTing to the undocumented casper.jxml. At some point I would like this to allow for automatic configuration of all repository information (provided an appropriately authentication by a privileged user). However, due to its undocumented nature, I don't want to rely on it until I can get some confirmation from JAMF that this is 'OK'.
+- Adds class ```casper```. This class pulls the information returned from POSTing to the undocumented casper.jxml. At some point I would like this to allow for automatic configuration of all repository information (provided an authentication by a privileged user). However, due to its undocumented nature, I don't want to rely on it until I can get some confirmation from JAMF that this is 'OK'.
+- Adds class ```JDS``` to module ```distribution_points```
+- class ```DistributionPoints``` now adds ```JDS``` type DP's.
+- ```DistributionPoints``` now have helper methods to add and remove a ```DistributionPoint```.
+
+CHANGES:
+
+- ```DistributionPoints.__repr__``` factored into ```DistributionPoint``` and children.
+- New option to fully declare distribution point connection information in the preference file or at JSS or DistributionPoints instantiation time.
+	- AFP or SMB shares declared in the previous style, with just a ```name``` and ```password``` will still get the rest of the information from the server.
+	- You may now specify these connection properties explictly.
+	- JDS' must be configured with explicit properties.
+	- See docstrings for the different types of DistributionPoint for required keys.
 
 ### 0.3.11 (October 8, 2014) Offal Sliders 2
 
