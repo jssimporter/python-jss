@@ -154,13 +154,7 @@ class DistributionPoints(object):
         """Nice display of our file shares."""
         output = ''
         for child in self._children:
-            output += 79 * '-'
-            output += "\nDistribution Point: %s\nMounted: %s\n" % (
-                child.connection['URL'],
-                os.path.ismount(child.connection['mount_point']))
-            output += "Connection information:\n"
-            for key, val in child.connection.items():
-                output += "\t%s: %s\n" % (key, val)
+            output += child.__repr__()
 
         return output
 
@@ -181,6 +175,17 @@ class Repository(object):
     #def _copy(self, filename):
     #    raise NotImplementedError("Base class 'Repository' should not be used "
     #                              "for copying!")
+
+    def __repr__(self):
+        output = ''
+        output += 79 * '-'
+        output += "\nDistribution Point: %s\n" % self.connection['URL']
+        output += "Connection information:\n"
+        for key, val in self.connection.items():
+            output += "\t%s: %s\n" % (key, val)
+
+        return output
+
 
 class MountedRepository(Repository):
     def __init__(self, **connection_args):
@@ -265,6 +270,14 @@ class MountedRepository(Repository):
                                     'Scripts', filename)
         print(filepath)
         return os.path.exists(filepath)
+
+    def __repr__(self):
+        """Add mount status to output."""
+        output = super(MountedRepository, self).__repr__()
+        output +=  "Mounted: %s\n" % \
+            os.path.ismount(self.connection['mount_point'])
+        return output
+
 
 class AFPDistributionPoint(MountedRepository):
     """Represents an AFP repository.
