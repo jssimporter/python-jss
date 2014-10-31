@@ -239,7 +239,6 @@ class DistributionPoints(object):
 
 class Repository(object):
     """Base class for file repositories."""
-
     def __init__(self, **connection_args):
         """Store the connection information."""
         if self.required_attrs.issubset(set(connection_args.keys())):
@@ -411,8 +410,7 @@ class AFPDistributionPoint(MountedRepository):
 
 class SMBDistributionPoint(MountedRepository):
     protocol = 'smbfs'
-    required_attrs = {'URL', 'mount_point', 'domain',
-                      'username', 'password'}
+    required_attrs = {'URL', 'mount_point', 'domain', 'username', 'password'}
 
     def __init__(self, **connection_args):
         """Set up a SMB connection.
@@ -461,6 +459,10 @@ class JDS(Repository):
 
     Also, there are caveats to its .exists() method which you should be aware
     of before relying on it.
+
+    I'm not sure, but I imagine that organizations with a JDS will not also
+    have other types of DP's, so it may be sufficient to just use the JDS class
+    directly rather than as member of a DistributionPoints object.
 
     """
     required_attrs = {'jss', 'URL', 'username', 'password'}
