@@ -34,8 +34,12 @@ class DistributionPoints(object):
     configuration data from the JSS and serves as a container for objects
     representing the configured distribution points.
 
-    This class provides a unified object for uploading packages and dmg's to
-    file repositories.
+    This class provides an abstract interface for uploading packages and dmg's
+    to file repositories.
+
+    PLEASE NOTE: Not all DistributionPoint types support all of the available
+    methods. For example, JDS' do not have a copy_script() method, and there
+    are caveats to the reliability of the exists() method.
 
     Support for AFP/SMB shares and JDS' are included, and are selected based on
     configuration files. Planned support for HTTP(S) and CDP types will come
@@ -59,6 +63,10 @@ class DistributionPoints(object):
         fully specify the required connection arguments for each DP in the
         future.
 
+        Please see the docstrings for the different DistributionPoint
+        subclasses for information regarding required configuration information
+        and properties.
+
         jss:      JSS server object
 
         """
@@ -79,11 +87,13 @@ class DistributionPoints(object):
                         if repo['name'] == dp_object.findtext('name'):
                             name = dp_object.findtext('name')
                             URL = dp_object.findtext('ip_address')
-                            connection_type = dp_object.findtext('connection_type')
+                            connection_type = \
+                                dp_object.findtext('connection_type')
                             share_name = dp_object.findtext('share_name')
                             domain = dp_object.findtext('workgroup_or_domain')
                             port = dp_object.findtext('share_port')
-                            username = dp_object.findtext('read_write_username')
+                            username = \
+                                dp_object.findtext('read_write_username')
                             password = repo.get('password')
 
                             mount_point = os.path.join('/Volumes',
@@ -91,17 +101,15 @@ class DistributionPoints(object):
 
                             if connection_type == 'AFP':
                                 dp = AFPDistributionPoint(URL=URL, port=port,
-                                                        share_name=share_name,
-                                                        mount_point=mount_point,
-                                                        username=username,
-                                                        password=password)
+                                    share_name=share_name,
+                                    mount_point=mount_point,
+                                    username=username, password=password)
                             elif connection_type == 'SMB':
                                 dp = SMBDistributionPoint(URL=URL, port=port,
-                                                        share_name=share_name,
-                                                        mount_point=mount_point,
-                                                        domain=domain,
-                                                        username=username,
-                                                        password=password)
+                                    share_name=share_name,
+                                    mount_point=mount_point,
+                                    domain=domain, username=username,
+                                    password=password)
 
                             # No need to keep looping.
                             break
@@ -401,7 +409,7 @@ class SMBDistributionPoint(MountedRepository):
                         'my_repository.domain.org/jamf'
                         (Do _not_ include protocol or auth info.)
         mount_point:    Path to a valid mount point.
-        user_domain:    If you need to specify a domain, do so here.
+        domain:    Specify the domain.
         username:       For shares requiring authentication, the username.
         password:       For shares requiring authentication, the password.
 
@@ -433,8 +441,13 @@ class SMBDistributionPoint(MountedRepository):
 class JDS(Repository):
     """Class for representing a JDS and associated repositories.
 
-    The JDS has a folder to which packages and scripts are uploaded. From
-    there, the JDS handles the distribution to its managed distribution points.
+    The JDS has a folder to which packages are uploaded. From there, the JDS
+    handles the distribution to its managed distribution points.
+
+    This distribution point type cannot copy scripts.
+
+    Also, there are caveats to its .exists() method which you should be aware
+    of before relying on it.
 
     """
     def __init__(self, **connection_args):
@@ -463,10 +476,11 @@ class JDS(Repository):
         """
         self._copy(filename, _id)
 
-    def copy_script(self, filename, _id='-1'):
-        """Copy a script to the JDS."""
-        #self._copy(filename)
-        raise NotImplementedError
+    #def copy_script(self, filename, _id='-1'):
+    #    """Copy a script to the JDS."""
+    #    # JDS' don't have scripts as files. Rather, they are just data in the
+    #    # DB.
+    #    print("Warning! Scripts cannot be copied to a JDS.")
 
     def _copy(self, filename, _id='-1'):
         """Upload a file to the JDS."""
@@ -476,10 +490,9 @@ class JDS(Repository):
         if extension in ('.PKG', '.DMG'):
             file_type = '0'
         else:
-            # Haven't tested uploading scripts yet. file_type of 1 is just a
-            # guess. There's also the potential for type 1 to be "In-House
-            # Apps" and type 2 to be "eBooks".
-            #file_type = '1'
+            # Not sure what other file_types there may be. Possibly a way to
+            # distinguish between dmg and pkg, or it is used for eBooks and
+            # in-house Apps.
             raise NotImplementedError
 
         resource = {basefname: open(filename, 'rb')}
