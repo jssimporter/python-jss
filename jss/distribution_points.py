@@ -145,7 +145,8 @@ class DistributionPoints(object):
                                                 password=password)
 
                 elif repo.get('type') == 'JDS':
-                    dp = JDS(URL=repo['URL'], username=repo['username'],
+                    dp = JDS(jss=self.jss, URL=repo['URL'],
+                             username=repo['username'],
                              password=repo['password'])
                 else:
                     raise ValueError('Distribution Point Type not recognized.')
@@ -192,7 +193,8 @@ class DistributionPoints(object):
 
         """
         for repo in self._children:
-            repo.copy_script(filename)
+            if hasattr(child, 'copy_script'):
+                repo.copy_script(filename)
 
     def mount(self):
         """Mount all mountable distribution points."""
@@ -237,13 +239,21 @@ class DistributionPoints(object):
 
 class Repository(object):
     """Base class for file repositories."""
+
     def __init__(self, **connection_args):
         """Store the connection information."""
-        self.connection = {}
-        for key, value in connection_args.iteritems():
-            self.connection[key] = value
+        if self.required_attrs.issubset(set(connection_args.keys())):
+            self.connection = {}
+            for key, value in connection_args.iteritems():
+                self.connection[key] = value
 
-        self._build_url()
+            self._build_url()
+        else:
+            # Put a custom exception in here.
+            missing_attrs = self.required_attrs.difference(set(connection_args.keys()))
+            raise Exception("Missing REQUIRED argument(s) %s to %s"
+                            "distribution point." % (list(missing_attrs),
+                                                     self.__class__))
 
     # Not really needed, since all subclasses implement this.
     # Placeholder for whether I do want to formally specify the interface
@@ -364,6 +374,7 @@ class AFPDistributionPoint(MountedRepository):
 
     """
     protocol = 'afp'
+    required_attrs = {'URL', 'mount_point', 'username', 'password'}
 
     def __init__(self, **connection_args):
         """Set up an AFP connection.
@@ -400,6 +411,8 @@ class AFPDistributionPoint(MountedRepository):
 
 class SMBDistributionPoint(MountedRepository):
     protocol = 'smbfs'
+    required_attrs = {'URL', 'mount_point', 'domain',
+                      'username', 'password'}
 
     def __init__(self, **connection_args):
         """Set up a SMB connection.
@@ -450,9 +463,12 @@ class JDS(Repository):
     of before relying on it.
 
     """
+    required_attrs = {'jss', 'URL', 'username', 'password'}
+
     def __init__(self, **connection_args):
         """Set up a connection to a JDS.
         Required connection arguments:
+            jss:            A JSS Object.
             URL:            URL to the JSS to upload to.
             username:       The read/write account name.
             password:       Password for above.
