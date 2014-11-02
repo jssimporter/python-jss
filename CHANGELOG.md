@@ -16,6 +16,7 @@ CHANGES:
 
 - ```DistributionPoints.__repr__``` factored into ```DistributionPoint``` and children.
 - New option to fully declare distribution point connection information in the preference file or at JSS or DistributionPoints instantiation time.
+	- Shares will now only be included if they are defined in the list of ```repos```. (Previously, it would try to match all DP's from .distributionpoints to a config option).
 	- AFP or SMB shares declared in the previous style, with just a ```name``` and ```password``` will still get the rest of the information from the server.
 	- You may now specify these connection properties explictly.
 	- JDS' must be configured with explicit properties.

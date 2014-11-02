@@ -76,6 +76,8 @@ defaults write ~/Library/Preferences/com.github.sheagcraig.python-jss.plist jss_
 defaults write ~/Library/Preferences/com.github.sheagcraig.python-jss.plist jss_url <url>
 ```
 
+If you want to work with File Share Distribution Points, or a JDS, to upload packages and scripts, see the section below on the DistributionPoints class.
+
 If you are working on a non-OS X machine, the JSSPrefs object falls back to
 using plistlib, although it's up to you to create the proper xml file.
 
@@ -324,12 +326,20 @@ Next, modify the object to your needs and then call the ```save()``` method.
 >>> new_policy.delete()
 ```
 
-Distribution Points:
+Distribution Points and Distribution Servers:
 =================
-The JSS stores all of the information about your file share "Distribution Points" in an API object named, appropriately "DistributionPoints". These repositories contain the packages and scripts that are deployed with policies, and are normally managed with the Casper Admin application.
+Casper supports a few different means for handling package and script files:
+- "File Share Distribution Points" corresponds to AFP and SMB mountable shares.
+- "JDS Instances" are Jamf Distribution Servers, which store files in a database, and are not mountable (i.e., must be interacted with via HTML POSTs)
+- "Cloud Distribution Point", which is currently unsupported by python-jss. (Coming as soon as I can set up a testing situation).
 
-python-jss includes objects to help handle these repositories. When you create a JSS object, it includes a DistributionPoint object to delegate copying to as a property, named .distribution_points. e.g. ```my_jss.distribution_points```. For this to be useful, you'll have to include some extra information in your ```com.github.sheagcraig.python-jss.plist``` file. Add a key ```repos```, with an array as its value. The array should contain dictionaries containing ```name``` (which corresponds to the name field on the JSS Computer Management->File Share Distribution Points->Display Name field), and ```password```. It should look like this:
+The JSS stores all of the information about your "File Share Distribution Points" in an API object named, appropriately "DistributionPoints". These repositories contain the packages and scripts that are deployed with policies, and are normally managed with the Casper Admin application.
 
+JDS types have no corresponding API object, and are usually managed with the web-based "Packages" and "Scripts" pages of the web interface's "Computer Management" section.
+
+python-jss includes classes to help work with these different repositories. When you create a JSS object, it includes a DistributionPoints object to delegate, named .distribution_points. e.g. ```my_jss.distribution_points```, to delegate file operations to. While you can always instantiate a DistributionPoints object (made up of DistributionPoint objects), or even set up individual DP's, it's probably easiest to use this delegated approach.
+
+For this to be useful, you'll have to include some extra information in your ```com.github.sheagcraig.python-jss.plist``` file. Add a key ```repos```, with an array as its value. The array should contain dictionaries containing connection information for each DP you wish to include. It should look simlar to this: 
 ```
 	<key>repos</key>
 	<array>
@@ -342,25 +352,69 @@ python-jss includes objects to help handle these repositories. When you create a
 		<dict>
 			<key>name</key>
 			<string>Repo2</string>
+			<key>URL</key>
+			<string>repo.mydomain.org</string>
+			<key>domain</key>
+			<string>SCHWARTZ</string>
+			<key>type</key>
+			<string>SMB</string>
+			<key>share_name</key>
+			<string>Jamf</string>
+			<key>username</key>
+			<string>DarthHelmet</string>
 			<key>password</key>
 			<string>abc123</string>
 		</dict>
 	</array>
 ```
 
+Notice two alternate forms for defining distribution points. The first uses just a name and a password. For SMB and AFP shares, the remaining connection information can be pulled from the JSS. ```name``` corresponds to the name field on the JSS Computer Management->File Share Distribution Points->Display Name field.
+
+However, you may also specify the complete set of connection information. If you only specify ```name``` and ```password```, python-jss will assume you want to auto-configure an AFP or SMB share. All other DP types must be fully-configured. 
+
+At this time, if you are not using the auto-configuration method, the following keys are required:
+- AFP
+	- name (optional)
+	- URL
+	- type='AFP'
+	- port (optional)
+	- share_name
+	- username (rw user)
+	- password
+- SMB
+	- name (optional)
+	- URL
+	- domain
+	- type='SMB'
+	- port (optional)
+	- share_name
+	- username (rw user)
+	- password
+- JDS
+	- URL
+	- type='JDS'
+	- username (rw user)
+	- password
+
+Please see the Repository subclass' docstrings for a list of required arguments and information for you using them.
+
 Once this is in place, the JSS object can be used to copy files to the distribution points with the copy methods. In general, ```copy()``` should be used, as it will enforce putting pkg and dmg files into Packages, and everything else into Scripts automatically. There are ```copy_pkg()``` and ```copy_script()``` methods too, however.
 
-If the DP isn't mounted, the copy operation will mount it automatically. If it's important to keep the mount from appearing in the GUI, you can use the ```nobrowse=True``` parameter to the mount methods on the individual DP's.
+For mountable DP types, if the DP isn't mounted, the copy operation will mount it automatically. If it's important to keep the mount from appearing in the GUI, you can use the ```nobrowse=True``` parameter to the mount methods on the individual DP's. There are ```mount()``` and ```umount()``` methods to do this manually.
 
-Please note: Copying a file to the distribution points does not create a Package or Script object! You must also use the python-jss ```Package.new()``` and ```Script.new()``` to create the objects in the database. The Packages and Scripts directories must be flat, meaning no subdirectories (although technically, bundle-style packages are directories, but this is not an issue). When specifying the filename, the JSS will assume a package is in the Packages directory, and a script in the Scripts directory, so only specify the basename of the file (i.e. Correct: 'my_package.pkg' Incorrect: 'jamf/Packages/my_package.pkg').
+There are some differences between how the AFP/SMB shares work, and a JDS that you should be familiar with.
 
-It's not really important which order you do this in, with the only realy side effect being that Casper Admin will report missing files if the Package/Script object has been created before it has been copied to the file shares.
+First, when you copy a file to an AFP or SMB share, the file just gets copied to the mounted directory. This does not create a ```jss.Package``` or ```jss.Script``` object. You must also use the python-jss ```Package.new()``` and ```Script.new()``` to create the objects in the database.
 
-Configuring the permissions correctly on your file share can be important to prevent unexpected freakouts!
+The Packages and Scripts directories must be flat, meaning no subdirectories (although technically, bundle-style packages are directories, but this is not an issue). When specifying the filename, the JSS will assume a package is in the Packages directory, and a script in the Scripts directory, so only specify the basename of the file (i.e. Correct: 'my_package.pkg' Incorrect: 'jamf/Packages/my_package.pkg').
 
-As soon as the ability to mount using the hashed passwords from the ```DistributionPoints``` works, the need to specify the passwords in the preferences file will go away.
+It's not really important which order you do this in, with the only real side effect being that Casper Admin will report missing files if the Package/Script object has been created before it has been copied to the file shares.
 
-Finally, you can always ignore the delegate ```JSS.distribution_points``` and just set up your own, or even instantiate individual repositories and copy/mount/etc to them manually.
+On a JDS, when you ```JDS.copy()```, if you don't specify an ```id_``` number as a parameter, it will assume you want to create a new ```jss.Package``` ```jss.Script``` object. If, instead, you are trying to upload a file to correspond to an existing object, you must pass the id number to the ```id_``` parameter. ('id' is a reserved word in Python, so throughout python-jss, I use id_).
+
+The second difference is in the ```exists()``` method. For AFP/SMB, it is pretty simple to just see if the file is present. On a JDS, it becomes more complicated. There is no officially documented way to see if a file is present. So the ```exists()``` method looks for a ```jss.Package``` or ```jss.Script``` object with a matching filename and assumes that the associated file is in the database. Of course, this isn't necessarily true, especially if you're monkeying around with python-jss, so there's an ```exists_using_casper``` method that uses the casper module of python-jss to check the undocumented casper.jxml results for proof of a file's existence and whether it has synced to all JDS children.
+
+Finally, the ```mount``` and ```umount``` methods obviously don't apply to JDS'.
 
 SSL Errors:
 =================
