@@ -29,8 +29,6 @@ import requests
 import urllib
 from xml.etree import ElementTree
 
-from jss import JSS
-
 
 class Casper(ElementTree.Element):
     def __init__(self, jss):
@@ -39,8 +37,6 @@ class Casper(ElementTree.Element):
         jss:    JSS object.
 
         """
-        if not isinstance(jss, JSS):
-            raise TypeError("Argument jss must be an instance of JSS.")
         self.jss = jss
         self.url = "%s%s" % (self.jss.base_url, '/casper.jxml')
         self.auth = urllib.urlencode({'username': self.jss.user,

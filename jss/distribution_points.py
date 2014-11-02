@@ -26,8 +26,16 @@ import os
 import shutil
 import subprocess
 
+import casper
 import requests
 
+
+PKG_TYPES = ['.PKG', '.DMG']
+PKG_FILE_TYPE = 0
+#EBOOK_FILE_TYPE = 1 ???
+#IN_HOUSE_APP_FILE_TYPE = 2 ???
+#SCRIPT_TYPES = []
+SCRIPT_FILE_TYPE = 3
 
 class DistributionPoints(object):
     """DistributionPoints is an object which reads DistributionPoint
@@ -162,20 +170,22 @@ class DistributionPoints(object):
         """Remove a distribution point by index."""
         self._children.pop(index)
 
-    def copy(self, filename):
+    def copy(self, filename, id_=-1):
         """Copy file to all repos, guessing file type and destination based
         on its extension.
 
         filename:       String path to the local file to copy.
+        id_:            Package or Script object ID to target. For use with
+                        JDS DP's only.
 
         """
         extension = os.path.splitext(filename)[1].upper()
         for repo in self._children:
-            if extension in ['.PKG', '.DMG']:
-                repo.copy_pkg(filename)
+            if extension in PKG_TYPES:
+                repo.copy_pkg(filename, id_)
             else:
                 # All other file types can go to scripts.
-                repo.copy_script(filename)
+                repo.copy_script(filename, id_)
 
     def copy_pkg(self, filename):
         """Copy a pkg or dmg to all repositories.
@@ -184,7 +194,7 @@ class DistributionPoints(object):
 
         """
         for repo in self._children:
-            repo.copy_pkg(filename)
+            repo.copy_pkg(filename, id_)
 
     def copy_script(self, filename):
         """Copy a script to all repositories.
@@ -193,8 +203,7 @@ class DistributionPoints(object):
 
         """
         for repo in self._children:
-            if hasattr(child, 'copy_script'):
-                repo.copy_script(filename)
+            repo.copy_script(filename, id_)
 
     def mount(self):
         """Mount all mountable distribution points."""
@@ -311,14 +320,24 @@ class MountedRepository(Repository):
         """Test for whether a mount point is mounted."""
         return os.path.ismount(self.connection['mount_point'])
 
-    def copy_pkg(self, filename):
-        """Copy a package to the repo's subdirectory."""
+    def copy_pkg(self, filename, id_=-1):
+        """Copy a package to the repo's subdirectory.
+
+        filename:           Path for file to copy.
+        id_:                Ignored. Used for compatibility with JDS repos.
+
+        """
         basename = os.path.basename(filename)
         self._copy(filename, os.path.join(self.connection['mount_point'],
                                           'Packages', basename))
 
-    def copy_script(self, filename):
-        """Copy a script to the repo's Script subdirectory."""
+    def copy_script(self, filename, id_=-1):
+        """Copy a script to the repo's Script subdirectory.
+
+        filename:           Path for file to copy.
+        id_:                Ignored. Used for compatibility with JDS repos.
+
+        """
         basename = os.path.basename(filename)
         self._copy(filename, os.path.join(self.connection['mount_point'],
                                           'Scripts', basename))
@@ -347,7 +366,7 @@ class MountedRepository(Repository):
 
         """
         extension = os.path.splitext(filename)[1].upper()
-        if extension in ['.PKG', '.DMG']:
+        if extension in PKG_TYPES:
             filepath = os.path.join(self.connection['mount_point'],
                                     'Packages', filename)
         else:
@@ -483,39 +502,39 @@ class JDS(Repository):
         self.connection['upload_url'] = '%s/%s' % \
                 (self.connection.get('URL'), 'dbfileupload')
 
-    def copy_pkg(self, filename, _id='-1'):
+    def copy_pkg(self, filename, id_='-1'):
         """Copy a package to the JDS.
 
         Required Parameters:
         filename:           Full path to file to upload.
-        _id:                ID of Package object to associate with, or '-1' for
+        id_:                ID of Package object to associate with, or '-1' for
                             new packages (default).
 
         """
-        self._copy(filename, _id)
+        self._copy(filename, id_=id_, file_type=PKG_FILE_TYPE)
 
-    #def copy_script(self, filename, _id='-1'):
-    #    """Copy a script to the JDS."""
-    #    # JDS' don't have scripts as files. Rather, they are just data in the
-    #    # DB.
-    #    print("Warning! Scripts cannot be copied to a JDS.")
+    def copy_script(self, filename, id_='-1'):
+        """Copy a script to the JDS. At this point, it does not work correctly.
 
-    def _copy(self, filename, _id='-1'):
+        Scripts end up in the JDS including the multipart boundaries and some
+        HTML information, which is not correct. So don't use this yet!
+
+        Required Parameters:
+        filename:           Full path to file to upload.
+        id_:                ID of Package object to associate with, or '-1' for
+                            new packages (default).
+
+        """
+        self._copy(filename, id_=id_, file_type=SCRIPT_FILE_TYPE)
+
+    def _copy(self, filename, id_='-1', file_type=0):
         """Upload a file to the JDS."""
         basefname = os.path.basename(filename)
         extension = os.path.splitext(basefname)[1].upper()
 
-        if extension in ('.PKG', '.DMG'):
-            file_type = '0'
-        else:
-            # Not sure what other file_types there may be. Possibly a way to
-            # distinguish between dmg and pkg, or it is used for eBooks and
-            # in-house Apps.
-            raise NotImplementedError
-
         resource = {basefname: open(filename, 'rb')}
         headers = {'Content-Type': 'text/xml', 'DESTINATION': '1',
-                   'OBJECT_ID': str(_id), 'FILE_TYPE': file_type,
+                   'OBJECT_ID': str(id_), 'FILE_TYPE': file_type,
                    'FILE_NAME': basefname}
         response = requests.post(url=self.connection['upload_url'],
                                  files=resource,
@@ -544,7 +563,7 @@ class JDS(Repository):
         # Technically, the results of the casper.jxml page list the package
         # files on the server. This is an undocumented interface, however.
         result = False
-        packages = self.jss.Package().retrieve_all()
+        packages = self.connection['jss'].Package().retrieve_all()
         for package in packages:
             if package.findtext('filename') == filename:
                 result = True
@@ -565,9 +584,20 @@ class JDS(Repository):
         as such should probably not be relied upon.
 
         """
-        # Nor have I implemented it yet.
-        raise NotImplementedError
+        casper_results = casper.Casper(self.connection['jss'])
+        distribution_servers = casper_results.find('distributionservers')
+        result = False
+        for distribution_server in distribution_servers:
+            for package in distribution_server.findall('packages/package'):
+                package_name = os.path.basename(package.find('fileURL').text)
+                if filename == package_name:
+                    # We only need to find it once.
+                    # It's possible that packages don't exist on ALL children,
+                    # but that's not our problem.
+                    result = True
+                    break
 
+        return result
 
 class HTTPRepository(Repository):
     pass
