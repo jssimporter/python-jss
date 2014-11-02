@@ -537,6 +537,9 @@ class JDS(Repository):
         example, it's possible to create a Package object but never upload a
         package file, and this method will still return "True".
 
+        Also, this may be slow, as it needs to retrieve the complete list of
+        packages from the server.
+
         """
         # Technically, the results of the casper.jxml page list the package
         # files on the server. This is an undocumented interface, however.
