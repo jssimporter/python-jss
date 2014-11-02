@@ -5,7 +5,10 @@ ADDITIONS:
 - Adds class ```casper```. This class pulls the information returned from POSTing to the undocumented casper.jxml. At some point I would like this to allow for automatic configuration of all repository information (provided an authentication by a privileged user). However, due to its undocumented nature, I don't want to rely on it until I can get some confirmation from JAMF that this is 'OK'.
 - Adds class ```JDS``` to module ```distribution_points```.
 	- Can copy packages/DMG's.
+	- Can copy scripts, although it is currently broken.
+		- Scripts include HTML form boundaries... Working on this.
 	- Has a limited .exists() method.
+	- Has a more thorough .exists_with_casper() method that uses the undocumented casper.jxml/casper-module.
 - class ```DistributionPoints``` now adds ```JDS``` type DP's.
 - ```DistributionPoints``` now have helper methods to add and remove a ```DistributionPoint```.
 
@@ -18,6 +21,9 @@ CHANGES:
 	- JDS' must be configured with explicit properties.
 	- See docstrings for the different types of DistributionPoint for required keys.
 - DistributionPoint subclasses will now let you know what config information you left out.
+- DistributionPoints and DistributionPoint subclasses now have an optional argument id_ for supporting JDS copy methods.
+	- Ignored by non-JDS DP's.
+	- Can be used to copy a package/script to an existing package object rather than creating a new one (the default, of -1 makes a new object).
 
 ### 0.3.11 (October 8, 2014) Offal Sliders 2
 

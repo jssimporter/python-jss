@@ -583,19 +583,33 @@ class JDS(Repository):
         page to determine if a file exists. This is an undocumented feature and
         as such should probably not be relied upon.
 
+        It will test for whether the file exists on ALL configured distribution
+        servers. This may register False if the JDS is busy syncing them.
+        (Need to test this situation).
+
+        Also, casper.jxml includes checksums. If this method proves reliable,
+        checksum comparison will be added as a feature.
+
         """
         casper_results = casper.Casper(self.connection['jss'])
         distribution_servers = casper_results.find('distributionservers')
-        result = False
+
+        # Step one: Build a list of sets of all package names.
+        all_packages = []
         for distribution_server in distribution_servers:
+            packages = set()
             for package in distribution_server.findall('packages/package'):
-                package_name = os.path.basename(package.find('fileURL').text)
-                if filename == package_name:
-                    # We only need to find it once.
-                    # It's possible that packages don't exist on ALL children,
-                    # but that's not our problem.
-                    result = True
-                    break
+                packages.add(os.path.basename(package.find('fileURL').text))
+
+            all_packages.append(packages)
+
+        # Step two: Intersect the sets.
+        base_set = all_packages.pop()
+        for packages in all_packages:
+            base_set = base_set.intersection(packages)
+
+        # Step three: Check for membership.
+        result = filename in base_set
 
         return result
 
