@@ -25,6 +25,7 @@ CHANGES:
 - DistributionPoints and DistributionPoint subclasses now have an optional argument id_ for supporting JDS copy methods.
 	- Ignored by non-JDS DP's.
 	- Can be used to copy a package/script to an existing package object rather than creating a new one (the default, of -1 makes a new object).
+- Moved documentation from README to wiki.
 
 ### 0.3.11 (October 8, 2014) Offal Sliders 2
 
