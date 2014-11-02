@@ -1,4 +1,4 @@
-### 0.4 (UNRELEASED) Mayonnaise-Olive Parfait
+### 0.4 (November 2, 2014) Mayonnaise-Olive Parfait
 
 ADDITIONS:
 
