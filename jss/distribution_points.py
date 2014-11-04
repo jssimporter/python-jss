@@ -28,6 +28,7 @@ import subprocess
 
 import casper
 import requests
+import urllib
 
 
 PKG_TYPES = ['.PKG', '.DMG']
@@ -411,8 +412,9 @@ class AFPDistributionPoint(MountedRepository):
     def _build_url(self):
         """Helper method for building mount URL strings."""
         if self.connection.get('username') and self.connection.get('password'):
+            
             auth = "%s:%s@" % (self.connection['username'],
-                               self.connection['password'])
+                               urllib.quote(self.connection['password']))
         else:
             auth = ''
 
@@ -450,8 +452,8 @@ class SMBDistributionPoint(MountedRepository):
         """Helper method for building mount URL strings."""
         # Build auth string
         if self.connection.get('username') and self.connection.get('password'):
-            auth = "%s:%s@" % (self.connection['username'],
-                               self.connection['password'])
+           auth = "%s:%s@" % (self.connection['username'],
+                              urllib.quote(self.connection['password']))
             if self.connection.get('domain'):
                 auth = r"%s;%s" % (self.connection['domain'], auth)
         else:
