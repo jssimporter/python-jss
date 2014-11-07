@@ -9,7 +9,7 @@ try:  # Test for SSL features
     HAS_SNI = False
 
     import ssl
-    from ssl import wrap_socket, CERT_NONE, PROTOCOL_SSLv23
+    from ssl import wrap_socket, CERT_NONE, PROTOCOL_TLSv1
     from ssl import SSLContext  # Modern SSL?
     from ssl import HAS_SNI  # Has SNI?
 except ImportError:
@@ -80,7 +80,7 @@ def resolve_ssl_version(candidate):
     like resolve_cert_reqs
     """
     if candidate is None:
-        return PROTOCOL_SSLv23
+        return PROTOCOL_TLSv1
 
     if isinstance(candidate, str):
         res = getattr(ssl, candidate, None)
