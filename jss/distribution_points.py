@@ -27,7 +27,7 @@ import shutil
 import subprocess
 
 import casper
-import requests
+from .contrib import requests
 
 
 PKG_TYPES = ['.PKG', '.DMG']
