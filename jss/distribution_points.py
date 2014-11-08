@@ -130,8 +130,6 @@ class DistributionPoints(object):
                     share_name = repo['share_name']
                     # Domain is not used for AFP.
                     domain = repo.get('workgroup_or_domain')
-                    # If port isn't given, assume it's the std of 139.
-                    port = repo.get('share_port') or '139'
                     username = repo['username']
                     password = repo['password']
 
@@ -139,12 +137,16 @@ class DistributionPoints(object):
                             (name + share_name).replace(' ', ''))
 
                     if connection_type == 'AFP':
+                        # If port isn't given, assume it's the std of 548.
+                        port = repo.get('share_port') or '548'
                         dp = AFPDistributionPoint(URL=URL, port=port,
                                                 share_name=share_name,
                                                 mount_point=mount_point,
                                                 username=username,
                                                 password=password)
                     elif connection_type == 'SMB':
+                        # If port isn't given, assume it's the std of 139.
+                        port = repo.get('share_port') or '139'
                         dp = SMBDistributionPoint(URL=URL, port=port,
                                                 share_name=share_name,
                                                 mount_point=mount_point,
