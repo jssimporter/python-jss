@@ -1,3 +1,9 @@
+### 0.4.1 (UNRELEASED)
+
+FIXES:
+
+- AFP and SMB file shares did not properly escape password characters. Thanks @eahrold for the fix.
+
 ### 0.4 (November 2, 2014) Mayonnaise-Olive Parfait
 
 ADDITIONS:
