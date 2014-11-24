@@ -1,5 +1,9 @@
 ### 0.4.1 (UNRELEASED)
 
+CHANGES:
+
+- Updates bundled Requests to 2.4.3.
+
 FIXES:
 
 - AFP and SMB file shares did not properly escape password characters. Thanks @eahrold for the fix.

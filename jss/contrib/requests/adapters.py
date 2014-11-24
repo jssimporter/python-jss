@@ -15,14 +15,15 @@ from .packages.urllib3 import Retry
 from .packages.urllib3.poolmanager import PoolManager, proxy_from_url
 from .packages.urllib3.response import HTTPResponse
 from .packages.urllib3.util import Timeout as TimeoutSauce
-from .compat import urlparse, basestring, urldefrag
+from .compat import urlparse, basestring
 from .utils import (DEFAULT_CA_BUNDLE_PATH, get_encoding_from_headers,
-                    prepend_scheme_if_needed, get_auth_from_url)
+                    prepend_scheme_if_needed, get_auth_from_url, urldefragauth)
 from .structures import CaseInsensitiveDict
 from .packages.urllib3.exceptions import ConnectTimeoutError
 from .packages.urllib3.exceptions import HTTPError as _HTTPError
 from .packages.urllib3.exceptions import MaxRetryError
 from .packages.urllib3.exceptions import ProxyError as _ProxyError
+from .packages.urllib3.exceptions import ProtocolError
 from .packages.urllib3.exceptions import ReadTimeoutError
 from .packages.urllib3.exceptions import SSLError as _SSLError
 from .cookies import extract_cookies_to_jar
@@ -269,7 +270,7 @@ class HTTPAdapter(BaseAdapter):
         proxy = proxies.get(scheme)
 
         if proxy and scheme != 'https':
-            url, _ = urldefrag(request.url)
+            url = urldefragauth(request.url)
         else:
             url = request.path_url
 
@@ -316,8 +317,10 @@ class HTTPAdapter(BaseAdapter):
 
         :param request: The :class:`PreparedRequest <PreparedRequest>` being sent.
         :param stream: (optional) Whether to stream the request content.
-        :param timeout: (optional) The timeout on the request.
-        :type timeout: float or tuple (connect timeout, read timeout), eg (3.1, 20)
+        :param timeout: (optional) How long to wait for the server to send
+            data before giving up, as a float, or a (`connect timeout, read
+            timeout <user/advanced.html#timeouts>`_) tuple.
+        :type timeout: float or tuple
         :param verify: (optional) Whether to verify SSL certificates.
         :param cert: (optional) Any user-provided SSL certificate to be trusted.
         :param proxies: (optional) The proxies dictionary to apply to the request.
@@ -400,8 +403,8 @@ class HTTPAdapter(BaseAdapter):
                     # All is well, return the connection to the pool.
                     conn._put_conn(low_conn)
 
-        except socket.error as sockerr:
-            raise ConnectionError(sockerr, request=request)
+        except (ProtocolError, socket.error) as err:
+            raise ConnectionError(err, request=request)
 
         except MaxRetryError as e:
             if isinstance(e.reason, ConnectTimeoutError):
