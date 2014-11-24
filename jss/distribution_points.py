@@ -25,10 +25,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import shutil
 import subprocess
+import urllib
 
 import casper
 import requests
-import urllib
 
 
 PKG_TYPES = ['.PKG', '.DMG']
@@ -383,6 +383,10 @@ class MountedRepository(Repository):
             os.path.ismount(self.connection['mount_point'])
         return output
 
+    def _encode_password(self):
+        """Returns a safely encoded and quoted password."""
+        upass = unicode(self.connection['password']).encode('utf-8')
+        return urllib.quote(upass, safe='~()*!.\'')
 
 class AFPDistributionPoint(MountedRepository):
     """Represents an AFP repository.
@@ -413,7 +417,7 @@ class AFPDistributionPoint(MountedRepository):
         """Helper method for building mount URL strings."""
         if self.connection.get('username') and self.connection.get('password'):
             auth = "%s:%s@" % (self.connection['username'],
-                               urllib.quote(unicode(self.connection['password']).encode('utf-8'),safe='~()*!.\''))
+                               self._encode_password())
         else:
             auth = ''
 
@@ -452,7 +456,7 @@ class SMBDistributionPoint(MountedRepository):
         # Build auth string
         if self.connection.get('username') and self.connection.get('password'):
             auth = "%s:%s@" % (self.connection['username'],
-                               urllib.quote(unicode(self.connection['password']).encode('utf-8'),safe='~()*!.\''))
+                               self._encode_password())
             if self.connection.get('domain'):
                 auth = r"%s;%s" % (self.connection['domain'], auth)
         else:
