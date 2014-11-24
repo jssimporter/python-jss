@@ -375,7 +375,6 @@ class MountedRepository(Repository):
         else:
             filepath = os.path.join(self.connection['mount_point'],
                                     'Scripts', filename)
-        print(filepath)
         return os.path.exists(filepath)
 
     def __repr__(self):
