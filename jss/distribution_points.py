@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import shutil
 import subprocess
+import sys
 import urllib
 
 import casper
@@ -317,7 +318,16 @@ class MountedRepository(Repository):
         """Try to unmount our mount point."""
         # If not mounted, don't bother.
         if os.path.exists(self.connection['mount_point']):
-            subprocess.check_call(['umount', self.connection['mount_point']])
+            # Force an unmount. If you are manually mounting and unmounting
+            # shares with python, chances are good that you know what you are
+            # doing and *want* it to unmount. For real.
+            if sys.platform == 'darwin':
+                subprocess.check_call(['/usr/sbin/diskutil', 'unmount',
+                                       'force',
+                                       self.connection['mount_point']])
+            else:
+                subprocess.check_call(['umount', '-f',
+                                       self.connection['mount_point']])
 
     def is_mounted(self):
         """Test for whether a mount point is mounted."""
