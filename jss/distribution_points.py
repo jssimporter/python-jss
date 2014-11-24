@@ -28,7 +28,7 @@ import subprocess
 import urllib
 
 import casper
-import requests
+from .contrib import requests
 
 
 PKG_TYPES = ['.PKG', '.DMG']

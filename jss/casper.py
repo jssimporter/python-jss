@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import copy
-import requests
+from .contrib import requests
 import urllib
 from xml.etree import ElementTree
 
