@@ -3,7 +3,7 @@
 FIXES:
 
 - AFP and SMB file shares did not properly escape password characters. Thanks @eahrold for the fix.
-- AFP shares were defaulting to the incorrect port (139). Now defaults to 548.
+- AFP shares were defaulting to the incorrect port (139). Now defaults to 548. Thanks @eahrold again!
 
 ### 0.4 (November 2, 2014) Mayonnaise-Olive Parfait
 
