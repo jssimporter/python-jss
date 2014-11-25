@@ -1,14 +1,20 @@
-### 0.4.1 (UNRELEASED)
+### 0.4.1 (November 25, 2014) Postpartum Fixapalooza
 
 CHANGES:
 
 - Updates bundled Requests to 2.4.3.
+- Mounted repositories now use the force flag to unmount. If this troubles anyone, let me know and I'll make it an option.
 
 FIXES:
 
 - AFP and SMB file shares did not properly escape password characters. Thanks @eahrold for the fix.
 - AFP shares were defaulting to the incorrect port (139). Now defaults to 548. Thanks @eahrold again!
 - Requests module not properly referenced in jss.py and distribution_points.py. Big props to @eahrold.
+- SSLv3 support was dropped in JSS v9.61 to avoid the Poodle attack. Thanks to @ocoda for a solution while we waited for urllib3 (part of requests) to update to solve this problem.
+
+KNOWN ISSUES:
+
+- JDS distribution points can upload scripts and packages, but they are getting corrupted with HTML multipart boundaries because the requests are not being made quite right. This should be solved soon.
 
 ### 0.4 (November 2, 2014) Mayonnaise-Olive Parfait
 
@@ -23,6 +29,10 @@ ADDITIONS:
 	- Has a more thorough .exists_with_casper() method that uses the undocumented casper.jxml/casper-module.
 - class ```DistributionPoints``` now adds ```JDS``` type DP's.
 - ```DistributionPoints``` now have helper methods to add and remove a ```DistributionPoint```.
+
+KNOWN ISSUES:
+
+- JDS distribution points can upload scripts and packages, but they are getting corrupted with HTML multipart boundaries because the requests are not being made quite right. This should be solved soon.
 
 CHANGES:
 
