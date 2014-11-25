@@ -126,7 +126,7 @@ class DistributionPoints(object):
 
                 # Handle Explictly declared DP's.
                 elif repo.get('type') in ['AFP', 'SMB']:
-                    name = repo['name']
+                    name = repo.get('name') or ''
                     URL = repo['URL']
                     connection_type = repo['type']
                     share_name = repo['share_name']
