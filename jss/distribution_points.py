@@ -86,6 +86,9 @@ class DistributionPoints(object):
 
         # If no distribution points are configured, there's nothing to do here.
         if self.jss.repo_prefs:
+            # Set up a counter for avoiding name clashes with optional name
+            # variable.
+            counter = 0
             for repo in self.jss.repo_prefs:
                 # Handle AFP/SMB shares, as they can be auto-configured.
                 # Legacy system did not require explicit type key.
@@ -126,7 +129,8 @@ class DistributionPoints(object):
 
                 # Handle Explictly declared DP's.
                 elif repo.get('type') in ['AFP', 'SMB']:
-                    name = repo.get('name') or ''
+                    name = repo.get('name') or 'JSS_DP_%02i' % counter
+                    counter += 1
                     URL = repo['URL']
                     connection_type = repo['type']
                     share_name = repo['share_name']
@@ -136,7 +140,7 @@ class DistributionPoints(object):
                     password = repo['password']
 
                     mount_point = os.path.join('/Volumes',
-                            (name + share_name).replace(' ', ''))
+                                               name.replace(' ', ''))
 
                     if connection_type == 'AFP':
                         # If port isn't given, assume it's the std of 548.
