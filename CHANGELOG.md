@@ -11,6 +11,7 @@ FIXES:
 - AFP shares were defaulting to the incorrect port (139). Now defaults to 548. Thanks @eahrold again!
 - Requests module not properly referenced in jss.py and distribution_points.py. Big props to @eahrold.
 - SSLv3 support was dropped in JSS v9.61 to avoid the Poodle attack. Thanks to @ocoda for a solution while we waited for urllib3 (part of requests) to update to solve this problem.
+- Explicitly configured AFP and SMB sharepoints, despite the documentation, needed a ```name```. This is no properly set as optional. If left out, a generic name with an incremented numeric suffix will be used.
 
 KNOWN ISSUES:
 
