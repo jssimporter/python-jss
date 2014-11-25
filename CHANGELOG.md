@@ -1,5 +1,7 @@
 ### 0.4.2 (November 25, 2014) Eyebrow Floss
 
+I did a quick update to include an egg installer on pypi.org. This was needed to support the jss-autopkg-addon installer.
+
 CHANGES:
 
 - AFP and SMB shares' URL variable should not include a prefixed protocol. Now, python-jss removes any preceding afp:// or smb:// from URL preferences just to be safe. Thanks @eahrold.
