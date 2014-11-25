@@ -132,6 +132,11 @@ class DistributionPoints(object):
                     name = repo.get('name') or 'JSS_DP_%02i' % counter
                     counter += 1
                     URL = repo['URL']
+                    # If found, strip the scheme off the URL
+                    # it's reconstructed later
+                    if "://" in URL:
+                        URL = URL.split('://')[1]
+
                     connection_type = repo['type']
                     share_name = repo['share_name']
                     # Domain is not used for AFP.
