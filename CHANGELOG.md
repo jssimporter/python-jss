@@ -1,3 +1,9 @@
+### 0.4.2 (UNRELEASED) UNNAMED
+
+CHANGES:
+
+- AFP and SMB shares' URL variable should not include a prefixed protocol. Now, python-jss removes any preceding afp:// or smb:// from URL preferences just to be safe. Thanks @eahrold.
+
 ### 0.4.1 (November 25, 2014) Postpartum Fixapalooza
 
 CHANGES:
