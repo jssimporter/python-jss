@@ -1,4 +1,4 @@
-### 0.4.2 (UNRELEASED) UNNAMED
+### 0.4.2 (November 25, 2014) Eyebrow Floss
 
 CHANGES:
 
