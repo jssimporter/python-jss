@@ -1,3 +1,14 @@
+### 0.4.3 (December 1, 2014) Anti-Corruption Sauce
+
+FIXES:
+
+- JDS repos can now upload packages and scripts.
+
+CHANGES:
+
+- Identified eBooks as file type 1 and in mobile apps as file type 2 for dbfileupload parameters. This may not be the appropriate place to house these functions, but for those who need it, the JDS._copy() method can now upload eBooks and mobile apps. Please feel free to experiment and clue me in to how to make it work better.
+- Research also showed that there are two viable methods for uploading to a JDS. We will stick with the existing method for the time being.
+
 ### 0.4.2 (November 25, 2014) Eyebrow Floss
 
 I did a quick update to include an egg installer on pypi.org. This was needed to support the jss-autopkg-addon installer.

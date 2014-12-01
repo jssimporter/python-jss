@@ -34,8 +34,8 @@ from .contrib import requests
 
 PKG_TYPES = ['.PKG', '.DMG']
 PKG_FILE_TYPE = 0
-#EBOOK_FILE_TYPE = 1 ???
-#IN_HOUSE_APP_FILE_TYPE = 2 ???
+EBOOK_FILE_TYPE = 1
+IN_HOUSE_APP_FILE_TYPE = 2
 #SCRIPT_TYPES = []
 SCRIPT_FILE_TYPE = 3
 
@@ -557,12 +557,11 @@ class JDS(Repository):
         basefname = os.path.basename(filename)
         extension = os.path.splitext(basefname)[1].upper()
 
-        resource = {basefname: open(filename, 'rb')}
-        headers = {'Content-Type': 'text/xml', 'DESTINATION': '1',
-                   'OBJECT_ID': str(id_), 'FILE_TYPE': file_type,
-                   'FILE_NAME': basefname}
+        resource = open(filename, 'rb')
+        headers = {'DESTINATION': '1', 'OBJECT_ID': str(id_), 'FILE_TYPE':
+                   file_type, 'FILE_NAME': basefname}
         response = requests.post(url=self.connection['upload_url'],
-                                 files=resource,
+                                 data=resource,
                                  auth=(self.connection['username'],
                                        self.connection['password']),
                                  headers=headers)
