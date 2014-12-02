@@ -1,8 +1,14 @@
+### 0.4.4 (UNRELEASED)
+
+CHANGES:
+
+- ```JSS``` objects will now have a ```DistributionPoint``` property ```JSS.distribution_points``` even if no repos are configured. This makes it easier to add in after the fact.
+
 ### 0.4.3 (December 1, 2014) Anti-Corruption Sauce
 
 FIXES:
 
-- JDS repos can now upload packages and scripts. Thanks to Forrest Beck for sorting out the dark magic in the packets.
+- JDS repos can now upload packages and scripts. Thanks to @beckf for sorting out the dark magic in the packets.
 
 CHANGES:
 

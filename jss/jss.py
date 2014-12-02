@@ -163,10 +163,7 @@ class JSS(object):
         headers = {"content-type": 'text/xml', 'Accept': 'application/xml'}
         self.session.headers.update(headers)
         self.factory = JSSObjectFactory(self)
-        # If JSS created with arguments, and no repos provided, don't try to
-        # create them.
-        if self.repo_prefs:
-            self.distribution_points = distribution_points.DistributionPoints(self)
+        self.distribution_points = distribution_points.DistributionPoints(self)
 
     def _error_handler(self, exception_cls, response):
         """Generic error handler. Converts html responses to friendlier
