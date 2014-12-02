@@ -2,7 +2,7 @@
 
 FIXES:
 
-- JDS repos can now upload packages and scripts.
+- JDS repos can now upload packages and scripts. Thanks to Forrest Beck for sorting out the dark magic in the packets.
 
 CHANGES:
 
