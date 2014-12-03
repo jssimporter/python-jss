@@ -2,12 +2,19 @@
 
 FIXES:
 
-- Included submodules should now properly handle TLS for JSS v9.6.1 or later. (sheagcraig/jss-autopkg-addon#9)
+- Included submodules should now properly handle TLS for JSS v9.6.1 or later. (sheagcraig/jss-autopkg-addon#9, #16)
+- ```JSSObject.save()``` has been reworked to safely handle all permutations of PUT and POST abilities on objects. For example, ```ComputerInvitations``` can only POST, not PUT, and did not work correctly.
+- All tests in the test suite are passing again. This is of course set up to work on our testing server only.
 
 CHANGES:
 
 - ```JSS``` objects will now have a ```DistributionPoint``` property ```JSS.distribution_points``` even if no repos are configured. This makes it easier to add in after the fact.
 - Updated [requests](http://docs.python-requests.org/en/latest/) to 2.5.0.
+- ```JSSObject.save()``` now has better error reporting.
+
+KNOWN ISSUES:
+
+- See #15. Objects that can potentially have a category, but have none, fail to save. This is almost certainly related to how the JSS interprets the changed value of nil categories (was "Unknown", now "No category assigned"). This has been solved by overriding the ```save``` method on Policies and Packages until they fix it. Please let me know if you come across others.
 
 ### 0.4.3 (December 1, 2014) Anti-Corruption Sauce
 
