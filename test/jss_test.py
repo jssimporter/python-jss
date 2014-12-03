@@ -43,6 +43,9 @@ def setup():
     try:
         cleanup = j_global.Policy(TESTPOLICY)
         cleanup.delete()
+    except JSSGetError:
+        pass
+    try:
         cleanup = j_global.ComputerGroup(TESTGROUP)
         cleanup.delete()
     except JSSGetError:
@@ -163,7 +166,14 @@ class TestJSSObject(object):
     def test_JSSObject_get_post_url(self):
         assert_equal(Policy.get_post_url(), '/policies/id/0')
 
+    @with_setup(setup)
     def test_JSSObject_get_object_url(self):
+        # Can't figure out why this policy doesn't go away with the setup
+        # above. I'll come back and try to understand this later. Until then,
+        # do a double-delete!
+        tp = j_global.Policy(TESTPOLICY)
+        tp.delete()
+
         new_policy = Policy(j_global, TESTPOLICY)
         new_policy.save()
 
