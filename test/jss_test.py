@@ -278,7 +278,7 @@ class TestJSSObjectNewMethods(object):
     @with_setup(setup)
     def test_ComputerGroup_Smart(self):
         cg = ComputerGroup(j_global, TESTGROUP, smart=True)
-        cg.add_criterion("Computer Name", 0, "and", "like", "craigs")
+        cg.add_criterion("Computer Name", 0, "and", "like", "craigs-imac")
         cg.findtext("criteria/criterion/name")
         cg.save()
         assert_is_instance(cg, ComputerGroup)
@@ -301,7 +301,7 @@ class TestJSSObjectNewMethods(object):
     def test_Policy_new(self):
         policy = Policy(j_global, "python-jss-test-policy")
         assert_is_instance(policy, Policy)
-        computer = j_global.Computer('craigs')
+        computer = j_global.Computer('craigs-imac')
         policy.add_object_to_scope(computer)
         policy_string = r"""<policy>
     <general>
@@ -313,8 +313,8 @@ class TestJSSObjectNewMethods(object):
     <scope>
         <computers>
             <computer>
-                <id>454</id>
-                <name>craigs</name>
+                <id>449</id>
+                <name>craigs-imac</name>
             </computer>
         </computers>
         <computer_groups />
