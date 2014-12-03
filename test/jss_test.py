@@ -78,9 +78,9 @@ class TestJSS(object):
         assert_is_instance(j, JSS)
 
     def test_jss_with_args(self):
-        authUser = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_user'])
-        authPass = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_pass'])
-        repoUrl = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_url'])
+        authUser = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_user']).strip('\n')
+        authPass = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_pass']).strip('\n')
+        repoUrl = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_url']).strip('\n')
         j = JSS(url=repoUrl, user=authUser, password=authPass)
         assert_is_instance(j, JSS)
 
@@ -222,7 +222,6 @@ class TestJSSObject(object):
         assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
                       NoGetObject, None)
         bad_policy = NoPostObject(j_global, "No workie")
-        print(bad_policy)
         assert_raises(JSSMethodNotAllowedError, bad_policy.save)
 
         np = NoPutNoPostObject(j_global, "TestNoPutNoPost")
