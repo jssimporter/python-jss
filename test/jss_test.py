@@ -168,12 +168,6 @@ class TestJSSObject(object):
 
     @with_setup(setup)
     def test_JSSObject_get_object_url(self):
-        # Can't figure out why this policy doesn't go away with the setup
-        # above. I'll come back and try to understand this later. Until then,
-        # do a double-delete!
-        tp = j_global.Policy(TESTPOLICY)
-        tp.delete()
-
         new_policy = Policy(j_global, TESTPOLICY)
         new_policy.save()
 
@@ -222,7 +216,7 @@ class TestJSSObject(object):
         assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
                       NoGetObject, None)
         bad_policy = NoPostObject(j_global, "No workie")
-        assert_raises(JSSMethodNotAllowedError, bad_policy.save)
+        assert_raises(JSSPutError, bad_policy.save)
 
         np = NoPutNoPostObject(j_global, "TestNoPutNoPost")
         assert_raises(JSSMethodNotAllowedError, np.save)

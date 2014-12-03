@@ -591,7 +591,6 @@ class JSSObject(ElementTree.Element):
         Data validation is up to the client.
 
         """
-        updated_data = None
         # If obj can't PUT or POST, stop here.
         if not self.can_put and not self.can_post:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
@@ -602,19 +601,28 @@ class JSSObject(ElementTree.Element):
             try:
                 self.jss.put(url, self)
                 updated_data = self.jss.get(url)
-            except JSSPutError:
+            except JSSPutError as put_error:
                 # Object doesn't exist, try creating a new one.
-                if self.can_post:
-                    url = self.get_post_url()
-                    try:
-                        updated_data = self.jss.post(self.__class__, url, self)
-                    except JSSPostError as e:
-                        if e.status_code == 409:
-                            raise JSSPostError("Object Conflict! If trying to "
-                                               "post a new object, look for "
-                                               "name conflict and delete.")
+                if put_error.status_code == 404:
+                    if self.can_post:
+                        url = self.get_post_url()
+                        try:
+                            updated_data = self.jss.post(self.__class__, url,
+                                                         self)
+                        except JSSPostError as e:
+                            if e.status_code == 409:
+                                raise JSSPostError(
+                                    "Object Conflict! If trying to post a new "
+                                    "object, look for name conflict and "
+                                    "delete.")
+                            else:
+                                raise JSSPostError(e)
+                    else:
+                        raise JSSMethodNotAllowedError(self.__class__.__name__)
                 else:
-                    raise JSSMethodNotAllowedError(self.__class__.__name__)
+                    # Something else went wrong
+                    raise JSSPutError(put_error)
+
         # Finally, handle those which can only POST.
         elif not self.can_put and self.can_post:
             url = self.get_post_url()
@@ -628,10 +636,9 @@ class JSSObject(ElementTree.Element):
 
         # If successful, replace current instance's data with new, JSS-filled
         # data.
-        if updated_data is not None:
-            self.clear()
-            for child in updated_data.getchildren():
-                self._children.append(child)
+        self.clear()
+        for child in updated_data.getchildren():
+            self._children.append(child)
 
     # Shared properties:
     # Almost all JSSObjects have at least name and id properties, so provide a
@@ -1322,6 +1329,18 @@ class Package(JSSContainerObject):
             name = category
         self.find("category").text = name
 
+    def save(self):
+        """Save a new package to the JSS, or update an existing one."""
+        # Jamf seems to have changed the way a missing category is handled. If
+        # you try to update an existing policy with the data returned from a
+        # GET on a policy that has no category, it will fail. If we clear the
+        # category under those circumstances, it will work.
+        category = self.find('category')
+        if category.text == "No category assigned":
+            self.set_category('')
+
+        super(Package, self).save()
+
 
 class Peripheral(JSSContainerObject):
     _url = '/peripherals'
@@ -1461,6 +1480,19 @@ class Policy(JSSContainerObject):
         id_.text = category.id
         name = ElementTree.SubElement(pcategory, "name")
         name.text = category.name
+
+    def save(self):
+        """Save a new policy to the JSS, or update an existing one."""
+        # Jamf seems to have changed the way a missing category is handled. If
+        # you try to update an existing policy with the data returned from a
+        # GET on a policy that has no category, it will fail. If we clear the
+        # category under those circumstances, it will work.
+        category = self.find('general/category')
+        if category.findtext('id') == "-1":
+            category.remove(category.find('name'))
+            category.remove(category.find('id'))
+
+        super(Policy, self).save()
 
 
 class Printer(JSSContainerObject):
