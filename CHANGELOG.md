@@ -1,14 +1,19 @@
-### 0.4.4 (UNRELEASED)
+### 0.4.4 (December 3, 2014) Welcome to the Terrordome
+
+FIXES:
+
+- Included submodules should now properly handle TLS for JSS v9.6.1 or later. (sheagcraig/jss-autopkg-addon#9)
 
 CHANGES:
 
 - ```JSS``` objects will now have a ```DistributionPoint``` property ```JSS.distribution_points``` even if no repos are configured. This makes it easier to add in after the fact.
+- Updated [requests](http://docs.python-requests.org/en/latest/) to 2.5.0.
 
 ### 0.4.3 (December 1, 2014) Anti-Corruption Sauce
 
 FIXES:
 
-- JDS repos can now upload packages and scripts. Thanks to @beckf for sorting out the dark magic in the packets.
+- JDS repos can now upload packages and scripts. Thanks to @beckf for sorting out the dark magic in the packets. (#5)
 
 CHANGES:
 
@@ -21,26 +26,26 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 
 CHANGES:
 
-- AFP and SMB shares' URL variable should not include a prefixed protocol. Now, python-jss removes any preceding afp:// or smb:// from URL preferences just to be safe. Thanks @eahrold.
+- AFP and SMB shares' URL variable should not include a prefixed protocol. Now, python-jss removes any preceding afp:// or smb:// from URL preferences just to be safe. Thanks @eahrold. (#13)
 
 FIXES:
 
-- Repos input variables ```port``` and ```domain``` were incorrectly pulled from preferences. This has been corrected. Thanks @eahrold.
+- Repos input variables ```port``` and ```domain``` were incorrectly pulled from preferences. This has been corrected. Thanks @eahrold. (sheagcraig/jss-autopkg-addon#11)
 
 ### 0.4.1 (November 25, 2014) Postpartum Fixapalooza
 
 CHANGES:
 
 - Updates bundled Requests to 2.4.3.
-- Mounted repositories now use the force flag to unmount. If this troubles anyone, let me know and I'll make it an option.
+- Mounted repositories now use the force flag to unmount. If this troubles anyone, let me know and I'll make it an option. (#10)
 
 FIXES:
 
-- AFP and SMB file shares did not properly escape password characters. Thanks @eahrold for the fix.
-- AFP shares were defaulting to the incorrect port (139). Now defaults to 548. Thanks @eahrold again!
-- Requests module not properly referenced in jss.py and distribution_points.py. Big props to @eahrold.
-- SSLv3 support was dropped in JSS v9.61 to avoid the Poodle attack. Thanks to @ocoda for a solution while we waited for urllib3 (part of requests) to update to solve this problem.
-- Explicitly configured AFP and SMB sharepoints, despite the documentation, needed a ```name```. This is no properly set as optional. If left out, a generic name with an incremented numeric suffix will be used.
+- AFP and SMB file shares did not properly escape password characters. Thanks @eahrold for the fix. (#4)
+- AFP shares were defaulting to the incorrect port (139). Now defaults to 548. Thanks @eahrold again! (#8)
+- Requests module not properly referenced in jss.py and distribution_points.py. Big props to @eahrold. (#7)
+- SSLv3 support was dropped in JSS v9.61 to avoid the Poodle attack. Thanks to @ocoda for a solution while we waited for urllib3 (part of requests) to update to solve this problem. (#6)
+- Explicitly configured AFP and SMB sharepoints, despite the documentation, needed a ```name```. This is now properly set as optional. If left out, a generic name with an incremented numeric suffix will be used.
 
 KNOWN ISSUES:
 
@@ -51,7 +56,7 @@ KNOWN ISSUES:
 ADDITIONS:
 
 - Adds class ```casper```. This class pulls the information returned from POSTing to the undocumented casper.jxml. At some point I would like this to allow for automatic configuration of all repository information (provided an authentication by a privileged user). However, due to its undocumented nature, I don't want to rely on it until I can get some confirmation from JAMF that this is 'OK'.
-- Adds class ```JDS``` to module ```distribution_points```.
+- Adds class ```JDS``` to module ```distribution_points```. (#1)
 	- Can copy packages/DMG's.
 	- Can copy scripts, although it is currently broken.
 		- Scripts include HTML form boundaries... Working on this.
