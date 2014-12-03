@@ -591,9 +591,13 @@ class JSSObject(ElementTree.Element):
         Data validation is up to the client.
 
         """
-
-        # Try to update/put first...
-        if self.can_put:
+        updated_data = None
+        # If obj can't PUT or POST, stop here.
+        if not self.can_put and not self.can_post:
+            raise JSSMethodNotAllowedError(self.__class__.__name__)
+        # Most objects can both PUT and POST. This block handles them.
+        # It will also handle those which can only PUT.
+        elif self.can_put:
             url = self.get_object_url()
             try:
                 self.jss.put(url, self)
@@ -606,15 +610,28 @@ class JSSObject(ElementTree.Element):
                         updated_data = self.jss.post(self.__class__, url, self)
                     except JSSPostError as e:
                         if e.status_code == 409:
-                            raise JSSPostError("Object Conflict! If trying to post a "
-                                               "new object, look for name conflict and "
-                                               "delete.")
+                            raise JSSPostError("Object Conflict! If trying to "
+                                               "post a new object, look for "
+                                               "name conflict and delete.")
                 else:
                     raise JSSMethodNotAllowedError(self.__class__.__name__)
-        # Replace current instance's data with new, JSS-filled data.
-        self.clear()
-        for child in updated_data.getchildren():
-            self._children.append(child)
+        # Finally, handle those which can only POST.
+        elif not self.can_put and self.can_post:
+            url = self.get_post_url()
+            try:
+                updated_data = self.jss.post(self.__class__, url, self)
+            except JSSPostError as e:
+                if e.status_code == 409:
+                    raise JSSPostError("Object Conflict! If trying to post a "
+                                       "new object, look for name conflict and"
+                                       " delete.")
+
+        # If successful, replace current instance's data with new, JSS-filled
+        # data.
+        if updated_data is not None:
+            self.clear()
+            for child in updated_data.getchildren():
+                self._children.append(child)
 
     # Shared properties:
     # Almost all JSSObjects have at least name and id properties, so provide a

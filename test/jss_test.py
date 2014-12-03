@@ -188,7 +188,15 @@ class TestJSSObject(object):
                 pass
 
         class NoPutObject(JSSObject):
+            """We don't need to test for this. This is just for doc purposes.
+
+            """
             can_put = False
+            pass
+
+        class NoPutNoPostObject(JSSObject):
+            can_put = False
+            can_post = False
 
             def new(self, name):
                 pass
@@ -207,7 +215,7 @@ class TestJSSObject(object):
         print(bad_policy)
         assert_raises(JSSMethodNotAllowedError, bad_policy.save)
 
-        np = NoPutObject(j_global, "TestNoPut")
+        np = NoPutNoPostObject(j_global, "TestNoPutNoPost")
         assert_raises(JSSMethodNotAllowedError, np.save)
 
         nd = NoDeleteObject(j_global, "TestNoDelete")
