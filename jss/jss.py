@@ -271,6 +271,9 @@ class JSS(object):
     def Building(self, data=None):
         return self.factory.get_object(Building, data)
 
+    def BYOProfile(self, data=None):
+        return self.factory.get_object(BYOProfile, data)
+
     def Category(self, data=None):
         return self.factory.get_object(Category, data)
 
@@ -285,6 +288,9 @@ class JSS(object):
 
     def ComputerCommand(self, data=None):
         return self.factory.get_object(ComputerCommand, data)
+
+    def ComputerConfiguration(self, data=None):
+        return self.factory.get_object(ComputerConfiguration, data)
 
     def ComputerExtensionAttribute(self, data=None):
         return self.factory.get_object(ComputerExtensionAttribute, data)
@@ -325,6 +331,9 @@ class JSS(object):
     def GSXConnection(self, data=None):
         return self.factory.get_object(GSXConnection, data)
 
+    def IBeacon(self, data=None):
+        return self.factory.get_object(IBeacon, data)
+
     def JSSUser(self, data=None):
         return self.factory.get_object(JSSUser, data)
 
@@ -333,6 +342,9 @@ class JSS(object):
 
     def LicensedSoftware(self, data=None):
         return self.factory.get_object(LicensedSoftware, data)
+
+    def MacApplication(self, data=None):
+        return self.factory.get_object(MacApplication, data)
 
     def ManagedPreferenceProfile(self, data=None):
         return self.factory.get_object(ManagedPreferenceProfile, data)
@@ -417,6 +429,9 @@ class JSS(object):
 
     def UserGroup(self, data=None):
         return self.factory.get_object(UserGroup, data)
+
+    def VPPAccount(self, data=None):
+        return self.factory.get_object(VPPAccount, data)
 
 
 class JSSObjectFactory(object):
@@ -910,7 +925,7 @@ class AccountGroup(JSSContainerObject):
 
 class ActivationCode(JSSFlatObject):
     _url = '/activationcode'
-    type = 'activation_code'
+    list_type = 'activation_code'
     can_delete = False
     can_post = False
     can_list = False
@@ -931,6 +946,13 @@ class AdvancedUserSearch(JSSContainerObject):
 class Building(JSSContainerObject):
     _url = '/buildings'
     list_type = 'building'
+
+
+class BYOProfile(JSSContainerObject):
+    _url = '/byoprofiles'
+    list_type = 'byoprofiles'
+    can_delete = False
+    can_post = False
 
 
 class Category(JSSContainerObject):
@@ -974,6 +996,11 @@ class ComputerCommand(JSSContainerObject):
     _url = '/computercommands'
     can_delete = False
     can_put = False
+
+
+class ComputerConfiguration(JSSContainerObject):
+    _url = '/computerconfigurations'
+    list_type = 'computer_configuration'
 
 
 class ComputerExtensionAttribute(JSSContainerObject):
@@ -1162,6 +1189,11 @@ class GSXConnection(JSSFlatObject):
     can_delete = False
 
 
+class IBeacon(JSSContainerObject):
+    _url = '/ibeacons'
+    list_type = 'ibeacon'
+
+
 class JSSUser(JSSFlatObject):
     """JSSUser is deprecated."""
     _url = '/jssuser'
@@ -1178,6 +1210,11 @@ class LDAPServer(JSSContainerObject):
 
 class LicensedSoftware(JSSContainerObject):
     _url = '/licensedsoftware'
+
+
+class MacApplication(JSSContainerObject):
+    _url = '/macapplications'
+    list_type = 'mac_application'
 
 
 class ManagedPreferenceProfile(JSSContainerObject):
@@ -1545,6 +1582,11 @@ class User(JSSContainerObject):
 
 class UserGroup(JSSContainerObject):
     _url = '/usergroups'
+
+
+class VPPAccount(JSSContainerObject):
+    _url = '/vppaccounts'
+    list_type = 'vpp_account'
 
 
 class SearchCriteria(ElementTree.Element):
