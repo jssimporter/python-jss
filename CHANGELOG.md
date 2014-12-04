@@ -1,3 +1,21 @@
+### 0.5.0 (December 4, 2014) Gold Soundz
+
+FIXES:
+
+- Finally implementing @ocoda suggestions for solving the disabling of SSL in >= JSS  v9.61. (sheagcraig/jss-autopkg-addon#9, #16) #Further behind-the-scenes-measures are being investigated to streamline this edit for the future.
+- Fixed ```list_type``` for ```ActivationCode``` regression.
+
+CHANGES:
+
+- Configuration for a JDS has changed. Now it only requires key: type, value: JDS. See the [wiki](https://github.com/sheagcraig/python-jss/wiki/Configuration) for complete examples.
+	- Old configuration was misleading and/or redundent. Uploading to a JDS actually involves POSTing to the *JSS*, using the JSS' URL, and a correctly privileged API user, NOT the JDS' URL or WebDAV R/W accounts.
+- Implemented missing API objects:
+	- BYOProfile
+	- ComputerConfiguration
+	- IBeacon. PEP8 wins over Apple 'iFoolishness' for naming.
+	- MacApplication
+	- VPPAccount
+
 ### 0.4.4 (December 3, 2014) Welcome to the Terrordome
 
 FIXES:
