@@ -494,12 +494,10 @@ class SMBDistributionPoint(MountedRepository):
 
 
 class JDS(Repository):
-    """Class for representing a JDS and associated repositories.
+    """Class for representing JDS' and their controlling JSS.
 
-    The JDS has a folder to which packages are uploaded. From there, the JDS
-    handles the distribution to its managed distribution points.
-
-    This distribution point type cannot copy scripts.
+    The JSS has a folder to which packages are uploaded. From there, the JSS
+    handles the distribution to its JDS'.
 
     Also, there are caveats to its .exists() method which you should be aware
     of before relying on it.
@@ -509,23 +507,21 @@ class JDS(Repository):
     directly rather than as member of a DistributionPoints object.
 
     """
-    required_attrs = {'jss', 'URL', 'username', 'password'}
+    required_attrs = {'jss'}
 
     def __init__(self, **connection_args):
         """Set up a connection to a JDS.
         Required connection arguments:
             jss:            A JSS Object.
-            URL:            URL to the JSS to upload to.
-            username:       The read/write account name.
-            password:       Password for above.
 
         """
         super(JDS, self).__init__(**connection_args)
+        self.connection['URL'] = self.connection['jss'].base_url
 
     def _build_url(self):
         """Builds the URL to POST files to."""
         self.connection['upload_url'] = '%s/%s' % \
-                (self.connection.get('URL'), 'dbfileupload')
+                (self.connection['jss'].base_url, 'dbfileupload')
 
     def copy_pkg(self, filename, id_='-1'):
         """Copy a package to the JDS.
@@ -562,8 +558,7 @@ class JDS(Repository):
                    file_type, 'FILE_NAME': basefname}
         response = requests.post(url=self.connection['upload_url'],
                                  data=resource,
-                                 auth=(self.connection['username'],
-                                       self.connection['password']),
+                                 auth=self.connection['jss'].session.auth,
                                  headers=headers)
         print(response, response.text)
         return response
