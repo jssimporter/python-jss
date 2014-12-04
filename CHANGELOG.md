@@ -1,9 +1,10 @@
-### 0.5.0 (December 4, 2014) Gold Soundz
+### 0.5.1 (December 4, 2014) Gold Soundz
 
 FIXES:
 
 - Finally implementing @ocoda suggestions for solving the disabling of SSL in >= JSS  v9.61. (sheagcraig/jss-autopkg-addon#9, #16) #Further behind-the-scenes-measures are being investigated to streamline this edit for the future.
 - Fixed ```list_type``` for ```ActivationCode``` regression.
+- Fixed DistributionPoints __init__ mistake.
 
 CHANGES:
 

@@ -166,9 +166,7 @@ class DistributionPoints(object):
                                                 password=password)
 
                 elif repo.get('type') == 'JDS':
-                    dp = JDS(jss=self.jss, URL=repo['URL'],
-                             username=repo['username'],
-                             password=repo['password'])
+                    dp = JDS(jss=self.jss)
                 else:
                     raise ValueError('Distribution Point Type not recognized.')
 
@@ -560,7 +558,6 @@ class JDS(Repository):
                                  data=resource,
                                  auth=self.connection['jss'].session.auth,
                                  headers=headers)
-        print(response, response.text)
         return response
 
     def exists(self, filename):

@@ -25,4 +25,4 @@ from jss import *
 from casper import Casper
 from distribution_points import DistributionPoints
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
