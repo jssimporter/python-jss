@@ -233,16 +233,16 @@ class TestJSSFlatObject(object):
 
 class TestJSSDeviceObjects(object):
     def test_JSSDeviceObject_properties(self):
-        computer = j_global.Computer('name=craigs-imac')
-        assert_equal(computer.udid, '012CDB33-82E1-558F-9F6F-18EAAC05B5AC')
-        assert_equal(computer.serial_number, 'D25H40JBDHJV')
+        computer = j_global.Computer('name=fs-mbp-test')
+        assert_equal(computer.udid, '6552F6E6-6A51-51DB-A395-7DFD8F33461C')
+        assert_equal(computer.serial_number, 'W8939GV266D')
 
     def test_Computer_properties(self):
-        computer = j_global.Computer('name=craigs-imac')
+        computer = j_global.Computer('name=fs-mbp-test')
         assert_is_instance(computer.mac_addresses, list)
         assert_equal(computer.mac_addresses, [
-            '3C:07:54:6E:8B:14', '04:54:53:0F:E9:D1'])
-        match = j_global.Computer('match=craigs-imac')
+            '00:26:BB:5B:57:FA', '00:26:BB:11:5A:10'])
+        match = j_global.Computer('match=fs-mbp-test')
         assert_is_instance(match, JSSObjectList)
 
     def test_MobileDevice_properties(self):
