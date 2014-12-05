@@ -554,10 +554,8 @@ class JDS(Repository):
         resource = open(filename, 'rb')
         headers = {'DESTINATION': '1', 'OBJECT_ID': str(id_), 'FILE_TYPE':
                    file_type, 'FILE_NAME': basefname}
-        response = requests.post(url=self.connection['upload_url'],
-                                 data=resource,
-                                 auth=self.connection['jss'].session.auth,
-                                 headers=headers)
+        response = self.connection['jss'].session.post(
+            url=self.connection['upload_url'], data=resource, headers=headers)
         return response
 
     def exists(self, filename):

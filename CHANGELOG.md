@@ -1,3 +1,9 @@
+### 0.5.2 (UNRELEASED) Brass Monkey
+
+FIXES:
+
+- JDS copy methods were not utilizing the same session as everything else and did not honor SSL settings. Corrected. (#18)
+
 ### 0.5.1 (December 4, 2014) Gold Soundz
 
 FIXES:
