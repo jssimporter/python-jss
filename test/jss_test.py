@@ -28,7 +28,7 @@ from jss import *
 
 
 global j_global
-jp = JSSPrefs()
+jp = JSSPrefs(os.path.expanduser('~/Library/Preferences/com.github.sheagcraig.python-jss.test-server.plist'))
 j_global = JSS(jss_prefs=jp)
 
 TESTPOLICY = 'python-jss Test Policy'
@@ -144,7 +144,7 @@ class TestJSSObjectFactory(object):
         assert_is_instance(obj_list, JSSObjectList)
 
     def test_JSSObjectFactory_JSSObject(self):
-        obj_list = j_global.factory.get_object(Policy, 242)
+        obj_list = j_global.factory.get_object(Policy, 1)
         assert_is_instance(obj_list, Policy)
 
 
@@ -246,9 +246,9 @@ class TestJSSDeviceObjects(object):
         assert_is_instance(match, JSSObjectList)
 
     def test_MobileDevice_properties(self):
-        computer = j_global.MobileDevice('name=Testing iPad - 2')
-        assert_equal(computer.wifi_mac_address, '28:6A:BA:11:F0:A3')
-        assert_equal(computer.bluetooth_mac_address, '28:6A:BA:11:F0:A4')
+        computer = j_global.MobileDevice('name=Mstesting')
+        assert_equal(computer.wifi_mac_address, 'B0:65:BD:13:EF:47')
+        assert_equal(computer.bluetooth_mac_address, 'B0:65:BD:13:EF:48')
 
 
 class TestJSSObject_Subclasses(object):
@@ -324,7 +324,7 @@ class TestJSSObjectNewMethods(object):
     <scope>
         <computers>
             <computer>
-                <id>449</id>
+                <id>2</id>
                 <name>craigs-imac</name>
             </computer>
         </computers>
