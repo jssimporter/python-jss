@@ -1,6 +1,6 @@
 *.pyc
 *.swp
-/test/startup.py
+/testing
 /dist
 /build
 MANIFEST

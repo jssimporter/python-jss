@@ -1,8 +1,12 @@
-### 0.5.2 (UNRELEASED) Brass Monkey
+### 0.5.2 (December 5, 2014) Brass Monkey
 
 FIXES:
 
 - JDS copy methods were not utilizing the same session as everything else and did not honor SSL settings. Corrected. (#18)
+
+CHANGES:
+
+- Started working on the nosetests again. This doesn't directly affect users; however, it should help me prevent regressions and should help automate testing things across a variety of different JSS/DistributionPoint types.
 
 ### 0.5.1 (December 4, 2014) Gold Soundz
 
