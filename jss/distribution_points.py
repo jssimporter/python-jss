@@ -569,12 +569,13 @@ class JDS(Repository):
         return response
 
     def exists(self, filename):
-        """Check for the existence of a file on the JDS.
+        """Check for the existence of a package or script on the JDS.
 
         Unlike other DistributionPoint types, JDS' have no documented interface
         for checking whether the JDS and its children have a complete copy of a
-        file. The best we can do is check for a package object using the API
-        /packages URL--JSS.Package() and look for matches on the filename.
+        file. The best we can do is check for an object using the API
+        /packages URL--JSS.Package() or /scripts and look for matches on the
+        filename.
 
         If this is not enough, please use the alternate exists methods. For
         example, it's possible to create a Package object but never upload a
@@ -587,25 +588,35 @@ class JDS(Repository):
         # Technically, the results of the casper.jxml page list the package
         # files on the server. This is an undocumented interface, however.
         result = False
-        packages = self.connection['jss'].Package().retrieve_all()
-        for package in packages:
-            if package.findtext('filename') == filename:
-                result = True
-                break
+        extension = os.path.splitext(filename)[1].upper()
+        if extension in PKG_TYPES:
+            packages = self.connection['jss'].Package().retrieve_all()
+            for package in packages:
+                if package.findtext('filename') == filename:
+                    result = True
+                    break
+        else:
+            scripts = self.connection['jss'].Script().retrieve_all()
+            for script in scripts:
+                if script.findtext('filename') == filename:
+                    result = True
+                    break
 
         return result
 
     def exists_using_casper(self, filename):
-        """Check for the existence of a file on the JDS.
+        """Check for the existence of a package file on the JDS.
 
         Unlike other DistributionPoint types, JDS' have no documented interface
         for checking whether the JDS and its children have a complete copy of a
         file. The best we can do is check for a package object using the API
-        /packages URL--JSS.Pacakage() and look for matches on the filename.
+        /packages URL--JSS.Package() and look for matches on the filename.
 
         If this is not enough, this method uses the results of the casper.jxml
-        page to determine if a file exists. This is an undocumented feature and
-        as such should probably not be relied upon.
+        page to determine if a package exists. This is an undocumented feature
+        and as such should probably not be relied upon. Please note, scripts
+        are not listed per-distributionserver like packages. For scripts, the
+        best you can do is use the regular exists method.
 
         It will test for whether the file exists on ALL configured distribution
         servers. This may register False if the JDS is busy syncing them.

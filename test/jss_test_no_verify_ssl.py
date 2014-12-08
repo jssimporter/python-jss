@@ -43,13 +43,10 @@ def setup():
     to continue testing.
 
     """
-    print("\n\nTrying setup")
     try:
-        print("Cleaning policy")
         cleanup = j_global.Policy(TESTPOLICY)
         cleanup.delete()
     except JSSGetError:
-        print('Except policy')
         pass
     try:
         cleanup = j_global.ComputerGroup(TESTGROUP)

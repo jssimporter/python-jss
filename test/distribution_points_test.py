@@ -35,18 +35,20 @@ class TestDistributionPoints(object):
         # There's a distribution point included in the JSS object.
         assert_is_instance(j_global.distribution_points, jss.DistributionPoints)
 
-    def test_copying(self):
+    def test_copying_script(self):
         # Whoa... Deep.
         filename = 'test/distribution_points_test.py'
-        copied_filenames = [
-            os.path.join(d.connection['mount_point'], 'Scripts',
-                         os.path.basename(filename))
-            for d in j_global.distribution_points._children]
         j_global.distribution_points.copy(filename)
-        # Cleanup
-        for f in copied_filenames:
-            assert_true(os.path.exists(f))
-            os.remove(f)
+        assert_true(j_global.distribution_points.exists(os.path.basename(filename)))
+        j_global.Script(os.path.basename(filename)).delete()
+
+    def test_copying_pkg(self):
+        filename = 'test/distribution_points_test.py.zip'
+        j_global.distribution_points.copy(filename)
+        assert_true(j_global.distribution_points.exists(os.path.basename(filename)))
+        # This test leaves packages cluttering up the repo.
+        # Need to add a delete method...
+
 
 class TestMountedRepository(object):
 
