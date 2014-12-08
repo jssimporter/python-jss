@@ -1,3 +1,17 @@
+### 0.5.3 (UNRELEASED) Dress For Success
+
+FIXES:
+
+- Non-flat packages cannot be uploaded to JDS'. Now there is a warning message and documentation. (#20)
+
+CHANGES:
+
+- Added script testing to ```jss.distribution_points.JDS.exists```.
+- Tests updated.
+- Moved all exceptions to their own module.
+- Added an exception for attempting to upload non-flat packages.
+- Added '.ZIP' as a package file type.
+
 ### 0.5.2 (December 5, 2014) Brass Monkey
 
 FIXES:
