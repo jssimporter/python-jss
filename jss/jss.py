@@ -26,6 +26,10 @@ import re
 import copy
 import subprocess
 
+from .exceptions import (
+    JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
+    JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
+    JSSUnsupportedSearchMethodError, JSSFileUploadParameterError)
 from . import distribution_points
 from .contrib import requests
 try:
@@ -35,42 +39,6 @@ except ImportError as e:
         print("Warning: Import of FoundationPlist failed: %s" % e)
         print("See README for information on this issue.")
     import plistlib
-
-
-class JSSPrefsMissingFileError(Exception):
-    pass
-
-
-class JSSPrefsMissingKeyError(Exception):
-    pass
-
-
-class JSSGetError(Exception):
-    pass
-
-
-class JSSPutError(Exception):
-    pass
-
-
-class JSSPostError(Exception):
-    pass
-
-
-class JSSDeleteError(Exception):
-    pass
-
-
-class JSSMethodNotAllowedError(Exception):
-    pass
-
-
-class JSSUnsupportedSearchMethodError(Exception):
-    pass
-
-
-class JSSFileUploadParameterError(Exception):
-    pass
 
 
 class JSSPrefs(object):

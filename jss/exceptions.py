@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-"""
-python-jss
-Python wrapper for JSS API.
+"""exceptions.py
 
+Python wrapper for JSS API.
 Copyright (C) 2014 Shea G Craig <shea.craig@da.org>
 
 This program is free software: you can redistribute it and/or modify
@@ -21,13 +20,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 
-from jss import *
-from casper import Casper
-from distribution_points import DistributionPoints
-from exceptions import (
-    JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
-    JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
-    JSSUnsupportedSearchMethodError, JSSFileUploadParameterError,
-    JSSUnsupportedFileType)
+class JSSPrefsMissingFileError(Exception):
+    pass
 
-__version__ = "0.5.2"
+
+class JSSPrefsMissingKeyError(Exception):
+    pass
+
+
+class JSSGetError(Exception):
+    pass
+
+
+class JSSPutError(Exception):
+    pass
+
+
+class JSSPostError(Exception):
+    pass
+
+
+class JSSDeleteError(Exception):
+    pass
+
+
+class JSSMethodNotAllowedError(Exception):
+    pass
+
+
+class JSSUnsupportedSearchMethodError(Exception):
+    pass
+
+
+class JSSFileUploadParameterError(Exception):
+    pass
+
+
+class JSSUnsupportedFileType(Exception):
+    pass
