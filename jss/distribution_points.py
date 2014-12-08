@@ -30,9 +30,10 @@ import urllib
 
 import casper
 from .contrib import requests
+from .exceptions import JSSUnsupportedFileType
 
 
-PKG_TYPES = ['.PKG', '.DMG']
+PKG_TYPES = ['.PKG', '.DMG', '.ZIP']
 PKG_FILE_TYPE = 0
 EBOOK_FILE_TYPE = 1
 IN_HOUSE_APP_FILE_TYPE = 2
@@ -547,7 +548,16 @@ class JDS(Repository):
         self._copy(filename, id_=id_, file_type=SCRIPT_FILE_TYPE)
 
     def _copy(self, filename, id_='-1', file_type=0):
-        """Upload a file to the JDS."""
+        """Upload a file to the JDS.
+
+        Directories, i.e. non-flat packages will fail.
+
+        """
+        if os.path.isdir(filename):
+            raise JSSUnsupportedFileType(
+                'JDS type repos do not permit directory uploads. You are '
+                'probably trying to upload a non-flat package. Please zip'
+                'or create a flat package.')
         basefname = os.path.basename(filename)
         extension = os.path.splitext(basefname)[1].upper()
 
@@ -564,7 +574,7 @@ class JDS(Repository):
         Unlike other DistributionPoint types, JDS' have no documented interface
         for checking whether the JDS and its children have a complete copy of a
         file. The best we can do is check for a package object using the API
-        /packages URL--JSS.Pacakage() and look for matches on the filename.
+        /packages URL--JSS.Package() and look for matches on the filename.
 
         If this is not enough, please use the alternate exists methods. For
         example, it's possible to create a Package object but never upload a
