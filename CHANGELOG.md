@@ -3,6 +3,9 @@
 FIXES:
 
 - Non-flat packages cannot be uploaded to JDS'. Now there is a warning message and documentation. (#20)
+- If you haven't configured any DP's through the ```repo_prefs``` parameter to the ```JSS```, we shouldn't attempt ```DistributionPoints.retrieve_all()```. Reordered slightly to avoid problems. (#21)
+	- No need (unnecessary work)
+	- Your API user may not have permissions to do so! Thanks @arubdesu
 
 CHANGES:
 
@@ -11,7 +14,7 @@ CHANGES:
 - Moved all exceptions to their own module.
 - Added an exception for attempting to upload non-flat packages.
 - Added '.ZIP' as a package file type.
-- Added ```suppress_warnings``` parameter to ```jss.JSS``` objects to disable urllib3 warnings. Use at your own risk.
+- Added ```suppress_warnings``` parameter to ```jss.JSS``` objects to disable urllib3 warnings. Use at your own risk. (sheagcraig/jss-autopkg-addon#18)
 
 ### 0.5.2 (December 5, 2014) Brass Monkey
 

@@ -83,10 +83,10 @@ class DistributionPoints(object):
         """
         self.jss = jss
         self._children = []
-        self.dp_info = self.jss.DistributionPoint().retrieve_all()
 
         # If no distribution points are configured, there's nothing to do here.
         if self.jss.repo_prefs:
+            self.dp_info = self.jss.DistributionPoint().retrieve_all()
             # Set up a counter for avoiding name clashes with optional name
             # variable.
             counter = 0
