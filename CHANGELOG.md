@@ -1,4 +1,4 @@
-### 0.5.3 (UNRELEASED) Dress For Success
+### 0.5.3 (December 9, 2014) Dress For Success
 
 FIXES:
 

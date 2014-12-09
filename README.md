@@ -42,4 +42,4 @@ Usage:
 =================
 Please see [the wiki](https://github.com/sheagcraig/python-jss/wiki) for complete documentation.
 
-Also, [my blog](http://www.sheacraig.com) has a series of posts about using python-jss, jss-autopkg-addon, and jss-helper, and solving unique problems using these tools.
+Also, [my blog](http://labs.da.org/wordpress/sheagcraig/) has a series of posts about using [python-jss](https://github.com/sheagcraig/python-jss), [JSSImporter](https://github.com/sheagcraig/jss-autopkg-addon), and [jss-helper](https://github.com/sheagcraig/jss_helper), and solving unique problems using these tools.
