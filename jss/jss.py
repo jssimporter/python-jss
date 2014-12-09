@@ -95,7 +95,8 @@ class JSSPrefs(object):
 class JSS(object):
     """Connect to a JSS and handle API requests."""
     def __init__(self, jss_prefs=None, url=None, user=None, password=None,
-                 repo_prefs=[], ssl_verify=True, verbose=False):
+                 repo_prefs=[], ssl_verify=True, verbose=False,
+                 suppress_warnings=False):
         """Provide either a JSSPrefs object OR specify url, user, and password
         to init.
 
@@ -108,6 +109,9 @@ class JSS(object):
         ssl_verify: Boolean indicating whether to verify SSL certificates.
                     Defaults to True.
         verbose:    Boolean indicating the level of logging. (Doesn't do much.)
+        suppress_warnings:
+                    Turns off the urllib3 warnings. Remember, these warnings
+                    are there for a reason! Use at your own risk.
 
         """
         if jss_prefs is not None:
@@ -115,6 +119,9 @@ class JSS(object):
             user = jss_prefs.user
             password = jss_prefs.password
             repo_prefs = jss_prefs.repos
+
+        if suppress_warnings:
+            requests.packages.urllib3.disable_warnings()
 
         # Used by some non-API methods.
         self.base_url = url

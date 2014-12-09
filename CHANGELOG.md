@@ -11,6 +11,7 @@ CHANGES:
 - Moved all exceptions to their own module.
 - Added an exception for attempting to upload non-flat packages.
 - Added '.ZIP' as a package file type.
+- Added ```suppress_warnings``` parameter to ```jss.JSS``` objects to disable urllib3 warnings. Use at your own risk.
 
 ### 0.5.2 (December 5, 2014) Brass Monkey
 
