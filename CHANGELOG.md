@@ -1,3 +1,13 @@
+### 0.5.4 (December 9, 2014) Apex Predator
+
+FIXES:
+
+- ```distribution_points.DistributionPoint``` did not have ```id_``` arguments.
+- Whitespace cleanup.
+- Migrated JSS with AFP or SMB shares now correctly copies scripts to DB instead of fileshare.
+- AFP and SMB distribution points should require ```share_name``` argument.
+- Standardized ```id_```'s in ```distribution_points``` to be ints.
+
 ### 0.5.3 (December 9, 2014) Dress For Success
 
 FIXES:
