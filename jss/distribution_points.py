@@ -358,9 +358,36 @@ class MountedRepository(Repository):
         id_:                Ignored. Used for compatibility with JDS repos.
 
         """
-        basename = os.path.basename(filename)
-        self._copy(filename, os.path.join(self.connection['mount_point'],
-                                          'Scripts', basename))
+        # Scripts are handled either as files copied to a path, or,
+        # it's possible to have a JSS that has been "migrated" to use
+        # the database to store the script in the script object, like
+        # the JDS type, but still using a MountedRepository for PKG
+        # files.
+
+        # If you have migrated your JSS, you need to pass a JSS object
+        # as a keyword argument during repository setup, and the JSS
+        # object needs the jss_migrated=True preference set.
+        if 'jss' in self.connection.keys() and \
+                self.connection['jss'].jss_migrated:
+            self._copy_script_migrated(filename, id_, SCRIPT_FILE_TYPE)
+        else:
+            basename = os.path.basename(filename)
+            self._copy(filename, os.path.join(self.connection['mount_point'],
+                                              'Scripts', basename))
+
+    def _copy_script_migrated(self, filename, id_=-1,
+                              file_type=SCRIPT_FILE_TYPE):
+        """Upload a script to a migrated JSS's database."""
+        basefname = os.path.basename(filename)
+        extension = os.path.splitext(basefname)[1].upper()
+
+        resource = open(filename, 'rb')
+        headers = {'DESTINATION': '1', 'OBJECT_ID': str(id_), 'FILE_TYPE':
+                   file_type, 'FILE_NAME': basefname}
+        response = self.connection['jss'].session.post(
+            url='%s/%s' % (self.connection['jss'].base_url, 'dbfileupload'),
+            data=resource, headers=headers)
+        return response
 
     def _copy(self, filename, destination):
         """Copy a file to the repository. Handles folders and single files.
@@ -410,13 +437,16 @@ class MountedRepository(Repository):
 class AFPDistributionPoint(MountedRepository):
     """Represents an AFP repository.
 
+    For migrated JSS, please see __init__ and copy_script.
+
     Please note: OS X seems to cache credentials when you use mount_afp like
     this, so if you change your authentication information, you'll have to
     force a re-authentication.
 
     """
     protocol = 'afp'
-    required_attrs = {'URL', 'mount_point', 'username', 'password'}
+    required_attrs = {'URL', 'mount_point', 'username', 'password',
+                      'share_name'}
 
     def __init__(self, **connection_args):
         """Set up an AFP connection.
@@ -426,8 +456,13 @@ class AFPDistributionPoint(MountedRepository):
                         'my_repository.domain.org/jamf'
                         (Do _not_ include protocol or auth info.)
         mount_point:    Path to a valid mount point.
+        share_name:     The fileshare's name.
         username:       For shares requiring authentication, the username.
         password:       For shares requiring authentication, the password.
+
+        Optional connection arguments (Migrated script support):
+        jss:            A JSS Object. NOTE: jss_migrated must be True
+                        for this to do anything.
 
         """
         super(AFPDistributionPoint, self).__init__(**connection_args)
@@ -452,8 +487,15 @@ class AFPDistributionPoint(MountedRepository):
 
 
 class SMBDistributionPoint(MountedRepository):
+    """Represents a SMB distribution point.
+
+    For migrated JSS, please see __init__ and copy_script.
+
+    """
+
     protocol = 'smbfs'
-    required_attrs = {'URL', 'mount_point', 'domain', 'username', 'password'}
+    required_attrs = {'URL', 'share_name', 'mount_point', 'domain', 'username',
+                      'password'}
 
     def __init__(self, **connection_args):
         """Set up a SMB connection.
@@ -463,9 +505,14 @@ class SMBDistributionPoint(MountedRepository):
                         'my_repository.domain.org/jamf'
                         (Do _not_ include protocol or auth info.)
         mount_point:    Path to a valid mount point.
-        domain:    Specify the domain.
+        share_name:     The fileshare's name.
+        domain:         Specify the domain.
         username:       For shares requiring authentication, the username.
         password:       For shares requiring authentication, the password.
+
+        Optional connection arguments (Migrated script support):
+        jss:            A JSS Object. NOTE: jss_migrated must be True
+                        for this to do anything.
 
         """
         super(SMBDistributionPoint, self).__init__(**connection_args)

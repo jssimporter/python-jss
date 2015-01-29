@@ -96,7 +96,7 @@ class JSS(object):
     """Connect to a JSS and handle API requests."""
     def __init__(self, jss_prefs=None, url=None, user=None, password=None,
                  repo_prefs=[], ssl_verify=True, verbose=False,
-                 suppress_warnings=False):
+                 jss_migrated=False, suppress_warnings=False):
         """Provide either a JSSPrefs object OR specify url, user, and password
         to init.
 
@@ -109,6 +109,9 @@ class JSS(object):
         ssl_verify: Boolean indicating whether to verify SSL certificates.
                     Defaults to True.
         verbose:    Boolean indicating the level of logging. (Doesn't do much.)
+        jss_migrated:
+                    Boolean indicating whether scripts have been migrated to
+                    the database. Used for determining copy_script type.
         suppress_warnings:
                     Turns off the urllib3 warnings. Remember, these warnings
                     are there for a reason! Use at your own risk.
@@ -132,6 +135,7 @@ class JSS(object):
         self.repo_prefs = repo_prefs
         self.ssl_verify = ssl_verify
         self.verbose = verbose
+        self.jss_migrated = jss_migrated
         self.session = requests.Session()
         self.session.auth = (self.user, self.password)
         self.session.verify = self.ssl_verify
