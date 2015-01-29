@@ -198,7 +198,7 @@ class DistributionPoints(object):
                 # All other file types can go to scripts.
                 repo.copy_script(filename, id_)
 
-    def copy_pkg(self, filename):
+    def copy_pkg(self, filename, id_=-1):
         """Copy a pkg or dmg to all repositories.
 
         filename:       String path to the local file to copy.
@@ -207,7 +207,7 @@ class DistributionPoints(object):
         for repo in self._children:
             repo.copy_pkg(filename, id_)
 
-    def copy_script(self, filename):
+    def copy_script(self, filename, id_=-1):
         """Copy a script to all repositories.
 
         filename:       String path to the local file to copy.
@@ -522,7 +522,7 @@ class JDS(Repository):
         self.connection['upload_url'] = '%s/%s' % \
                 (self.connection['jss'].base_url, 'dbfileupload')
 
-    def copy_pkg(self, filename, id_='-1'):
+    def copy_pkg(self, filename, id_=-1):
         """Copy a package to the JDS.
 
         Required Parameters:
@@ -533,8 +533,8 @@ class JDS(Repository):
         """
         self._copy(filename, id_=id_, file_type=PKG_FILE_TYPE)
 
-    def copy_script(self, filename, id_='-1'):
-        """Copy a script to the JDS. At this point, it does not work correctly.
+    def copy_script(self, filename, id_=-1):
+        """Copy a script to the JDS.
 
         Required Parameters:
         filename:           Full path to file to upload.
@@ -544,7 +544,7 @@ class JDS(Repository):
         """
         self._copy(filename, id_=id_, file_type=SCRIPT_FILE_TYPE)
 
-    def _copy(self, filename, id_='-1', file_type=0):
+    def _copy(self, filename, id_=-1, file_type=0):
         """Upload a file to the JDS.
 
         Directories, i.e. non-flat packages will fail.
