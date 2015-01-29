@@ -41,41 +41,43 @@ SCRIPT_FILE_TYPE = 3
 
 class DistributionPoints(object):
     """DistributionPoints is an object which reads DistributionPoint
-    configuration data from the JSS and serves as a container for objects
-    representing the configured distribution points.
+    configuration data from the JSS and serves as a container for
+    objects representing the configured distribution points.
 
-    This class provides an abstract interface for uploading packages and dmg's
-    to file repositories.
+    This class provides an abstract interface for uploading packages and
+    dmg's to file repositories.
 
-    PLEASE NOTE: Not all DistributionPoint types support all of the available
-    methods. For example, JDS' do not have a copy_script() method, and there
-    are caveats to the reliability of the exists() method.
+    PLEASE NOTE: Not all DistributionPoint types support all of the
+    available methods. For example, JDS' do not have a copy_script()
+    method, and there are caveats to the reliability of the exists()
+    method.
 
-    Support for AFP/SMB shares and JDS' are included, and are selected based on
-    configuration files. Planned support for HTTP(S) and CDP types will come
-    later.
+    Support for AFP/SMB shares and JDS' are included, and are selected
+    based on configuration files. Planned support for HTTP(S) and CDP
+    types will come later.
 
-    This object can copy files to multiple repositories, avoiding the need to
-    use Casper Admin to "Replicate" from one repository to another, as long as
-    the repositories are all configured correctly.
+    This object can copy files to multiple repositories, avoiding the
+    need to use Casper Admin to "Replicate" from one repository to
+    another, as long as the repositories are all configured correctly.
 
     See the individual Repository subclasses for information regarding
     type-specific properties and configuration.
 
     """
     def __init__(self, jss):
-        """Populate our distribution point dict from our configuration file.
+        """Populate our distribution point dict from our configuration
+        file.
 
-        The JSS server's DistributionPoints is used to automatically configure
-        AFP and SMB shares. To make use of this, the repo's dictionary should
-        contain only the name of the repo, as found in the web interface, and
-        the password for the RW user. This method is deprecated, and you should
-        fully specify the required connection arguments for each DP in the
-        future.
+        The JSS server's DistributionPoints is used to automatically
+        configure AFP and SMB shares. To make use of this, the repo's
+        dictionary should contain only the name of the repo, as found in
+        the web interface, and the password for the RW user. This method
+        is deprecated, and you should fully specify the required
+        connection arguments for each DP in the future.
 
         Please see the docstrings for the different DistributionPoint
-        subclasses for information regarding required configuration information
-        and properties.
+        subclasses for information regarding required configuration
+        information and properties.
 
         jss:      JSS server object
 
@@ -83,19 +85,20 @@ class DistributionPoints(object):
         self.jss = jss
         self._children = []
 
-        # If no distribution points are configured, there's nothing to do here.
+        # If no distribution points are configured, there's nothing to
+        # do here.
         if self.jss.repo_prefs:
             self.dp_info = self.jss.DistributionPoint().retrieve_all()
-            # Set up a counter for avoiding name clashes with optional name
-            # variable.
+            # Set up a counter for avoiding name clashes with optional
+            # name variable.
             counter = 0
             for repo in self.jss.repo_prefs:
                 # Handle AFP/SMB shares, as they can be auto-configured.
                 # Legacy system did not require explicit type key.
                 if not repo.get('type'):
                     # Must be AFP or SMB.
-                    # Use JSS.DistributionPoints information to automatically
-                    # configure this DP.
+                    # Use JSS.DistributionPoints information to
+                    # automatically configure this DP.
                     for dp_object in self.dp_info:
                         if repo['name'] == dp_object.findtext('name'):
                             name = dp_object.findtext('name')
@@ -148,7 +151,8 @@ class DistributionPoints(object):
                                                name.replace(' ', ''))
 
                     if connection_type == 'AFP':
-                        # If port isn't given, assume it's the std of 548.
+                        # If port isn't given, assume it's the std of
+                        # 548.
                         port = repo.get('port') or '548'
                         dp = AFPDistributionPoint(URL=URL, port=port,
                                                 share_name=share_name,
@@ -156,7 +160,8 @@ class DistributionPoints(object):
                                                 username=username,
                                                 password=password)
                     elif connection_type == 'SMB':
-                        # If port isn't given, assume it's the std of 139.
+                        # If port isn't given, assume it's the std of
+                        # 139.
                         port = repo.get('port') or '139'
                         dp = SMBDistributionPoint(URL=URL, port=port,
                                                 share_name=share_name,
@@ -182,12 +187,12 @@ class DistributionPoints(object):
         self._children.pop(index)
 
     def copy(self, filename, id_=-1):
-        """Copy file to all repos, guessing file type and destination based
-        on its extension.
+        """Copy file to all repos, guessing file type and destination
+        based on its extension.
 
         filename:       String path to the local file to copy.
-        id_:            Package or Script object ID to target. For use with
-                        JDS DP's only.
+        id_:            Package or Script object ID to target. For use
+                        with JDS DP's only.
 
         """
         extension = os.path.splitext(filename)[1].upper()
@@ -229,8 +234,8 @@ class DistributionPoints(object):
                 child.umount()
 
     def exists(self, filename):
-        """Report whether a file exists on all distribution points. Determines
-        file type by extension.
+        """Report whether a file exists on all distribution points.
+        Determines file type by extension.
 
         filename:       Filename you wish to check. (No path! e.g.:
                         "AdobeFlashPlayer-14.0.0.176.pkg")
@@ -269,17 +274,18 @@ class Repository(object):
             self._build_url()
         else:
             # Put a custom exception in here.
-            missing_attrs = self.required_attrs.difference(set(connection_args.keys()))
+            missing_attrs = self.required_attrs.difference(
+                set(connection_args.keys()))
             raise Exception("Missing REQUIRED argument(s) %s to %s"
                             "distribution point." % (list(missing_attrs),
                                                      self.__class__))
 
     # Not really needed, since all subclasses implement this.
-    # Placeholder for whether I do want to formally specify the interface
-    # like this.
+    # Placeholder for whether I do want to formally specify the
+    # interface like this.
     #def _copy(self, filename):
-    #    raise NotImplementedError("Base class 'Repository' should not be used "
-    #                              "for copying!")
+    #    raise NotImplementedError("Base class 'Repository' should not be used"
+    #                              " for copying!")
 
     def __repr__(self):
         output = ''
@@ -325,9 +331,10 @@ class MountedRepository(Repository):
         """Try to unmount our mount point."""
         # If not mounted, don't bother.
         if os.path.exists(self.connection['mount_point']):
-            # Force an unmount. If you are manually mounting and unmounting
-            # shares with python, chances are good that you know what you are
-            # doing and *want* it to unmount. For real.
+            # Force an unmount. If you are manually mounting and
+            # unmounting shares with python, chances are good that you
+            # know what you are doing and *want* it to unmount. For
+            # real.
             if sys.platform == 'darwin':
                 subprocess.check_call(['/usr/sbin/diskutil', 'unmount',
                                        'force',
@@ -344,7 +351,8 @@ class MountedRepository(Repository):
         """Copy a package to the repo's subdirectory.
 
         filename:           Path for file to copy.
-        id_:                Ignored. Used for compatibility with JDS repos.
+        id_:                Ignored. Used for compatibility with JDS
+                            repos.
 
         """
         basename = os.path.basename(filename)
@@ -355,7 +363,8 @@ class MountedRepository(Repository):
         """Copy a script to the repo's Script subdirectory.
 
         filename:           Path for file to copy.
-        id_:                Ignored. Used for compatibility with JDS repos.
+        id_:                Ignored. Used for compatibility with JDS
+                            repos.
 
         """
         # Scripts are handled either as files copied to a path, or,
@@ -390,8 +399,8 @@ class MountedRepository(Repository):
         return response
 
     def _copy(self, filename, destination):
-        """Copy a file to the repository. Handles folders and single files.
-        Will mount if needed.
+        """Copy a file to the repository. Handles folders and single
+        files.  Will mount if needed.
 
         """
         if not self.is_mounted():
@@ -405,8 +414,8 @@ class MountedRepository(Repository):
             shutil.copyfile(full_filename, destination)
 
     def exists(self, filename):
-        """Report whether a file exists on the distribution point. Determines
-        file type by extension.
+        """Report whether a file exists on the distribution point.
+        Determines file type by extension.
 
         filename:       Filename you wish to check. (No path! e.g.:
                         "AdobeFlashPlayer-14.0.0.176.pkg")
@@ -439,9 +448,9 @@ class AFPDistributionPoint(MountedRepository):
 
     For migrated JSS, please see __init__ and copy_script.
 
-    Please note: OS X seems to cache credentials when you use mount_afp like
-    this, so if you change your authentication information, you'll have to
-    force a re-authentication.
+    Please note: OS X seems to cache credentials when you use mount_afp
+    like this, so if you change your authentication information, you'll
+    have to force a re-authentication.
 
     """
     protocol = 'afp'
@@ -451,14 +460,15 @@ class AFPDistributionPoint(MountedRepository):
     def __init__(self, **connection_args):
         """Set up an AFP connection.
         Required connection arguments:
-        URL:            URL to the mountpoint in the format, including volume
-                        name Ex:
-                        'my_repository.domain.org/jamf'
+        URL:            URL to the mountpoint in the format, including
+                        volume name Ex: 'my_repository.domain.org/jamf'
                         (Do _not_ include protocol or auth info.)
         mount_point:    Path to a valid mount point.
         share_name:     The fileshare's name.
-        username:       For shares requiring authentication, the username.
-        password:       For shares requiring authentication, the password.
+        username:       For shares requiring authentication, the
+                        username.
+        password:       For shares requiring authentication, the
+                        password.
 
         Optional connection arguments (Migrated script support):
         jss:            A JSS Object. NOTE: jss_migrated must be True
@@ -500,15 +510,16 @@ class SMBDistributionPoint(MountedRepository):
     def __init__(self, **connection_args):
         """Set up a SMB connection.
         Required connection arguments:
-        URL:            URL to the mountpoint in the format, including volume
-                        name Ex:
-                        'my_repository.domain.org/jamf'
+        URL:            URL to the mountpoint in the format, including
+                        volume name Ex: 'my_repository.domain.org/jamf'
                         (Do _not_ include protocol or auth info.)
         mount_point:    Path to a valid mount point.
         share_name:     The fileshare's name.
         domain:         Specify the domain.
-        username:       For shares requiring authentication, the username.
-        password:       For shares requiring authentication, the password.
+        username:       For shares requiring authentication, the
+                        username.
+        password:       For shares requiring authentication, the
+                        password.
 
         Optional connection arguments (Migrated script support):
         jss:            A JSS Object. NOTE: jss_migrated must be True
@@ -542,15 +553,16 @@ class SMBDistributionPoint(MountedRepository):
 class JDS(Repository):
     """Class for representing JDS' and their controlling JSS.
 
-    The JSS has a folder to which packages are uploaded. From there, the JSS
-    handles the distribution to its JDS'.
+    The JSS has a folder to which packages are uploaded. From there, the
+    JSS handles the distribution to its JDS'.
 
-    Also, there are caveats to its .exists() method which you should be aware
-    of before relying on it.
+    Also, there are caveats to its .exists() method which you should be
+    aware of before relying on it.
 
-    I'm not sure, but I imagine that organizations with a JDS will not also
-    have other types of DP's, so it may be sufficient to just use the JDS class
-    directly rather than as member of a DistributionPoints object.
+    I'm not sure, but I imagine that organizations with a JDS will not
+    also have other types of DP's, so it may be sufficient to just use
+    the JDS class directly rather than as member of a DistributionPoints
+    object.
 
     """
     required_attrs = {'jss'}
@@ -574,8 +586,8 @@ class JDS(Repository):
 
         Required Parameters:
         filename:           Full path to file to upload.
-        id_:                ID of Package object to associate with, or '-1' for
-                            new packages (default).
+        id_:                ID of Package object to associate with, or
+                            -1 for new packages (default).
 
         """
         self._copy(filename, id_=id_, file_type=PKG_FILE_TYPE)
@@ -585,8 +597,8 @@ class JDS(Repository):
 
         Required Parameters:
         filename:           Full path to file to upload.
-        id_:                ID of Package object to associate with, or '-1' for
-                            new packages (default).
+        id_:                ID of Package object to associate with, or
+                            -1 for new packages (default).
 
         """
         self._copy(filename, id_=id_, file_type=SCRIPT_FILE_TYPE)
@@ -615,22 +627,23 @@ class JDS(Repository):
     def exists(self, filename):
         """Check for the existence of a package or script on the JDS.
 
-        Unlike other DistributionPoint types, JDS' have no documented interface
-        for checking whether the JDS and its children have a complete copy of a
-        file. The best we can do is check for an object using the API
-        /packages URL--JSS.Package() or /scripts and look for matches on the
-        filename.
+        Unlike other DistributionPoint types, JDS' have no documented
+        interface for checking whether the JDS and its children have a
+        complete copy of a file. The best we can do is check for an
+        object using the API /packages URL--JSS.Package() or /scripts
+        and look for matches on the filename.
 
-        If this is not enough, please use the alternate exists methods. For
-        example, it's possible to create a Package object but never upload a
-        package file, and this method will still return "True".
+        If this is not enough, please use the alternate exists methods.
+        For example, it's possible to create a Package object but never
+        upload a package file, and this method will still return "True".
 
-        Also, this may be slow, as it needs to retrieve the complete list of
-        packages from the server.
+        Also, this may be slow, as it needs to retrieve the complete
+        list of packages from the server.
 
         """
-        # Technically, the results of the casper.jxml page list the package
-        # files on the server. This is an undocumented interface, however.
+        # Technically, the results of the casper.jxml page list the
+        # package files on the server. This is an undocumented
+        # interface, however.
         result = False
         extension = os.path.splitext(filename)[1].upper()
         if extension in PKG_TYPES:
@@ -651,23 +664,25 @@ class JDS(Repository):
     def exists_using_casper(self, filename):
         """Check for the existence of a package file on the JDS.
 
-        Unlike other DistributionPoint types, JDS' have no documented interface
-        for checking whether the JDS and its children have a complete copy of a
-        file. The best we can do is check for a package object using the API
-        /packages URL--JSS.Package() and look for matches on the filename.
+        Unlike other DistributionPoint types, JDS' have no documented
+        interface for checking whether the JDS and its children have a
+        complete copy of a file. The best we can do is check for a
+        package object using the API /packages URL--JSS.Package() and
+        look for matches on the filename.
 
-        If this is not enough, this method uses the results of the casper.jxml
-        page to determine if a package exists. This is an undocumented feature
-        and as such should probably not be relied upon. Please note, scripts
-        are not listed per-distributionserver like packages. For scripts, the
-        best you can do is use the regular exists method.
+        If this is not enough, this method uses the results of the
+        casper.jxml page to determine if a package exists. This is an
+        undocumented feature and as such should probably not be relied
+        upon. Please note, scripts are not listed per-distributionserver
+        like packages. For scripts, the best you can do is use the
+        regular exists method.
 
-        It will test for whether the file exists on ALL configured distribution
-        servers. This may register False if the JDS is busy syncing them.
-        (Need to test this situation).
+        It will test for whether the file exists on ALL configured
+        distribution servers. This may register False if the JDS is busy
+        syncing them.  (Need to test this situation).
 
-        Also, casper.jxml includes checksums. If this method proves reliable,
-        checksum comparison will be added as a feature.
+        Also, casper.jxml includes checksums. If this method proves
+        reliable, checksum comparison will be added as a feature.
 
         """
         casper_results = casper.Casper(self.connection['jss'])

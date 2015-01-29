@@ -42,7 +42,10 @@ except ImportError as e:
 
 
 class JSSPrefs(object):
-    """Uses the OS X preferences system to store credentials and JSS URL."""
+    """Uses the OS X preferences system to store credentials and JSS
+    URL.
+
+    """
     def __init__(self, preferences_file=None):
         """Create a preferences object.
 
@@ -51,31 +54,34 @@ class JSSPrefs(object):
         Preference file should include the following keys:
             jss_url:        Full path, including port, to JSS,
                             e.g. 'https://mycasper.donkey.com:8443'
-                            (JSS() handles the appending of /JSSResource)
+                            (JSS() handles the appending of
+                            /JSSResource)
             jss_user:       API username to use.
             jss_password:   API password.
-            repos:          (Optional) An array of file repositories dicts to
-                            connect.
+            repos:          (Optional) An array of file repositories
+                            dicts to connect.
 
         repos Data (See distribution_points package for more info):
-            name:           String name of the distribution point. Must match
-                            the value on the JSS.
+            name:           String name of the distribution point. Must
+                            match the value on the JSS.
             password:       For types requiring authentication.
 
         """
         if preferences_file is None:
-            preferences_file = '~/Library/Preferences/com.github.sheagcraig.python-jss.plist'
+            preferences_file = \
+                '~/Library/Preferences/com.github.sheagcraig.python-jss.plist'
         preferences_file = os.path.expanduser(preferences_file)
         if os.path.exists(preferences_file):
             try:
                 prefs = FoundationPlist.readPlist(preferences_file)
             except NameError:
-                # Plist files are probably not binary on non-OS X machines, so
-                # this should be safe.
+                # Plist files are probably not binary on non-OS X
+                # machines, so this should be safe.
                 try:
                     prefs = plistlib.readPlist(preferences_file)
                 except ExpatError:
-                    subprocess.call(['plutil', '-convert', 'xml1', preferences_file])
+                    subprocess.call(['plutil', '-convert', 'xml1',
+                                     preferences_file])
                     prefs = plistlib.readPlist(preferences_file)
             try:
                 self.user = prefs['jss_user']
@@ -97,24 +103,27 @@ class JSS(object):
     def __init__(self, jss_prefs=None, url=None, user=None, password=None,
                  repo_prefs=[], ssl_verify=True, verbose=False,
                  jss_migrated=False, suppress_warnings=False):
-        """Provide either a JSSPrefs object OR specify url, user, and password
-        to init.
+        """Provide either a JSSPrefs object OR specify url, user, and
+        password to init.
 
         jss_prefs:  A JSSPrefs object.
         url:        Path with port to a JSS. See JSSPrefs.__doc__
         user:       API Username.
         password:   API Password.
-        repo_prefs: A list of dicts with repository names and passwords. See
-                    JSSPrefs.
-        ssl_verify: Boolean indicating whether to verify SSL certificates.
-                    Defaults to True.
-        verbose:    Boolean indicating the level of logging. (Doesn't do much.)
+        repo_prefs: A list of dicts with repository names and passwords.
+                    See JSSPrefs.
+        ssl_verify: Boolean indicating whether to verify SSL
+                    certificates.  Defaults to True.
+        verbose:    Boolean indicating the level of logging. (Doesn't do
+                    much.)
         jss_migrated:
-                    Boolean indicating whether scripts have been migrated to
-                    the database. Used for determining copy_script type.
+                    Boolean indicating whether scripts have been
+                    migrated to the database. Used for determining
+                    copy_script type.
         suppress_warnings:
-                    Turns off the urllib3 warnings. Remember, these warnings
-                    are there for a reason! Use at your own risk.
+                    Turns off the urllib3 warnings. Remember, these
+                    warnings are there for a reason! Use at your own
+                    risk.
 
         """
         if jss_prefs is not None:
@@ -149,8 +158,8 @@ class JSS(object):
         text.
 
         """
-        # Responses are sent as html. Split on the newlines and give us the
-        # <p> text back.
+        # Responses are sent as html. Split on the newlines and give us
+        # the <p> text back.
         errorlines = response.text.encode('utf-8').split('\n')
         error = []
         for line in errorlines:
@@ -159,15 +168,18 @@ class JSS(object):
                 error.append(e.group(1))
 
         error = '\n'.join(error)
-        exception = exception_cls('JSS Error. Response Code: %s\tResponse" %s' %
-                                  (response.status_code, error))
+        exception = exception_cls('JSS Error. Response Code: %s\tResponse" %s'
+                                  % (response.status_code, error))
         exception.status_code = response.status_code
         raise exception
 
     def get(self, url):
-        """Get a url, handle errors, and return an etree from the XML data."""
-        # For some objects the JSS tries to return JSON if we don't specify
-        # that we want XML.
+        """Get a url, handle errors, and return an etree from the XML
+        data.
+
+        """
+        # For some objects the JSS tries to return JSON if we don't
+        # specify that we want XML.
         url = '%s%s' % (self._url, url)
         response = self.session.get(url)
 
@@ -227,7 +239,7 @@ class JSS(object):
         elif response.status_code >= 400:
             self._error_handler(JSSDeleteError, response)
 
-    # Factory methods for all JSSObject types #############################
+    # Factory methods for all JSSObject types ##########################
 
     def Account(self, data=None):
         return self.factory.get_object(Account, data)
@@ -414,26 +426,31 @@ class JSS(object):
 
 
 class JSSObjectFactory(object):
-    """Create JSSObjects intelligently based on a single data argument."""
+    """Create JSSObjects intelligently based on a single data
+    argument.
+
+    """
     def __init__(self, jss):
         self.jss = jss
 
     def get_object(self, obj_class, data=None):
-        """Return a subclassed JSSObject instance by querying for existing
-        objects or posting a new object. List operations return a
-        JSSObjectList.
+        """Return a subclassed JSSObject instance by querying for
+        existing objects or posting a new object. List operations return
+        a JSSObjectList.
 
         obj_class is the class to retrieve.
         data is flexible.
             If data is type:
-                None:   Perform a list operation, or for non-container objects,
-                        return all data.
+                None:   Perform a list operation, or for non-container
+                        objects, return all data.
                 int:    Retrieve an object with ID of <data>
                 str:    Retrieve an object with name of <str>. For some
-                        objects, this may be overridden to include searching
-                        by other criteria. See those objects for more info.
+                        objects, this may be overridden to include
+                        searching by other criteria. See those objects
+                        for more info.
                 dict:   Get the existing object with <dict>['id']
-                xml.etree.ElementTree.Element:    Create a new object from xml
+                xml.etree.ElementTree.Element:
+                        Create a new object from xml
 
                 Warning! Be sure to pass ID's as ints, not str!
 
@@ -465,8 +482,8 @@ class JSSObjectFactory(object):
                 url = obj_class.get_url(data)
                 xmldata = self.jss.get(url)
                 if xmldata.find('size') is not None:
-                    # May need above treatment, with .find(container), and
-                    # refactoring out this otherwise duplicate code.
+                    # May need above treatment, with .find(container),
+                    # and refactoring out this otherwise duplicate code.
 
                     # Get returned a list.
                     response_objects = [item for item in xmldata
@@ -534,9 +551,9 @@ class JSSObject(ElementTree.Element):
 
     def makeelement(self, tag, attrib):
         """Return an Element."""
-        # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
-        # super() call to its __class__.makeelement(), which will fail due to
-        # the class NOT being Element.
+        # We use ElementTree.SubElement() a lot. Unfortunately, it
+        # relies on a super() call to its __class__.makeelement(), which
+        # will fail due to the class NOT being Element.
         # This handles that issue.
         return ElementTree.Element(tag, attrib)
 
@@ -628,15 +645,15 @@ class JSSObject(ElementTree.Element):
                                        "new object, look for name conflict and"
                                        " delete.")
 
-        # If successful, replace current instance's data with new, JSS-filled
-        # data.
+        # If successful, replace current instance's data with new,
+        # JSS-filled data.
         self.clear()
         for child in updated_data.getchildren():
             self._children.append(child)
 
     # Shared properties:
-    # Almost all JSSObjects have at least name and id properties, so provide a
-    # convenient accessor.
+    # Almost all JSSObjects have at least name and id properties, so
+    # provide a convenient accessor.
     @property
     def name(self):
         """Return object name or None."""
@@ -648,17 +665,16 @@ class JSSObject(ElementTree.Element):
         # Most objects have ID nested in general. Groups don't.
         result = self.findtext('id') or self.findtext('general/id')
         # After much consideration, I will treat id's as strings.
-        #   We can't assign ID's, so there's no need to perform arithmetic on
-        #   them.
-        #   Having to convert to str all over the place is gross.
-        #   str equivalency still works.
+        #   We can't assign ID's, so there's no need to perform
+        #   arithmetic on them.  Having to convert to str all over the
+        #   place is gross.  str equivalency still works.
         return result
 
     def _indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing.
 
-        Method is internal to discourage indenting the self._root Element,
-        thus potentially corrupting it.
+        Method is internal to discourage indenting the self._root
+        Element, thus potentially corrupting it.
 
         """
         i = "\n"
@@ -712,9 +728,9 @@ class JSSObject(ElementTree.Element):
         return self.getiterator(tag)
 
     def set_bool(self, location, value):
-        """For an object at path, set the string representation of a boolean
-        value to value. Mostly just to prevent me from forgetting to convert
-        to string.
+        """For an object at path, set the string representation of a
+        boolean value to value. Mostly just to prevent me from
+        forgetting to convert to string.
 
         """
         element = self._handle_location(location)
@@ -724,8 +740,8 @@ class JSSObject(ElementTree.Element):
             element.text = 'false'
 
     def add_object_to_path(self, obj, location):
-        """Add an object of type JSSContainerObject to XMLEditor's context
-        object at "path".
+        """Add an object of type JSSContainerObject to XMLEditor's
+        context object at "path".
 
         location can be an Element or a string path argument to find()
 
@@ -797,7 +813,10 @@ class JSSContainerObject(JSSObject):
         name_element.text = name
 
     def as_list_data(self):
-        """Return an Element with id and name data for adding to lists."""
+        """Return an Element with id and name data for adding to
+        lists.
+
+        """
         element = ElementTree.Element(self.list_type)
         id_ = ElementTree.SubElement(element, "id")
         id_.text = self.id
@@ -827,13 +846,13 @@ class JSSGroupObject(JSSContainerObject):
         object.
 
         """
-        # There is a size tag which the JSS manages for us, so we can ignore
-        # it.
+        # There is a size tag which the JSS manages for us, so we can
+        # ignore it.
         if self.findtext("is_smart") == 'false':
             self.add_object_to_path(device, container)
         else:
-            # Technically this isn't true. It will strangely accept them, and
-            # they even show up as members of the group!
+            # Technically this isn't true. It will strangely accept
+            # them, and they even show up as members of the group!
             raise ValueError("Devices may not be added to smart groups.")
 
 
@@ -858,8 +877,8 @@ class JSSDeviceObject(JSSContainerObject):
 class JSSFlatObject(JSSObject):
     """Subclass for JSS objects which do not return a list of objects.
 
-    These objects have in common that they cannot be created. They can, however,
-    be updated.
+    These objects have in common that they cannot be created. They can,
+    however, be updated.
 
     """
     search_types = {}
@@ -944,8 +963,8 @@ class Class(JSSContainerObject):
 
 
 class Computer(JSSDeviceObject):
-    """Computer objects include a 'match' search type which queries across
-    multiple properties.
+    """Computer objects include a 'match' search type which queries
+    across multiple properties.
 
     """
     list_type = 'computer'
@@ -1064,14 +1083,15 @@ class FileUpload(object):
     """FileUploads are a special case in the API. They allow you to add
     file resources to a number of objects on the JSS.
 
-    To use, instantiate a new FileUpload object, then use the save() method to
-    upload.
+    To use, instantiate a new FileUpload object, then use the save()
+    method to upload.
 
-    Once the upload has been posted you may only interact with it through the
-    web interface. You cannot list/get it or delete it through the API.
+    Once the upload has been posted you may only interact with it
+    through the web interface. You cannot list/get it or delete it
+    through the API.
 
-    However, you can reuse the FileUpload object if you wish, by changing the
-    parameters, and issuing another save().
+    However, you can reuse the FileUpload object if you wish, by
+    changing the parameters, and issuing another save().
 
     """
     _url = 'fileuploads'
@@ -1099,8 +1119,8 @@ class FileUpload(object):
                                 id
                                 name
 
-        _id                 Int or String referencing the identity value of
-                            the resource to add the FileUpload to.
+        _id                 Int or String referencing the identity value
+                            of the resource to add the FileUpload to.
 
         resource            String path to the file to upload.
 
@@ -1201,8 +1221,8 @@ class ManagedPreferenceProfile(JSSContainerObject):
 
 
 class MobileDevice(JSSDeviceObject):
-    """Mobile Device objects include a 'match' search type which queries across
-    multiple properties.
+    """Mobile Device objects include a 'match' search type which queries
+    across multiple properties.
 
     """
     _url = '/mobiledevices'
@@ -1327,18 +1347,20 @@ class Package(JSSContainerObject):
         send_notification.text = "false"
 
     def set_os_requirements(self, requirements):
-        """Sets package OS Requirements. Pass in a string of comma seperated
-        OS versions. A lowercase 'x' is allowed as a wildcard, e.g. '10.9.x'
+        """Sets package OS Requirements. Pass in a string of comma
+        seperated OS versions. A lowercase 'x' is allowed as a wildcard,
+        e.g. '10.9.x'
 
         """
         self.find("os_requirements").text = requirements
 
     def set_category(self, category):
-        """Sets package category to 'category', which can be a string of an
-        existing category's name, or a Category object.
+        """Sets package category to 'category', which can be a string of
+        an existing category's name, or a Category object.
 
         """
-        # For some reason, packages only have the category name, not the ID.
+        # For some reason, packages only have the category name, not the
+        # ID.
         if isinstance(category, Category):
             name = category.name
         else:
@@ -1347,10 +1369,12 @@ class Package(JSSContainerObject):
 
     def save(self):
         """Save a new package to the JSS, or update an existing one."""
-        # Jamf seems to have changed the way a missing category is handled. If
-        # you try to update an existing policy with the data returned from a
-        # GET on a policy that has no category, it will fail. If we clear the
-        # category under those circumstances, it will work.
+        # Jamf seems to have changed the way a missing category is
+        # handled. If you try to update an existing policy with the data
+        # returned from a GET on a policy that has no category, it will
+        # fail. If we clear the category under those circumstances, it
+        # will work.
+        # See issue: D-008180
         category = self.find('category')
         if category.text == "No category assigned":
             self.set_category('')
@@ -1389,8 +1413,8 @@ class Policy(JSSContainerObject):
         self.frequency.text = "Once per computer"
         self.category = ElementTree.SubElement(self.general, "category")
         if category:
-            # Without a category, the JSS will add an id of -1, with name
-            # "Unknown".
+            # Without a category, the JSS will add an id of -1, with
+            # name "Unknown". But... See D-008180
             self.category_name = ElementTree.SubElement(self.category, "name")
             self.category_name.text = category.name
 
@@ -1452,7 +1476,8 @@ class Policy(JSSContainerObject):
             self.clear_list("%s%s" % ("scope/", section))
 
     def add_object_to_exclusions(self, obj):
-        """Add an object 'obj' to the appropriate scope exclusions block.
+        """Add an object 'obj' to the appropriate scope exclusions
+        block.
 
         obj should be an instance of Computer, ComputerGroup, Building,
         or Department.
@@ -1470,9 +1495,13 @@ class Policy(JSSContainerObject):
             raise TypeError
 
     def add_package(self, pkg):
-        """Add a jss.Package object to the policy with action=install."""
+        """Add a jss.Package object to the policy with
+        action=install.
+
+        """
         if isinstance(pkg, Package):
-            package = self.add_object_to_path(pkg, "package_configuration/packages")
+            package = self.add_object_to_path(
+                pkg, "package_configuration/packages")
             action = ElementTree.SubElement(package, "action")
             action.text = "Install"
 
@@ -1499,10 +1528,12 @@ class Policy(JSSContainerObject):
 
     def save(self):
         """Save a new policy to the JSS, or update an existing one."""
-        # Jamf seems to have changed the way a missing category is handled. If
-        # you try to update an existing policy with the data returned from a
-        # GET on a policy that has no category, it will fail. If we clear the
-        # category under those circumstances, it will work.
+        # Jamf seems to have changed the way a missing category is
+        # handled. If you try to update an existing policy with the data
+        # returned from a GET on a policy that has no category, it will
+        # fail. If we clear the category under those circumstances, it
+        # will work.
+        # See issue: D-008180
         category = self.find('general/category')
         if category.findtext('id') == "-1":
             category.remove(category.find('name'))
@@ -1587,10 +1618,11 @@ class SearchCriteria(ElementTree.Element):
 
     def makeelement(self, tag, attrib):
         """Return an Element."""
-        # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
-        # super() call to its __class__.makeelement(), which will fail due to
-        # the method resolution order / multiple inheritance of our objects
-        # (they have an editor AND a template or JSSObject parent class).
+        # We use ElementTree.SubElement() a lot. Unfortunately, it
+        # relies on a super() call to its __class__.makeelement(), which
+        # will fail due to the method resolution order / multiple
+        # inheritance of our objects (they have an editor AND a template
+        # or JSSObject parent class).
         # This handles that issue.
         return ElementTree.Element(tag, attrib)
 
@@ -1613,11 +1645,12 @@ class JSSListData(dict):
 class JSSObjectList(list):
     """A list style collection of JSSObjects.
 
-    List operations retrieve only minimal information for most object types.
-    Further, we may want to know all Computer(s) to get their ID's, but that
-    does not mean we want to do a full object search for each one. Thus,
-    methods are provided to both retrieve individual members' full
-    information, and to retrieve the full information for the entire list.
+    List operations retrieve only minimal information for most object
+    types.  Further, we may want to know all Computer(s) to get their
+    ID's, but that does not mean we want to do a full object search for
+    each one. Thus, methods are provided to both retrieve individual
+    members' full information, and to retrieve the full information for
+    the entire list.
 
     """
     def __init__(self, factory, obj_class, objects):
@@ -1654,7 +1687,10 @@ class JSSObjectList(list):
         return self.factory.get_object(self.obj_class, self[index].id)
 
     def retrieve_by_id(self, id_):
-        """Return a JSSObject for the JSSListData element with ID id_."""
+        """Return a JSSObject for the JSSListData element with ID
+        id_.
+
+        """
         list_index = [int(i) for i, j in enumerate(self) if j.id == id_]
         if len(list_index) == 1:
             list_index = list_index[0]
@@ -1663,11 +1699,11 @@ class JSSObjectList(list):
     def retrieve_all(self):
         """Return a list of all JSSListData elements as full JSSObjects.
 
-        At least on my JSS, I end up with some harmless SSL errors, which are
-        dealt with.
+        At least on my JSS, I end up with some harmless SSL errors,
+        which are dealt with.
 
-        Note: This can take a long time given a large number of objects, and
-        depending on the size of each object.
+        Note: This can take a long time given a large number of objects,
+        and depending on the size of each object.
 
         """
         final_list = []
