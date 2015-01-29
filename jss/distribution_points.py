@@ -37,7 +37,6 @@ PKG_TYPES = ['.PKG', '.DMG', '.ZIP']
 PKG_FILE_TYPE = 0
 EBOOK_FILE_TYPE = 1
 IN_HOUSE_APP_FILE_TYPE = 2
-#SCRIPT_TYPES = []
 SCRIPT_FILE_TYPE = 3
 
 class DistributionPoints(object):
@@ -407,6 +406,7 @@ class MountedRepository(Repository):
         upass = unicode(self.connection['password']).encode('utf-8')
         return urllib.quote(upass, safe='~()*!.\'')
 
+
 class AFPDistributionPoint(MountedRepository):
     """Represents an AFP repository.
 
@@ -536,9 +536,6 @@ class JDS(Repository):
     def copy_script(self, filename, id_='-1'):
         """Copy a script to the JDS. At this point, it does not work correctly.
 
-        Scripts end up in the JDS including the multipart boundaries and some
-        HTML information, which is not correct. So don't use this yet!
-
         Required Parameters:
         filename:           Full path to file to upload.
         id_:                ID of Package object to associate with, or '-1' for
@@ -647,6 +644,7 @@ class JDS(Repository):
         result = filename in base_set
 
         return result
+
 
 class HTTPRepository(Repository):
     pass
