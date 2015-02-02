@@ -1,4 +1,10 @@
-### 0.5.4 (December 9, 2014) Apex Predator
+### 0.5.5 (February 2, 2015) Sanpo Shimasu
+
+FIXES:
+
+- Automatically configured distribution points (AFP and SMB shares using just name and password) need to pass jss object so ```jss_migrated``` is handled correctly. (sheagcraig/JSSImporter#19)
+
+### 0.5.4 (January 29, 2015) Apex Predator
 
 FIXES:
 

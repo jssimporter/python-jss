@@ -119,13 +119,15 @@ class DistributionPoints(object):
                                 dp = AFPDistributionPoint(URL=URL, port=port,
                                     share_name=share_name,
                                     mount_point=mount_point,
-                                    username=username, password=password)
+                                    username=username, password=password,
+                                    jss=self.jss)
                             elif connection_type == 'SMB':
                                 dp = SMBDistributionPoint(URL=URL, port=port,
                                     share_name=share_name,
                                     mount_point=mount_point,
                                     domain=domain, username=username,
-                                    password=password)
+                                    password=password,
+                                    jss=self.jss)
 
                             # No need to keep looping.
                             break
@@ -158,7 +160,8 @@ class DistributionPoints(object):
                                                 share_name=share_name,
                                                 mount_point=mount_point,
                                                 username=username,
-                                                password=password)
+                                                password=password,
+                                                jss=self.jss)
                     elif connection_type == 'SMB':
                         # If port isn't given, assume it's the std of
                         # 139.
@@ -168,7 +171,8 @@ class DistributionPoints(object):
                                                 mount_point=mount_point,
                                                 domain=domain,
                                                 username=username,
-                                                password=password)
+                                                password=password,
+                                                jss=self.jss)
 
                 elif repo.get('type') == 'JDS':
                     dp = JDS(jss=self.jss)
