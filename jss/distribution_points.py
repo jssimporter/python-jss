@@ -225,6 +225,19 @@ class DistributionPoints(object):
         for repo in self._children:
             repo.copy_script(filename, id_)
 
+    def delete(self, filename):
+        """Delete a file from all repositories which support it.
+        Individual repositories will determine correct location to
+        delete from (Scripts vs. Packages).
+
+        filename:       The filename you wish to delete (do not
+                        include a path).
+
+        """
+        for repo in self._children:
+            if hasattr(repo, 'delete'):
+                repo.delete(filename)
+
     def mount(self):
         """Mount all mountable distribution points."""
         for child in self._children:
@@ -416,6 +429,24 @@ class MountedRepository(Repository):
             shutil.copytree(full_filename, destination)
         elif os.path.isfile(full_filename):
             shutil.copyfile(full_filename, destination)
+
+    def delete(self, filename):
+        """Delete a file from the repository. Pass the file's name
+        only. This method will determine whether the file is a package
+        or a script.
+
+        """
+        if not self.is_mounted():
+            self.mount()
+        if os.path.splitext(filename)[1].upper() in ['.DMG', '.PKG']:
+            folder = 'Packages'
+        else:
+            folder = 'Scripts'
+        path = os.path.join(self.connection['mount_point'], folder, filename)
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        elif os.path.isfile(path):
+            os.remove(path)
 
     def exists(self, filename):
         """Report whether a file exists on the distribution point.
