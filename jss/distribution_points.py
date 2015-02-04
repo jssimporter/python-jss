@@ -48,9 +48,8 @@ class DistributionPoints(object):
     dmg's to file repositories.
 
     PLEASE NOTE: Not all DistributionPoint types support all of the
-    available methods. For example, JDS' do not have a copy_script()
-    method, and there are caveats to the reliability of the exists()
-    method.
+    available methods, or in the same way. For example, JDS' has
+    caveats to the reliability of the exists() method.
 
     Support for AFP/SMB shares and JDS' are included, and are selected
     based on configuration files. Planned support for HTTP(S) and CDP
@@ -315,6 +314,7 @@ class Repository(object):
 
 
 class MountedRepository(Repository):
+    """Parent class for mountable file shares."""
     def __init__(self, **connection_args):
         super(MountedRepository, self).__init__(**connection_args)
 
