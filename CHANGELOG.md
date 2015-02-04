@@ -7,6 +7,7 @@ FIXES:
 CHANGES:
 
 - Added ```jss.distribution_points.DistributionPoints.delete()``` and ```jss.distribution_points.MountedRepository.delete()```
+- Added ```jss.distribution_points.JDS.delete()``` and ```jss.distribution_points.JDS.delete_with_casperAdminSave()```. The latter is the method used by the Casper Admin app, and is included mostly for reference.
 
 ### 0.5.4 (January 29, 2015) Apex Predator
 

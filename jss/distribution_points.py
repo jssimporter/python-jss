@@ -615,6 +615,8 @@ class JDS(Repository):
         """Builds the URL to POST files to."""
         self.connection['upload_url'] = '%s/%s' % \
                 (self.connection['jss'].base_url, 'dbfileupload')
+        self.connection['delete_url'] = '%s/%s' % \
+                (self.connection['jss'].base_url, 'casperAdminSave.jxml')
 
     def copy_pkg(self, filename, id_=-1):
         """Copy a package to the JDS.
@@ -658,6 +660,38 @@ class JDS(Repository):
         response = self.connection['jss'].session.post(
             url=self.connection['upload_url'], data=resource, headers=headers)
         return response
+
+    def delete_with_casperAdminSave(self, pkg):
+        """Delete a pkg from the JDS.
+
+        pkg:        Can be a jss.Package object, an int ID of a
+                    package, or a filename.
+
+        """
+        # The POST needs the package ID.
+        if pkg.__class__.__name__ == 'Package':
+            package_to_delete = pkg.id
+        elif isinstance(pkg, int):
+            package_to_delete = pkg
+        elif isinstance(pkg, str):
+            package_to_delete = self.connection['jss'].Package(filename).id
+        else:
+            raise TypeError
+
+        data_dict = {'username': self.connection['jss'].user,
+                        'password': self.connection['jss'].password,
+                        'deletedPackageID': package_to_delete}
+        response = self.connection['jss'].session.post(
+            url=self.connection['delete_url'], data=data_dict)
+        # There's no response if it works.
+
+    def delete(self, filename):
+        """Delete a package or script from the JDS."""
+        if os.path.splitext(filename)[1].upper() in ['.DMG', '.PKG']:
+            self.connection['jss'].Package(filename).delete()
+        else:
+            # Script type.
+            self.connection['jss'].Script(filename).delete()
 
     def exists(self, filename):
         """Check for the existence of a package or script on the JDS.
