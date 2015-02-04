@@ -199,11 +199,11 @@ class DistributionPoints(object):
                         with JDS DP's only.
 
         """
-        extension = os.path.splitext(filename)[1].upper()
-        for repo in self._children:
-            if extension in PKG_TYPES:
+        if is_package(filename):
+            for repo in self._children:
                 repo.copy_pkg(filename, id_)
-            else:
+        else:
+            for repo in self._children:
                 # All other file types can go to scripts.
                 repo.copy_script(filename, id_)
 
@@ -259,7 +259,6 @@ class DistributionPoints(object):
 
         """
         result = True
-        extension = os.path.splitext(filename)[1].upper()
         for repo in self._children:
             if not repo.exists(filename):
                 result = False
@@ -405,7 +404,6 @@ class MountedRepository(Repository):
                               file_type=SCRIPT_FILE_TYPE):
         """Upload a script to a migrated JSS's database."""
         basefname = os.path.basename(filename)
-        extension = os.path.splitext(basefname)[1].upper()
 
         resource = open(filename, 'rb')
         headers = {'DESTINATION': '1', 'OBJECT_ID': str(id_), 'FILE_TYPE':
@@ -438,7 +436,7 @@ class MountedRepository(Repository):
         """
         if not self.is_mounted():
             self.mount()
-        if os.path.splitext(filename)[1].upper() in ['.DMG', '.PKG']:
+        if is_package(filename):
             folder = 'Packages'
         else:
             folder = 'Scripts'
@@ -456,8 +454,7 @@ class MountedRepository(Repository):
                         "AdobeFlashPlayer-14.0.0.176.pkg")
 
         """
-        extension = os.path.splitext(filename)[1].upper()
-        if extension in PKG_TYPES:
+        if is_package(filename):
             filepath = os.path.join(self.connection['mount_point'],
                                     'Packages', filename)
         else:
@@ -652,7 +649,6 @@ class JDS(Repository):
                 'probably trying to upload a non-flat package. Please zip'
                 'or create a flat package.')
         basefname = os.path.basename(filename)
-        extension = os.path.splitext(basefname)[1].upper()
 
         resource = open(filename, 'rb')
         headers = {'DESTINATION': '1', 'OBJECT_ID': str(id_), 'FILE_TYPE':
@@ -686,8 +682,17 @@ class JDS(Repository):
         # There's no response if it works.
 
     def delete(self, filename):
-        """Delete a package or script from the JDS."""
-        if os.path.splitext(filename)[1].upper() in ['.DMG', '.PKG']:
+        """Delete a package or script from the JDS.
+
+        This method simply finds the Package or Script object with
+        the API GET call and then deletes it.
+
+        For setups which have
+        more than just a JDS, you will need to delete the files on
+        the shares also.
+
+        """
+        if is_package(filename):
             self.connection['jss'].Package(filename).delete()
         else:
             # Script type.
@@ -714,8 +719,7 @@ class JDS(Repository):
         # package files on the server. This is an undocumented
         # interface, however.
         result = False
-        extension = os.path.splitext(filename)[1].upper()
-        if extension in PKG_TYPES:
+        if is_package(filename):
             packages = self.connection['jss'].Package().retrieve_all()
             for package in packages:
                 if package.findtext('filename') == filename:
@@ -783,3 +787,17 @@ class HTTPRepository(Repository):
 
 class HTTPSRepository(Repository):
     pass
+
+
+def is_package(filename):
+    """Return True if filename is a package type."""
+    return os.path.splitext(filename)[1].upper() in PKG_TYPES
+
+def is_script(filename):
+    """Return True of a filename is NOT a package.
+
+    Because there are so many script types, it's easier to see if
+    the file is a package than to see if it is a script.
+
+    """
+    return not is_package(filename)
