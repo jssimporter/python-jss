@@ -931,14 +931,17 @@ class ActivationCode(JSSFlatObject):
 
 class AdvancedComputerSearch(JSSContainerObject):
     _url = '/advancedcomputersearches'
+    list_type = 'advanced_computer_search'
 
 
 class AdvancedMobileDeviceSearch(JSSContainerObject):
     _url = '/advancedmobiledevicesearches'
+    list_type = 'advanced_mobile_device_search'
 
 
 class AdvancedUserSearch(JSSContainerObject):
     _url = '/advancedusersearches'
+    list_type = 'advanced_user_search'
 
 
 class Building(JSSContainerObject):
@@ -960,6 +963,7 @@ class Category(JSSContainerObject):
 
 class Class(JSSContainerObject):
     _url = '/classes'
+    list_type = 'class'
 
 
 class Computer(JSSDeviceObject):
@@ -985,6 +989,7 @@ class Computer(JSSDeviceObject):
 
 class ComputerCheckIn(JSSFlatObject):
     _url = '/computercheckin'
+    list_type = 'computer_check_in'
     can_delete = False
     can_list = False
     can_post = False
@@ -992,6 +997,7 @@ class ComputerCheckIn(JSSFlatObject):
 
 class ComputerCommand(JSSContainerObject):
     _url = '/computercommands'
+    list_type = 'computer_command'
     can_delete = False
     can_put = False
 
@@ -1003,6 +1009,7 @@ class ComputerConfiguration(JSSContainerObject):
 
 class ComputerExtensionAttribute(JSSContainerObject):
     _url = '/computerextensionattributes'
+    list_type = 'computer_extension_attribute'
 
 
 class ComputerGroup(JSSGroupObject):
@@ -1036,6 +1043,7 @@ class ComputerGroup(JSSGroupObject):
 
 class ComputerInventoryCollection(JSSFlatObject):
     _url = '/computerinventorycollection'
+    list_type = 'computer_inventory_collection'
     can_list = False
     can_post = False
     can_delete = False
@@ -1043,12 +1051,14 @@ class ComputerInventoryCollection(JSSFlatObject):
 
 class ComputerInvitation(JSSContainerObject):
     _url = '/computerinvitations'
+    list_type = 'computer_invitation'
     can_put = False
     search_types = {'name': '/name/', 'invitation': '/invitation/'}
 
 
 class ComputerReport(JSSContainerObject):
     _url = '/computerreports'
+    list_type = 'computer_reports'
     can_put = False
     can_post = False
     can_delete = False
@@ -1061,22 +1071,27 @@ class Department(JSSContainerObject):
 
 class DirectoryBinding(JSSContainerObject):
     _url = '/directorybindings'
+    list_type = 'directory_binding'
 
 
 class DiskEncryptionConfiguration(JSSContainerObject):
     _url = '/diskencryptionconfigurations'
+    list_type = 'disk_encryption_configuration'
 
 
 class DistributionPoint(JSSContainerObject):
     _url = '/distributionpoints'
+    list_type = 'distribution_point'
 
 
 class DockItem(JSSContainerObject):
     _url = '/dockitems'
+    list_type = 'dock_item'
 
 
 class EBook(JSSContainerObject):
     _url = '/ebooks'
+    list_type = 'ebook'
 
 
 class FileUpload(object):
@@ -1183,6 +1198,7 @@ class FileUpload(object):
 
 class GSXConnection(JSSFlatObject):
     _url = '/gsxconnection'
+    list_type = 'gsx_connection'
     can_list = False
     can_post = False
     can_delete = False
@@ -1196,6 +1212,7 @@ class IBeacon(JSSContainerObject):
 class JSSUser(JSSFlatObject):
     """JSSUser is deprecated."""
     _url = '/jssuser'
+    list_type = 'user'
     can_list = False
     can_post = False
     can_put = False
@@ -1205,10 +1222,12 @@ class JSSUser(JSSFlatObject):
 
 class LDAPServer(JSSContainerObject):
     _url = '/ldapservers'
+    list_type = 'ldap_server'
 
 
 class LicensedSoftware(JSSContainerObject):
     _url = '/licensedsoftware'
+    list_type = 'licensed_software'
 
 
 class MacApplication(JSSContainerObject):
@@ -1218,6 +1237,7 @@ class MacApplication(JSSContainerObject):
 
 class ManagedPreferenceProfile(JSSContainerObject):
     _url = '/managedpreferenceprofiles'
+    list_type = 'managed_preference_profile'
 
 
 class MobileDevice(JSSDeviceObject):
@@ -1245,10 +1265,12 @@ class MobileDevice(JSSDeviceObject):
 
 class MobileDeviceApplication(JSSContainerObject):
     _url = '/mobiledeviceapplications'
+    list_type = 'mobile_device_application'
 
 
 class MobileDeviceCommand(JSSContainerObject):
     _url = '/mobiledevicecommands'
+    list_type = 'mobile_device_command'
     can_put = False
     can_delete = False
     search_types = {'name': '/name/', 'uuid': '/uuid/',
@@ -1259,19 +1281,23 @@ class MobileDeviceCommand(JSSContainerObject):
 
 class MobileDeviceConfigurationProfile(JSSContainerObject):
     _url = '/mobiledeviceconfigurationprofiles'
+    list_type = 'configuration_profile'
 
 
 class MobileDeviceEnrollmentProfile(JSSContainerObject):
     _url = '/mobiledeviceenrollmentprofiles'
+    list_type = 'mobile_device_enrollment_profile'
     search_types = {'name': '/name/', 'invitation': '/invitation/'}
 
 
 class MobileDeviceExtensionAttribute(JSSContainerObject):
     _url = '/mobiledeviceextensionattributes'
+    list_type = 'mobile_device_extension_attribute'
 
 
 class MobileDeviceInvitation(JSSContainerObject):
     _url = '/mobiledeviceinvitations'
+    list_type = 'mobile_device_invitation'
     can_put = False
     search_types = {'invitation': '/invitation/'}
 
@@ -1292,19 +1318,23 @@ class MobileDeviceGroup(JSSContainerObject):
 
 class MobileDeviceProvisioningProfile(JSSContainerObject):
     _url = '/mobiledeviceprovisioningprofiles'
+    list_type = 'mobile_device_provisioning_profile'
     search_types = {'name': '/name/', 'uuid': '/uuid/'}
 
 
 class NetbootServer(JSSContainerObject):
     _url = '/netbootservers'
+    list_type = 'netboot_server'
 
 
 class NetworkSegment(JSSContainerObject):
     _url = '/networksegments'
+    list_type = 'network_segment'
 
 
 class OSXConfigurationProfile(JSSContainerObject):
     _url = '/osxconfigurationprofiles'
+    list_type = 'os_x_configuration_profile'
 
 
 class Package(JSSContainerObject):
@@ -1384,11 +1414,13 @@ class Package(JSSContainerObject):
 
 class Peripheral(JSSContainerObject):
     _url = '/peripherals'
+    list_type = 'peripheral'
     search_types = {}
 
 
 class PeripheralType(JSSContainerObject):
     _url = '/peripheraltypes'
+    list_type = 'peripheral_type'
     search_types = {}
 
 
@@ -1544,18 +1576,22 @@ class Policy(JSSContainerObject):
 
 class Printer(JSSContainerObject):
     _url = '/printers'
+    list_type = 'printer'
 
 
 class RestrictedSoftware(JSSContainerObject):
     _url = '/restrictedsoftware'
+    list_type = 'restricted_software'
 
 
 class RemovableMACAddress(JSSContainerObject):
     _url = '/removablemacaddresses'
+    list_type = 'removable_mac_address'
 
 
 class SavedSearch(JSSContainerObject):
     _url = '/savedsearches'
+    list_type = 'saved_search'
     can_put = False
     can_post = False
     can_delete = False
@@ -1568,14 +1604,17 @@ class Script(JSSContainerObject):
 
 class Site(JSSContainerObject):
     _url = '/sites'
+    list_type = 'site'
 
 
 class SoftwareUpdateServer(JSSContainerObject):
     _url = '/softwareupdateservers'
+    list_type = 'software_update_server'
 
 
 class SMTPServer(JSSFlatObject):
     _url = '/smtpserver'
+    list_type = 'smtp_server'
     id_url = ''
     can_list = False
     can_post = False
@@ -1584,14 +1623,17 @@ class SMTPServer(JSSFlatObject):
 
 class UserExtensionAttribute(JSSContainerObject):
     _url = '/userextensionattributes'
+    list_type = 'user_extension_attribute'
 
 
 class User(JSSContainerObject):
     _url = '/users'
+    list_type = 'user'
 
 
 class UserGroup(JSSContainerObject):
     _url = '/usergroups'
+    list_type = 'user_group'
 
 
 class VPPAccount(JSSContainerObject):
