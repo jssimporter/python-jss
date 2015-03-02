@@ -111,8 +111,7 @@ class DistributionPoints(object):
                                 dp_object.findtext('read_write_username')
                             password = repo.get('password')
 
-                            mount_point = os.path.join('/Volumes',
-                                    (name + share_name).replace(' ', ''))
+                            mount_point = os.path.join('/Volumes', share_name)
 
                             if connection_type == 'AFP':
                                 dp = AFPDistributionPoint(URL=URL, port=port,
@@ -148,8 +147,7 @@ class DistributionPoints(object):
                     username = repo['username']
                     password = repo['password']
 
-                    mount_point = os.path.join('/Volumes',
-                                               name.replace(' ', ''))
+                    mount_point = os.path.join('/Volumes', share_name)
 
                     if connection_type == 'AFP':
                         # If port isn't given, assume it's the std of
@@ -360,7 +358,41 @@ class MountedRepository(Repository):
                                        self.connection['mount_point']])
 
     def is_mounted(self):
-        """Test for whether a mount point is mounted."""
+        """ Test for whether a mount point is mounted.
+
+        If it is currently mounted, determine the path it's currently
+        mounted to and update the connection's mount_point accordingly.
+
+        """
+
+        if isinstance(self, AFPDistributionPoint):
+            _connection_type = "afpfs"
+        elif isinstance(self, SMBDistributionPoint):
+            _connection_type = "smbfs"
+        else:
+            _connection_type = "undefined"
+
+        _share_name = self.connection['share_name']
+        _check_url = self.connection['URL']
+        
+        mount_check = subprocess.check_output('mount').splitlines()
+        # The mount command returns lines like this
+        # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO (afpfs, nodev, nosuid, mounted by local_me)
+
+        for _mount in mount_check:
+            _mount_str = os.path.join(_check_url, urllib.quote(_share_name, safe='~()*!.\''))
+            if _mount_str in _mount and _connection_type in _mount:
+                print "%s is already mounted." % _mount_str
+                
+                # Get the string between "on" and the "(" symbol, then strip front and back.
+                _mount_point = _mount.split('on ')[1].split('(')[0].lstrip().rstrip()                
+
+                # Reset the connection's mount point to the discovered value.
+                if _mount_point:
+                    print 'Using "%s" as the mount_point' % _mount_point
+                    self.connection['mount_point'] = _mount_point
+
+        # Do an inexpensive double check...
         return os.path.ismount(self.connection['mount_point'])
 
     def copy_pkg(self, filename, id_=-1):
