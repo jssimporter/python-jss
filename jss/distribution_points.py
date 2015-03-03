@@ -366,31 +366,33 @@ class MountedRepository(Repository):
         """
 
         if isinstance(self, AFPDistributionPoint):
-            _connection_type = "afpfs"
+            fs_type = "afpfs"
         elif isinstance(self, SMBDistributionPoint):
-            _connection_type = "smbfs"
+            fs_type = "smbfs"
         else:
-            _connection_type = "undefined"
+            fs_type = "undefined"
 
-        _share_name = self.connection['share_name']
-        _check_url = self.connection['URL']
+        share_name = self.connection['share_name']
+        check_url = self.connection['URL']
         
         mount_check = subprocess.check_output('mount').splitlines()
         # The mount command returns lines like this
         # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO (afpfs, nodev, nosuid, mounted by local_me)
 
-        for _mount in mount_check:
-            _mount_str = os.path.join(_check_url, urllib.quote(_share_name, safe='~()*!.\''))
-            if _mount_str in _mount and _connection_type in _mount:
-                print "%s is already mounted." % _mount_str
+        for mount in mount_check:
+            # This will check if the share is mounted using a name other than the share_name.
+            mount_string = os.path.join(check_url, urllib.quote(share_name, safe='~()*!.\''))
+
+            if mount_string in mount and fs_type in mount:
+                print "%s is already mounted." % mount_string
                 
                 # Get the string between "on" and the "(" symbol, then strip front and back.
-                _mount_point = _mount.split('on ')[1].split('(')[0].lstrip().rstrip()                
+                mount_point = mount.split('on ')[1].split('(')[0].lstrip().rstrip()                
 
                 # Reset the connection's mount point to the discovered value.
-                if _mount_point:
-                    print 'Using "%s" as the mount_point' % _mount_point
-                    self.connection['mount_point'] = _mount_point
+                if mount_point:
+                    print 'Using "%s" as the mount_point' % mount_point
+                    self.connection['mount_point'] = mount_point
 
         # Do an inexpensive double check...
         return os.path.ismount(self.connection['mount_point'])
