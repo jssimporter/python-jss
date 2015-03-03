@@ -315,6 +315,7 @@ class MountedRepository(Repository):
     """Parent class for mountable file shares."""
     def __init__(self, **connection_args):
         super(MountedRepository, self).__init__(**connection_args)
+        self._was_mounted = False
 
     def _build_url(self):
         pass
@@ -344,12 +345,16 @@ class MountedRepository(Repository):
     def umount(self):
         """Try to unmount our mount point."""
         # If not mounted, don't bother.
+        
         if os.path.exists(self.connection['mount_point']):
+            if self._was_mounted:
+                print "Distribution point was previously mounted, will not unmount"
+                
             # Force an unmount. If you are manually mounting and
             # unmounting shares with python, chances are good that you
             # know what you are doing and *want* it to unmount. For
             # real.
-            if sys.platform == 'darwin':
+            elif sys.platform == 'darwin':
                 subprocess.check_call(['/usr/sbin/diskutil', 'unmount',
                                        'force',
                                        self.connection['mount_point']])
@@ -385,7 +390,7 @@ class MountedRepository(Repository):
 
             if mount_string in mount and fs_type in mount:
                 print "%s is already mounted." % mount_string
-                
+                self._was_mounted = True
                 # Get the string between "on" and the "(" symbol, then strip front and back.
                 mount_point = mount.split('on ')[1].split('(')[0].lstrip().rstrip()                
 
