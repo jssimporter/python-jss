@@ -1,3 +1,10 @@
+### 0.5.6 (March 6, 2015) Tonkatsu
+
+FIXES:
+
+- Solve regression in JSS >= 9.64 FileUpload API call failing on icon upload with Tomcat Java exception by shelling out to curl.
+- Add ```list_type``` for ```jss.Site``` so it will properly add itself to other objects. Thanks @MScottBlake. (#29)
+
 ### 0.5.5 (February 2, 2015) Sanpo Shimasu
 
 FIXES:
