@@ -1236,6 +1236,24 @@ class JSSUser(JSSFlatObject):
 class LDAPServer(JSSContainerObject):
     _url = '/ldapservers'
 
+    def get_user(self, user):
+        user_url = "%s/%s/%s" % (self.get_object_url(), 'user', user)
+        print(user_url)
+        response = self.jss.get(user_url)
+        return LDAPUsers(self.jss, response)
+
+
+    @property
+    def id(self):
+        """Return object ID or None."""
+        # LDAPServer's ID is in 'connection'
+        result = self.findtext('connection/id')
+        return result
+
+class LDAPUsers(JSSContainerObject):
+    #_url = '/ldapservers'
+    pass
+
 
 class LicensedSoftware(JSSContainerObject):
     _url = '/licensedsoftware'
