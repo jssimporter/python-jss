@@ -1147,6 +1147,9 @@ class FileUpload(object):
                                               "%s" % id_types)
         self._id = str(_id)
 
+        # To support curl workaround in FileUpload.save()...
+        self.resource_path = resource
+
         self.resource = {'name': (os.path.basename(resource),
                                   open(resource, 'rb'), 'multipart/form-data')}
 
@@ -1158,27 +1161,54 @@ class FileUpload(object):
                                      self.resource_type, self.id_type,
                                      str(self._id)])
 
-    def save(self):
-        """POST the object to the JSS."""
-        try:
-            response = requests.post(self._upload_url,
-                                     auth=self.jss.session.auth,
-                                     verify=self.jss.session.verify,
-                                     files=self.resource)
-        except JSSPostError as e:
-            if e.status_code == 409:
-                raise JSSPostError("Object Conflict! If trying to post a "
-                                   "new object, look for name conflict and "
-                                   "delete.")
-            else:
-                raise JSSMethodNotAllowedError(self.__class__.__name__)
+    #def save(self):
+    #    """POST the object to the JSS."""
+    #    try:
+    #        response = requests.post(self._upload_url,
+    #                                 auth=self.jss.session.auth,
+    #                                 verify=self.jss.session.verify,
+    #                                 files=self.resource)
+    #    except JSSPostError as e:
+    #        if e.status_code == 409:
+    #            raise JSSPostError("Object Conflict! If trying to post a "
+    #                               "new object, look for name conflict and "
+    #                               "delete.")
+    #        else:
+    #            raise JSSMethodNotAllowedError(self.__class__.__name__)
 
-        if response.status_code == 201:
+    #    if response.status_code == 201:
+    #        if self.jss.verbose:
+    #            print("POST: Success")
+    #            print(response.text.encode('utf-8'))
+    #    elif response.status_code >= 400:
+    #        self.jss._error_handler(JSSPostError, response)
+
+    def save(self):
+        """POST the object to the JSS. WORKAROUND version."""
+        try:
+            # A regression introduced in JSS 9.64 prevents this from
+            # working correctly. Until a solution is found, shell out
+            # to curl.
+
+            curl = ['/usr/bin/curl', '-kvu', '%s:%s' % self.jss.session.auth,
+                    self._upload_url, '-F', 'name=@%s' %
+                    os.path.expanduser(self.resource_path), '-X', 'POST']
+            response = subprocess.check_output(curl, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            # Handle problems with curl.
+            raise JSSPostError("Curl subprocess error code: %s" % e.message)
+
+        http_response_regex = '.*HTTP/1.1 ([0-9]{3}) ([a-zA-Z ]*)'
+        found_patterns = re.findall(http_response_regex, response)
+        if len(found_patterns) > 0:
+            final_response = found_patterns[-1]
+        else:
+            raise JSSPostError("Unknown curl error.")
+        if int(final_response[0]) >= 400:
+            raise JSSPostError("Curl error: %s, %s" % final_response)
+        elif int(final_response[0]) == 201:
             if self.jss.verbose:
                 print("POST: Success")
-                print(response.text.encode('utf-8'))
-        elif response.status_code >= 400:
-            self.jss._error_handler(JSSPostError, response)
 
 
 class GSXConnection(JSSFlatObject):
