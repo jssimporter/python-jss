@@ -576,7 +576,7 @@ class JSSObject(ElementTree.Element):
                     return '%s%s%s' % (cls._url, cls.search_types[key], value)
                 else:
                     raise JSSUnsupportedSearchMethodError(
-                        "This object cannot" "be queried by %s." % key)
+                        "This object cannot be queried by %s." % key)
             else:
                 return '%s%s%s' % (cls._url,
                                    cls.search_types[cls.default_search], data)
