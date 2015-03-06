@@ -1598,6 +1598,7 @@ class Script(JSSContainerObject):
 
 class Site(JSSContainerObject):
     _url = '/sites'
+    list_type = 'site'
 
 
 class SoftwareUpdateServer(JSSContainerObject):
