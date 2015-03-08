@@ -132,8 +132,6 @@ class DistributionPoints(object):
 
                 # Handle Explictly declared DP's.
                 elif repo.get('type') in ['AFP', 'SMB']:
-                    name = repo.get('name') or 'JSS_DP_%02i' % counter
-                    counter += 1
                     URL = repo['URL']
                     # If found, strip the scheme off the URL
                     # it's reconstructed later
@@ -369,11 +367,12 @@ class MountedRepository(Repository):
         mounted to and update the connection's mount_point accordingly.
 
         """
+        import socket
 
         # Initially check to see if mounted path exists for the currently defined
         # mount_point. This will catch situations where different servers, 
-        # have the same share name. If the actual mount is detected later on in
-        # this method it will reset it to the appropriate 'mount_point'
+        # have the same share name. If the actual mount is detected further down
+        # it will get updated to the correct 'mount_point' value.
         count = 1
         while os.path.ismount(self.connection['mount_point']):
             self.connection['mount_point'] = "%s-%s" % (self.connection['mount_point'], count)
@@ -386,44 +385,45 @@ class MountedRepository(Repository):
         else:
             fs_type = "undefined"
 
-        share_name = self.connection['share_name']
-        check_url = self.connection['URL']
-        check_port = self.connection['port']
+        share_name = urllib.quote(self.connection['share_name'], safe='~()*!.\'')
+        URL = self.connection['URL']
+        port = self.connection['port']
 
         mount_check = subprocess.check_output('mount').splitlines()
-
-        # The mount command returns lines like this
+        # The mount command returns lines like this...
         # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO (afpfs, nodev, nosuid, mounted by local_me)
 
-        for mount in mount_check:
-            import socket
+        # socket.gethostbyname() will return an IP address whether  
+        # an IP address, FQDN, or .local name is provided.
+        ip_address = socket.gethostbyname(URL)
+        
+        ip_url = os.path.join(ip_address, share_name)
+        ip_url_with_port = os.path.join('%s:%s' % (ip_address, port), share_name)
+        
+        any_match = (os.path.join(URL, share_name),
+                     os.path.join('%s:%s' % (URL, port), share_name),
+                     ip_url, 
+                     ip_url_with_port)
 
-            # This will check if the share is mounted using a name other than the share_name.
-            ip_address = socket.gethostbyname(check_url)
-            quoted_share = urllib.quote(share_name, safe='~()*!.\'')
-            
-            ip_url = os.path.join(ip_address, quoted_share)
-            ip_url_with_port = os.path.join('%s:%s' % (ip_address, check_port), quoted_share)
-            any_match = (ip_url, ip_url_with_port)
-
-            #fqdn may or may not be resolvable so check it here.
-            fqdn = socket.getfqdn(ip_address)
-            if fqdn:
-                fqdn_url = os.path.join(fqdn, quoted_share)
-                fqdn_url_with_port = os.path.join('%s:%s' % (fqdn, check_port), quoted_share)
-                any_match = any_match + (fqdn_url, fqdn_url_with_port,)
-
-            if any(match in mount for match in any_match) \
+        # socket.getfqdn() could just resolve back to the ip
+        # or be the same as the initial URL so only add it if it's different than both.
+        fqdn = socket.getfqdn(ip_address)
+        if not fqdn == ip_url and not fqdn == URL:
+            fqdn_url = os.path.join(fqdn, share_name)
+            fqdn_url_with_port = os.path.join('%s:%s' % (fqdn, port), share_name)
+            any_match = any_match + (fqdn_url, fqdn_url_with_port,)
+        
+        for mount in mount_check:    
+            if any(match in mount.split(' on ')[0] for match in any_match) \
                 and fs_type in mount.rsplit('(')[-1].split(',')[0]:
                 
-                print "%s is already mounted.\n" % fqdn_url
                 self._was_mounted = True
-                # Get the string between "on" and the "(" symbol, then strip front and back.
+                # Get the string between " on " and the "(" symbol, then strip.
                 mount_point = mount.split(' on ')[1].split('(')[0].strip()                
 
                 # Reset the connection's mount point to the discovered value.
                 if mount_point:
-                    print 'Using "%s" as the mount_point\n' % mount_point
+                    print "%s is already mounted at %s.\n" % (URL, mount_point)
                     self.connection['mount_point'] = mount_point
 
         # Do an inexpensive double check...
