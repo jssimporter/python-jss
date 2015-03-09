@@ -1,3 +1,12 @@
+### 0.5.7 (UNRELEASED) The Next Episode
+
+CHANGES:
+
+- Adds in extra LDAPServer methods.
+	- ```search_users()``` searches for users.
+	- ```search_groups()``` searches for groups.
+	- ```is_user_in_group()``` tests for group membership by user.
+
 ### 0.5.6 (March 6, 2015) Tonkatsu
 
 FIXES:
