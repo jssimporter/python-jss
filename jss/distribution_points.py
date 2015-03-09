@@ -112,7 +112,7 @@ class DistributionPoints(object):
                             password = repo.get('password')
 
                             mount_point = os.path.join('/Volumes', share_name)
-                        
+
                             if connection_type == 'AFP':
                                 dp = AFPDistributionPoint(URL=URL, port=port,
                                     share_name=share_name,
@@ -343,11 +343,11 @@ class MountedRepository(Repository):
     def umount(self):
         """Try to unmount our mount point."""
         # If not mounted, don't bother.
-        
+
         if os.path.exists(self.connection['mount_point']):
             if self._was_mounted:
                 print "Distribution point was previously mounted, will not unmount"
-                
+
             # Force an unmount. If you are manually mounting and
             # unmounting shares with python, chances are good that you
             # know what you are doing and *want* it to unmount. For
@@ -370,7 +370,7 @@ class MountedRepository(Repository):
         import socket
 
         # Initially check to see if mounted path exists for the currently defined
-        # mount_point. This will catch situations where different servers, 
+        # mount_point. This will catch situations where different servers,
         # have the same share name. If the actual mount is detected further down
         # it will get updated to the correct 'mount_point' value.
         count = 1
@@ -393,16 +393,16 @@ class MountedRepository(Repository):
         # The mount command returns lines like this...
         # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO (afpfs, nodev, nosuid, mounted by local_me)
 
-        # socket.gethostbyname() will return an IP address whether  
+        # socket.gethostbyname() will return an IP address whether
         # an IP address, FQDN, or .local name is provided.
         ip_address = socket.gethostbyname(URL)
-        
+
         ip_url = os.path.join(ip_address, share_name)
         ip_url_with_port = os.path.join('%s:%s' % (ip_address, port), share_name)
-        
+
         any_match = (os.path.join(URL, share_name),
                      os.path.join('%s:%s' % (URL, port), share_name),
-                     ip_url, 
+                     ip_url,
                      ip_url_with_port)
 
         # socket.getfqdn() could just resolve back to the ip
@@ -412,14 +412,14 @@ class MountedRepository(Repository):
             fqdn_url = os.path.join(fqdn, share_name)
             fqdn_url_with_port = os.path.join('%s:%s' % (fqdn, port), share_name)
             any_match = any_match + (fqdn_url, fqdn_url_with_port,)
-        
-        for mount in mount_check:    
+
+        for mount in mount_check:
             if any(match in mount.split(' on ')[0] for match in any_match) \
                 and fs_type in mount.rsplit('(')[-1].split(',')[0]:
-                
+
                 self._was_mounted = True
                 # Get the string between " on " and the "(" symbol, then strip.
-                mount_point = mount.split(' on ')[1].split('(')[0].strip()                
+                mount_point = mount.split(' on ')[1].split('(')[0].strip()
 
                 # Reset the connection's mount point to the discovered value.
                 if mount_point:
