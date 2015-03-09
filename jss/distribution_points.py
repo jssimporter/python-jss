@@ -364,12 +364,10 @@ class MountedRepository(Repository):
     def is_mounted(self):
         """ Test for whether a mount point is mounted.
 
-        If it is currently mounted, determine the path it's currently
-        mounted to and update the connection's mount_point accordingly.
+        If it is currently mounted, determine the path where it's
+        mounted and update the connection's mount_point accordingly.
 
         """
-        import socket
-
         # Initially check to see if mounted path exists for the currently
         # defined mount_point. This will catch situations where different
         # servers, have the same share name. If the actual mount is
@@ -398,32 +396,10 @@ class MountedRepository(Repository):
         # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO
         # (afpfs, nodev, nosuid, mounted by local_me)
 
-        # socket.gethostbyname() will return an IP address whether
-        # an IP address, FQDN, or .local name is provided.
-        ip_address = socket.gethostbyname(URL)
-
-        ip_url = os.path.join(ip_address, share_name)
-        ip_url_with_port = os.path.join('%s:%s' % (ip_address, port),
-                                        share_name)
-
-        any_match = (os.path.join(URL, share_name),
-                     os.path.join('%s:%s' % (URL, port), share_name),
-                     ip_url,
-                     ip_url_with_port)
-
-        # socket.getfqdn() could just resolve back to the ip
-        # or be the same as the initial URL so only add it if it's
-        # different than both.
-        fqdn = socket.getfqdn(ip_address)
-        if not fqdn == ip_url and not fqdn == URL:
-            fqdn_url = os.path.join(fqdn, share_name)
-            fqdn_url_with_port = os.path.join('%s:%s' % (fqdn, port),
-                                              share_name)
-            any_match = any_match + (fqdn_url, fqdn_url_with_port,)
+        valid_mount_strings = self._get_valid_mount_strings()
 
         for mount in mount_check:
-            if any(match in mount.split(' on ')[0] for match in any_match) \
-                and fs_type in mount.rsplit('(')[-1].split(',')[0]:
+            if any(match in mount.split(' on ')[0] for match in valid_mount_strings) and fs_type in mount.rsplit('(')[-1].split(',')[0]:
 
                 self._was_mounted = True
                 # Get the string between " on " and the "(" symbol, then
@@ -438,6 +414,53 @@ class MountedRepository(Repository):
 
         # Do an inexpensive double check...
         return os.path.ismount(self.connection['mount_point'])
+
+    def _get_valid_mount_strings(self):
+        """Return a tuple of potential mount strings."""
+        # Casper Admin seems to mount in a number of ways:
+        #     - hostname/share
+        #     - fqdn/share
+        # Plus, there's the possibility of:
+        #     - IPAddress/share
+        # Then factor in the possibility that the port is included too!
+
+        # This gives us a total of up to six valid addresses for mount
+        # to report.
+
+        import socket
+        # Express results as a set so we don't have any redundent
+        # entries.
+        results = set()
+        URL = self.connection['URL']
+        share_name = urllib.quote(self.connection['share_name'],
+                                  safe='~()*!.\'')
+        port = self.connection['port']
+
+        # URL from python-jss form:
+        results.add(os.path.join(URL, share_name))
+        results.add(os.path.join('%s:%s' % (URL, port), share_name))
+
+        # IP Address form:
+        # socket.gethostbyname() will return an IP address whether
+        # an IP address, FQDN, or .local name is provided.
+        ip_address = socket.gethostbyname(URL)
+        results.add(os.path.join(ip_address, share_name))
+        results.add(os.path.join('%s:%s' % (ip_address, port), share_name))
+
+        # Domain name only form:
+        domain_name = URL.split('.')[0]
+        results.add(os.path.join(domain_name, share_name))
+        results.add(os.path.join('%s:%s' % (domain_name, port), share_name))
+
+        # FQDN form using getfqdn:
+        # socket.getfqdn() could just resolve back to the ip
+        # or be the same as the initial URL so only add it if it's
+        # different than both.
+        fqdn = socket.getfqdn(ip_address)
+        results.add(os.path.join(fqdn, share_name))
+        results.add(os.path.join('%s:%s' % (fqdn, port), share_name))
+
+        return tuple(results)
 
     def copy_pkg(self, filename, id_=-1):
         """Copy a package to the repo's subdirectory.
