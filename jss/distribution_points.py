@@ -311,6 +311,8 @@ class Repository(object):
 
 class MountedRepository(Repository):
     """Parent class for mountable file shares."""
+    fs_type = 'undefined'
+
     def __init__(self, **connection_args):
         super(MountedRepository, self).__init__(**connection_args)
         self._was_mounted = False
@@ -379,13 +381,6 @@ class MountedRepository(Repository):
                 (self.connection['mount_point'], count)
             count += 1
 
-        if isinstance(self, AFPDistributionPoint):
-            fs_type = "afpfs"
-        elif isinstance(self, SMBDistributionPoint):
-            fs_type = "smbfs"
-        else:
-            fs_type = "undefined"
-
         share_name = urllib.quote(self.connection['share_name'],
                                   safe='~()*!.\'')
         URL = self.connection['URL']
@@ -399,7 +394,7 @@ class MountedRepository(Repository):
         valid_mount_strings = self._get_valid_mount_strings()
 
         for mount in mount_check:
-            if any(match in mount.split(' on ')[0] for match in valid_mount_strings) and fs_type in mount.rsplit('(')[-1].split(',')[0]:
+            if any(match in mount.split(' on ')[0] for match in valid_mount_strings) and self.fs_type in mount.rsplit('(')[-1].split(',')[0]:
 
                 self._was_mounted = True
                 # Get the string between " on " and the "(" symbol, then
@@ -411,6 +406,9 @@ class MountedRepository(Repository):
                 if mount_point:
                     print "%s is already mounted at %s.\n" % (URL, mount_point)
                     self.connection['mount_point'] = mount_point
+
+                # We found the share, no need to continue.
+                break
 
         # Do an inexpensive double check...
         return os.path.ismount(self.connection['mount_point'])
@@ -585,6 +583,7 @@ class AFPDistributionPoint(MountedRepository):
 
     """
     protocol = 'afp'
+    fs_type = 'afpfs'
     required_attrs = {'URL', 'mount_point', 'username', 'password',
                       'share_name'}
 
@@ -635,6 +634,7 @@ class SMBDistributionPoint(MountedRepository):
     """
 
     protocol = 'smbfs'
+    fs_type = 'smbfs'
     required_attrs = {'URL', 'share_name', 'mount_point', 'domain', 'username',
                       'password'}
 
