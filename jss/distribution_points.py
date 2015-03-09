@@ -111,9 +111,8 @@ class DistributionPoints(object):
                                 dp_object.findtext('read_write_username')
                             password = repo.get('password')
 
-                            mount_point = os.path.join('/Volumes',
-                                    (name + share_name).replace(' ', ''))
-
+                            mount_point = os.path.join('/Volumes', share_name)
+                        
                             if connection_type == 'AFP':
                                 dp = AFPDistributionPoint(URL=URL, port=port,
                                     share_name=share_name,
@@ -133,8 +132,6 @@ class DistributionPoints(object):
 
                 # Handle Explictly declared DP's.
                 elif repo.get('type') in ['AFP', 'SMB']:
-                    name = repo.get('name') or 'JSS_DP_%02i' % counter
-                    counter += 1
                     URL = repo['URL']
                     # If found, strip the scheme off the URL
                     # it's reconstructed later
@@ -148,8 +145,7 @@ class DistributionPoints(object):
                     username = repo['username']
                     password = repo['password']
 
-                    mount_point = os.path.join('/Volumes',
-                                               name.replace(' ', ''))
+                    mount_point = os.path.join('/Volumes', share_name)
 
                     if connection_type == 'AFP':
                         # If port isn't given, assume it's the std of
@@ -317,6 +313,7 @@ class MountedRepository(Repository):
     """Parent class for mountable file shares."""
     def __init__(self, **connection_args):
         super(MountedRepository, self).__init__(**connection_args)
+        self._was_mounted = False
 
     def _build_url(self):
         pass
@@ -346,12 +343,16 @@ class MountedRepository(Repository):
     def umount(self):
         """Try to unmount our mount point."""
         # If not mounted, don't bother.
+        
         if os.path.exists(self.connection['mount_point']):
+            if self._was_mounted:
+                print "Distribution point was previously mounted, will not unmount"
+                
             # Force an unmount. If you are manually mounting and
             # unmounting shares with python, chances are good that you
             # know what you are doing and *want* it to unmount. For
             # real.
-            if sys.platform == 'darwin':
+            elif sys.platform == 'darwin':
                 subprocess.check_call(['/usr/sbin/diskutil', 'unmount',
                                        'force',
                                        self.connection['mount_point']])
@@ -360,7 +361,72 @@ class MountedRepository(Repository):
                                        self.connection['mount_point']])
 
     def is_mounted(self):
-        """Test for whether a mount point is mounted."""
+        """ Test for whether a mount point is mounted.
+
+        If it is currently mounted, determine the path it's currently
+        mounted to and update the connection's mount_point accordingly.
+
+        """
+        import socket
+
+        # Initially check to see if mounted path exists for the currently defined
+        # mount_point. This will catch situations where different servers, 
+        # have the same share name. If the actual mount is detected further down
+        # it will get updated to the correct 'mount_point' value.
+        count = 1
+        while os.path.ismount(self.connection['mount_point']):
+            self.connection['mount_point'] = "%s-%s" % (self.connection['mount_point'], count)
+            count += 1
+
+        if isinstance(self, AFPDistributionPoint):
+            fs_type = "afpfs"
+        elif isinstance(self, SMBDistributionPoint):
+            fs_type = "smbfs"
+        else:
+            fs_type = "undefined"
+
+        share_name = urllib.quote(self.connection['share_name'], safe='~()*!.\'')
+        URL = self.connection['URL']
+        port = self.connection['port']
+
+        mount_check = subprocess.check_output('mount').splitlines()
+        # The mount command returns lines like this...
+        # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO (afpfs, nodev, nosuid, mounted by local_me)
+
+        # socket.gethostbyname() will return an IP address whether  
+        # an IP address, FQDN, or .local name is provided.
+        ip_address = socket.gethostbyname(URL)
+        
+        ip_url = os.path.join(ip_address, share_name)
+        ip_url_with_port = os.path.join('%s:%s' % (ip_address, port), share_name)
+        
+        any_match = (os.path.join(URL, share_name),
+                     os.path.join('%s:%s' % (URL, port), share_name),
+                     ip_url, 
+                     ip_url_with_port)
+
+        # socket.getfqdn() could just resolve back to the ip
+        # or be the same as the initial URL so only add it if it's different than both.
+        fqdn = socket.getfqdn(ip_address)
+        if not fqdn == ip_url and not fqdn == URL:
+            fqdn_url = os.path.join(fqdn, share_name)
+            fqdn_url_with_port = os.path.join('%s:%s' % (fqdn, port), share_name)
+            any_match = any_match + (fqdn_url, fqdn_url_with_port,)
+        
+        for mount in mount_check:    
+            if any(match in mount.split(' on ')[0] for match in any_match) \
+                and fs_type in mount.rsplit('(')[-1].split(',')[0]:
+                
+                self._was_mounted = True
+                # Get the string between " on " and the "(" symbol, then strip.
+                mount_point = mount.split(' on ')[1].split('(')[0].strip()                
+
+                # Reset the connection's mount point to the discovered value.
+                if mount_point:
+                    print "%s is already mounted at %s.\n" % (URL, mount_point)
+                    self.connection['mount_point'] = mount_point
+
+        # Do an inexpensive double check...
         return os.path.ismount(self.connection['mount_point'])
 
     def copy_pkg(self, filename, id_=-1):
