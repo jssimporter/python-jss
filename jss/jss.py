@@ -1236,12 +1236,59 @@ class JSSUser(JSSFlatObject):
 class LDAPServer(JSSContainerObject):
     _url = '/ldapservers'
 
-    def get_user(self, user):
+    def search_users(self, user):
+        """Search for LDAP users.
+
+        It is not entirely clear how the JSS determines the results-
+        are regexes allowed, or globbing?
+
+        Will raise a JSSGetError if no results are found.
+
+        Returns an LDAPUsersResult object.
+
+        """
         user_url = "%s/%s/%s" % (self.get_object_url(), 'user', user)
         print(user_url)
         response = self.jss.get(user_url)
-        return LDAPUsers(self.jss, response)
+        return LDAPUsersResults(self.jss, response)
 
+    def search_groups(self, group):
+        """Search for LDAP groups.
+
+        It is not entirely clear how the JSS determines the results-
+        are regexes allowed, or globbing?
+
+        Will raise a JSSGetError if no results are found.
+
+        Returns an LDAPGroupsResult object.
+
+        """
+        group_url = "%s/%s/%s" % (self.get_object_url(), 'group', group)
+        response = self.jss.get(group_url)
+        return LDAPGroupsResults(self.jss, response)
+
+    def is_user_in_group(self, user, group):
+        """Test for whether a user is in a group. Returns bool."""
+        search_url = "%s/%s/%s/%s/%s" % (self.get_object_url(), 'group', group,
+                                         'user', user)
+        response = self.jss.get(search_url)
+        # Sanity check
+        length = len(response)
+        result = False
+        if length  == 1:
+            # User doesn't exist. Use default False value.
+            pass
+        elif length == 2:
+            if response.findtext('ldap_user/username') == user:
+                if response.findtext('ldap_user/is_member') == 'Yes':
+                    result = True
+        elif len(response) >= 2:
+            raise JSSGetError("Unexpected response.")
+        return result
+
+    # There is also the ability to test for whether multiple users are
+    # members of an LDAP group, but you should just call
+    # is_user_in_group over an enumerated list of users.
 
     @property
     def id(self):
@@ -1250,9 +1297,28 @@ class LDAPServer(JSSContainerObject):
         result = self.findtext('connection/id')
         return result
 
-class LDAPUsers(JSSContainerObject):
-    #_url = '/ldapservers'
-    pass
+    @property
+    def name(self):
+        """Return object name or None."""
+        # LDAPServer's name is in 'connection'
+        result = self.findtext('connection/name')
+        return result
+
+
+class LDAPUsersResults(JSSContainerObject):
+    """Helper class for results of LDAPServer queries for users."""
+    can_get = False
+    can_post = False
+    can_put = False
+    can_delete = False
+
+
+class LDAPGroupsResults(JSSContainerObject):
+    """Helper class for results of LDAPServer queries for groups."""
+    can_get = False
+    can_post = False
+    can_put = False
+    can_delete = False
 
 
 class LicensedSoftware(JSSContainerObject):
