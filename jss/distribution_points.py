@@ -381,7 +381,7 @@ class MountedRepository(Repository):
         was_mounted = False
 
         for mount in mount_check:
-            fs_type = re.search('\(([\w]*fs),.*$', mount).group(1)
+            fs_type = re.search('\(([\w]*),.*$', mount).group(1)
             # Automounts, non-network shares, and network shares
             # all have a slightly different format, so it's easiest to
             # just split.
@@ -401,7 +401,7 @@ class MountedRepository(Repository):
                     self.connection['mount_point'] = mount_point
                     if self.connection['jss'].verbose:
                         print("%s is already mounted at %s.\n" % \
-                              (URL, mount_point))
+                              (self.connection['URL'], mount_point))
 
                 # We found the share, no need to continue.
                 break
