@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -319,7 +320,6 @@ class MountedRepository(Repository):
 
     def __init__(self, **connection_args):
         super(MountedRepository, self).__init__(**connection_args)
-        self._was_mounted = False
 
     def _build_url(self):
         pass
@@ -384,11 +384,6 @@ class MountedRepository(Repository):
                 (self.connection['mount_point'], count)
             count += 1
 
-        share_name = urllib.quote(self.connection['share_name'],
-                                  safe='~()*!.\'')
-        URL = self.connection['URL']
-        port = self.connection['port']
-
         mount_check = subprocess.check_output('mount').splitlines()
         # The mount command returns lines like this...
         # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO
@@ -397,18 +392,24 @@ class MountedRepository(Repository):
         valid_mount_strings = self._get_valid_mount_strings()
 
         for mount in mount_check:
-            if any(match in mount.split(' on ')[0] for match in valid_mount_strings) and self.fs_type in mount.rsplit('(')[-1].split(',')[0]:
+            fs_type = re.search('\(([\w]*fs),.*$', mount).group(1)
+            mount_string = mount.split(' on ')[0]
+            if [mstring for mstring in valid_mount_strings if
+                mstring in mount_string] and self.fs_type == fs_type:
 
-                self._was_mounted = True
-                # Get the string between " on " and the "(" symbol, then
-                # strip.
-                mount_point = mount.split(' on ')[1].split('(')[0].strip()
+                # Get the mount point string between from the end back to
+                # the last "on", but before the options (wrapped in
+                # parenthesis). Considers alphanumerics, / , _ , - and a
+                # blank space as valid, but no crazy chars.
+                mount_point = re.search('on ([\w/ -]*) \(.*$', mount).group(1)
 
                 # Reset the connection's mount point to the discovered
                 # value.
                 if mount_point:
-                    print "%s is already mounted at %s.\n" % (URL, mount_point)
                     self.connection['mount_point'] = mount_point
+                    if self.connection['jss'].verbose:
+                        print("%s is already mounted at %s.\n" % \
+                              (URL, mount_point))
 
                 # We found the share, no need to continue.
                 break
