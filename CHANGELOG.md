@@ -1,4 +1,9 @@
-### 0.5.7 (UNRELEASED) The Next Episode
+### 0.5.7 (March 10, 2015) The Next Episode
+
+FIXES:
+
+- Mounted distribution points ```is_mounted``` method now looks for mounted shares by server, and updates mount point dynamically if it is different than configured. This prevents issues when multiple shares have the same name, or when Casper Admin is open and has mounted them already, with different-than-expected share names. Thanks @eahrold!
+- Mounted distribution points ```__repr__``` corrected to make use of ```is_mounted```.
 
 CHANGES:
 
@@ -6,6 +11,8 @@ CHANGES:
 	- ```search_users()``` searches for users.
 	- ```search_groups()``` searches for groups.
 	- ```is_user_in_group()``` tests for group membership by user.
+- Mounted repositories' ```umount``` now has a ```forced``` argument which defaults to ```True```.
+- Mounted repositories' ```mount_point```, due to the dynamic handling above, is no longer made by concatenating the repo name or "JSS" and share name. Thanks @eahrold!
 
 ### 0.5.6 (March 6, 2015) Tonkatsu
 
