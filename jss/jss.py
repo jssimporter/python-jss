@@ -25,12 +25,14 @@ import os
 import re
 import copy
 import subprocess
+import ssl
 
 from .exceptions import (
     JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
     JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
     JSSUnsupportedSearchMethodError, JSSFileUploadParameterError)
 from . import distribution_points
+from .tlsadapter import TLSAdapter
 from .contrib import requests
 try:
     from .contrib import FoundationPlist
@@ -150,6 +152,9 @@ class JSS(object):
         self.session.verify = self.ssl_verify
         headers = {"content-type": 'text/xml', 'Accept': 'application/xml'}
         self.session.headers.update(headers)
+        # Add a TransportAdapter to force TLS, since JSS no longer
+        # accepts SSLv23, which is the default.
+        self.session.mount(self.base_url, TLSAdapter())
         self.factory = JSSObjectFactory(self)
         self.distribution_points = distribution_points.DistributionPoints(self)
 
