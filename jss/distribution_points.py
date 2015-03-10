@@ -393,10 +393,13 @@ class MountedRepository(Repository):
 
         for mount in mount_check:
             fs_type = re.search('\(([\w]*fs),.*$', mount).group(1)
+            # Automounts, non-network shares, and network shares
+            # all have a slightly different format, so it's easiest to
+            # just split.
             mount_string = mount.split(' on ')[0]
+            # Does the mount_string match one of our valid_mount_strings?
             if [mstring for mstring in valid_mount_strings if
                 mstring in mount_string] and self.fs_type == fs_type:
-
                 # Get the mount point string between from the end back to
                 # the last "on", but before the options (wrapped in
                 # parenthesis). Considers alphanumerics, / , _ , - and a
