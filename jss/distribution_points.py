@@ -239,11 +239,15 @@ class DistributionPoints(object):
             if hasattr(child, 'mount'):
                 child.mount()
 
-    def umount(self):
-        """Umount all mountable distribution points."""
+    def umount(self, forced=True):
+        """Umount all mountable distribution points.
+
+        Defaults to using forced method.
+
+        """
         for child in self._children:
             if hasattr(child, 'umount'):
-                child.umount()
+                child.umount(forced)
 
     def exists(self, filename):
         """Report whether a file exists on all distribution points.
@@ -342,26 +346,25 @@ class MountedRepository(Repository):
 
             subprocess.check_call(args)
 
-    def umount(self):
-        """Try to unmount our mount point."""
+    def umount(self, forced=True):
+        """Try to unmount our mount point.
+
+        Defaults to using forced method.
+
+        """
         # If not mounted, don't bother.
-
         if os.path.exists(self.connection['mount_point']):
-            if self._was_mounted:
-                print("Distribution point was previously mounted, will not "
-                      "unmount")
-
-            # Force an unmount. If you are manually mounting and
-            # unmounting shares with python, chances are good that you
-            # know what you are doing and *want* it to unmount. For
-            # real.
-            elif sys.platform == 'darwin':
-                subprocess.check_call(['/usr/sbin/diskutil', 'unmount',
-                                       'force',
-                                       self.connection['mount_point']])
+            if sys.platform == 'darwin':
+                cmd = ['/usr/sbin/diskutil', 'unmount',
+                       self.connection['mount_point']]
+                if forced:
+                    cmd.insert(2, 'force')
+                subprocess.check_call(cmd)
             else:
-                subprocess.check_call(['umount', '-f',
-                                       self.connection['mount_point']])
+                cmd = ['umount', self.connection['mount_point']]
+                if forced:
+                    cmd.insert(1, '-f')
+                subprocess.check_call(cmd)
 
     def is_mounted(self):
         """ Test for whether a mount point is mounted.
