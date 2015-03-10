@@ -373,23 +373,13 @@ class MountedRepository(Repository):
         mounted and update the connection's mount_point accordingly.
 
         """
-        # Initially check to see if mounted path exists for the currently
-        # defined mount_point. This will catch situations where different
-        # servers, have the same share name. If the actual mount is
-        # detected further down it will get updated to the correct
-        # 'mount_point' value.
-        count = 1
-        while os.path.ismount(self.connection['mount_point']):
-            self.connection['mount_point'] = "%s-%s" % \
-                (self.connection['mount_point'], count)
-            count += 1
-
         mount_check = subprocess.check_output('mount').splitlines()
         # The mount command returns lines like this...
         # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO
         # (afpfs, nodev, nosuid, mounted by local_me)
 
         valid_mount_strings = self._get_valid_mount_strings()
+        was_mounted = False
 
         for mount in mount_check:
             fs_type = re.search('\(([\w]*fs),.*$', mount).group(1)
@@ -405,7 +395,7 @@ class MountedRepository(Repository):
                 # parenthesis). Considers alphanumerics, / , _ , - and a
                 # blank space as valid, but no crazy chars.
                 mount_point = re.search('on ([\w/ -]*) \(.*$', mount).group(1)
-
+                was_mounted = True
                 # Reset the connection's mount point to the discovered
                 # value.
                 if mount_point:
@@ -416,6 +406,16 @@ class MountedRepository(Repository):
 
                 # We found the share, no need to continue.
                 break
+
+        if not was_mounted:
+            # If the share is not mounted, check for another share
+            # mounted to the same path and if found, incremement the
+            # name to avoid conflicts.
+            count = 1
+            while os.path.ismount(self.connection['mount_point']):
+                self.connection['mount_point'] = "%s-%s" % \
+                    (self.connection['mount_point'], count)
+                count += 1
 
         # Do an inexpensive double check...
         return os.path.ismount(self.connection['mount_point'])
@@ -569,8 +569,7 @@ class MountedRepository(Repository):
     def __repr__(self):
         """Add mount status to output."""
         output = super(MountedRepository, self).__repr__()
-        output += "Mounted: %s\n" % \
-            os.path.ismount(self.connection['mount_point'])
+        output += "Mounted: %s\n" % self.is_mounted()
         return output
 
     def _encode_password(self):
