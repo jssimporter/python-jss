@@ -30,7 +30,6 @@ import sys
 import urllib
 
 import casper
-from .contrib import requests
 from .exceptions import JSSUnsupportedFileType
 
 

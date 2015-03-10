@@ -7,12 +7,15 @@ FIXES:
 
 CHANGES:
 
+- Adds ```tlsadapter.py``` to subclass ```requests.HTTPAdapter``` into using ```PROTOCOL_TLSv1```. Removes need for manually editing each requests release.
+- Updates requests to 2.5.3
 - Adds in extra LDAPServer methods.
 	- ```search_users()``` searches for users.
 	- ```search_groups()``` searches for groups.
 	- ```is_user_in_group()``` tests for group membership by user.
 - Mounted repositories' ```umount``` now has a ```forced``` argument which defaults to ```True```.
 - Mounted repositories' ```mount_point```, due to the dynamic handling above, is no longer made by concatenating the repo name or "JSS" and share name. Thanks @eahrold!
+- Remove unused requests import in distribution_points.
 
 ### 0.5.6 (March 6, 2015) Tonkatsu
 
