@@ -1544,6 +1544,15 @@ class Policy(JSSContainerObject):
                                                       "computer_groups")
         self.buildings = ElementTree.SubElement(self.scope, "buldings")
         self.departments = ElementTree.SubElement(self.scope, "departments")
+        self.limitations = ElementTree.SubElement(self.scope, "limitations")
+        self.limited_users = ElementTree.SubElement(self.limitations,
+                                                    "users")
+        self.limited_user_groups = ElementTree.SubElement(self.limitations,
+                                                          "user_groups")
+        self.limited_network_segments = ElementTree.SubElement(
+            self.limitations, "network_segments")
+        self.limited_ibeacons = ElementTree.SubElement(self.limitations,
+                                                       "ibeacons")
         self.exclusions = ElementTree.SubElement(self.scope, "exclusions")
         self.excluded_computers = ElementTree.SubElement(self.exclusions,
                                                          "computers")
@@ -1553,6 +1562,14 @@ class Policy(JSSContainerObject):
             self.exclusions, "buildings")
         self.excluded_departments = ElementTree.SubElement(self.exclusions,
                                                            "departments")
+        self.excluded_users = ElementTree.SubElement(self.exclusions,
+                                                    "users")
+        self.excluded_user_groups = ElementTree.SubElement(self.exclusions,
+                                                          "user_groups")
+        self.excluded_network_segments = ElementTree.SubElement(
+            self.exclusions, "network_segments")
+        self.excluded_ibeacons = ElementTree.SubElement(self.exclusions,
+                                                       "ibeacons")
 
         # Self Service
         self.self_service = ElementTree.SubElement(self, "self_service")
