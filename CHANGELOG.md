@@ -1,4 +1,4 @@
-### 0.5.7 (March 10, 2015) The Next Episode
+### 0.5.7 (March 17, 2015) Corned Beef and Cabbage
 
 FIXES:
 
