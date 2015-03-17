@@ -25,12 +25,14 @@ import os
 import re
 import copy
 import subprocess
+import ssl
 
 from .exceptions import (
     JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
     JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
     JSSUnsupportedSearchMethodError, JSSFileUploadParameterError)
 from . import distribution_points
+from .tlsadapter import TLSAdapter
 from .contrib import requests
 try:
     from .contrib import FoundationPlist
@@ -150,6 +152,9 @@ class JSS(object):
         self.session.verify = self.ssl_verify
         headers = {"content-type": 'text/xml', 'Accept': 'application/xml'}
         self.session.headers.update(headers)
+        # Add a TransportAdapter to force TLS, since JSS no longer
+        # accepts SSLv23, which is the default.
+        self.session.mount(self.base_url, TLSAdapter())
         self.factory = JSSObjectFactory(self)
         self.distribution_points = distribution_points.DistributionPoints(self)
 
@@ -576,7 +581,7 @@ class JSSObject(ElementTree.Element):
                     return '%s%s%s' % (cls._url, cls.search_types[key], value)
                 else:
                     raise JSSUnsupportedSearchMethodError(
-                        "This object cannot" "be queried by %s." % key)
+                        "This object cannot be queried by %s." % key)
             else:
                 return '%s%s%s' % (cls._url,
                                    cls.search_types[cls.default_search], data)
@@ -1147,6 +1152,9 @@ class FileUpload(object):
                                               "%s" % id_types)
         self._id = str(_id)
 
+        # To support curl workaround in FileUpload.save()...
+        self.resource_path = resource
+
         self.resource = {'name': (os.path.basename(resource),
                                   open(resource, 'rb'), 'multipart/form-data')}
 
@@ -1158,27 +1166,54 @@ class FileUpload(object):
                                      self.resource_type, self.id_type,
                                      str(self._id)])
 
-    def save(self):
-        """POST the object to the JSS."""
-        try:
-            response = requests.post(self._upload_url,
-                                     auth=self.jss.session.auth,
-                                     verify=self.jss.session.verify,
-                                     files=self.resource)
-        except JSSPostError as e:
-            if e.status_code == 409:
-                raise JSSPostError("Object Conflict! If trying to post a "
-                                   "new object, look for name conflict and "
-                                   "delete.")
-            else:
-                raise JSSMethodNotAllowedError(self.__class__.__name__)
+    #def save(self):
+    #    """POST the object to the JSS."""
+    #    try:
+    #        response = requests.post(self._upload_url,
+    #                                 auth=self.jss.session.auth,
+    #                                 verify=self.jss.session.verify,
+    #                                 files=self.resource)
+    #    except JSSPostError as e:
+    #        if e.status_code == 409:
+    #            raise JSSPostError("Object Conflict! If trying to post a "
+    #                               "new object, look for name conflict and "
+    #                               "delete.")
+    #        else:
+    #            raise JSSMethodNotAllowedError(self.__class__.__name__)
 
-        if response.status_code == 201:
+    #    if response.status_code == 201:
+    #        if self.jss.verbose:
+    #            print("POST: Success")
+    #            print(response.text.encode('utf-8'))
+    #    elif response.status_code >= 400:
+    #        self.jss._error_handler(JSSPostError, response)
+
+    def save(self):
+        """POST the object to the JSS. WORKAROUND version."""
+        try:
+            # A regression introduced in JSS 9.64 prevents this from
+            # working correctly. Until a solution is found, shell out
+            # to curl.
+
+            curl = ['/usr/bin/curl', '-kvu', '%s:%s' % self.jss.session.auth,
+                    self._upload_url, '-F', 'name=@%s' %
+                    os.path.expanduser(self.resource_path), '-X', 'POST']
+            response = subprocess.check_output(curl, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            # Handle problems with curl.
+            raise JSSPostError("Curl subprocess error code: %s" % e.message)
+
+        http_response_regex = '.*HTTP/1.1 ([0-9]{3}) ([a-zA-Z ]*)'
+        found_patterns = re.findall(http_response_regex, response)
+        if len(found_patterns) > 0:
+            final_response = found_patterns[-1]
+        else:
+            raise JSSPostError("Unknown curl error.")
+        if int(final_response[0]) >= 400:
+            raise JSSPostError("Curl error: %s, %s" % final_response)
+        elif int(final_response[0]) == 201:
             if self.jss.verbose:
                 print("POST: Success")
-                print(response.text.encode('utf-8'))
-        elif response.status_code >= 400:
-            self.jss._error_handler(JSSPostError, response)
 
 
 class GSXConnection(JSSFlatObject):
@@ -1205,6 +1240,90 @@ class JSSUser(JSSFlatObject):
 
 class LDAPServer(JSSContainerObject):
     _url = '/ldapservers'
+
+    def search_users(self, user):
+        """Search for LDAP users.
+
+        It is not entirely clear how the JSS determines the results-
+        are regexes allowed, or globbing?
+
+        Will raise a JSSGetError if no results are found.
+
+        Returns an LDAPUsersResult object.
+
+        """
+        user_url = "%s/%s/%s" % (self.get_object_url(), 'user', user)
+        print(user_url)
+        response = self.jss.get(user_url)
+        return LDAPUsersResults(self.jss, response)
+
+    def search_groups(self, group):
+        """Search for LDAP groups.
+
+        It is not entirely clear how the JSS determines the results-
+        are regexes allowed, or globbing?
+
+        Will raise a JSSGetError if no results are found.
+
+        Returns an LDAPGroupsResult object.
+
+        """
+        group_url = "%s/%s/%s" % (self.get_object_url(), 'group', group)
+        response = self.jss.get(group_url)
+        return LDAPGroupsResults(self.jss, response)
+
+    def is_user_in_group(self, user, group):
+        """Test for whether a user is in a group. Returns bool."""
+        search_url = "%s/%s/%s/%s/%s" % (self.get_object_url(), 'group', group,
+                                         'user', user)
+        response = self.jss.get(search_url)
+        # Sanity check
+        length = len(response)
+        result = False
+        if length  == 1:
+            # User doesn't exist. Use default False value.
+            pass
+        elif length == 2:
+            if response.findtext('ldap_user/username') == user:
+                if response.findtext('ldap_user/is_member') == 'Yes':
+                    result = True
+        elif len(response) >= 2:
+            raise JSSGetError("Unexpected response.")
+        return result
+
+    # There is also the ability to test for whether multiple users are
+    # members of an LDAP group, but you should just call
+    # is_user_in_group over an enumerated list of users.
+
+    @property
+    def id(self):
+        """Return object ID or None."""
+        # LDAPServer's ID is in 'connection'
+        result = self.findtext('connection/id')
+        return result
+
+    @property
+    def name(self):
+        """Return object name or None."""
+        # LDAPServer's name is in 'connection'
+        result = self.findtext('connection/name')
+        return result
+
+
+class LDAPUsersResults(JSSContainerObject):
+    """Helper class for results of LDAPServer queries for users."""
+    can_get = False
+    can_post = False
+    can_put = False
+    can_delete = False
+
+
+class LDAPGroupsResults(JSSContainerObject):
+    """Helper class for results of LDAPServer queries for groups."""
+    can_get = False
+    can_post = False
+    can_put = False
+    can_delete = False
 
 
 class LicensedSoftware(JSSContainerObject):

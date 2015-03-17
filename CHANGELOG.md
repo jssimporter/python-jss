@@ -1,3 +1,29 @@
+### 0.5.7 (March 17, 2015) Corned Beef and Cabbage
+
+FIXES:
+
+- Mounted distribution points ```is_mounted``` method now looks for mounted shares by server, and updates mount point dynamically if it is different than configured. This prevents issues when multiple shares have the same name, or when Casper Admin is open and has mounted them already, with different-than-expected share names. Thanks @eahrold!
+- Mounted distribution points ```__repr__``` corrected to make use of ```is_mounted```.
+
+CHANGES:
+
+- Adds ```tlsadapter.py``` to subclass ```requests.HTTPAdapter``` into using ```PROTOCOL_TLSv1```. Removes need for manually editing each requests release.
+- Updates requests to 2.5.3
+- Adds in extra LDAPServer methods.
+	- ```search_users()``` searches for users.
+	- ```search_groups()``` searches for groups.
+	- ```is_user_in_group()``` tests for group membership by user.
+- Mounted repositories' ```umount``` now has a ```forced``` argument which defaults to ```True```.
+- Mounted repositories' ```mount_point```, due to the dynamic handling above, is no longer made by concatenating the repo name or "JSS" and share name. Thanks @eahrold!
+- Remove unused requests import in distribution_points.
+
+### 0.5.6 (March 6, 2015) Tonkatsu
+
+FIXES:
+
+- Solve regression in JSS >= 9.64 FileUpload API call failing on icon upload with Tomcat Java exception by shelling out to curl.
+- Add ```list_type``` for ```jss.Site``` so it will properly add itself to other objects. Thanks @MScottBlake. (#29)
+
 ### 0.5.5 (February 2, 2015) Sanpo Shimasu
 
 FIXES:

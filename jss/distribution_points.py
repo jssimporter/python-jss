@@ -23,13 +23,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import os
+import re
 import shutil
 import subprocess
 import sys
 import urllib
 
 import casper
-from .contrib import requests
 from .exceptions import JSSUnsupportedFileType
 
 
@@ -111,8 +111,7 @@ class DistributionPoints(object):
                                 dp_object.findtext('read_write_username')
                             password = repo.get('password')
 
-                            mount_point = os.path.join('/Volumes',
-                                    (name + share_name).replace(' ', ''))
+                            mount_point = os.path.join('/Volumes', share_name)
 
                             if connection_type == 'AFP':
                                 dp = AFPDistributionPoint(URL=URL, port=port,
@@ -133,8 +132,6 @@ class DistributionPoints(object):
 
                 # Handle Explictly declared DP's.
                 elif repo.get('type') in ['AFP', 'SMB']:
-                    name = repo.get('name') or 'JSS_DP_%02i' % counter
-                    counter += 1
                     URL = repo['URL']
                     # If found, strip the scheme off the URL
                     # it's reconstructed later
@@ -148,8 +145,7 @@ class DistributionPoints(object):
                     username = repo['username']
                     password = repo['password']
 
-                    mount_point = os.path.join('/Volumes',
-                                               name.replace(' ', ''))
+                    mount_point = os.path.join('/Volumes', share_name)
 
                     if connection_type == 'AFP':
                         # If port isn't given, assume it's the std of
@@ -243,11 +239,15 @@ class DistributionPoints(object):
             if hasattr(child, 'mount'):
                 child.mount()
 
-    def umount(self):
-        """Umount all mountable distribution points."""
+    def umount(self, forced=True):
+        """Umount all mountable distribution points.
+
+        Defaults to using forced method.
+
+        """
         for child in self._children:
             if hasattr(child, 'umount'):
-                child.umount()
+                child.umount(forced)
 
     def exists(self, filename):
         """Report whether a file exists on all distribution points.
@@ -315,6 +315,8 @@ class Repository(object):
 
 class MountedRepository(Repository):
     """Parent class for mountable file shares."""
+    fs_type = 'undefined'
+
     def __init__(self, **connection_args):
         super(MountedRepository, self).__init__(**connection_args)
 
@@ -343,25 +345,126 @@ class MountedRepository(Repository):
 
             subprocess.check_call(args)
 
-    def umount(self):
-        """Try to unmount our mount point."""
+    def umount(self, forced=True):
+        """Try to unmount our mount point.
+
+        Defaults to using forced method.
+
+        """
         # If not mounted, don't bother.
         if os.path.exists(self.connection['mount_point']):
-            # Force an unmount. If you are manually mounting and
-            # unmounting shares with python, chances are good that you
-            # know what you are doing and *want* it to unmount. For
-            # real.
             if sys.platform == 'darwin':
-                subprocess.check_call(['/usr/sbin/diskutil', 'unmount',
-                                       'force',
-                                       self.connection['mount_point']])
+                cmd = ['/usr/sbin/diskutil', 'unmount',
+                       self.connection['mount_point']]
+                if forced:
+                    cmd.insert(2, 'force')
+                subprocess.check_call(cmd)
             else:
-                subprocess.check_call(['umount', '-f',
-                                       self.connection['mount_point']])
+                cmd = ['umount', self.connection['mount_point']]
+                if forced:
+                    cmd.insert(1, '-f')
+                subprocess.check_call(cmd)
 
     def is_mounted(self):
-        """Test for whether a mount point is mounted."""
+        """ Test for whether a mount point is mounted.
+
+        If it is currently mounted, determine the path where it's
+        mounted and update the connection's mount_point accordingly.
+
+        """
+        mount_check = subprocess.check_output('mount').splitlines()
+        # The mount command returns lines like this...
+        # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO
+        # (afpfs, nodev, nosuid, mounted by local_me)
+
+        valid_mount_strings = self._get_valid_mount_strings()
+        was_mounted = False
+
+        for mount in mount_check:
+            fs_type = re.search('\(([\w]*),.*$', mount).group(1)
+            # Automounts, non-network shares, and network shares
+            # all have a slightly different format, so it's easiest to
+            # just split.
+            mount_string = mount.split(' on ')[0]
+            # Does the mount_string match one of our valid_mount_strings?
+            if [mstring for mstring in valid_mount_strings if
+                mstring in mount_string] and self.fs_type == fs_type:
+                # Get the mount point string between from the end back to
+                # the last "on", but before the options (wrapped in
+                # parenthesis). Considers alphanumerics, / , _ , - and a
+                # blank space as valid, but no crazy chars.
+                mount_point = re.search('on ([\w/ -]*) \(.*$', mount).group(1)
+                was_mounted = True
+                # Reset the connection's mount point to the discovered
+                # value.
+                if mount_point:
+                    self.connection['mount_point'] = mount_point
+                    if self.connection['jss'].verbose:
+                        print("%s is already mounted at %s.\n" % \
+                              (self.connection['URL'], mount_point))
+
+                # We found the share, no need to continue.
+                break
+
+        if not was_mounted:
+            # If the share is not mounted, check for another share
+            # mounted to the same path and if found, incremement the
+            # name to avoid conflicts.
+            count = 1
+            while os.path.ismount(self.connection['mount_point']):
+                self.connection['mount_point'] = "%s-%s" % \
+                    (self.connection['mount_point'], count)
+                count += 1
+
+        # Do an inexpensive double check...
         return os.path.ismount(self.connection['mount_point'])
+
+    def _get_valid_mount_strings(self):
+        """Return a tuple of potential mount strings."""
+        # Casper Admin seems to mount in a number of ways:
+        #     - hostname/share
+        #     - fqdn/share
+        # Plus, there's the possibility of:
+        #     - IPAddress/share
+        # Then factor in the possibility that the port is included too!
+
+        # This gives us a total of up to six valid addresses for mount
+        # to report.
+
+        import socket
+        # Express results as a set so we don't have any redundent
+        # entries.
+        results = set()
+        URL = self.connection['URL']
+        share_name = urllib.quote(self.connection['share_name'],
+                                  safe='~()*!.\'')
+        port = self.connection['port']
+
+        # URL from python-jss form:
+        results.add(os.path.join(URL, share_name))
+        results.add(os.path.join('%s:%s' % (URL, port), share_name))
+
+        # IP Address form:
+        # socket.gethostbyname() will return an IP address whether
+        # an IP address, FQDN, or .local name is provided.
+        ip_address = socket.gethostbyname(URL)
+        results.add(os.path.join(ip_address, share_name))
+        results.add(os.path.join('%s:%s' % (ip_address, port), share_name))
+
+        # Domain name only form:
+        domain_name = URL.split('.')[0]
+        results.add(os.path.join(domain_name, share_name))
+        results.add(os.path.join('%s:%s' % (domain_name, port), share_name))
+
+        # FQDN form using getfqdn:
+        # socket.getfqdn() could just resolve back to the ip
+        # or be the same as the initial URL so only add it if it's
+        # different than both.
+        fqdn = socket.getfqdn(ip_address)
+        results.add(os.path.join(fqdn, share_name))
+        results.add(os.path.join('%s:%s' % (fqdn, port), share_name))
+
+        return tuple(results)
 
     def copy_pkg(self, filename, id_=-1):
         """Copy a package to the repo's subdirectory.
@@ -465,8 +568,7 @@ class MountedRepository(Repository):
     def __repr__(self):
         """Add mount status to output."""
         output = super(MountedRepository, self).__repr__()
-        output += "Mounted: %s\n" % \
-            os.path.ismount(self.connection['mount_point'])
+        output += "Mounted: %s\n" % self.is_mounted()
         return output
 
     def _encode_password(self):
@@ -486,6 +588,7 @@ class AFPDistributionPoint(MountedRepository):
 
     """
     protocol = 'afp'
+    fs_type = 'afpfs'
     required_attrs = {'URL', 'mount_point', 'username', 'password',
                       'share_name'}
 
@@ -536,6 +639,7 @@ class SMBDistributionPoint(MountedRepository):
     """
 
     protocol = 'smbfs'
+    fs_type = 'smbfs'
     required_attrs = {'URL', 'share_name', 'mount_point', 'domain', 'username',
                       'password'}
 

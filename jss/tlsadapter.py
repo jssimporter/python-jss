@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-"""
-python-jss
-Python wrapper for JSS API.
+"""tlsadapter.py
 
+TLS Adapter to work with JSS.
 Copyright (C) 2014 Shea G Craig <shea.craig@da.org>
 
 This program is free software: you can redistribute it and/or modify
@@ -20,14 +19,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 
+import ssl
 
-from jss import *
-from casper import Casper
-from distribution_points import DistributionPoints
-from exceptions import (
-    JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
-    JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
-    JSSUnsupportedSearchMethodError, JSSFileUploadParameterError,
-    JSSUnsupportedFileType)
+from .contrib.requests.adapters import HTTPAdapter
+from .contrib.requests.packages.urllib3.poolmanager import PoolManager
 
-__version__ = "0.5.7"
+
+class TLSAdapter(HTTPAdapter):
+    """Transport adapter that uses TLS vs. default of SSLv23."""
+    def init_poolmanager(self, connections, maxsize, block=False):
+        self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize,
+                                       block=block,
+                                       ssl_version=ssl.PROTOCOL_TLSv1)
