@@ -1611,6 +1611,25 @@ class Policy(JSSContainerObject):
         for section in clear_list:
             self.clear_list("%s%s" % ("scope/", section))
 
+    def add_object_to_limitations(self, obj):
+        """Add an object 'obj' to the appropriate scope limitations
+        block.
+
+        obj should be an instance of User, UserGroup, NetworkSegment,
+        or IBeacon.
+
+        """
+        if isinstance(obj, User):
+            self.add_object_to_path(obj, "scope/limitations/users")
+        elif isinstance(obj, UserGroup):
+            self.add_object_to_path(obj, "scope/limitations/user_groups")
+        elif isinstance(obj, NetworkSegment):
+            self.add_object_to_path(obj, "scope/limitations/network_segment")
+        elif isinstance(obj, IBeacon):
+            self.add_object_to_path(obj, "scope/limitations/ibeacons")
+        else:
+            raise TypeError
+
     def add_object_to_exclusions(self, obj):
         """Add an object 'obj' to the appropriate scope exclusions
         block.
