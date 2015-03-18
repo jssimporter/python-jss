@@ -1326,6 +1326,11 @@ class LDAPGroupsResults(JSSContainerObject):
     can_delete = False
 
     def as_user_group(self, jss):
+        """Maps uid to id and groupname to name, then returns a UserGroup type
+        object.
+
+        Useful for using an LDAPGroup in policy limitations and exclusions.
+        """
         result = UserGroup(jss, self.findtext('ldap_group/groupname'))
         ElementTree.SubElement(result, 'id').text = \
             self.findtext('ldap_group/uid')
