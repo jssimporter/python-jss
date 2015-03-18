@@ -1325,6 +1325,11 @@ class LDAPGroupsResults(JSSContainerObject):
     can_put = False
     can_delete = False
 
+    def as_user_group(self, jss):
+        result = UserGroup(jss, self.find('ldap_group/groupname').text)
+        ElementTree.SubElement(result, 'id').text = \
+            self.find('ldap_group/uid').text
+        return result
 
 class LicensedSoftware(JSSContainerObject):
     _url = '/licensedsoftware'
