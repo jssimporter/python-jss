@@ -1336,6 +1336,17 @@ class LDAPGroupsResults(JSSContainerObject):
             self.findtext('ldap_group/uid')
         return result
 
+    def as_computer_group(self, jss):
+        """Maps uid to id and groupname to name, then returns a ComputerGroup
+        type object.
+
+        Useful for using an LDAPGroup in policy limitations and exclusions.
+        """
+        result = ComputerGroup(jss, self.findtext('ldap_group/groupname'))
+        ElementTree.SubElement(result, 'id').text = \
+            self.findtext('ldap_group/uid')
+        return result
+
 class LicensedSoftware(JSSContainerObject):
     _url = '/licensedsoftware'
 
