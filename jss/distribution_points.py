@@ -381,7 +381,11 @@ class MountedRepository(Repository):
         was_mounted = False
 
         for mount in mount_check:
-            fs_type = re.search('\(([\w]*),.*$', mount).group(1)
+            fs_match = re.search('\(([\w]*),*.*\)$', mount)
+            if fs_match:
+                fs_type = fs_match.group(1)
+            else:
+                fs_type = None
             # Automounts, non-network shares, and network shares
             # all have a slightly different format, so it's easiest to
             # just split.
@@ -393,7 +397,12 @@ class MountedRepository(Repository):
                 # the last "on", but before the options (wrapped in
                 # parenthesis). Considers alphanumerics, / , _ , - and a
                 # blank space as valid, but no crazy chars.
-                mount_point = re.search('on ([\w/ -]*) \(.*$', mount).group(1)
+                mount_point_match = re.search(
+                    'on ([\w/ -]*) \(.*$', mount)
+                if mount_point_match:
+                    mount_point = mount_point_match.group(1)
+                else:
+                    mount_point = None
                 was_mounted = True
                 # Reset the connection's mount point to the discovered
                 # value.
