@@ -1,3 +1,9 @@
+### 0.5.8 (March 19, 2015) Echo Sierra Xray India
+
+FIXES:
+
+- Safer regexes present unpredictable mount output from tanking ```is_mounted``` method. (sheagcraig/JSSImporter#35). Thanks for the heads up @rtrouton!
+
 ### 0.5.7 (March 17, 2015) Corned Beef and Cabbage
 
 FIXES:
