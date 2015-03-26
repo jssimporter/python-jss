@@ -172,8 +172,8 @@ class JSS(object):
             if e:
                 error.append(e.group(1))
 
-        error = '\n'.join(error)
-        exception = exception_cls('JSS Error. Response Code: %s\tResponse" %s'
+        error = '. '.join(error)
+        exception = exception_cls('Response Code: %s\tResponse: %s'
                                   % (response.status_code, error))
         exception.status_code = response.status_code
         raise exception
@@ -626,13 +626,7 @@ class JSSObject(ElementTree.Element):
                             updated_data = self.jss.post(self.__class__, url,
                                                          self)
                         except JSSPostError as e:
-                            if e.status_code == 409:
-                                raise JSSPostError(
-                                    "Object Conflict! If trying to post a new "
-                                    "object, look for name conflict and "
-                                    "delete.")
-                            else:
-                                raise JSSPostError(e)
+                            raise JSSPostError(e)
                     else:
                         raise JSSMethodNotAllowedError(self.__class__.__name__)
                 else:
@@ -645,10 +639,7 @@ class JSSObject(ElementTree.Element):
             try:
                 updated_data = self.jss.post(self.__class__, url, self)
             except JSSPostError as e:
-                if e.status_code == 409:
-                    raise JSSPostError("Object Conflict! If trying to post a "
-                                       "new object, look for name conflict and"
-                                       " delete.")
+                raise JSSPostError(e)
 
         # If successful, replace current instance's data with new,
         # JSS-filled data.
@@ -1175,9 +1166,7 @@ class FileUpload(object):
     #                                 files=self.resource)
     #    except JSSPostError as e:
     #        if e.status_code == 409:
-    #            raise JSSPostError("Object Conflict! If trying to post a "
-    #                               "new object, look for name conflict and "
-    #                               "delete.")
+    #            raise JSSPostError(e)
     #        else:
     #            raise JSSMethodNotAllowedError(self.__class__.__name__)
 

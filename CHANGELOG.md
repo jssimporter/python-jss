@@ -1,3 +1,9 @@
+### 0.5.9 (March 26, 2015) The Pricing is the Message
+
+CHANGES:
+
+- Passes JSS error messages through when it returns 409: Conflict. Previously thought to be helpful, not passing along the response from the JSS was obfuscating the cause of the conflict. 409 Post and PUT Exceptions will now report back on the (first) error in the XML.
+
 ### 0.5.8 (March 19, 2015) Echo Sierra Xray India
 
 FIXES:
