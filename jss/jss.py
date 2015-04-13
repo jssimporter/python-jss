@@ -1183,6 +1183,7 @@ class FileUpload(object):
             # A regression introduced in JSS 9.64 prevents this from
             # working correctly. Until a solution is found, shell out
             # to curl.
+            # This is defect D-008936.
 
             curl = ['/usr/bin/curl', '-kvu', '%s:%s' % self.jss.session.auth,
                     self._upload_url, '-F', 'name=@%s' %
