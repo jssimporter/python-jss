@@ -25,10 +25,24 @@ from xml.etree import ElementTree
 from nose.tools import *
 
 from jss import *
+try:
+    from jss.contrib import FoundationPlist
+except ImportError as e:
+    if os.uname()[0] == 'Darwin':
+        print("Warning: Import of FoundationPlist failed: %s" % e)
+        print("See README for information on this issue.")
+    import plistlib
 
 
 global j_global
-jp = JSSPrefs(os.path.expanduser('~/Library/Preferences/com.github.sheagcraig.python-jss.test-server.plist'))
+prefs = "com.github.sheagcraig.python-jss.test-server.plist"
+if is_osx():
+    PREF_PATH = os.path.join("~/Library/Preferences", prefs)
+elif is_linux():
+    PREF_PATH = os.path.join("~", "." + prefs)
+else:
+    raise Exception("Unknown/unsupported OS.")
+jp = JSSPrefs(PREF_PATH)
 j_global = JSS(jss_prefs=jp)
 
 TESTPOLICY = 'python-jss Test Policy'
@@ -55,13 +69,24 @@ def setup():
 class TestJSSPrefs(object):
 
     def test_jssprefs(self):
-        jp = JSSPrefs()
-        result = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_user'])
-        assert_in(jp.user, result)
-        result = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_pass'])
-        assert_in(jp.password, result)
-        result = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_url'])
-        assert_in(jp.url, result)
+        jp = JSSPrefs(PREF_PATH)
+        try:
+            prefs = FoundationPlist.readPlist(PREF_PATH)
+        except NameError:
+            # Plist files are probably not binary on non-OS X
+            # machines, so this should be safe.
+            try:
+                prefs = plistlib.readPlist(os.path.expanduser(PREF_PATH))
+            except ExpatError:
+                subprocess.call(['plutil', '-convert', 'xml1',
+                                    PREF_PATH])
+                prefs = plistlib.readPlist(os.path.expanduser(PREF_PATH))
+        #result = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_user'])
+        assert_in(jp.user, prefs["jss_user"])
+        #result = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_pass'])
+        assert_in(jp.password, prefs["jss_pass"] )
+        #result = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_url'])
+        assert_in(jp.url, prefs["jss_url"])
 
     def test_jssprefs_missing_file_error(self):
         assert_raises(JSSPrefsMissingFileError, JSSPrefs, '/nonexistent_path')
@@ -78,9 +103,20 @@ class TestJSS(object):
         assert_is_instance(j, JSS)
 
     def test_jss_with_args(self):
-        authUser = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_user']).strip('\n')
-        authPass = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_pass']).strip('\n')
-        repoUrl = subprocess.check_output(['defaults', 'read', 'com.github.sheagcraig.python-jss', 'jss_url']).strip('\n')
+        try:
+            prefs = FoundationPlist.readPlist(PREF_PATH)
+        except NameError:
+            # Plist files are probably not binary on non-OS X
+            # machines, so this should be safe.
+            try:
+                prefs = plistlib.readPlist(os.path.expanduser(PREF_PATH))
+            except ExpatError:
+                subprocess.call(['plutil', '-convert', 'xml1',
+                                    PREF_PATH])
+                prefs = plistlib.readPlist(os.path.expanduser(PREF_PATH))
+        authUser = prefs["jss_user"]
+        authPass = prefs["jss_pass"]
+        repoUrl = prefs["jss_url"]
         j = JSS(url=repoUrl, user=authUser, password=authPass)
         assert_is_instance(j, JSS)
 

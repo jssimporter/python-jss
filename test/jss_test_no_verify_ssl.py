@@ -30,7 +30,14 @@ from jss import *
 
 # Setup a global JSS object for test usage.
 global j_global
-jp = JSSPrefs(os.path.expanduser('~/Library/Preferences/com.github.sheagcraig.python-jss.test-server.plist'))
+prefs = "com.github.sheagcraig.python-jss.test-server.plist"
+if is_osx():
+    pref_path = os.path.join("~/Library/Preferences", prefs)
+elif is_linux():
+    pref_path = os.path.join("~", "." + prefs)
+else:
+    raise Exception("Unknown/unsupported OS.")
+jp = JSSPrefs(pref_path)
 j_global = JSS(jp, ssl_verify=False)
 
 

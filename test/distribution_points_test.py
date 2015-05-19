@@ -24,8 +24,14 @@ class TestJSSPrefs(object):
         # Make sure that if you don't specify any repository information in
         # your preference file, everything still works correctly (just no
         # repos). Of course, needs a preferences file with no repos in it.
-        jssPrefs = jss.JSSPrefs(
-            os.path.expanduser('~/Library/Preferences/com.github.sheagcraig.python-jss-no-repos.plist'))
+        no_repos_prefs = "com.github.sheagcraig.python-jss-no-repos.plist"
+        if jss.is_osx():
+            pref_path = os.path.join("~/Library/Preferences", no_repos_prefs)
+        elif jss.is_linux():
+            pref_path = os.path.join("~", "." + no_repos_prefs)
+        else:
+            raise Exception("Unknown/unsupported OS.")
+        jssPrefs = jss.JSSPrefs(pref_path)
         assert_is_instance(jssPrefs, jss.JSSPrefs)
 
 
@@ -40,7 +46,8 @@ class TestDistributionPoints(object):
         filename = 'test/distribution_points_test.py'
         j_global.distribution_points.copy(filename)
         assert_true(j_global.distribution_points.exists(os.path.basename(filename)))
-        j_global.Script(os.path.basename(filename)).delete()
+        j_global.distribution_points.delete(os.path.basename(filename))
+        j_global.distribution_points.umount()
 
     def test_copying_pkg(self):
         filename = 'test/distribution_points_test.py.zip'
@@ -48,6 +55,8 @@ class TestDistributionPoints(object):
         assert_true(j_global.distribution_points.exists(os.path.basename(filename)))
         # This test leaves packages cluttering up the repo.
         # Need to add a delete method...
+        j_global.distribution_points.delete(os.path.basename(filename))
+        j_global.distribution_points.umount()
 
 
 class TestMountedRepository(object):
@@ -61,13 +70,16 @@ class TestMountedRepository(object):
 
         test_repo.mount()
         assert_true(os.path.ismount(mount_point))
+        test_repo.umount()
 
     def test_umounting(self):
         # Of course this only tests the distribution points I have configured.
         test_repo = j_global.distribution_points._children[0]
+        # Updates connection information.
+        test_repo.is_mounted()
         mount_point = test_repo.connection['mount_point']
         if not os.path.ismount(mount_point):
-            mount_point.mount()
+            test_repo.mount()
 
         test_repo.umount()
         assert_false(os.path.ismount(mount_point))
