@@ -70,8 +70,13 @@ class JSSPrefs(object):
 
         """
         if preferences_file is None:
-            preferences_file = \
-                '~/Library/Preferences/com.github.sheagcraig.python-jss.plist'
+            plist_name = "com.github.sheagcraig.python-jss.plist"
+            if os.uname()[0] == "Darwin":
+                preferences_file = os.path.join("~", "Library", "Preferences",
+                                                plist_name)
+            elif os.uname()[0] == "Linux":
+                preferences_file = os.path.join("~", "." + plist_name)
+
         preferences_file = os.path.expanduser(preferences_file)
         if os.path.exists(preferences_file):
             try:

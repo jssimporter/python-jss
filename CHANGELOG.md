@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file. This projec
 
 - Adds FileUploads defect number to comments.
 
+### Changed
+
+- Begin working on Linux functionality.
+	- Preferences plist on Linux should be: ```~/.com.github.sheagcraig.python-jss.plist``` and should be a non-binary plist.
 
 ## [0.5.9] - 2015-03-26 - The Pricing is the Message
 
