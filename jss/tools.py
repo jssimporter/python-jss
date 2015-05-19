@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-"""exceptions.py
+"""
+tools.py
+Helper functions for python-jss.
 
-Custom Exceptions for python-jss.
 Copyright (C) 2014, 2015 Shea G Craig <shea.craig@da.org>
 
 This program is free software: you can redistribute it and/or modify
@@ -19,45 +20,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 
-class JSSError(Exception):
-    pass
+import os
 
 
-class JSSPrefsMissingFileError(JSSError):
-    pass
+def is_osx():
+    """Convenience function for testing OS version."""
+    result = False
+    if os.uname()[0] == "Darwin":
+        result = True
+    return result
 
 
-class JSSPrefsMissingKeyError(JSSError):
-    pass
-
-
-class JSSGetError(JSSError):
-    pass
-
-
-class JSSPutError(JSSError):
-    pass
-
-
-class JSSPostError(JSSError):
-    pass
-
-
-class JSSDeleteError(JSSError):
-    pass
-
-
-class JSSMethodNotAllowedError(JSSError):
-    pass
-
-
-class JSSUnsupportedSearchMethodError(JSSError):
-    pass
-
-
-class JSSFileUploadParameterError(JSSError):
-    pass
-
-
-class JSSUnsupportedFileType(JSSError):
-    pass
+def is_linux():
+    """Convenience function for testing OS version."""
+    result = False
+    if os.uname()[0] == "Linux":
+        result = True
+    return result

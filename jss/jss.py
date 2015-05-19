@@ -34,10 +34,11 @@ from .exceptions import (
 from . import distribution_points
 from .tlsadapter import TLSAdapter
 from .contrib import requests
+from .tools import is_osx, is_linux
 try:
     from .contrib import FoundationPlist
 except ImportError as e:
-    if os.uname()[0] == 'Darwin':
+    if is_osx():
         print("Warning: Import of FoundationPlist failed: %s" % e)
         print("See README for information on this issue.")
     import plistlib
@@ -71,11 +72,13 @@ class JSSPrefs(object):
         """
         if preferences_file is None:
             plist_name = "com.github.sheagcraig.python-jss.plist"
-            if os.uname()[0] == "Darwin":
+            if is_osx():
                 preferences_file = os.path.join("~", "Library", "Preferences",
                                                 plist_name)
-            elif os.uname()[0] == "Linux":
+            elif is_linux():
                 preferences_file = os.path.join("~", "." + plist_name)
+            else:
+                raise JSSError("Unsupported OS.")
 
         preferences_file = os.path.expanduser(preferences_file)
         if os.path.exists(preferences_file):

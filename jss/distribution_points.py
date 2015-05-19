@@ -30,7 +30,8 @@ import sys
 import urllib
 
 import casper
-from .exceptions import JSSUnsupportedFileType
+from .exceptions import JSSError, JSSUnsupportedFileType
+from tools import is_osx, is_linux
 
 
 PKG_TYPES = ['.PKG', '.DMG', '.ZIP']
@@ -111,7 +112,13 @@ class DistributionPoints(object):
                                 dp_object.findtext('read_write_username')
                             password = repo.get('password')
 
-                            mount_point = os.path.join('/Volumes', share_name)
+                            if is_osx():
+                                mount_point = os.path.join('/Volumes',
+                                                           share_name)
+                            elif is_linux():
+                                mount_point = os.path.join('/mnt', share_name)
+                            else:
+                                raise JSSError("Unsupported OS.")
 
                             if connection_type == 'AFP':
                                 dp = AFPDistributionPoint(URL=URL, port=port,
@@ -145,7 +152,12 @@ class DistributionPoints(object):
                     username = repo['username']
                     password = repo['password']
 
-                    mount_point = os.path.join('/Volumes', share_name)
+                    if is_osx():
+                        mount_point = os.path.join('/Volumes', share_name)
+                    elif is_linux():
+                        mount_point = os.path.join('/mnt', share_name)
+                    else:
+                        raise JSSError("Unsupported OS.")
 
                     if connection_type == 'AFP':
                         # If port isn't given, assume it's the std of
@@ -326,8 +338,9 @@ class MountedRepository(Repository):
     def mount(self, nobrowse=False):
         """Mount the repository.
 
-        If you want it to be hidden from the GUI, pass nobrowse=True.
-
+        Args:
+            nobrowse: Bool indicating whether you want share to be
+                hidden from the GUI (OS X only).
         """
         # Is this volume already mounted; if so, we're done.
         if not self.is_mounted():
@@ -336,14 +349,22 @@ class MountedRepository(Repository):
             if not os.path.exists(self.connection['mount_point']):
                 os.mkdir(self.connection['mount_point'])
 
-            # Try to mount
-            args = ['mount', '-t', self.protocol, self.connection['mount_url'],
-                    self.connection['mount_point']]
-            if nobrowse:
-                args.insert(1, '-o')
-                args.insert(2, 'nobrowse')
+            # Mount afp on Linux via fuse-afp:
+            # mount_afp 'afp://scraig:<password>@address/share' <mnt_point>
+            # Mount smb on Linux via cifs-utils:
+            # mount -t cifs -o \
+            # username=<user>,password=<password>,domain=<domain>,port=139 \
+            # //server/share /mnt/<mountpoint>
 
-            subprocess.check_call(args)
+            # Try to mount
+            self._mount(nobrowse)
+            #args = ['mount', '-t', self.protocol, self.connection['mount_url'],
+            #        self.connection['mount_point']]
+            #if nobrowse:
+            #    args.insert(1, '-o')
+            #    args.insert(2, 'nobrowse')
+
+            #subprocess.check_call(args)
 
     def umount(self, forced=True):
         """Try to unmount our mount point.
@@ -353,7 +374,7 @@ class MountedRepository(Repository):
         """
         # If not mounted, don't bother.
         if os.path.exists(self.connection['mount_point']):
-            if sys.platform == 'darwin':
+            if is_osx():
                 cmd = ['/usr/sbin/diskutil', 'unmount',
                        self.connection['mount_point']]
                 if forced:
@@ -381,11 +402,16 @@ class MountedRepository(Repository):
         was_mounted = False
 
         for mount in mount_check:
-            fs_match = re.search('\(([\w]*),*.*\)$', mount)
+            if is_osx():
+                fs_match = re.search('\(([\w]*),*.*\)$', mount)
+            if is_linux():
+                fs_match = re.search('type ([\w]*) \(.*\)$', mount)
             if fs_match:
                 fs_type = fs_match.group(1)
             else:
                 fs_type = None
+            #if fs_type:
+            #    print "fs_type: %s fs_match: %s" % (fs_type, fs_match.group())
             # Automounts, non-network shares, and network shares
             # all have a slightly different format, so it's easiest to
             # just split.
@@ -397,10 +423,15 @@ class MountedRepository(Repository):
                 # the last "on", but before the options (wrapped in
                 # parenthesis). Considers alphanumerics, / , _ , - and a
                 # blank space as valid, but no crazy chars.
-                mount_point_match = re.search(
-                    'on ([\w/ -]*) \(.*$', mount)
+                if is_osx():
+                    mount_point_match = re.search('on ([\w/ -]*) \(.*$',
+                                                  mount)
+                elif is_linux():
+                    mount_point_match = re.search(
+                        'on ([\w/ -]*) type .*$', mount)
                 if mount_point_match:
                     mount_point = mount_point_match.group(1)
+                    print mount_point
                 else:
                     mount_point = None
                 was_mounted = True
@@ -484,6 +515,8 @@ class MountedRepository(Repository):
 
         """
         basename = os.path.basename(filename)
+        if not self.is_mounted():
+            self.mount()
         self._copy(filename, os.path.join(self.connection['mount_point'],
                                           'Packages', basename))
 
@@ -530,10 +563,9 @@ class MountedRepository(Repository):
         files.  Will mount if needed.
 
         """
+        full_filename = os.path.abspath(os.path.expanduser(filename))
         if not self.is_mounted():
             self.mount()
-
-        full_filename = os.path.abspath(os.path.expanduser(filename))
 
         if os.path.isdir(full_filename):
             shutil.copytree(full_filename, destination)
@@ -572,6 +604,8 @@ class MountedRepository(Repository):
         else:
             filepath = os.path.join(self.connection['mount_point'],
                                     'Scripts', filename)
+        if not self.is_mounted():
+            self.mount()
         return os.path.exists(filepath)
 
     def __repr__(self):
@@ -639,6 +673,21 @@ class AFPDistributionPoint(MountedRepository):
             self.protocol, auth, self.connection['URL'], port,
             self.connection['share_name'])
 
+    def _mount(self, nobrowse):
+        """OS specific mount."""
+        # mount_afp 'afp://scraig:<password>@address/share' <mnt_point>
+        args = ["mount", "-t", self.protocol, self.connection["mount_url"],
+                self.connection["mount_point"]]
+        if is_osx() and nobrowse:
+            args.insert(1, '-o')
+            args.insert(2, 'nobrowse')
+        elif is_linux():
+            args[0] = "mount_afp"
+        else:
+            raise JSSError("Unsupported OS.")
+
+        subprocess.check_call(args)
+
 
 class SMBDistributionPoint(MountedRepository):
     """Represents a SMB distribution point.
@@ -648,7 +697,6 @@ class SMBDistributionPoint(MountedRepository):
     """
 
     protocol = 'smbfs'
-    fs_type = 'smbfs'
     required_attrs = {'URL', 'share_name', 'mount_point', 'domain', 'username',
                       'password'}
 
@@ -672,6 +720,10 @@ class SMBDistributionPoint(MountedRepository):
 
         """
         super(SMBDistributionPoint, self).__init__(**connection_args)
+        if is_osx():
+            self.fs_type = "smbfs"
+        elif is_linux():
+            self.fs_type = "cifs"
 
     def _build_url(self):
         """Helper method for building mount URL strings."""
@@ -694,6 +746,29 @@ class SMBDistributionPoint(MountedRepository):
         self.connection['mount_url'] = '//%s%s%s/%s' % (
             auth, self.connection['URL'], port, self.connection['share_name'])
 
+    def _mount(self, nobrowse):
+        """OS specific mount."""
+        # mount -t cifs -o \
+        # username=<user>,password=<password>,domain=<domain>,port=139 \
+        # //server/share /mnt/<mountpoint>
+        if is_osx():
+            args = ["mount", "-t", self.protocol, self.connection["mount_url"],
+                    self.connection["mount_point"]]
+            if nobrowse:
+                args.insert(1, '-o')
+                args.insert(2, 'nobrowse')
+        elif is_linux():
+            args = ["mount", "-t", "cifs","-o",
+                    "username=%s,password=%s,domain=%s,port=%s" %
+                    (self.connection["username"], self.connection["password"],
+                     self.connection["domain"], self.connection["port"]),
+                    "//%s/%s" % (self.connection["URL"],
+                               self.connection["share_name"]),
+                    self.connection["mount_point"]]
+        else:
+            raise JSSError("Unsupported OS.")
+
+        subprocess.check_call(args)
 
 class JDS(Repository):
     """Class for representing JDS' and their controlling JSS.

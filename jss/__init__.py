@@ -28,6 +28,7 @@ from exceptions import (
     JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
     JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
     JSSUnsupportedSearchMethodError, JSSFileUploadParameterError,
-    JSSUnsupportedFileType)
+    JSSUnsupportedFileType, JSSError)
+from tools import is_osx, is_linux
 
 __version__ = "1.0.0"
