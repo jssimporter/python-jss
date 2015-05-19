@@ -30,4 +30,4 @@ from exceptions import (
     JSSUnsupportedSearchMethodError, JSSFileUploadParameterError,
     JSSUnsupportedFileType)
 
-__version__ = "0.5.9"
+__version__ = "1.0.0"
