@@ -348,23 +348,8 @@ class MountedRepository(Repository):
             # First, ensure the mountpoint exists
             if not os.path.exists(self.connection['mount_point']):
                 os.mkdir(self.connection['mount_point'])
-
-            # Mount afp on Linux via fuse-afp:
-            # mount_afp 'afp://scraig:<password>@address/share' <mnt_point>
-            # Mount smb on Linux via cifs-utils:
-            # mount -t cifs -o \
-            # username=<user>,password=<password>,domain=<domain>,port=139 \
-            # //server/share /mnt/<mountpoint>
-
             # Try to mount
             self._mount(nobrowse)
-            #args = ['mount', '-t', self.protocol, self.connection['mount_url'],
-            #        self.connection['mount_point']]
-            #if nobrowse:
-            #    args.insert(1, '-o')
-            #    args.insert(2, 'nobrowse')
-
-            #subprocess.check_call(args)
 
     def umount(self, forced=True):
         """Try to unmount our mount point.
@@ -391,12 +376,14 @@ class MountedRepository(Repository):
 
         If it is currently mounted, determine the path where it's
         mounted and update the connection's mount_point accordingly.
-
         """
         mount_check = subprocess.check_output('mount').splitlines()
-        # The mount command returns lines like this...
+        # The mount command returns lines like this on OS X...
         # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO
         # (afpfs, nodev, nosuid, mounted by local_me)
+        # and like this on Linux...
+        # //pretendco.com/jamf on /mnt/jamf type cifs (rw,relatime,
+        # <options>...)
 
         valid_mount_strings = self._get_valid_mount_strings()
         was_mounted = False
@@ -410,8 +397,6 @@ class MountedRepository(Repository):
                 fs_type = fs_match.group(1)
             else:
                 fs_type = None
-            #if fs_type:
-            #    print "fs_type: %s fs_match: %s" % (fs_type, fs_match.group())
             # Automounts, non-network shares, and network shares
             # all have a slightly different format, so it's easiest to
             # just split.
@@ -431,7 +416,6 @@ class MountedRepository(Repository):
                         'on ([\w/ -]*) type .*$', mount)
                 if mount_point_match:
                     mount_point = mount_point_match.group(1)
-                    print mount_point
                 else:
                     mount_point = None
                 was_mounted = True
@@ -769,6 +753,7 @@ class SMBDistributionPoint(MountedRepository):
             raise JSSError("Unsupported OS.")
 
         subprocess.check_call(args)
+
 
 class JDS(Repository):
     """Class for representing JDS' and their controlling JSS.
