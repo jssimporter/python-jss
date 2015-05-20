@@ -14,7 +14,7 @@ Automating policy creation is streamlined; however, class
 ```MobileDeviceInvitations``` provides nothing beyond basic ```JSSObject```
 methods and properties to the API. Those aspects which I use heavily in our
 organization, and in support of
-[jss-autopkg-addon](https://www.github.com/sheagcraig/jss-autopkg-addon), tend
+[JSSImporter](https://www.github.com/sheagcraig/JSSImporter), tend
 to be more fleshed out, whereas aspects of the JSS API that I never use tend to
 be minimalistic. However, based on the code here, it should be easy for anyone
 wishing to do so to implement a ```new()``` method for those objects they're
@@ -42,4 +42,4 @@ Usage:
 =================
 Please see [the wiki](https://github.com/sheagcraig/python-jss/wiki) for complete documentation.
 
-Also, [my blog](http://labs.da.org/wordpress/sheagcraig/) has a series of posts about using [python-jss](https://github.com/sheagcraig/python-jss), [JSSImporter](https://github.com/sheagcraig/jss-autopkg-addon), and [jss-helper](https://github.com/sheagcraig/jss_helper), and solving unique problems using these tools.
+Also, [my blog](http://labs.da.org/wordpress/sheagcraig/) has a series of posts about using [python-jss](https://github.com/sheagcraig/python-jss), [JSSImporter](https://github.com/sheagcraig/JSSImporter), and [jss_helper](https://github.com/sheagcraig/jss_helper), and solving unique problems using these tools.
