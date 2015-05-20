@@ -38,6 +38,14 @@ Check them out at:
 requests: http://docs.python-requests.org/en/latest/
 FoundationPlist is part of Munki: https://code.google.com/p/munki/
 
+Linux:
+=================
+python-jss on Linux has some extra dependencies if you need to be able to mount distribution points.
+- AFP distribution points require the ```fuse-afp``` package.
+- SMB distribution points require the ```cifs-utils``` package. 
+
+As I'm currently developing on Fedora, these requirements are specific to RedHat-based distros. Feel free to test and comment on Debian so I can update!
+
 Usage:
 =================
 Please see [the wiki](https://github.com/sheagcraig/python-jss/wiki) for complete documentation.
