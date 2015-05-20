@@ -1323,6 +1323,27 @@ class LDAPGroupsResults(JSSContainerObject):
     can_put = False
     can_delete = False
 
+    def as_user_group(self, jss):
+        """Maps uid to id and groupname to name, then returns a UserGroup type
+        object.
+
+        Useful for using an LDAPGroup in policy limitations and exclusions.
+        """
+        result = UserGroup(jss, self.findtext('ldap_group/groupname'))
+        ElementTree.SubElement(result, 'id').text = \
+            self.findtext('ldap_group/uid')
+        return result
+
+    def as_computer_group(self, jss):
+        """Maps uid to id and groupname to name, then returns a ComputerGroup
+        type object.
+
+        Useful for using an LDAPGroup in policy limitations and exclusions.
+        """
+        result = ComputerGroup(jss, self.findtext('ldap_group/groupname'))
+        ElementTree.SubElement(result, 'id').text = \
+            self.findtext('ldap_group/uid')
+        return result
 
 class LicensedSoftware(JSSContainerObject):
     _url = '/licensedsoftware'
@@ -1542,6 +1563,15 @@ class Policy(JSSContainerObject):
                                                       "computer_groups")
         self.buildings = ElementTree.SubElement(self.scope, "buldings")
         self.departments = ElementTree.SubElement(self.scope, "departments")
+        self.limitations = ElementTree.SubElement(self.scope, "limitations")
+        self.limited_users = ElementTree.SubElement(self.limitations,
+                                                    "users")
+        self.limited_user_groups = ElementTree.SubElement(self.limitations,
+                                                          "user_groups")
+        self.limited_network_segments = ElementTree.SubElement(
+            self.limitations, "network_segments")
+        self.limited_ibeacons = ElementTree.SubElement(self.limitations,
+                                                       "ibeacons")
         self.exclusions = ElementTree.SubElement(self.scope, "exclusions")
         self.excluded_computers = ElementTree.SubElement(self.exclusions,
                                                          "computers")
@@ -1551,6 +1581,14 @@ class Policy(JSSContainerObject):
             self.exclusions, "buildings")
         self.excluded_departments = ElementTree.SubElement(self.exclusions,
                                                            "departments")
+        self.excluded_users = ElementTree.SubElement(self.exclusions,
+                                                    "users")
+        self.excluded_user_groups = ElementTree.SubElement(self.exclusions,
+                                                          "user_groups")
+        self.excluded_network_segments = ElementTree.SubElement(
+            self.exclusions, "network_segments")
+        self.excluded_ibeacons = ElementTree.SubElement(self.exclusions,
+                                                       "ibeacons")
 
         # Self Service
         self.self_service = ElementTree.SubElement(self, "self_service")
@@ -1591,6 +1629,25 @@ class Policy(JSSContainerObject):
                       "exclusions/user_groups", "exclusions/network_segments"]
         for section in clear_list:
             self.clear_list("%s%s" % ("scope/", section))
+
+    def add_object_to_limitations(self, obj):
+        """Add an object 'obj' to the appropriate scope limitations
+        block.
+
+        obj should be an instance of User, UserGroup, NetworkSegment,
+        or IBeacon.
+
+        """
+        if isinstance(obj, User):
+            self.add_object_to_path(obj, "scope/limitations/users")
+        elif isinstance(obj, UserGroup):
+            self.add_object_to_path(obj, "scope/limitations/user_groups")
+        elif isinstance(obj, NetworkSegment):
+            self.add_object_to_path(obj, "scope/limitations/network_segment")
+        elif isinstance(obj, IBeacon):
+            self.add_object_to_path(obj, "scope/limitations/ibeacons")
+        else:
+            raise TypeError
 
     def add_object_to_exclusions(self, obj):
         """Add an object 'obj' to the appropriate scope exclusions
