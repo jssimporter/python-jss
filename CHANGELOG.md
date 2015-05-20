@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [1.0.0] - 2015-05-20 - It's a Catapult
+
 ### Added
 
 - Adds FileUploads defect number to comments.
@@ -14,6 +16,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Changed
 
+- Basic interface is in place; Calling this 1.0.0 now.
 - Begin working on Linux functionality.
 	- Preferences plist on Linux should be: ```~/.com.github.sheagcraig.python-jss.plist``` and should be a non-binary plist.
 	- Mount on OS X has different output format than Linux. Thus, regex searches need to be os-specific.
@@ -420,7 +423,8 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 - Initial release.
 
 
-[unreleased]: https://github.com/sheagcraig/python-jss/compare/v0.5.9...HEAD
+[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/sheagcraig/python-jss/compare/v0.5.9...v1.0.0
 [0.5.9]: https://github.com/sheagcraig/python-jss/compare/v0.5.8...v0.5.9
 [0.5.8]: https://github.com/sheagcraig/python-jss/compare/v0.5.7...v0.5.8
 [0.5.7]: https://github.com/sheagcraig/python-jss/compare/v0.5.6...v0.5.7
