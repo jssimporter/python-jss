@@ -71,7 +71,7 @@ class TestJSSPrefs(object):
     def test_jssprefs(self):
         jp = JSSPrefs(PREF_PATH)
         try:
-            prefs = FoundationPlist.readPlist(PREF_PATH)
+            prefs = FoundationPlist.readPlist(os.path.expanduser(PREF_PATH))
         except NameError:
             # Plist files are probably not binary on non-OS X
             # machines, so this should be safe.
@@ -104,7 +104,7 @@ class TestJSS(object):
 
     def test_jss_with_args(self):
         try:
-            prefs = FoundationPlist.readPlist(PREF_PATH)
+            prefs = FoundationPlist.readPlist(os.path.expanduser(PREF_PATH))
         except NameError:
             # Plist files are probably not binary on non-OS X
             # machines, so this should be safe.
@@ -281,6 +281,8 @@ class TestJSSDeviceObjects(object):
         match = j_global.Computer('match=fs-mbp-test')
         assert_is_instance(match, JSSObjectList)
 
+    # Don't currently have any iOS devices in test JSS, so this will
+    # fail.
     def test_MobileDevice_properties(self):
         computer = j_global.MobileDevice('name=Mstesting')
         assert_equal(computer.wifi_mac_address, 'B0:65:BD:13:EF:47')
