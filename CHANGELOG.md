@@ -8,12 +8,20 @@ All notable changes to this project will be documented in this file. This projec
 ### Added
 
 - Adds FileUploads defect number to comments.
+- Add ```jss.exceptions.JSSError```, and all exceptions now subclass it.
+- Add ```jss.tools``` for misc. tools. (Right now, shorthand os detection functions).
 
 ### Changed
 
 - Begin working on Linux functionality.
 	- Preferences plist on Linux should be: ```~/.com.github.sheagcraig.python-jss.plist``` and should be a non-binary plist.
+	- Mount on OS X has different output format than Linux. Thus, regex searches need to be os-specific.
+	- Mounting a share is also different.
 - As this is largely stable code, set major version to 1.
+
+### Fixed
+
+- Copy methods now make use of the ```is_mounted``` method for dynamic mount point reconfiguration.
 
 ## [0.5.9] - 2015-03-26 - The Pricing is the Message
 
