@@ -1013,6 +1013,18 @@ class ComputerGroup(JSSGroupObject):
     _url = '/computergroups'
     list_type = 'computer_group'
 
+    def __init__(self, jss, data, **kwargs):
+        """Init a ComputerGroup, adding in extra Elements."""
+        # Temporary solution to #34.
+        # When grabbing a ComputerGroup from the JSS, we don't get the
+        # convenience properties for accessing some of the elements
+        # that the new() method adds. For now, this just adds in a
+        # criteria property. But...
+        # TODO(Shea): Find a generic/higher level way to add these
+        #   convenience accessors.
+        super(ComputerGroup, self).__init__(jss, data, **kwargs)
+        self.criteria = self.find("criteria")
+
     def new(self, name, **kwargs):
         """Creates a computer group template.
 

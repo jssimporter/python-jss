@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. This projec
 - Adds FileUploads defect number to comments.
 - Add ```jss.exceptions.JSSError```, and all exceptions now subclass it.
 - Add ```jss.tools``` for misc. tools. (Right now, shorthand os detection functions).
+- Add ```Policy.add_object_to_limitations``` and ```Policy.add_object_to_exclusions```. Thanks to @MScottBlake
 
 ### Changed
 
@@ -22,6 +23,8 @@ All notable changes to this project will be documented in this file. This projec
 ### Fixed
 
 - Copy methods now make use of the ```is_mounted``` method for dynamic mount point reconfiguration.
+- Typo in policy scope for ```building```.
+- ```ComputerGroup.add_criterion``` fails with ```AttributeError``` with pre-existing computer groups. (#34)
 
 ## [0.5.9] - 2015-03-26 - The Pricing is the Message
 
