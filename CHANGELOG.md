@@ -5,29 +5,35 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [1.0.1] - 2015-05-28 - Blink Dogs Ate My Homework
+
+### Fixed
+
+- Regression in AFP mount failing on OSX when nobrowse=False. (#38) Thanks for the heads up @galenrichards!
+
 ## [1.0.0] - 2015-05-20 - It's a Catapult
 
 ### Added
 
 - Adds FileUploads defect number to comments.
-- Add ```jss.exceptions.JSSError```, and all exceptions now subclass it.
-- Add ```jss.tools``` for misc. tools. (Right now, shorthand os detection functions).
-- Add ```Policy.add_object_to_limitations``` and ```Policy.add_object_to_exclusions```. Thanks to @MScottBlake
+- Add `jss.exceptions.JSSError`, and all exceptions now subclass it.
+- Add `jss.tools` for misc. tools. (Right now, shorthand os detection functions).
+- Add `Policy.add_object_to_limitations` and `Policy.add_object_to_exclusions`. Thanks to @MScottBlake
 
 ### Changed
 
 - Basic interface is in place; Calling this 1.0.0 now.
 - Begin working on Linux functionality.
-	- Preferences plist on Linux should be: ```~/.com.github.sheagcraig.python-jss.plist``` and should be a non-binary plist.
+	- Preferences plist on Linux should be: `~/.com.github.sheagcraig.python-jss.plist` and should be a non-binary plist.
 	- Mount on OS X has different output format than Linux. Thus, regex searches need to be os-specific.
 	- Mounting a share is also different.
 - As this is largely stable code, set major version to 1.
 
 ### Fixed
 
-- Copy methods now make use of the ```is_mounted``` method for dynamic mount point reconfiguration.
-- Typo in policy scope for ```building```.
-- ```ComputerGroup.add_criterion``` fails with ```AttributeError``` with pre-existing computer groups. (#34)
+- Copy methods now make use of the `is_mounted` method for dynamic mount point reconfiguration.
+- Typo in policy scope for `building`.
+- `ComputerGroup.add_criterion` fails with `AttributeError` with pre-existing computer groups. (#34)
 
 ## [0.5.9] - 2015-03-26 - The Pricing is the Message
 
@@ -423,7 +429,8 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 - Initial release.
 
 
-[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.0.0...HEAD
+[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/sheagcraig/python-jss/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/sheagcraig/python-jss/compare/v0.5.9...v1.0.0
 [0.5.9]: https://github.com/sheagcraig/python-jss/compare/v0.5.8...v0.5.9
 [0.5.8]: https://github.com/sheagcraig/python-jss/compare/v0.5.7...v0.5.8

@@ -662,9 +662,10 @@ class AFPDistributionPoint(MountedRepository):
         # mount_afp 'afp://scraig:<password>@address/share' <mnt_point>
         args = ["mount", "-t", self.protocol, self.connection["mount_url"],
                 self.connection["mount_point"]]
-        if is_osx() and nobrowse:
-            args.insert(1, '-o')
-            args.insert(2, 'nobrowse')
+        if is_osx():
+            if nobrowse:
+                args.insert(1, '-o')
+                args.insert(2, 'nobrowse')
         elif is_linux():
             args[0] = "mount_afp"
         else:
