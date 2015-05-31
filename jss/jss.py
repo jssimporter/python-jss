@@ -876,6 +876,11 @@ class JSSDeviceObject(JSSContainerObject):
     def serial_number(self):
         """Return device's serial number or None."""
         return self.findtext('general/serial_number')
+    
+    @property
+    def asset_tag(self):
+        """Return device's asset tag or None."""
+        return self.findtext('general/asset_tag')
 
 
 class JSSFlatObject(JSSObject):
