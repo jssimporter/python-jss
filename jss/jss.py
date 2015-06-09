@@ -1405,7 +1405,7 @@ class MobileDeviceInvitation(JSSContainerObject):
     search_types = {'invitation': '/invitation/'}
 
 
-class MobileDeviceGroup(JSSContainerObject):
+class MobileDeviceGroup(JSSGroupObject):
     _url = '/mobiledevicegroups'
     list_type = 'mobile_device_group'
 
