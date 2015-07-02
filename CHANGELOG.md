@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [1.1.0] - 2015-06-10 - Velvet Nachos
+
+### Changed
+
+- `Package.new` now sets the `boot_volume_required` property to `true` by default.
+
 ## [1.0.2] - 2015-06-10 - When Doves Cry
 
 ### Fixed
@@ -435,7 +441,8 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 - Initial release.
 
 
-[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.0.2...HEAD
+[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/sheagcraig/python-jss/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/sheagcraig/python-jss/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/sheagcraig/python-jss/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/sheagcraig/python-jss/compare/v0.5.9...v1.0.0
