@@ -1458,7 +1458,7 @@ class Package(JSSContainerObject):
         feu = ElementTree.SubElement(self, "fill_existing_users")
         feu.text = "false"
         boot_volume = ElementTree.SubElement(self, "boot_volume_required")
-        boot_volume.text = "false"
+        boot_volume.text = "true"
         allow_uninstalled = ElementTree.SubElement(self, "allow_uninstalled")
         allow_uninstalled.text = "false"
         ElementTree.SubElement(self, "os_requirements")
