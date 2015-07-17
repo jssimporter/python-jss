@@ -60,7 +60,7 @@ class JSSPrefs(object):
                             (JSS() handles the appending of
                             /JSSResource)
             jss_user:       API username to use.
-            jss_password:   API password.
+            jss_pass:       API password.
             repos:          (Optional) An array of file repositories
                             dicts to connect.
 
