@@ -20,8 +20,6 @@ from .packages.six import iterkeys, itervalues, PY3
 __all__ = ['RecentlyUsedContainer', 'HTTPHeaderDict']
 
 
-MULTIPLE_HEADERS_ALLOWED = frozenset(['cookie', 'set-cookie', 'set-cookie2'])
-
 _Null = object()
 
 
@@ -143,7 +141,10 @@ class HTTPHeaderDict(dict):
     def __init__(self, headers=None, **kwargs):
         dict.__init__(self)
         if headers is not None:
-            self.extend(headers)
+            if isinstance(headers, HTTPHeaderDict):
+                self._copy_from(headers)
+            else:
+                self.extend(headers)
         if kwargs:
             self.extend(kwargs)
 
@@ -223,26 +224,23 @@ class HTTPHeaderDict(dict):
                 vals.append(val)
             else:
                 # vals should be a tuple then, i.e. only one item so far
-                if key_lower in MULTIPLE_HEADERS_ALLOWED:
-                    # Need to convert the tuple to list for further extension
-                    _dict_setitem(self, key_lower, [vals[0], vals[1], val])
-                else:
-                    _dict_setitem(self, key_lower, new_vals)
+                # Need to convert the tuple to list for further extension
+                _dict_setitem(self, key_lower, [vals[0], vals[1], val])
 
-    def extend(*args, **kwargs):
+    def extend(self, *args, **kwargs):
         """Generic import function for any type of header-like object.
         Adapted version of MutableMapping.update in order to insert items
         with self.add instead of self.__setitem__
         """
-        if len(args) > 2:
-            raise TypeError("update() takes at most 2 positional "
+        if len(args) > 1:
+            raise TypeError("extend() takes at most 1 positional "
                             "arguments ({} given)".format(len(args)))
-        elif not args:
-            raise TypeError("update() takes at least 1 argument (0 given)")
-        self = args[0]
-        other = args[1] if len(args) >= 2 else ()
+        other = args[0] if len(args) >= 1 else ()
         
-        if isinstance(other, Mapping):
+        if isinstance(other, HTTPHeaderDict):
+            for key, val in other.iteritems():
+                self.add(key, val)
+        elif isinstance(other, Mapping):
             for key in other:
                 self.add(key, other[key])
         elif hasattr(other, "keys"):
@@ -276,14 +274,17 @@ class HTTPHeaderDict(dict):
     def __repr__(self):
         return "%s(%s)" % (type(self).__name__, dict(self.itermerged()))
 
-    def copy(self):
-        clone = type(self)()
-        for key in self:
-            val = _dict_getitem(self, key)
+    def _copy_from(self, other):
+        for key in other:
+            val = _dict_getitem(other, key)
             if isinstance(val, list):
                 # Don't need to convert tuples
                 val = list(val)
-            _dict_setitem(clone, key, val)
+            _dict_setitem(self, key, val)
+
+    def copy(self):
+        clone = type(self)()
+        clone._copy_from(self)
         return clone
 
     def iteritems(self):
@@ -303,17 +304,20 @@ class HTTPHeaderDict(dict):
         return list(self.iteritems())
 
     @classmethod
-    def from_httplib(cls, message, duplicates=('set-cookie',)): # Python 2
+    def from_httplib(cls, message): # Python 2
         """Read headers from a Python 2 httplib message object."""
-        ret = cls(message.items())
-        # ret now contains only the last header line for each duplicate.
-        # Importing with all duplicates would be nice, but this would
-        # mean to repeat most of the raw parsing already done, when the
-        # message object was created. Extracting only the headers of interest 
-        # separately, the cookies, should be faster and requires less
-        # extra code.
-        for key in duplicates:
-            ret.discard(key)
-            for val in message.getheaders(key):
-                ret.add(key, val)
-            return ret
+        # python2.7 does not expose a proper API for exporting multiheaders
+        # efficiently. This function re-reads raw lines from the message 
+        # object and extracts the multiheaders properly.
+        headers = []
+         
+        for line in message.headers:
+            if line.startswith((' ', '\t')):
+                key, value = headers[-1]
+                headers[-1] = (key, value + '\r\n' + line.rstrip())
+                continue
+    
+            key, value = line.split(':', 1)
+            headers.append((key, value.strip()))
+
+        return cls(headers)
