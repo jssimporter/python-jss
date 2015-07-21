@@ -26,6 +26,7 @@ import re
 import copy
 import subprocess
 import ssl
+import urlparse
 
 from .exceptions import (
     JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
@@ -147,8 +148,6 @@ class JSS(object):
 
         # Used by some non-API methods.
         self.base_url = url
-        # Used for all API calls.
-        self._url = '%s/JSSResource' % url
         self.user = user
         self.password = password
         self.repo_prefs = repo_prefs
@@ -184,6 +183,22 @@ class JSS(object):
                                   % (response.status_code, error))
         exception.status_code = response.status_code
         raise exception
+
+    @property
+    def _url(self):
+        """The URL to the Casper JSS API endpoints. Get only."""
+        return urlparse.urljoin(self.base_url, "JSSResource")
+
+    @property
+    def base_url(self):
+        """The URL to the Casper JSS, including port if needed."""
+        return self._base_url
+
+    @base_url.setter
+    def base_url(self, url):
+        """The URL to the Casper JSS, including port if needed."""
+        # Remove the frequently included yet incorrect trailing slash.
+        self._base_url = url.rstrip("/")
 
     @property
     def ssl_verify(self):

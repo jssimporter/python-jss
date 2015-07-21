@@ -15,12 +15,14 @@ All notable changes to this project will be documented in this file. This projec
 	- ndg-httpsclient
 	- Previous two required for cipher change support.
 - TODO: Updated documentation to describe this requirement for developer (i.e. anyone who does not use the egg or wheel files to install).
+- `JSS.base_url` (Get and Set) and `JSS._url` (Read only) are now proper properties.
 
 ### Fixed
 
 - Changes the default cipher list for requests/urllib3 to work with recommended changes in JSS >= v9.73.
-- `jss.JSS.verify_ssl` is now a computed property and will properly update the requests session if changed after instantiation.
+- `jss.JSS.ssl_verify` is now a computed property and will properly update the requests session if changed after instantiation.
 - casper package's `Casper` class did not use the requests session on the JSS object passed to it.
+- JSS URL's with a trailing slash will be sanitized to remove that slash upon JSS instantiation or `base_url` update.
 
 ## [1.1.0] - 2015-06-10 - Velvet Nachos
 
