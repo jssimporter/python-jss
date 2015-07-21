@@ -1040,6 +1040,7 @@ class ComputerGroup(JSSGroupObject):
             smartness = False
         self.set_bool(self.is_smart, smartness)
         self.criteria = ElementTree.SubElement(self, "criteria")
+        self.computers = ElementTree.SubElement(self, "computers")
 
     def add_computer(self, device):
         """Add a computer to the group."""
