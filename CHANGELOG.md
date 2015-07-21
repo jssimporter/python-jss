@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+### Changed
+
+- `jss.ComputerGroup`s that are made with the `new` method now include the `computers` subelement.
+- Removed bundled copy of python requests.
+- Using setuptools `setup.py` property `install_requires` to specify dependencies:
+	- requests
+	- pyasn1
+	- ndg-httpsclient
+	- Previous two required for cipher change support.
+- TODO: Updated documentation to describe this requirement for developer (i.e. anyone who does not use the egg or wheel files to install).
+
+### Fixed
+
+- Changes the default cipher list for requests/urllib3 to work with recommended changes in JSS >= v9.73.
+- `jss.JSS.verify_ssl` is now a computed property and will properly update the requests session if changed after instantiation.
+- casper package's `Casper` class did not use the requests session on the JSS object passed to it.
+
 ## [1.1.0] - 2015-06-10 - Velvet Nachos
 
 ### Changed
