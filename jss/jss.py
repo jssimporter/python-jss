@@ -152,12 +152,11 @@ class JSS(object):
         self.user = user
         self.password = password
         self.repo_prefs = repo_prefs
-        self.ssl_verify = ssl_verify
         self.verbose = verbose
         self.jss_migrated = jss_migrated
         self.session = requests.Session()
         self.session.auth = (self.user, self.password)
-        self.session.verify = self.ssl_verify
+        self.ssl_verify = ssl_verify
         headers = {"content-type": 'text/xml', 'Accept': 'application/xml'}
         self.session.headers.update(headers)
         # Add a TransportAdapter to force TLS, since JSS no longer
@@ -185,6 +184,20 @@ class JSS(object):
                                   % (response.status_code, error))
         exception.status_code = response.status_code
         raise exception
+
+    @property
+    def ssl_verify(self):
+        """Boolean value for whether to verify SSL traffic."""
+        return self.session.verify
+
+    @ssl_verify.setter
+    def ssl_verify(self, value):
+        """Boolean value for whether to verify SSL traffic.
+
+        Args:
+            value: Boolean.
+        """
+        self.session.verify = value
 
     def get(self, url):
         """Get a url, handle errors, and return an etree from the XML
