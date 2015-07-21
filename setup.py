@@ -26,7 +26,8 @@ setup(name = 'python-jss',
       author_email = 'shea.craig@da.org',
       url = 'https://github.com/sheagcraig/python-jss/',
       license = 'GPLv3',
-      #install_requires=["requests"],
+      # pyOpenSSL is required, but included in requests.
+      install_requires=["requests", "ndg-httpsclient", "pyasn1"],
       classifiers = [
           'Development Status :: 5 - Production/Stable',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)']

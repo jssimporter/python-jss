@@ -21,9 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import ssl
 
-from .contrib.requests.adapters import HTTPAdapter
-from .contrib.requests.packages.urllib3.poolmanager import PoolManager
-from .contrib.requests.packages.urllib3.contrib import pyopenssl
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.poolmanager import PoolManager
+from requests.packages.urllib3.contrib import pyopenssl
 
 
 CIPHER_LIST = ":".join(["ECDHE-RSA-AES128-GCM-SHA256",

@@ -33,7 +33,7 @@ from .exceptions import (
     JSSUnsupportedSearchMethodError, JSSFileUploadParameterError)
 from . import distribution_points
 from .tlsadapter import TLSAdapter
-from .contrib import requests
+import requests
 from .tools import is_osx, is_linux
 try:
     from .contrib import FoundationPlist
