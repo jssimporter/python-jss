@@ -31,4 +31,4 @@ from exceptions import (
     JSSUnsupportedFileType, JSSError)
 from tools import is_osx, is_linux
 
-__version__ = "1.2.0rc2"
+__version__ = "1.2.0"
