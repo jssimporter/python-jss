@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [1.2.1] - 2015-07-28 - U0001F49A
+
+### Fixed
+
+- Restated cipher list to solve #42 and sheagcraig/jss-autopkg-addon#44. Thanks to @rtrouton for extensive testing patience.
+
 ## [1.2.0] - 2015-07-21 - Your Cipher is all Over my Necktie
 
 ### Changed
@@ -462,7 +468,8 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 - Initial release.
 
 
-[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.2.0...HEAD
+[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/sheagcraig/python-jss/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/sheagcraig/python-jss/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/sheagcraig/python-jss/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/sheagcraig/python-jss/compare/v1.0.1...v1.0.2

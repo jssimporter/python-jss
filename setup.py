@@ -14,12 +14,7 @@ except ImportError:
 
 setup(name = 'python-jss',
       version = __version__,
-      #py_modules=['jss', 'FoundationPlist'],
       packages = find_packages(),
-      package_data = {
-          # Make sure to include Requests cacert.cer file
-          '': ['*.pem', '*.md'],
-      },
       description = 'Python wrapper for JSS API.',
       long_description = read_md('README.md'),
       author = 'Shea G. Craig',
