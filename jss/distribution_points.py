@@ -31,6 +31,7 @@ import urllib
 
 import casper
 from .exceptions import JSSError, JSSUnsupportedFileType
+from contrib import mount_shares_better
 from tools import is_osx, is_linux
 
 
@@ -665,15 +666,23 @@ class AFPDistributionPoint(MountedRepository):
         args = ["mount", "-t", self.protocol, self.connection["mount_url"],
                 self.connection["mount_point"]]
         if is_osx():
-            if nobrowse:
-                args.insert(1, '-o')
-                args.insert(2, 'nobrowse')
+            # TODO: Set up for testing @pudquick/Michael Lynn's mount
+            # techniuqe.
+            #if nobrowse:
+            #    args.insert(1, '-o')
+            #    args.insert(2, 'nobrowse')
+            mount_shares_better.mount_share("afp:%s" %
+                                            self.connection["mount_url"])
         elif is_linux():
             args[0] = "mount_afp"
+            subprocess.check_call(args)
         else:
             raise JSSError("Unsupported OS.")
 
-        subprocess.check_call(args)
+        # TODO: Add a verbose option to print mount string
+        print " ".join(args)
+        print args
+        #subprocess.check_call(args)
 
 
 class SMBDistributionPoint(MountedRepository):
@@ -741,9 +750,11 @@ class SMBDistributionPoint(MountedRepository):
         if is_osx():
             args = ["mount", "-t", self.protocol, self.connection["mount_url"],
                     self.connection["mount_point"]]
-            if nobrowse:
-                args.insert(1, '-o')
-                args.insert(2, 'nobrowse')
+            #if nobrowse:
+            #    args.insert(1, '-o')
+            #    args.insert(2, 'nobrowse')
+            mount_shares_better.mount_share("smb:%s" %
+                                            self.connection["mount_url"])
         elif is_linux():
             args = ["mount", "-t", "cifs","-o",
                     "username=%s,password=%s,domain=%s,port=%s" %
@@ -752,10 +763,13 @@ class SMBDistributionPoint(MountedRepository):
                     "//%s/%s" % (self.connection["URL"],
                                self.connection["share_name"]),
                     self.connection["mount_point"]]
+            subprocess.check_call(args)
         else:
             raise JSSError("Unsupported OS.")
+        print " ".join(args)
+        print args
 
-        subprocess.check_call(args)
+        #subprocess.check_call(args)
 
 
 class JDS(Repository):
