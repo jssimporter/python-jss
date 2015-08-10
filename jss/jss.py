@@ -312,8 +312,8 @@ class JSS(object):
     def Class(self, data=None):
         return self.factory.get_object(Class, data)
 
-    def Computer(self, data=None):
-        return self.factory.get_object(Computer, data)
+    def Computer(self, data=None, subset=None):
+        return self.factory.get_object(Computer, data, subset)
 
     def ComputerCheckIn(self, data=None):
         return self.factory.get_object(ComputerCheckIn, data)
@@ -354,8 +354,8 @@ class JSS(object):
     def DockItem(self, data=None):
         return self.factory.get_object(DockItem, data)
 
-    def EBook(self, data=None):
-        return self.factory.get_object(EBook, data)
+    def EBook(self, data=None, subset=None):
+        return self.factory.get_object(EBook, data, subset)
 
     # FileUploads' only function is to upload, so a method here is not
     # provided.
@@ -375,26 +375,28 @@ class JSS(object):
     def LicensedSoftware(self, data=None):
         return self.factory.get_object(LicensedSoftware, data)
 
-    def MacApplication(self, data=None):
-        return self.factory.get_object(MacApplication, data)
+    def MacApplication(self, data=None, subset=None):
+        return self.factory.get_object(MacApplication, data, subset)
 
-    def ManagedPreferenceProfile(self, data=None):
-        return self.factory.get_object(ManagedPreferenceProfile, data)
+    def ManagedPreferenceProfile(self, data=None, subset=None):
+        return self.factory.get_object(ManagedPreferenceProfile, data, subset)
 
-    def MobileDevice(self, data=None):
-        return self.factory.get_object(MobileDevice, data)
+    def MobileDevice(self, data=None, subset=None):
+        return self.factory.get_object(MobileDevice, data, subset)
 
-    def MobileDeviceApplication(self, data=None):
-        return self.factory.get_object(MobileDeviceApplication, data)
+    def MobileDeviceApplication(self, data=None, subset=None):
+        return self.factory.get_object(MobileDeviceApplication, data, subset)
 
     def MobileDeviceCommand(self, data=None):
         return self.factory.get_object(MobileDeviceCommand, data)
 
-    def MobileDeviceConfigurationProfile(self, data=None):
-        return self.factory.get_object(MobileDeviceConfigurationProfile, data)
+    def MobileDeviceConfigurationProfile(self, data=None, subset=None):
+        return self.factory.get_object(MobileDeviceConfigurationProfile, data,
+                                       subset)
 
-    def MobileDeviceEnrollmentProfile(self, data=None):
-        return self.factory.get_object(MobileDeviceEnrollmentProfile, data)
+    def MobileDeviceEnrollmentProfile(self, data=None, subset=None):
+        return self.factory.get_object(MobileDeviceEnrollmentProfile, data,
+                                       subset)
 
     def MobileDeviceExtensionAttribute(self, data=None):
         return self.factory.get_object(MobileDeviceExtensionAttribute, data)
@@ -405,8 +407,9 @@ class JSS(object):
     def MobileDeviceGroup(self, data=None):
         return self.factory.get_object(MobileDeviceGroup, data)
 
-    def MobileDeviceProvisioningProfile(self, data=None):
-        return self.factory.get_object(MobileDeviceProvisioningProfile, data)
+    def MobileDeviceProvisioningProfile(self, data=None, subset=None):
+        return self.factory.get_object(MobileDeviceProvisioningProfile, data,
+                                       subset)
 
     def NetbootServer(self, data=None):
         return self.factory.get_object(NetbootServer, data)
@@ -414,8 +417,8 @@ class JSS(object):
     def NetworkSegment(self, data=None):
         return self.factory.get_object(NetworkSegment, data)
 
-    def OSXConfigurationProfile(self, data=None):
-        return self.factory.get_object(OSXConfigurationProfile, data)
+    def OSXConfigurationProfile(self, data=None, subset=None):
+        return self.factory.get_object(OSXConfigurationProfile, data, subset)
 
     def Package(self, data=None):
         return self.factory.get_object(Package, data)
@@ -423,11 +426,11 @@ class JSS(object):
     def Peripheral(self, data=None):
         return self.factory.get_object(Peripheral, data)
 
-    def PeripheralType(self, data=None):
-        return self.factory.get_object(PeripheralType, data)
+    def PeripheralType(self, data=None, subset=None):
+        return self.factory.get_object(PeripheralType, data, subset)
 
-    def Policy(self, data=None):
-        return self.factory.get_object(Policy, data)
+    def Policy(self, data=None, subset=None):
+        return self.factory.get_object(Policy, data, subset)
 
     def Printer(self, data=None):
         return self.factory.get_object(Printer, data)
@@ -474,7 +477,7 @@ class JSSObjectFactory(object):
     def __init__(self, jss):
         self.jss = jss
 
-    def get_object(self, obj_class, data=None):
+    def get_object(self, obj_class, data=None, subset=None):
         """Return a subclassed JSSObject instance by querying for
         existing objects or posting a new object. List operations return
         a JSSObjectList.
@@ -494,12 +497,26 @@ class JSSObjectFactory(object):
                         Create a new object from xml
 
                 Warning! Be sure to pass ID's as ints, not str!
-
+        subset:
+            A list of sub-tags to request, or an '&' delimited string,
+            (e.g. 'general&purchasing'). Warning: Pushing incomplete
+            records to the server with a PUT / save() method has not
+            been tested!
         """
+        if subset:
+            if not isinstance(subset, list):
+                if isinstance(subset, (str, unicode)):
+                    subset = subset.split("&")
+                else:
+                    raise TypeError
+
         # List objects
         if data is None:
             url = obj_class.get_url(data)
             if obj_class.can_list and obj_class.can_get:
+                if (subset and len(subset) == 1 and subset[0].upper() ==
+                    "BASIC") and obj_class is Computer:
+                    url += "/subset/basic"
                 result = self.jss.get(url)
                 if obj_class.container:
                     result = result.find(obj_class.container)
@@ -521,6 +538,8 @@ class JSSObjectFactory(object):
         elif type(data) in [str, int, unicode]:
             if obj_class.can_get:
                 url = obj_class.get_url(data)
+                if subset:
+                    url += "/subset/%s" % "&".join(subset)
                 xmldata = self.jss.get(url)
                 if xmldata.find('size') is not None:
                     # May need above treatment, with .find(container),

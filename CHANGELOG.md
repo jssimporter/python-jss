@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+### Added
+
+- Added the subset feature to object queries that support it. For example Computers allow you to do `jss_connection.Computer(None, "basic") for extended list information or `jss_connection.Computer("computer-name", "general&purchasing")` or `jss_connection.Computer("computer-name", ["general", "purchasing"])` for subsection retrieval.
+	- Don't try to PUT these subsetted objects!
+
 ## [1.2.1] - 2015-07-28 - U0001F49A
 
 ### Fixed
