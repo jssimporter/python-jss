@@ -423,11 +423,11 @@ class JSS(object):
     def Package(self, data=None):
         return self.factory.get_object(Package, data)
 
-    def Peripheral(self, data=None):
-        return self.factory.get_object(Peripheral, data)
+    def Peripheral(self, data=None, subset=None):
+        return self.factory.get_object(Peripheral, data, subset)
 
-    def PeripheralType(self, data=None, subset=None):
-        return self.factory.get_object(PeripheralType, data, subset)
+    def PeripheralType(self, data=None):
+        return self.factory.get_object(PeripheralType, data)
 
     def Policy(self, data=None, subset=None):
         return self.factory.get_object(Policy, data, subset)
@@ -499,9 +499,7 @@ class JSSObjectFactory(object):
                 Warning! Be sure to pass ID's as ints, not str!
         subset:
             A list of sub-tags to request, or an '&' delimited string,
-            (e.g. 'general&purchasing'). Warning: Pushing incomplete
-            records to the server with a PUT / save() method has not
-            been tested!
+            (e.g. 'general&purchasing').
         """
         if subset:
             if not isinstance(subset, list):
@@ -539,6 +537,8 @@ class JSSObjectFactory(object):
             if obj_class.can_get:
                 url = obj_class.get_url(data)
                 if subset:
+                    if not "general" in subset:
+                        subset.append("general")
                     url += "/subset/%s" % "&".join(subset)
                 xmldata = self.jss.get(url)
                 if xmldata.find('size') is not None:
@@ -1874,7 +1874,7 @@ class JSSObjectList(list):
             list_index = list_index[0]
             return self.factory.get_object(self.obj_class, self[list_index].id)
 
-    def retrieve_all(self):
+    def retrieve_all(self, subset=None):
         """Return a list of all JSSListData elements as full JSSObjects.
 
         At least on my JSS, I end up with some harmless SSL errors,
@@ -1883,11 +1883,16 @@ class JSSObjectList(list):
         Note: This can take a long time given a large number of objects,
         and depending on the size of each object.
 
+        Args:
+            subset:
+                For objects which support it, a list of sub-tags to
+                request, or an '&' delimited string, (e.g.
+                'general&purchasing'). Default to None.
         """
         final_list = []
         for i in range(0, len(self)):
-            result = self.factory.get_object(self.obj_class,
-                                             int(self[i]['id']))
+            result = self.factory.get_object(
+                self.obj_class, int(self[i]['id']), subset)
             final_list.append(result)
 
         return final_list
