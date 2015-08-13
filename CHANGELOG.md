@@ -11,6 +11,12 @@ All notable changes to this project will be documented in this file. This projec
 	- Don't try to PUT these subsetted objects!
 - Added Cloud Distribution Point support.
 
+### Changed
+
+- New mount technique uses PyObjC rather than subprocess to mount. Thanks to @pudquick for this slick implementation!
+	- Solves some Kerberos issues some users were experiencing.
+	- The nobrowse argument to mount is now deprecated, and will do nothing. It will be removed entirely in the future.
+
 ## [1.2.1] - 2015-07-28 - U0001F49A
 
 ### Fixed

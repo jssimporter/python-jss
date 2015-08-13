@@ -64,12 +64,11 @@ class TestMountedRepository(object):
     def test_mounting(self):
         # Of course this only tests the distribution points I have configured.
         test_repo = j_global.distribution_points._children[0]
-        mount_point = test_repo.connection['mount_point']
-        if os.path.ismount(mount_point):
+        if test_repo.is_mounted():
             test_repo.umount()
 
         test_repo.mount()
-        assert_true(os.path.ismount(mount_point))
+        assert_true(test_repo.is_mounted())
         test_repo.umount()
 
     def test_umounting(self):

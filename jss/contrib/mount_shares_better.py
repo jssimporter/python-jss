@@ -1,4 +1,15 @@
-import objc, CoreFoundation, Foundation
+#!/usr/bin/env python
+# Copyright (C) 2015 Michael Lynn
+
+"""mount_shares_better.py
+
+Mount file shares on OS X.
+"""
+
+
+import CoreFoundation
+import Foundation
+import objc
 
 class attrdict(dict):
     __getattr__ = dict.__getitem__
