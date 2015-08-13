@@ -80,8 +80,7 @@ class Casper(ElementTree.Element):
         # deepcopy so we don't mess with the valid XML.
         pretty_data = copy.deepcopy(self)
         self._indent(pretty_data)
-        elementstring = ElementTree.tostring(pretty_data)
-        return elementstring.encode('utf-8')
+        return ElementTree.tostring(pretty_data).encode("utf_8")
 
     def makeelement(self, tag, attrib):
         """Return an Element."""
@@ -94,7 +93,7 @@ class Casper(ElementTree.Element):
     def update(self):
         """Request an updated set of data from casper.jxml."""
         response = self.jss.session.post(self.url, data=self.auth)
-        response_xml = ElementTree.fromstring(response.text)
+        response_xml = ElementTree.fromstring(response.text.encode("utf_8"))
 
         # Remove previous data, if any, and then add in response's XML.
         self.clear()
