@@ -676,10 +676,11 @@ class AFPDistributionPoint(MountedRepository):
             #if nobrowse:
             #    args.insert(1, '-o')
             #    args.insert(2, 'nobrowse')
-            mount_url = "afp:%s" % self.connection["mount_url"]
+            #mount_url = "afp:%s" % self.connection["mount_url"]
             if self.connection["jss"].verbose:
-                print mount_url
-            self.connection["mount_point"] = mount_share(mount_url)
+                print self.connection["mount_url"]
+            self.connection["mount_point"] = mount_share(
+                self.connection["mount_url"])
         elif is_linux():
             args = ["mount_afp", "-t", self.protocol,
                     self.connection["mount_url"],
