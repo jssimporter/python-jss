@@ -1,5 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/python
+#
 # Copyright (C) 2015 Michael Lynn
+# https://gist.github.com/pudquick/1362a8908be01e23041d
+# https://michaellynn.github.io/2015/08/08/learn-you-a-better-pyobjc-bridgesupport-signature/
 
 """mount_shares_better.py
 
@@ -31,6 +34,7 @@ NetFS_bundle = objc.initFrameworkWrapper(
 del NetFS['NetFSMountURLSync']
 objc.loadBundleFunctions(NetFS_bundle, NetFS,
                          [('NetFSMountURLSync', 'i@@@@@@o^@')])
+
 
 def mount_share(share_path):
     """Mounts a share at /Volumes
