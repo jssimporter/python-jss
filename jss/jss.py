@@ -187,7 +187,7 @@ class JSS(object):
     @property
     def _url(self):
         """The URL to the Casper JSS API endpoints. Get only."""
-        return urlparse.urljoin(self.base_url, "JSSResource")
+        return "%s/%s" % (self.base_url, "JSSResource")
 
     @property
     def base_url(self):
