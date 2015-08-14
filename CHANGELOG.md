@@ -15,7 +15,9 @@ All notable changes to this project will be documented in this file. This projec
 
 - New mount technique uses PyObjC rather than subprocess to mount. Thanks to @pudquick for this slick implementation!
 	- Solves some Kerberos issues some users were experiencing.
+	- For OS X users who are not using the Apple Python, continue to use subprocess to mount.
 	- The nobrowse argument to mount is now deprecated, and will do nothing. It will be removed entirely in the future.
+	- Verbose prints mount arguments.
 
 ### Fixed
 

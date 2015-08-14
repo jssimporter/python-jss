@@ -34,7 +34,9 @@ from .exceptions import JSSError, JSSUnsupportedFileType
 try:
     from .contrib.mount_shares_better import mount_share
 except ImportError:
-    # Non-OS X machine. Create dummy function.
+    # mount_shares_better uses PyObjC. If using non-system python,
+    # chances are good user has not set up PyObjC, so fall back to
+    # subprocess to mount. (See mount methods).
     mount_share = None
 from tools import is_osx, is_linux
 
@@ -673,14 +675,22 @@ class AFPDistributionPoint(MountedRepository):
         """OS specific mount."""
         # mount_afp 'afp://scraig:<password>@address/share' <mnt_point>
         if is_osx():
-            #if nobrowse:
-            #    args.insert(1, '-o')
-            #    args.insert(2, 'nobrowse')
-            #mount_url = "afp:%s" % self.connection["mount_url"]
             if self.connection["jss"].verbose:
                 print self.connection["mount_url"]
-            self.connection["mount_point"] = mount_share(
-                self.connection["mount_url"])
+            if mount_share:
+                self.connection["mount_point"] = mount_share(
+                    self.connection["mount_url"])
+            else:
+                # Non-Apple OS X python:
+                #if nobrowse:
+                #    args.insert(1, '-o')
+                #    args.insert(2, 'nobrowse')
+                args = ["mount", "-t", self.protocol,
+                        self.connection["mount_url"],
+                        self.connection["mount_point"]]
+                if self.connection["jss"].verbose:
+                    print " ".join(args)
+                subprocess.check_call(args)
         elif is_linux():
             args = ["mount_afp", "-t", self.protocol,
                     self.connection["mount_url"],
@@ -758,15 +768,22 @@ class SMBDistributionPoint(MountedRepository):
         # username=<user>,password=<password>,domain=<domain>,port=139 \
         # //server/share /mnt/<mountpoint>
         if is_osx():
-            #args = ["mount", "-t", self.protocol, self.connection["mount_url"],
-            #        self.connection["mount_point"]]
-            #if nobrowse:
-            #    args.insert(1, '-o')
-            #    args.insert(2, 'nobrowse')
-            mount_url = "smb:%s" % self.connection["mount_url"]
-            if self.connection["jss"].verbose:
-                print mount_url
-            self.connection["mount_point"] = mount_share(mount_url)
+            if mount_share:
+                mount_url = "smb:%s" % self.connection["mount_url"]
+                if self.connection["jss"].verbose:
+                    print mount_url
+                self.connection["mount_point"] = mount_share(mount_url)
+            else:
+                # Non-Apple OS X python:
+                args = ["mount", "-t", self.protocol,
+                        self.connection["mount_url"],
+                        self.connection["mount_point"]]
+                #if nobrowse:
+                #    args.insert(1, '-o')
+                #    args.insert(2, 'nobrowse')
+                if self.connection["jss"].verbose:
+                    print " ".join(args)
+                subprocess.check_call(args)
         elif is_linux():
             args = ["mount", "-t", "cifs","-o",
                     "username=%s,password=%s,domain=%s,port=%s" %
