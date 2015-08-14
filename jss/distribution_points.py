@@ -41,7 +41,7 @@ except ImportError:
 from tools import is_osx, is_linux
 
 
-PKG_TYPES = ['.PKG', '.DMG', '.ZIP']
+PKG_TYPES = [".PKG", ".DMG", ".ZIP"]
 PKG_FILE_TYPE = 0
 EBOOK_FILE_TYPE = 1
 IN_HOUSE_APP_FILE_TYPE = 2
@@ -799,31 +799,26 @@ class SMBDistributionPoint(MountedRepository):
             raise JSSError("Unsupported OS.")
 
 
-class JDS(Repository):
-    """Class for representing JDS' and their controlling JSS.
+class DistributionServer(Repository):
+    """Abstract class for representing JDS and CDP type repos.
 
     The JSS has a folder to which packages are uploaded. From there, the
-    JSS handles the distribution to its JDS'.
+    JSS handles the distribution to its Cloud and JDS points.
 
-    Also, there are caveats to its .exists() method which you should be
+    There are caveats to its .exists() method which you should be
     aware of before relying on it.
-
-    I'm not sure, but I imagine that organizations with a JDS will not
-    also have other types of DP's, so it may be sufficient to just use
-    the JDS class directly rather than as member of a DistributionPoints
-    object.
-
     """
     required_attrs = {'jss'}
+    destination = "0"
 
     def __init__(self, **connection_args):
-        """Set up a connection to a JDS.
-        Required connection arguments:
-            jss:            A JSS Object.
+        """Set up a connection to a distribution server.
 
+        Args::
+            jss: A JSS Object.
         """
-        super(JDS, self).__init__(**connection_args)
-        self.connection['URL'] = self.connection['jss'].base_url
+        super(DistributionServer, self).__init__(**connection_args)
+        self.connection["URL"] = self.connection['jss'].base_url
 
     def _build_url(self):
         """Builds the URL to POST files to."""
@@ -868,7 +863,7 @@ class JDS(Repository):
         basefname = os.path.basename(filename)
 
         resource = open(filename, 'rb')
-        headers = {'DESTINATION': '1', 'OBJECT_ID': str(id_), 'FILE_TYPE':
+        headers = {'DESTINATION': self.destination, 'OBJECT_ID': str(id_), 'FILE_TYPE':
                    file_type, 'FILE_NAME': basefname}
         response = self.connection['jss'].session.post(
             url=self.connection['upload_url'], data=resource, headers=headers)
@@ -998,7 +993,27 @@ class JDS(Repository):
         return result
 
 
-class CDP(Repository):
+class JDS(DistributionServer):
+    """Class for representing JDS' and their controlling JSS.
+
+    The JSS has a folder to which packages are uploaded. From there, the
+    JSS handles the distribution to its JDS'.
+
+    Also, there are caveats to its .exists() method which you should be
+    aware of before relying on it.
+
+    I'm not sure, but I imagine that organizations with a JDS will not
+    also have other types of DP's, so it may be sufficient to just use
+    the JDS class directly rather than as member of a DistributionPoints
+    object.
+
+    """
+    required_attrs = {'jss'}
+    destination = "1"
+
+
+
+class CDP(DistributionServer):
     """Class for representing CDPs and their controlling JSS.
 
     The JSS has a folder to which packages are uploaded. From there, the
@@ -1013,193 +1028,13 @@ class CDP(Repository):
     object.
     """
     required_attrs = {'jss'}
-
-    def __init__(self, **connection_args):
-        """Set up a connection to a CDP.
-        Required connection arguments:
-            jss:            A JSS Object.
-
-        """
-        super(CDP, self).__init__(**connection_args)
-        self.connection['URL'] = self.connection['jss'].base_url
-
-    def _build_url(self):
-        """Builds the URL to POST files to."""
-        self.connection['upload_url'] = '%s/%s' % \
-                (self.connection['jss'].base_url, 'dbfileupload')
-        self.connection['delete_url'] = '%s/%s' % \
-                (self.connection['jss'].base_url, 'casperAdminSave.jxml')
-
-    def copy_pkg(self, filename, id_=-1):
-        """Copy a package to the CDP.
-
-        Required Parameters:
-        filename:           Full path to file to upload.
-        id_:                ID of Package object to associate with, or
-                            -1 for new packages (default).
-
-        """
-        self._copy(filename, id_=id_, file_type=PKG_FILE_TYPE)
-
-    def copy_script(self, filename, id_=-1):
-        """Copy a script to the CDP.
-
-        Required Parameters:
-        filename:           Full path to file to upload.
-        id_:                ID of Package object to associate with, or
-                            -1 for new packages (default).
-
-        """
-        self._copy(filename, id_=id_, file_type=SCRIPT_FILE_TYPE)
-
-    def _copy(self, filename, id_=-1, file_type=0):
-        """Upload a file to the CDP.
-
-        Directories, i.e. non-flat packages will fail.
-
-        """
-        if os.path.isdir(filename):
-            raise JSSUnsupportedFileType(
-                'CDP type repos do not permit directory uploads. You are '
-                'probably trying to upload a non-flat package. Please zip'
-                'or create a flat package.')
-        basefname = os.path.basename(filename)
-
-        resource = open(filename, 'rb')
-        # TODO: This DESTINATION of 2 is the only difference from a JDS.
-        headers = {'DESTINATION': '2', 'OBJECT_ID': str(id_), 'FILE_TYPE':
-                   file_type, 'FILE_NAME': basefname}
-        response = self.connection['jss'].session.post(
-            url=self.connection['upload_url'], data=resource, headers=headers)
-        return response
-
-    def delete_with_casperAdminSave(self, pkg):
-        """Delete a pkg from the CDP.
-
-        pkg:        Can be a jss.Package object, an int ID of a
-                    package, or a filename.
-
-        """
-        # The POST needs the package ID.
-        if pkg.__class__.__name__ == 'Package':
-            package_to_delete = pkg.id
-        elif isinstance(pkg, int):
-            package_to_delete = pkg
-        elif isinstance(pkg, str):
-            package_to_delete = self.connection['jss'].Package(filename).id
-        else:
-            raise TypeError
-
-        data_dict = {'username': self.connection['jss'].user,
-                        'password': self.connection['jss'].password,
-                        'deletedPackageID': package_to_delete}
-        response = self.connection['jss'].session.post(
-            url=self.connection['delete_url'], data=data_dict)
-        # There's no response if it works.
-
-    def delete(self, filename):
-        """Delete a package or script from the CDP.
-
-        This method simply finds the Package or Script object with
-        the API GET call and then deletes it.
-
-        For setups which have
-        more than just a CDP, you will need to delete the files on
-        the shares also.
-
-        """
-        if is_package(filename):
-            self.connection['jss'].Package(filename).delete()
-        else:
-            # Script type.
-            self.connection['jss'].Script(filename).delete()
-
-    def exists(self, filename):
-        """Check for the existence of a package or script on the CDP.
-
-        Unlike other DistributionPoint types, JDS' have no documented
-        interface for checking whether the JDS and its children have a
-        complete copy of a file. The best we can do is check for an
-        object using the API /packages URL--JSS.Package() or /scripts
-        and look for matches on the filename.
-
-        If this is not enough, please use the alternate exists methods.
-        For example, it's possible to create a Package object but never
-        upload a package file, and this method will still return "True".
-
-        Also, this may be slow, as it needs to retrieve the complete
-        list of packages from the server.
-
-        """
-        # Technically, the results of the casper.jxml page list the
-        # package files on the server. This is an undocumented
-        # interface, however.
-        result = False
-        if is_package(filename):
-            packages = self.connection['jss'].Package().retrieve_all()
-            for package in packages:
-                if package.findtext('filename') == filename:
-                    result = True
-                    break
-        else:
-            scripts = self.connection['jss'].Script().retrieve_all()
-            for script in scripts:
-                if script.findtext('filename') == filename:
-                    result = True
-                    break
-
-        return result
-
-    def exists_using_casper(self, filename):
-        """Check for the existence of a package file on the JDS.
-
-        Unlike other DistributionPoint types, JDS' have no documented
-        interface for checking whether the JDS and its children have a
-        complete copy of a file. The best we can do is check for a
-        package object using the API /packages URL--JSS.Package() and
-        look for matches on the filename.
-
-        If this is not enough, this method uses the results of the
-        casper.jxml page to determine if a package exists. This is an
-        undocumented feature and as such should probably not be relied
-        upon. Please note, scripts are not listed per-distributionserver
-        like packages. For scripts, the best you can do is use the
-        regular exists method.
-
-        It will test for whether the file exists on ALL configured
-        distribution servers. This may register False if the JDS is busy
-        syncing them.  (Need to test this situation).
-
-        Also, casper.jxml includes checksums. If this method proves
-        reliable, checksum comparison will be added as a feature.
-
-        """
-        casper_results = casper.Casper(self.connection['jss'])
-        distribution_servers = casper_results.find('distributionservers')
-
-        # Step one: Build a list of sets of all package names.
-        all_packages = []
-        for distribution_server in distribution_servers:
-            packages = set()
-            for package in distribution_server.findall('packages/package'):
-                packages.add(os.path.basename(package.find('fileURL').text))
-
-            all_packages.append(packages)
-
-        # Step two: Intersect the sets.
-        base_set = all_packages.pop()
-        for packages in all_packages:
-            base_set = base_set.intersection(packages)
-
-        # Step three: Check for membership.
-        result = filename in base_set
-
-        return result
+    destination = "2"
 
 
 def is_package(filename):
     """Return True if filename is a package type."""
     return os.path.splitext(filename)[1].upper() in PKG_TYPES
+
 
 def is_script(filename):
     """Return True of a filename is NOT a package.
