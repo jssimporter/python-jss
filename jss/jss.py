@@ -26,6 +26,7 @@ import re
 import copy
 import subprocess
 import ssl
+from urllib import quote
 import urlparse
 
 from .exceptions import (
@@ -221,7 +222,7 @@ class JSS(object):
         """
         # For some objects the JSS tries to return JSON if we don't
         # specify that we want XML.
-        url = '%s%s' % (self._url, url)
+        url = '%s%s' % (self._url, quote(url))
         response = self.session.get(url)
 
         if response.status_code == 200:
@@ -241,7 +242,7 @@ class JSS(object):
     def post(self, obj_class, url, data):
         """Post an object to the JSS. For creating new objects only."""
         # The JSS expects a post to ID 0 to create an object
-        url = '%s%s' % (self._url, url)
+        url = '%s%s' % (self._url, quote(url))
         data = ElementTree.tostring(data)
         response = self.session.post(url, data=data)
 
@@ -259,7 +260,7 @@ class JSS(object):
 
     def put(self, url, data):
         """Updates an object on the JSS."""
-        url = '%s%s' % (self._url, url)
+        url = '%s%s' % (self._url, quote(url))
         data = ElementTree.tostring(data)
         response = self.session.put(url, data)
 
@@ -271,7 +272,7 @@ class JSS(object):
 
     def delete(self, url):
         """Delete an object from the JSS."""
-        url = '%s%s' % (self._url, url)
+        url = '%s%s' % (self._url, quote(url))
         response = self.session.delete(url)
 
         if response.status_code == 200:

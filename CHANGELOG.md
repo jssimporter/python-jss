@@ -17,6 +17,10 @@ All notable changes to this project will be documented in this file. This projec
 	- Solves some Kerberos issues some users were experiencing.
 	- The nobrowse argument to mount is now deprecated, and will do nothing. It will be removed entirely in the future.
 
+### Fixed
+
+- Quote data arguments to `JSS` object's get, put, post, and del methods, since apparently requests doesn't do this for us.
+
 ## [1.2.1] - 2015-07-28 - U0001F49A
 
 ### Fixed
