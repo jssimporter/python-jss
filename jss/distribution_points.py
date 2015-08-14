@@ -102,38 +102,38 @@ class DistributionPoints(object):
             for repo in self.jss.repo_prefs:
                 # Handle AFP/SMB shares, as they can be auto-configured.
                 # Legacy system did not require explicit type key.
-                if not repo.get('type'):
+                if not repo.get("type"):
                     # Must be AFP or SMB.
                     # Use JSS.DistributionPoints information to
                     # automatically configure this DP.
                     for dp_object in self.dp_info:
-                        if repo['name'] == dp_object.findtext('name'):
-                            name = dp_object.findtext('name')
-                            URL = dp_object.findtext('ip_address')
+                        if repo["name"] == dp_object.findtext("name"):
+                            name = dp_object.findtext("name")
+                            URL = dp_object.findtext("ip_address")
                             connection_type = \
-                                dp_object.findtext('connection_type')
-                            share_name = dp_object.findtext('share_name')
-                            domain = dp_object.findtext('workgroup_or_domain')
-                            port = dp_object.findtext('share_port')
+                                dp_object.findtext("connection_type")
+                            share_name = dp_object.findtext("share_name")
+                            domain = dp_object.findtext("workgroup_or_domain")
+                            port = dp_object.findtext("share_port")
                             username = \
-                                dp_object.findtext('read_write_username')
-                            password = repo.get('password')
+                                dp_object.findtext("read_write_username")
+                            password = repo.get("password")
 
                             if is_osx():
-                                mount_point = os.path.join('/Volumes',
+                                mount_point = os.path.join("/Volumes",
                                                            share_name)
                             elif is_linux():
-                                mount_point = os.path.join('/mnt', share_name)
+                                mount_point = os.path.join("/mnt", share_name)
                             else:
                                 raise JSSError("Unsupported OS.")
 
-                            if connection_type == 'AFP':
+                            if connection_type == "AFP":
                                 dp = AFPDistributionPoint(URL=URL, port=port,
                                     share_name=share_name,
                                     mount_point=mount_point,
                                     username=username, password=password,
                                     jss=self.jss)
-                            elif connection_type == 'SMB':
+                            elif connection_type == "SMB":
                                 dp = SMBDistributionPoint(URL=URL, port=port,
                                     share_name=share_name,
                                     mount_point=mount_point,
@@ -145,41 +145,41 @@ class DistributionPoints(object):
                             break
 
                 # Handle Explictly declared DP's.
-                elif repo.get('type') in ['AFP', 'SMB']:
-                    URL = repo['URL']
+                elif repo.get("type") in ["AFP", "SMB"]:
+                    URL = repo["URL"]
                     # If found, strip the scheme off the URL
                     # it's reconstructed later
                     if "://" in URL:
-                        URL = URL.split('://')[1]
+                        URL = URL.split("://")[1]
 
-                    connection_type = repo['type']
-                    share_name = repo['share_name']
+                    connection_type = repo["type"]
+                    share_name = repo["share_name"]
                     # Domain is not used for AFP.
-                    domain = repo.get('domain')
-                    username = repo['username']
-                    password = repo['password']
+                    domain = repo.get("domain")
+                    username = repo["username"]
+                    password = repo["password"]
 
                     if is_osx():
-                        mount_point = os.path.join('/Volumes', share_name)
+                        mount_point = os.path.join("/Volumes", share_name)
                     elif is_linux():
-                        mount_point = os.path.join('/mnt', share_name)
+                        mount_point = os.path.join("/mnt", share_name)
                     else:
                         raise JSSError("Unsupported OS.")
 
-                    if connection_type == 'AFP':
+                    if connection_type == "AFP":
                         # If port isn't given, assume it's the std of
                         # 548.
-                        port = repo.get('port') or '548'
+                        port = repo.get("port") or "548"
                         dp = AFPDistributionPoint(URL=URL, port=port,
                                                 share_name=share_name,
                                                 mount_point=mount_point,
                                                 username=username,
                                                 password=password,
                                                 jss=self.jss)
-                    elif connection_type == 'SMB':
+                    elif connection_type == "SMB":
                         # If port isn't given, assume it's the std of
                         # 139.
-                        port = repo.get('port') or '139'
+                        port = repo.get("port") or "139"
                         dp = SMBDistributionPoint(URL=URL, port=port,
                                                 share_name=share_name,
                                                 mount_point=mount_point,
@@ -188,12 +188,12 @@ class DistributionPoints(object):
                                                 password=password,
                                                 jss=self.jss)
 
-                elif repo.get('type') == 'JDS':
+                elif repo.get("type") == "JDS":
                     dp = JDS(jss=self.jss)
-                elif repo.get('type') == 'CDP':
+                elif repo.get("type") == "CDP":
                     dp = CDP(jss=self.jss)
                 else:
-                    raise ValueError('Distribution Point Type not recognized.')
+                    raise ValueError("Distribution Point Type not recognized.")
 
                 # Add the DP to the list.
                 self._children.append(dp)
@@ -251,13 +251,13 @@ class DistributionPoints(object):
 
         """
         for repo in self._children:
-            if hasattr(repo, 'delete'):
+            if hasattr(repo, "delete"):
                 repo.delete(filename)
 
     def mount(self):
         """Mount all mountable distribution points."""
         for child in self._children:
-            if hasattr(child, 'mount'):
+            if hasattr(child, "mount"):
                 child.mount()
 
     def umount(self, forced=True):
@@ -267,7 +267,7 @@ class DistributionPoints(object):
 
         """
         for child in self._children:
-            if hasattr(child, 'umount'):
+            if hasattr(child, "umount"):
                 child.umount(forced)
 
     def exists(self, filename):
@@ -287,11 +287,11 @@ class DistributionPoints(object):
 
     def __repr__(self):
         """Nice display of our file shares."""
-        output = ''
+        output = ""
         index = 0
         for child in self._children:
-            output += 79 * '-' + '\n'
-            output += 'Index: %s' % index
+            output += 79 * "-" + "\n"
+            output += "Index: %s" % index
             output += child.__repr__()
             index += 1
 
@@ -324,8 +324,8 @@ class Repository(object):
     #                              " for copying!")
 
     def __repr__(self):
-        output = ''
-        output += "\nDistribution Point: %s\n" % self.connection['URL']
+        output = ""
+        output += "\nDistribution Point: %s\n" % self.connection["URL"]
         output += "Type: %s\n" % type(self)
         output += "Connection Information:\n"
         for key, val in self.connection.items():
@@ -336,7 +336,7 @@ class Repository(object):
 
 class MountedRepository(Repository):
     """Parent class for mountable file shares."""
-    fs_type = 'undefined'
+    fs_type = "undefined"
 
     def __init__(self, **connection_args):
         super(MountedRepository, self).__init__(**connection_args)
@@ -355,8 +355,8 @@ class MountedRepository(Repository):
         if not self.is_mounted():
 
             # First, ensure the mountpoint exists
-            if not os.path.exists(self.connection['mount_point']):
-                os.mkdir(self.connection['mount_point'])
+            if not os.path.exists(self.connection["mount_point"]):
+                os.mkdir(self.connection["mount_point"])
             # Try to mount
             self._mount(nobrowse)
 
@@ -367,17 +367,17 @@ class MountedRepository(Repository):
 
         """
         # If not mounted, don't bother.
-        if os.path.exists(self.connection['mount_point']):
+        if os.path.exists(self.connection["mount_point"]):
             if is_osx():
-                cmd = ['/usr/sbin/diskutil', 'unmount',
-                       self.connection['mount_point']]
+                cmd = ["/usr/sbin/diskutil", "unmount",
+                       self.connection["mount_point"]]
                 if forced:
-                    cmd.insert(2, 'force')
+                    cmd.insert(2, "force")
                 subprocess.check_call(cmd)
             else:
-                cmd = ['umount', self.connection['mount_point']]
+                cmd = ["umount", self.connection["mount_point"]]
                 if forced:
-                    cmd.insert(1, '-f')
+                    cmd.insert(1, "-f")
                 subprocess.check_call(cmd)
 
     def is_mounted(self):
@@ -386,7 +386,7 @@ class MountedRepository(Repository):
         If it is currently mounted, determine the path where it's
         mounted and update the connection's mount_point accordingly.
         """
-        mount_check = subprocess.check_output('mount').splitlines()
+        mount_check = subprocess.check_output("mount").splitlines()
         # The mount command returns lines like this on OS X...
         # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO
         # (afpfs, nodev, nosuid, mounted by local_me)
@@ -399,9 +399,9 @@ class MountedRepository(Repository):
 
         for mount in mount_check:
             if is_osx():
-                fs_match = re.search('\(([\w]*),*.*\)$', mount)
+                fs_match = re.search("\(([\w]*),*.*\)$", mount)
             if is_linux():
-                fs_match = re.search('type ([\w]*) \(.*\)$', mount)
+                fs_match = re.search("type ([\w]*) \(.*\)$", mount)
             if fs_match:
                 fs_type = fs_match.group(1)
             else:
@@ -409,7 +409,7 @@ class MountedRepository(Repository):
             # Automounts, non-network shares, and network shares
             # all have a slightly different format, so it's easiest to
             # just split.
-            mount_string = mount.split(' on ')[0]
+            mount_string = mount.split(" on ")[0]
             # Does the mount_string match one of our valid_mount_strings?
             if [mstring for mstring in valid_mount_strings if
                 mstring in mount_string] and self.fs_type == fs_type:
@@ -418,11 +418,11 @@ class MountedRepository(Repository):
                 # parenthesis). Considers alphanumerics, / , _ , - and a
                 # blank space as valid, but no crazy chars.
                 if is_osx():
-                    mount_point_match = re.search('on ([\w/ -]*) \(.*$',
+                    mount_point_match = re.search("on ([\w/ -]*) \(.*$",
                                                   mount)
                 elif is_linux():
                     mount_point_match = re.search(
-                        'on ([\w/ -]*) type .*$', mount)
+                        "on ([\w/ -]*) type .*$", mount)
                 if mount_point_match:
                     mount_point = mount_point_match.group(1)
                 else:
@@ -431,10 +431,10 @@ class MountedRepository(Repository):
                 # Reset the connection's mount point to the discovered
                 # value.
                 if mount_point:
-                    self.connection['mount_point'] = mount_point
-                    if self.connection['jss'].verbose:
+                    self.connection["mount_point"] = mount_point
+                    if self.connection["jss"].verbose:
                         print("%s is already mounted at %s.\n" % \
-                              (self.connection['URL'], mount_point))
+                              (self.connection["URL"], mount_point))
 
                 # We found the share, no need to continue.
                 break
@@ -444,13 +444,13 @@ class MountedRepository(Repository):
             # mounted to the same path and if found, incremement the
             # name to avoid conflicts.
             count = 1
-            while os.path.ismount(self.connection['mount_point']):
-                self.connection['mount_point'] = "%s-%s" % \
-                    (self.connection['mount_point'], count)
+            while os.path.ismount(self.connection["mount_point"]):
+                self.connection["mount_point"] = "%s-%s" % \
+                    (self.connection["mount_point"], count)
                 count += 1
 
         # Do an inexpensive double check...
-        return os.path.ismount(self.connection['mount_point'])
+        return os.path.ismount(self.connection["mount_point"])
 
     def _get_valid_mount_strings(self):
         """Return a tuple of potential mount strings."""
@@ -468,26 +468,26 @@ class MountedRepository(Repository):
         # Express results as a set so we don't have any redundent
         # entries.
         results = set()
-        URL = self.connection['URL']
-        share_name = urllib.quote(self.connection['share_name'],
-                                  safe='~()*!.\'')
-        port = self.connection['port']
+        URL = self.connection["URL"]
+        share_name = urllib.quote(self.connection["share_name"],
+                                  safe="~()*!.'")
+        port = self.connection["port"]
 
         # URL from python-jss form:
         results.add(os.path.join(URL, share_name))
-        results.add(os.path.join('%s:%s' % (URL, port), share_name))
+        results.add(os.path.join("%s:%s" % (URL, port), share_name))
 
         # IP Address form:
         # socket.gethostbyname() will return an IP address whether
         # an IP address, FQDN, or .local name is provided.
         ip_address = socket.gethostbyname(URL)
         results.add(os.path.join(ip_address, share_name))
-        results.add(os.path.join('%s:%s' % (ip_address, port), share_name))
+        results.add(os.path.join("%s:%s" % (ip_address, port), share_name))
 
         # Domain name only form:
-        domain_name = URL.split('.')[0]
+        domain_name = URL.split(".")[0]
         results.add(os.path.join(domain_name, share_name))
-        results.add(os.path.join('%s:%s' % (domain_name, port), share_name))
+        results.add(os.path.join("%s:%s" % (domain_name, port), share_name))
 
         # FQDN form using getfqdn:
         # socket.getfqdn() could just resolve back to the ip
@@ -495,7 +495,7 @@ class MountedRepository(Repository):
         # different than both.
         fqdn = socket.getfqdn(ip_address)
         results.add(os.path.join(fqdn, share_name))
-        results.add(os.path.join('%s:%s' % (fqdn, port), share_name))
+        results.add(os.path.join("%s:%s" % (fqdn, port), share_name))
 
         return tuple(results)
 
@@ -510,8 +510,8 @@ class MountedRepository(Repository):
         basename = os.path.basename(filename)
         if not self.is_mounted():
             self.mount()
-        self._copy(filename, os.path.join(self.connection['mount_point'],
-                                          'Packages', basename))
+        self._copy(filename, os.path.join(self.connection["mount_point"],
+                                          "Packages", basename))
 
     def copy_script(self, filename, id_=-1):
         """Copy a script to the repo's Script subdirectory.
@@ -530,24 +530,24 @@ class MountedRepository(Repository):
         # If you have migrated your JSS, you need to pass a JSS object
         # as a keyword argument during repository setup, and the JSS
         # object needs the jss_migrated=True preference set.
-        if 'jss' in self.connection.keys() and \
-                self.connection['jss'].jss_migrated:
+        if "jss" in self.connection.keys() and \
+                self.connection["jss"].jss_migrated:
             self._copy_script_migrated(filename, id_, SCRIPT_FILE_TYPE)
         else:
             basename = os.path.basename(filename)
-            self._copy(filename, os.path.join(self.connection['mount_point'],
-                                              'Scripts', basename))
+            self._copy(filename, os.path.join(self.connection["mount_point"],
+                                              "Scripts", basename))
 
     def _copy_script_migrated(self, filename, id_=-1,
                               file_type=SCRIPT_FILE_TYPE):
         """Upload a script to a migrated JSS's database."""
         basefname = os.path.basename(filename)
 
-        resource = open(filename, 'rb')
-        headers = {'DESTINATION': '1', 'OBJECT_ID': str(id_), 'FILE_TYPE':
-                   file_type, 'FILE_NAME': basefname}
-        response = self.connection['jss'].session.post(
-            url='%s/%s' % (self.connection['jss'].base_url, 'dbfileupload'),
+        resource = open(filename, "rb")
+        headers = {"DESTINATION": "1", "OBJECT_ID": str(id_), "FILE_TYPE":
+                   file_type, "FILE_NAME": basefname}
+        response = self.connection["jss"].session.post(
+            url="%s/%s" % (self.connection["jss"].base_url, "dbfileupload"),
             data=resource, headers=headers)
         return response
 
@@ -574,10 +574,10 @@ class MountedRepository(Repository):
         if not self.is_mounted():
             self.mount()
         if is_package(filename):
-            folder = 'Packages'
+            folder = "Packages"
         else:
-            folder = 'Scripts'
-        path = os.path.join(self.connection['mount_point'], folder, filename)
+            folder = "Scripts"
+        path = os.path.join(self.connection["mount_point"], folder, filename)
         if os.path.isdir(path):
             shutil.rmtree(path)
         elif os.path.isfile(path):
@@ -592,11 +592,11 @@ class MountedRepository(Repository):
 
         """
         if is_package(filename):
-            filepath = os.path.join(self.connection['mount_point'],
-                                    'Packages', filename)
+            filepath = os.path.join(self.connection["mount_point"],
+                                    "Packages", filename)
         else:
-            filepath = os.path.join(self.connection['mount_point'],
-                                    'Scripts', filename)
+            filepath = os.path.join(self.connection["mount_point"],
+                                    "Scripts", filename)
         if not self.is_mounted():
             self.mount()
         return os.path.exists(filepath)
@@ -611,8 +611,8 @@ class MountedRepository(Repository):
 
     def _encode_password(self):
         """Returns a safely encoded and quoted password."""
-        upass = unicode(self.connection['password']).encode('utf-8')
-        return urllib.quote(upass, safe='~()*!.\'')
+        upass = unicode(self.connection["password"]).encode("utf-8")
+        return urllib.quote(upass, safe="~()*!.'")
 
 
 class AFPDistributionPoint(MountedRepository):
@@ -625,16 +625,16 @@ class AFPDistributionPoint(MountedRepository):
     have to force a re-authentication.
 
     """
-    protocol = 'afp'
-    fs_type = 'afpfs'
-    required_attrs = {'URL', 'mount_point', 'username', 'password',
-                      'share_name'}
+    protocol = "afp"
+    fs_type = "afpfs"
+    required_attrs = {"URL", "mount_point", "username", "password",
+                      "share_name"}
 
     def __init__(self, **connection_args):
         """Set up an AFP connection.
         Required connection arguments:
         URL:            URL to the mountpoint in the format, including
-                        volume name Ex: 'my_repository.domain.org/jamf'
+                        volume name Ex: "my_repository.domain.org/jamf"
                         (Do _not_ include protocol or auth info.)
         mount_point:    Path to a valid mount point.
         share_name:     The fileshare's name.
@@ -655,25 +655,25 @@ class AFPDistributionPoint(MountedRepository):
 
     def _build_url(self):
         """Helper method for building mount URL strings."""
-        if self.connection.get('username') and self.connection.get('password'):
-            auth = "%s:%s@" % (self.connection['username'],
+        if self.connection.get("username") and self.connection.get("password"):
+            auth = "%s:%s@" % (self.connection["username"],
                                self._encode_password())
         else:
-            auth = ''
+            auth = ""
 
         # Optional port number
-        if self.connection.get('port'):
-            port = ":%s" % self.connection['port']
+        if self.connection.get("port"):
+            port = ":%s" % self.connection["port"]
         else:
-            port = ''
+            port = ""
 
-        self.connection['mount_url'] = '%s://%s%s%s/%s' % (
-            self.protocol, auth, self.connection['URL'], port,
-            self.connection['share_name'])
+        self.connection["mount_url"] = "%s://%s%s%s/%s" % (
+            self.protocol, auth, self.connection["URL"], port,
+            self.connection["share_name"])
 
     def _mount(self, nobrowse):
         """OS specific mount."""
-        # mount_afp 'afp://scraig:<password>@address/share' <mnt_point>
+        # mount_afp "afp://scraig:<password>@address/share" <mnt_point>
         if is_osx():
             if self.connection["jss"].verbose:
                 print self.connection["mount_url"]
@@ -683,8 +683,8 @@ class AFPDistributionPoint(MountedRepository):
             else:
                 # Non-Apple OS X python:
                 #if nobrowse:
-                #    args.insert(1, '-o')
-                #    args.insert(2, 'nobrowse')
+                #    args.insert(1, "-o")
+                #    args.insert(2, "nobrowse")
                 args = ["mount", "-t", self.protocol,
                         self.connection["mount_url"],
                         self.connection["mount_point"]]
@@ -709,15 +709,15 @@ class SMBDistributionPoint(MountedRepository):
 
     """
 
-    protocol = 'smbfs'
-    required_attrs = {'URL', 'share_name', 'mount_point', 'domain', 'username',
-                      'password'}
+    protocol = "smbfs"
+    required_attrs = {"URL", "share_name", "mount_point", "domain", "username",
+                      "password"}
 
     def __init__(self, **connection_args):
         """Set up a SMB connection.
         Required connection arguments:
         URL:            URL to the mountpoint in the format, including
-                        volume name Ex: 'my_repository.domain.org/jamf'
+                        volume name Ex: "my_repository.domain.org/jamf"
                         (Do _not_ include protocol or auth info.)
         mount_point:    Path to a valid mount point.
         share_name:     The fileshare's name.
@@ -744,23 +744,23 @@ class SMBDistributionPoint(MountedRepository):
     def _build_url(self):
         """Helper method for building mount URL strings."""
         # Build auth string
-        if self.connection.get('username') and self.connection.get('password'):
-            auth = "%s:%s@" % (self.connection['username'],
+        if self.connection.get("username") and self.connection.get("password"):
+            auth = "%s:%s@" % (self.connection["username"],
                                self._encode_password())
-            if self.connection.get('domain'):
-                auth = r"%s;%s" % (self.connection['domain'], auth)
+            if self.connection.get("domain"):
+                auth = r"%s;%s" % (self.connection["domain"], auth)
         else:
-            auth = ''
+            auth = ""
 
         # Optional port number
-        if self.connection.get('port'):
-            port = ":%s" % self.connection['port']
+        if self.connection.get("port"):
+            port = ":%s" % self.connection["port"]
         else:
-            port = ''
+            port = ""
 
         # Construct mount_url
-        self.connection['mount_url'] = '//%s%s%s/%s' % (
-            auth, self.connection['URL'], port, self.connection['share_name'])
+        self.connection["mount_url"] = "//%s%s%s/%s" % (
+            auth, self.connection["URL"], port, self.connection["share_name"])
 
     def _mount(self, nobrowse):
         """OS specific mount."""
@@ -779,8 +779,8 @@ class SMBDistributionPoint(MountedRepository):
                         self.connection["mount_url"],
                         self.connection["mount_point"]]
                 #if nobrowse:
-                #    args.insert(1, '-o')
-                #    args.insert(2, 'nobrowse')
+                #    args.insert(1, "-o")
+                #    args.insert(2, "nobrowse")
                 if self.connection["jss"].verbose:
                     print " ".join(args)
                 subprocess.check_call(args)
@@ -808,7 +808,7 @@ class DistributionServer(Repository):
     There are caveats to its .exists() method which you should be
     aware of before relying on it.
     """
-    required_attrs = {'jss'}
+    required_attrs = {"jss"}
     destination = "0"
 
     def __init__(self, **connection_args):
@@ -818,14 +818,14 @@ class DistributionServer(Repository):
             jss: A JSS Object.
         """
         super(DistributionServer, self).__init__(**connection_args)
-        self.connection["URL"] = self.connection['jss'].base_url
+        self.connection["URL"] = self.connection["jss"].base_url
 
     def _build_url(self):
         """Builds the URL to POST files to."""
-        self.connection['upload_url'] = '%s/%s' % \
-                (self.connection['jss'].base_url, 'dbfileupload')
-        self.connection['delete_url'] = '%s/%s' % \
-                (self.connection['jss'].base_url, 'casperAdminSave.jxml')
+        self.connection["upload_url"] = "%s/%s" % \
+                (self.connection["jss"].base_url, "dbfileupload")
+        self.connection["delete_url"] = "%s/%s" % \
+                (self.connection["jss"].base_url, "casperAdminSave.jxml")
 
     def copy_pkg(self, filename, id_=-1):
         """Copy a package to the JDS.
@@ -857,16 +857,16 @@ class DistributionServer(Repository):
         """
         if os.path.isdir(filename):
             raise JSSUnsupportedFileType(
-                'JDS type repos do not permit directory uploads. You are '
-                'probably trying to upload a non-flat package. Please zip'
-                'or create a flat package.')
+                "JDS type repos do not permit directory uploads. You are "
+                "probably trying to upload a non-flat package. Please zip"
+                "or create a flat package.")
         basefname = os.path.basename(filename)
 
-        resource = open(filename, 'rb')
-        headers = {'DESTINATION': self.destination, 'OBJECT_ID': str(id_), 'FILE_TYPE':
-                   file_type, 'FILE_NAME': basefname}
-        response = self.connection['jss'].session.post(
-            url=self.connection['upload_url'], data=resource, headers=headers)
+        resource = open(filename, "rb")
+        headers = {"DESTINATION": self.destination, "OBJECT_ID": str(id_), "FILE_TYPE":
+                   file_type, "FILE_NAME": basefname}
+        response = self.connection["jss"].session.post(
+            url=self.connection["upload_url"], data=resource, headers=headers)
         return response
 
     def delete_with_casperAdminSave(self, pkg):
@@ -877,20 +877,20 @@ class DistributionServer(Repository):
 
         """
         # The POST needs the package ID.
-        if pkg.__class__.__name__ == 'Package':
+        if pkg.__class__.__name__ == "Package":
             package_to_delete = pkg.id
         elif isinstance(pkg, int):
             package_to_delete = pkg
         elif isinstance(pkg, str):
-            package_to_delete = self.connection['jss'].Package(filename).id
+            package_to_delete = self.connection["jss"].Package(filename).id
         else:
             raise TypeError
 
-        data_dict = {'username': self.connection['jss'].user,
-                        'password': self.connection['jss'].password,
-                        'deletedPackageID': package_to_delete}
-        response = self.connection['jss'].session.post(
-            url=self.connection['delete_url'], data=data_dict)
+        data_dict = {"username": self.connection["jss"].user,
+                        "password": self.connection["jss"].password,
+                        "deletedPackageID": package_to_delete}
+        response = self.connection["jss"].session.post(
+            url=self.connection["delete_url"], data=data_dict)
         # There's no response if it works.
 
     def delete(self, filename):
@@ -905,10 +905,10 @@ class DistributionServer(Repository):
 
         """
         if is_package(filename):
-            self.connection['jss'].Package(filename).delete()
+            self.connection["jss"].Package(filename).delete()
         else:
             # Script type.
-            self.connection['jss'].Script(filename).delete()
+            self.connection["jss"].Script(filename).delete()
 
     def exists(self, filename):
         """Check for the existence of a package or script on the JDS.
@@ -932,15 +932,15 @@ class DistributionServer(Repository):
         # interface, however.
         result = False
         if is_package(filename):
-            packages = self.connection['jss'].Package().retrieve_all()
+            packages = self.connection["jss"].Package().retrieve_all()
             for package in packages:
-                if package.findtext('filename') == filename:
+                if package.findtext("filename") == filename:
                     result = True
                     break
         else:
-            scripts = self.connection['jss'].Script().retrieve_all()
+            scripts = self.connection["jss"].Script().retrieve_all()
             for script in scripts:
-                if script.findtext('filename') == filename:
+                if script.findtext("filename") == filename:
                     result = True
                     break
 
@@ -970,15 +970,15 @@ class DistributionServer(Repository):
         reliable, checksum comparison will be added as a feature.
 
         """
-        casper_results = casper.Casper(self.connection['jss'])
-        distribution_servers = casper_results.find('distributionservers')
+        casper_results = casper.Casper(self.connection["jss"])
+        distribution_servers = casper_results.find("distributionservers")
 
         # Step one: Build a list of sets of all package names.
         all_packages = []
         for distribution_server in distribution_servers:
             packages = set()
-            for package in distribution_server.findall('packages/package'):
-                packages.add(os.path.basename(package.find('fileURL').text))
+            for package in distribution_server.findall("packages/package"):
+                packages.add(os.path.basename(package.find("fileURL").text))
 
             all_packages.append(packages)
 
@@ -1008,7 +1008,7 @@ class JDS(DistributionServer):
     object.
 
     """
-    required_attrs = {'jss'}
+    required_attrs = {"jss"}
     destination = "1"
 
 
@@ -1027,7 +1027,7 @@ class CDP(DistributionServer):
     the CDP class directly rather than as member of a DistributionPoints
     object.
     """
-    required_attrs = {'jss'}
+    required_attrs = {"jss"}
     destination = "2"
 
 
