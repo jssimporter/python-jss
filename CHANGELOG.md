@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. This projec
 - Added the subset feature to object queries that support it. For example Computers allow you to do `jss_connection.Computer(None, "basic") for extended list information or `jss_connection.Computer("computer-name", "general&purchasing")` or `jss_connection.Computer("computer-name", ["general", "purchasing"])` for subsection retrieval.
 	- Don't try to PUT these subsetted objects!
 - Added Cloud Distribution Point support.
+- Added `JSSObject.pretty_find`. Pretty prints sub-elements of a JSSObject for use in interactive exploration of the JSS.
 
 ### Changed
 

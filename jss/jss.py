@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 
+from xml.dom import minidom
 from xml.etree import ElementTree
 from xml.parsers.expat import ExpatError
 import os
@@ -761,6 +762,19 @@ class JSSObject(ElementTree.Element):
         elementstring = ElementTree.tostring(pretty_data)
         return elementstring.encode('utf-8')
 
+    def pretty_find(self, search):
+        """Pretty print the results of a find.
+
+        Args:
+            search: xpath passed onto the find method.
+        """
+        result = self.find(search)
+        if result is not None:
+            pretty_data = copy.deepcopy(result)
+            self._indent(pretty_data)
+            elementstring = ElementTree.tostring(pretty_data)
+            print elementstring.encode('utf-8')
+
     def _handle_location(self, location):
         """Return an element located at location.
 
@@ -777,6 +791,8 @@ class JSSObject(ElementTree.Element):
 
     def search(self, tag):
         """Return elements with tag using getiterator."""
+        # TODO: getiterator is deprecated, and I'm not sure why this
+        # function is even here any more!
         return self.getiterator(tag)
 
     def set_bool(self, location, value):
