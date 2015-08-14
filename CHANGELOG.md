@@ -19,7 +19,8 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Fixed
 
-- Quote data arguments to `JSS` object's get, put, post, and del methods, since apparently requests doesn't do this for us.
+- Encode data arguments to `JSS` object's get method.
+- Quote data arguments to `JSS` object's get method, since apparently requests doesn't do this for us.
 
 ## [1.2.1] - 2015-07-28 - U0001F49A
 

@@ -157,6 +157,8 @@ class JSS(object):
         self.session = requests.Session()
         self.session.auth = (self.user, self.password)
         self.ssl_verify = ssl_verify
+        # For some objects the JSS tries to return JSON if we don't
+        # specify that we want XML.
         headers = {"content-type": 'text/xml', 'Accept': 'application/xml'}
         self.session.headers.update(headers)
         # Add a TransportAdapter to force TLS, since JSS no longer
@@ -215,15 +217,13 @@ class JSS(object):
         """
         self.session.verify = value
 
-    def get(self, url):
+    def get(self, url_path):
         """Get a url, handle errors, and return an etree from the XML
         data.
 
         """
-        # For some objects the JSS tries to return JSON if we don't
-        # specify that we want XML.
-        url = '%s%s' % (self._url, quote(url))
-        response = self.session.get(url)
+        request_url = '%s%s' % (self._url, quote(url_path.encode("utf_8")))
+        response = self.session.get(request_url)
 
         if response.status_code == 200:
             if self.verbose:
@@ -239,12 +239,12 @@ class JSS(object):
             raise JSSGetError("Error Parsing XML:\n%s" % jss_results)
         return xmldata
 
-    def post(self, obj_class, url, data):
+    def post(self, obj_class, url_path, data):
         """Post an object to the JSS. For creating new objects only."""
         # The JSS expects a post to ID 0 to create an object
-        url = '%s%s' % (self._url, quote(url))
+        request_url = '%s%s' % (self._url, url_path)
         data = ElementTree.tostring(data)
-        response = self.session.post(url, data=data)
+        response = self.session.post(request_url, data=data)
 
         if response.status_code == 201:
             if self.verbose:
@@ -258,11 +258,11 @@ class JSS(object):
 
         return self.factory.get_object(obj_class, id_)
 
-    def put(self, url, data):
+    def put(self, url_path, data):
         """Updates an object on the JSS."""
-        url = '%s%s' % (self._url, quote(url))
+        request_url = '%s%s' % (self._url, url_path)
         data = ElementTree.tostring(data)
-        response = self.session.put(url, data)
+        response = self.session.put(request_url, data)
 
         if response.status_code == 201:
             if self.verbose:
@@ -270,10 +270,10 @@ class JSS(object):
         elif response.status_code >= 400:
             self._error_handler(JSSPutError, response)
 
-    def delete(self, url):
+    def delete(self, url_path):
         """Delete an object from the JSS."""
-        url = '%s%s' % (self._url, quote(url))
-        response = self.session.delete(url)
+        request_url = '%s%s' % (self._url, url_path)
+        response = self.session.delete(request_url)
 
         if response.status_code == 200:
             if self.verbose:
