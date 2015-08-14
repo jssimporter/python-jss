@@ -828,7 +828,7 @@ class DistributionServer(Repository):
                 (self.connection["jss"].base_url, "casperAdminSave.jxml")
 
     def copy_pkg(self, filename, id_=-1):
-        """Copy a package to the JDS.
+        """Copy a package to the distribution server.
 
         Required Parameters:
         filename:           Full path to file to upload.
@@ -839,7 +839,7 @@ class DistributionServer(Repository):
         self._copy(filename, id_=id_, file_type=PKG_FILE_TYPE)
 
     def copy_script(self, filename, id_=-1):
-        """Copy a script to the JDS.
+        """Copy a script to the distribution server.
 
         Required Parameters:
         filename:           Full path to file to upload.
@@ -850,27 +850,26 @@ class DistributionServer(Repository):
         self._copy(filename, id_=id_, file_type=SCRIPT_FILE_TYPE)
 
     def _copy(self, filename, id_=-1, file_type=0):
-        """Upload a file to the JDS.
+        """Upload a file to the distribution server.
 
         Directories, i.e. non-flat packages will fail.
-
         """
         if os.path.isdir(filename):
             raise JSSUnsupportedFileType(
-                "JDS type repos do not permit directory uploads. You are "
-                "probably trying to upload a non-flat package. Please zip"
-                "or create a flat package.")
+                "Distribution Server type repos do not permit directory "
+                "uploads. You are probably trying to upload a non-flat "
+                "package. Please zip or create a flat package.")
         basefname = os.path.basename(filename)
 
         resource = open(filename, "rb")
-        headers = {"DESTINATION": self.destination, "OBJECT_ID": str(id_), "FILE_TYPE":
-                   file_type, "FILE_NAME": basefname}
+        headers = {"DESTINATION": self.destination, "OBJECT_ID": str(id_),
+                   "FILE_TYPE": file_type, "FILE_NAME": basefname}
         response = self.connection["jss"].session.post(
             url=self.connection["upload_url"], data=resource, headers=headers)
         return response
 
     def delete_with_casperAdminSave(self, pkg):
-        """Delete a pkg from the JDS.
+        """Delete a pkg from the distribution server.
 
         pkg:        Can be a jss.Package object, an int ID of a
                     package, or a filename.
@@ -894,15 +893,13 @@ class DistributionServer(Repository):
         # There's no response if it works.
 
     def delete(self, filename):
-        """Delete a package or script from the JDS.
+        """Delete a package or script from the distribution server.
 
         This method simply finds the Package or Script object with
         the API GET call and then deletes it.
 
-        For setups which have
-        more than just a JDS, you will need to delete the files on
-        the shares also.
-
+        For setups which have file share distribution points, you will
+        need to delete the files on the shares also.
         """
         if is_package(filename):
             self.connection["jss"].Package(filename).delete()
@@ -911,13 +908,13 @@ class DistributionServer(Repository):
             self.connection["jss"].Script(filename).delete()
 
     def exists(self, filename):
-        """Check for the existence of a package or script on the JDS.
+        """Check for the existence of a package or script.
 
-        Unlike other DistributionPoint types, JDS' have no documented
-        interface for checking whether the JDS and its children have a
-        complete copy of a file. The best we can do is check for an
-        object using the API /packages URL--JSS.Package() or /scripts
-        and look for matches on the filename.
+        Unlike other DistributionPoint types, JDS and CDP types have no
+        documented interface for checking whether the server and its
+        children have a complete copy of a file. The best we can do is
+        check for an object using the API /packages URL--JSS.Package()
+        or /scripts and look for matches on the filename.
 
         If this is not enough, please use the alternate exists methods.
         For example, it's possible to create a Package object but never
@@ -925,8 +922,8 @@ class DistributionServer(Repository):
 
         Also, this may be slow, as it needs to retrieve the complete
         list of packages from the server.
-
         """
+        # TODO: Should we use it anyway?
         # Technically, the results of the casper.jxml page list the
         # package files on the server. This is an undocumented
         # interface, however.
@@ -947,13 +944,13 @@ class DistributionServer(Repository):
         return result
 
     def exists_using_casper(self, filename):
-        """Check for the existence of a package file on the JDS.
+        """Check for the existence of a package file.
 
-        Unlike other DistributionPoint types, JDS' have no documented
-        interface for checking whether the JDS and its children have a
-        complete copy of a file. The best we can do is check for a
-        package object using the API /packages URL--JSS.Package() and
-        look for matches on the filename.
+        Unlike other DistributionPoint types, JDS and CDP types have no
+        documented interface for checking whether the server and its
+        children have a complete copy of a file. The best we can do is
+        check for an object using the API /packages URL--JSS.Package()
+        or /scripts and look for matches on the filename.
 
         If this is not enough, this method uses the results of the
         casper.jxml page to determine if a package exists. This is an
@@ -968,7 +965,6 @@ class DistributionServer(Repository):
 
         Also, casper.jxml includes checksums. If this method proves
         reliable, checksum comparison will be added as a feature.
-
         """
         casper_results = casper.Casper(self.connection["jss"])
         distribution_servers = casper_results.find("distributionservers")
@@ -997,35 +993,29 @@ class JDS(DistributionServer):
     """Class for representing JDS' and their controlling JSS.
 
     The JSS has a folder to which packages are uploaded. From there, the
-    JSS handles the distribution to its JDS'.
+    JSS handles the distribution to its Cloud and JDS points.
 
-    Also, there are caveats to its .exists() method which you should be
-    aware of before relying on it.
-
-    I'm not sure, but I imagine that organizations with a JDS will not
-    also have other types of DP's, so it may be sufficient to just use
-    the JDS class directly rather than as member of a DistributionPoints
-    object.
-
+    This class should be considered experimental!
+    - There are caveats to its .exists() method
+    - It is unclear at the moment what the interaction is in systems
+    that have both a JDS and a CDP, especially depending on which is the
+    master.
     """
     required_attrs = {"jss"}
     destination = "1"
-
 
 
 class CDP(DistributionServer):
     """Class for representing CDPs and their controlling JSS.
 
     The JSS has a folder to which packages are uploaded. From there, the
-    JSS handles the distribution to a master CDP.
+    JSS handles the distribution to its Cloud and JDS points.
 
-    Also, there are caveats to its .exists() method which you should be
-    aware of before relying on it.
-
-    I'm not sure, but I imagine that organizations with a CDP will not
-    also have other types of DP's, so it may be sufficient to just use
-    the CDP class directly rather than as member of a DistributionPoints
-    object.
+    This class should be considered experimental!
+    - There are caveats to its .exists() method
+    - It is unclear at the moment what the interaction is in systems
+    that have both a JDS and a CDP, especially depending on which is the
+    master.
     """
     required_attrs = {"jss"}
     destination = "2"
