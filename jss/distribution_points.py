@@ -1197,14 +1197,6 @@ class CDP(Repository):
         return result
 
 
-class HTTPRepository(Repository):
-    pass
-
-
-class HTTPSRepository(Repository):
-    pass
-
-
 def is_package(filename):
     """Return True if filename is a package type."""
     return os.path.splitext(filename)[1].upper() in PKG_TYPES
