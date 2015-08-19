@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file. This projec
 	- Don't try to PUT these subsetted objects!
 - Added Cloud Distribution Point support.
 - Added `JSSObject.pretty_find`. Pretty prints sub-elements of a JSSObject for use in interactive exploration of the JSS.
+- Added option `verify` to `JSSPrefs` and the com.github.sheagcraig.python-jss preference domain. If not specified in the preferences, it will assume `True`.
 
 ### Changed
 
