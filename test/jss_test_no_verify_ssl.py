@@ -39,6 +39,7 @@ else:
     raise Exception("Unknown/unsupported OS.")
 jp = JSSPrefs(pref_path)
 j_global = JSS(jp, ssl_verify=False)
+j_global.ssl_verify = False
 
 
 TESTPOLICY = 'python-jss Test Policy'

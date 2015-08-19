@@ -58,14 +58,15 @@ class JSSPrefs(object):
         preferences_file: Alternate location to look for preferences.
 
         Preference file should include the following keys:
-            jss_url:        Full path, including port, to JSS,
-                            e.g. 'https://mycasper.donkey.com:8443'
-                            (JSS() handles the appending of
-                            /JSSResource)
-            jss_user:       API username to use.
-            jss_pass:       API password.
-            repos:          (Optional) An array of file repositories
-                            dicts to connect.
+            jss_url: Full path, including port, to JSS, e.g.
+                'https://mycasper.donkey.com:8443'.
+            jss_user: API username to use.
+            jss_pass: API password.
+            verify: Optional Boolean for whether to verify the JSS's
+                certificate matches the SSL traffic. This certificate must be
+                in your keychain. Defaults to True.
+            repos: (Optional) An array of file repositories dicts to
+                connect.
 
         repos Data (See distribution_points package for more info):
             name:           String name of the distribution point. Must
@@ -107,6 +108,9 @@ class JSSPrefs(object):
             self.repos = []
             for repo in prefs.get('repos', []):
                 self.repos.append(dict(repo))
+
+            self.verify = prefs.get("verify", True)
+
         else:
             raise JSSPrefsMissingFileError("Preferences file not found!")
 
@@ -144,6 +148,7 @@ class JSS(object):
             user = jss_prefs.user
             password = jss_prefs.password
             repo_prefs = jss_prefs.repos
+            ssl_verify = jss_prefs.verify
 
         if suppress_warnings:
             requests.packages.urllib3.disable_warnings()
