@@ -905,8 +905,21 @@ class JSSGroupObject(JSSContainerObject):
         criterion = SearchCriteria(name, priority, and_or, search_type, value)
         self.criteria.append(criterion)
 
-    def set_is_smart(self, value):
-        """Set whether a group is smart or not."""
+    @property
+    def is_smart(self):
+        """Returns boolean for whether group is Smart."""
+        result = False
+        if self.findtext("is_smart") == "true":
+            result = True
+        return result
+
+    @is_smart.setter
+    def is_smart(self, value):
+        """Set group is_smart property to value.
+
+        Args:
+            value: Boolean.
+        """
         self.set_bool("is_smart", value)
         if value is True:
             if self.find("criteria") is None:

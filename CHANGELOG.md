@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file. This projec
 - Added Cloud Distribution Point support.
 - Added `JSSObject.pretty_find`. Pretty prints sub-elements of a JSSObject for use in interactive exploration of the JSS.
 - Added option `verify` to `JSSPrefs` and the com.github.sheagcraig.python-jss preference domain. If not specified in the preferences, it will assume `True`.
+- Added property to `JSSGroupObject` and subclasses for `is_smart`. Now you can have a regular boolean property and setter for groups.
 
 ### Changed
 
@@ -25,6 +26,10 @@ All notable changes to this project will be documented in this file. This projec
 
 - Encode data arguments to `JSS` object's get method.
 - Quote data arguments to `JSS` object's get method, since apparently requests doesn't do this for us.
+
+### Removed
+
+- Removed `JSSGroupObject.set_is_smart`. (Replaced with `@property`)
 
 ## [1.2.1] - 2015-07-28 - U0001F49A
 
