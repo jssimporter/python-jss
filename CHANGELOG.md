@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file. This projec
 - Added `JSSObject.pretty_find`. Pretty prints sub-elements of a JSSObject for use in interactive exploration of the JSS.
 - Added option `verify` to `JSSPrefs` and the com.github.sheagcraig.python-jss preference domain. If not specified in the preferences, it will assume `True`.
 - Added property to `JSSGroupObject` and subclasses for `is_smart`. Now you can have a regular boolean property and setter for groups.
+- Added method `is_member` to `JSSGroupObject`. This allows you to test whether a Computer or MobileDevice object is a member of a group.
 
 ### Changed
 

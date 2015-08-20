@@ -941,6 +941,23 @@ class JSSGroupObject(JSSContainerObject):
             # them, and they even show up as members of the group!
             raise ValueError("Devices may not be added to smart groups.")
 
+    def has_member(self, device_object):
+        """Return whether group has a device as a member.
+
+        Args:
+            Device object (Computer or MobileDevice). Membership is
+            determined by ID, as names can be shared amongst devices.
+        """
+        if isinstance(device_object, Computer):
+            container_search = "computers/computer"
+        elif isinstance(device_object, MobileDevice):
+            container_search = "mobile_devices/mobile_device"
+        else:
+            raise ValueError
+
+        return len([device for device in self.findall(container_search) if
+                    device.findtext("id") == device_object.id]) is not 0
+
 
 class JSSDeviceObject(JSSContainerObject):
     """Provides convenient accessors for properties of devices.
