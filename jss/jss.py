@@ -1135,13 +1135,11 @@ class ComputerGroup(JSSGroupObject):
         """
         element_name = ElementTree.SubElement(self, "name")
         element_name.text = name
-        self.is_smart = ElementTree.SubElement(self, "is_smart")
-        if 'smart' in kwargs.keys():
-            smartness = kwargs['smart']
-        else:
-            smartness = False
-        self.set_bool(self.is_smart, smartness)
+        # is_smart is a JSSGroupObject @property.
+        ElementTree.SubElement(self, "is_smart")
         self.criteria = ElementTree.SubElement(self, "criteria")
+        # Assing smartness if specified, otherwise default to False.
+        self.is_smart = kwargs.get("smart", False)
         self.computers = ElementTree.SubElement(self, "computers")
 
     def add_computer(self, device):

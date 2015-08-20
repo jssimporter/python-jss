@@ -331,8 +331,9 @@ class TestJSSObjectNewMethods(object):
         cg.findtext("criteria/criterion/name")
         cg.save()
         assert_is_instance(cg, ComputerGroup)
-        assert_true(bool(cg.findtext("is_smart")))
-        assert_equals(cg.findtext("criteria/criterion/name"), "Computer Name")
+        assert_true(cg.is_smart)
+        assert_equals(cg.findall("criteria/criterion/name")[0].text,
+                      "Computer Name")
         cg.delete()
 
     def test_PackageTemplate(self):
