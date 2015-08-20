@@ -9,8 +9,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Added
 
-- Added the subset feature to object queries that support it. For example Computers allow you to do `jss_connection.Computer(None, "basic") for extended list information or `jss_connection.Computer("computer-name", "general&purchasing")` or `jss_connection.Computer("computer-name", ["general", "purchasing"])` for subsection retrieval.
-	- Don't try to PUT these subsetted objects!
+- Added the subset feature to object queries that support it. For example Computers allow you to do `jss_connection.Computer(None, "basic") for extended list information or `jss_connection.Computer("computer-name", "general&purchasing")` or `jss_connection.Computer("computer-name", ["general", "purchasing"])` for subsection retrieval. This should allow you to speed up big `retrieve_all` runs significantly.
 - Added Cloud Distribution Point support. Thanks to @beckf for packet analysis help, and @homebysix for testing. (#22)
 - Added `JSSObject.pretty_find`. Pretty prints sub-elements of a JSSObject for use in interactive exploration of the JSS.
 - Added option `verify` to `JSSPrefs` and the com.github.sheagcraig.python-jss preference domain. If not specified in the preferences, it will assume `True`.
