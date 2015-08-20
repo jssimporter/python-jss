@@ -747,6 +747,8 @@ class JSSObject(ElementTree.Element):
                     elem.text += pad
             count = 0
             for kid in elem:
+                if kid.tag == "data":
+                    kid.text = "*DATA*"
                 self._indent(kid, level+1, count < num_kids - 1)
                 count += 1
             if not elem.tail or not elem.tail.strip():
@@ -900,6 +902,7 @@ class JSSContainerObject(JSSObject):
 
 class JSSGroupObject(JSSContainerObject):
     """Abstract XMLEditor for ComputerGroup and MobileDeviceGroup."""
+
     def add_criterion(self, name, priority, and_or, search_type, value):
         """Add a search criteria object to a smart group."""
         criterion = SearchCriteria(name, priority, and_or, search_type, value)

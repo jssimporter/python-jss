@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file. This projec
 	- For OS X users who are not using the Apple Python, continue to use subprocess to mount.
 	- The nobrowse argument to mount is now deprecated, and will do nothing. It will be removed entirely in the future.
 	- Verbose prints mount arguments.
+- When viewing object data interactively, the `__repr__` now displays simply `*data*` instead of the full binary data for things like icons and app binaries.
 
 ### Fixed
 
