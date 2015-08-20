@@ -353,21 +353,24 @@ class MountedRepository(Repository):
         """
         # Is this volume already mounted; if so, we're done.
         if not self.is_mounted():
-
-            # First, ensure the mountpoint exists
-            if not os.path.exists(self.connection["mount_point"]):
-                os.mkdir(self.connection["mount_point"])
+            # OS X mounting is handled automagically in /Volumes:
+            # DO NOT mkdir there!
+            # For Linux, ensure the mountpoint exists.
+            if not is_osx():
+                if not os.path.exists(self.connection["mount_point"]):
+                    os.mkdir(self.connection["mount_point"])
             # Try to mount
             self._mount(nobrowse)
 
     def umount(self, forced=True):
         """Try to unmount our mount point.
 
-        Defaults to using forced method.
+        Defaults to using forced method. If OS is Linux, it will leave
+        the mount point in place.
 
         """
         # If not mounted, don't bother.
-        if os.path.exists(self.connection["mount_point"]):
+        if self.is_mounted():
             if is_osx():
                 cmd = ["/usr/sbin/diskutil", "unmount",
                        self.connection["mount_point"]]

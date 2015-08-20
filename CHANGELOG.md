@@ -5,11 +5,13 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [1.3.0] - 2015-08-19 - Two Men Enter, One Man Leaves
+
 ### Added
 
 - Added the subset feature to object queries that support it. For example Computers allow you to do `jss_connection.Computer(None, "basic") for extended list information or `jss_connection.Computer("computer-name", "general&purchasing")` or `jss_connection.Computer("computer-name", ["general", "purchasing"])` for subsection retrieval.
 	- Don't try to PUT these subsetted objects!
-- Added Cloud Distribution Point support.
+- Added Cloud Distribution Point support. Thanks to @beckf for packet analysis help, and @homebysix for testing. (#22)
 - Added `JSSObject.pretty_find`. Pretty prints sub-elements of a JSSObject for use in interactive exploration of the JSS.
 - Added option `verify` to `JSSPrefs` and the com.github.sheagcraig.python-jss preference domain. If not specified in the preferences, it will assume `True`.
 - Added property to `JSSGroupObject` and subclasses for `is_smart`. Now you can have a regular boolean property and setter for groups.
@@ -496,7 +498,8 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 - Initial release.
 
 
-[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.2.1...HEAD
+[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/sheagcraig/python-jss/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/sheagcraig/python-jss/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/sheagcraig/python-jss/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/sheagcraig/python-jss/compare/v1.0.2...v1.1.0

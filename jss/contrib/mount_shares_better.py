@@ -58,3 +58,33 @@ def mount_share(share_path):
          raise Exception('Error mounting url "%s": %s' % (share_path, output))
     # Return the mountpath
     return str(output[0])
+
+
+def mount_share_at_path(share_path, mount_path):
+    """Mounts a share at the specified path
+
+    Args:
+        share_path: String URL with all auth info to connect to file share.
+        mount_path: Path to mount share on.
+
+    Returns:
+        The mount point or raises an error
+    """
+    sh_url = CoreFoundation.CFURLCreateWithString(None, share_path, None)
+    mo_url = CoreFoundation.CFURLCreateWithString(None, mount_path, None)
+    # Set UI to reduced interaction
+    open_options  = {NetFS.kNAUIOptionKey: NetFS.kNAUIOptionNoUI}
+    # Allow mounting sub-directories of root shares
+    # Also specify the share should be mounted directly at (not under)
+    # mount_path
+    mount_options = {NetFS.kNetFSAllowSubMountsKey: True,
+                     NetFS.kNetFSMountAtMountDirKey: True}
+    # Mount!
+    result, output = NetFS.NetFSMountURLSync(sh_url, mo_url, None, None,
+                                             open_options, mount_options, None)
+    # Check if it worked
+    if result != 0:
+         raise Exception('Error mounting url "%s" at path "%s": %s' %
+                         (share_path, mount_path, output))
+    # Return the mountpath
+    return str(output[0])
