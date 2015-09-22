@@ -436,8 +436,8 @@ class MountedRepository(Repository):
                 if mount_point:
                     self.connection["mount_point"] = mount_point
                     if self.connection["jss"].verbose:
-                        print("%s is already mounted at %s.\n" % \
-                              (self.connection["URL"], mount_point))
+                        print ("%s is already mounted at %s.\n" %
+                               (self.connection["URL"], mount_point))
 
                 # We found the share, no need to continue.
                 break

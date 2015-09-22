@@ -345,7 +345,7 @@ class JSS(object):
 
         if response.status_code == 201:
             if self.verbose:
-                print("POST: Success")
+                print "POST: Success"
         elif response.status_code >= 400:
             self._error_handler(JSSPostError, response)
 
@@ -363,7 +363,7 @@ class JSS(object):
 
         if response.status_code == 201:
             if self.verbose:
-                print("PUT: Success.")
+                print "PUT: Success."
         elif response.status_code >= 400:
             self._error_handler(JSSPutError, response)
 
@@ -374,7 +374,7 @@ class JSS(object):
 
         if response.status_code == 200:
             if self.verbose:
-                print("DEL: Success.")
+                print "DEL: Success."
         elif response.status_code >= 400:
             self._error_handler(JSSDeleteError, response)
 
@@ -1384,8 +1384,8 @@ class FileUpload(object):
 
     #    if response.status_code == 201:
     #        if self.jss.verbose:
-    #            print("POST: Success")
-    #            print(response.text.encode("utf-8"))
+    #            print "POST: Success"
+    #            print response.text.encode("utf-8")
     #    elif response.status_code >= 400:
     #        self.jss._error_handler(JSSPostError, response)
 
@@ -1415,7 +1415,7 @@ class FileUpload(object):
             raise JSSPostError("Curl error: %s, %s" % final_response)
         elif int(final_response[0]) == 201:
             if self.jss.verbose:
-                print("POST: Success")
+                print "POST: Success"
 
 
 class GSXConnection(JSSFlatObject):
@@ -1455,7 +1455,7 @@ class LDAPServer(JSSContainerObject):
 
         """
         user_url = "%s/%s/%s" % (self.get_object_url(), "user", user)
-        print(user_url)
+        print user_url
         response = self.jss.get(user_url)
         return LDAPUsersResults(self.jss, response)
 
