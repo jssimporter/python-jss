@@ -251,18 +251,16 @@ class JSS(object):
         self.distribution_points = distribution_points.DistributionPoints(self)
 
     def _error_handler(self, exception_cls, response):
-        """Generic error handler. Converts html responses to friendlier
-        text.
-
-        """
+        """Handle HTTP errors by formatting into strings."""
         # Responses are sent as html. Split on the newlines and give us
         # the <p> text back.
         errorlines = response.text.encode("utf-8").split("\n")
         error = []
+        pattern = re.compile(r"<p.*>(.*)</p>")
         for line in errorlines:
-            e = re.search(r"<p.*>(.*)</p>", line)
-            if e:
-                error.append(e.group(1))
+            err_line = re.search(pattern, line)
+            if err_line:
+                error.append(err_line.group(1))
 
         error = ". ".join(error)
         exception = exception_cls("Response Code: %s\tResponse: %s"
@@ -288,12 +286,12 @@ class JSS(object):
 
     @property
     def ssl_verify(self):
-        """Boolean value for whether to verify SSL traffic."""
+        """Boolean value for whether to verify SSL traffic is valid."""
         return self.session.verify
 
     @ssl_verify.setter
     def ssl_verify(self, value):
-        """Boolean value for whether to verify SSL traffic.
+        """Boolean value for whether to verify SSL traffic is valid.
 
         Args:
             value: Boolean.
@@ -301,16 +299,31 @@ class JSS(object):
         self.session.verify = value
 
     def get(self, url_path):
-        """Get a url, handle errors, and return an etree from the XML
-        data.
+        """GET a url, handle errors, and return an etree.
 
+        In general, it is better to use a higher level interface for
+        API requests, like the search methods on this class, or the
+        JSSObjects themselves.
+
+        Args:
+            url_path: String API endpoint path to GET (e.g. "/packages")
+
+        Returns:
+            ElementTree.Element for the XML returned from the JSS.
+
+        Raises:
+            JSSGetError if provided url_path has a >= 400 response, for
+            example, if an object queried for does not exist (404). Will
+            also raise JSSGetError for bad XML.
+
+            This behavior will change in the future for 404/Not Found
+            to returning None.
         """
         request_url = "%s%s" % (self._url, quote(url_path.encode("utf_8")))
         response = self.session.get(request_url)
 
-        if response.status_code == 200:
-            if self.verbose:
-                print("GET: Success.")
+        if response.status_code == 200 and self.verbose:
+            print "GET %s: Success." % request_url
         elif response.status_code >= 400:
             self._error_handler(JSSGetError, response)
 
@@ -320,6 +333,7 @@ class JSS(object):
             xmldata = ElementTree.fromstring(jss_results)
         except ElementTree.ParseError:
             raise JSSGetError("Error Parsing XML:\n%s" % jss_results)
+
         return xmldata
 
     def post(self, obj_class, url_path, data):
