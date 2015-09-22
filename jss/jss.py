@@ -1,78 +1,110 @@
 #!/usr/bin/env python
+# Copyright (C) 2014, 2015 Shea G Craig <shea.craig@da.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """jss.py
 
-Python wrapper for JSS API.
-Copyright (C) 2014 Shea G Craig <shea.craig@da.org>
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+Classes representing a JSS, and its available API calls, represented
+as JSSObjects.
 """
 
+
+import copy
+import os
+import re
+import ssl
+import subprocess
+from urllib import quote
+import urlparse
 from xml.dom import minidom
 from xml.etree import ElementTree
 from xml.parsers.expat import ExpatError
-import os
-import re
-import copy
-import subprocess
-import ssl
-from urllib import quote
-import urlparse
 
+import requests
+
+from . import distribution_points
 from .exceptions import (
     JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
     JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
     JSSUnsupportedSearchMethodError, JSSFileUploadParameterError)
-from . import distribution_points
 from .tlsadapter import TLSAdapter
-import requests
 from .tools import is_osx, is_linux
+
 try:
     from .contrib import FoundationPlist
-except ImportError as e:
+except ImportError as err:
+    # If using OSX, FoundationPlist will need Foundation/PyObjC
+    # available, or it won't import.
+
     if is_osx():
-        print("Warning: Import of FoundationPlist failed: %s" % e)
-        print("See README for information on this issue.")
+        print "Warning: Import of FoundationPlist failed:", err
+        print "See README for information on this issue."
     import plistlib
 
 
 class JSSPrefs(object):
-    """Uses the OS X preferences system to store credentials and JSS
-    URL.
+    """Object representing JSS credentials and configuration.
 
+    This JSSPrefs object can be used as an argument for a new JSS.
+    By default and with no arguments, it uses the preference domain
+    "com.github.sheagcraig.python-jss.plist". However, alternate
+    configurations can be supplied to the __init__ method to use
+    something else.
+
+    Preference file should include the following keys:
+        jss_url: String, full path, including port, to JSS, e.g.
+            "https://mycasper.donkey.com:8443".
+        jss_user: String, API username to use.
+        jss_pass: String, API password.
+        verify: (Optional) Boolean for whether to verify the JSS's
+            certificate matches the SSL traffic. This certificate must
+            be in your keychain. Defaults to True.
+        repos: (Optional) An array of file repositories dicts to
+            connect.
+        repos dicts:
+            Each file-share distribution point requires:
+            name: String name of the distribution point. Must match
+                the value on the JSS.
+            password: String password for the read/write user.
+
+            This form uses the distributionpoints API call to determine
+            the remaining information. There is also an explicit form;
+            See distribution_points package for more info
+
+            CDP and JDS types require one dict for the master, with
+            key:
+                type: String, either "CDP" or "JDS".
     """
+
     def __init__(self, preferences_file=None):
         """Create a preferences object.
 
-        preferences_file: Alternate location to look for preferences.
+        This JSSPrefs object can be used as an argument for a new JSS.
+        By default and with no arguments, it uses the preference domain
+        "com.github.sheagcraig.python-jss.plist". However, alternate
+        configurations can be supplied to the __init__ method to use
+        something else.
 
-        Preference file should include the following keys:
-            jss_url: Full path, including port, to JSS, e.g.
-                'https://mycasper.donkey.com:8443'.
-            jss_user: API username to use.
-            jss_pass: API password.
-            verify: Optional Boolean for whether to verify the JSS's
-                certificate matches the SSL traffic. This certificate must be
-                in your keychain. Defaults to True.
-            repos: (Optional) An array of file repositories dicts to
-                connect.
+        See the JSSPrefs __doc__ for information on supported
+        preferences.
 
-        repos Data (See distribution_points package for more info):
-            name:           String name of the distribution point. Must
-                            match the value on the JSS.
-            password:       For types requiring authentication.
+        Args:
+            preferences_file: String path to an alternate location to
+                look for preferences.
 
+        Raises:
+            JSSError if using an unsupported OS.
         """
         if preferences_file is None:
             plist_name = "com.github.sheagcraig.python-jss.plist"
@@ -86,27 +118,32 @@ class JSSPrefs(object):
 
         preferences_file = os.path.expanduser(preferences_file)
         if os.path.exists(preferences_file):
+            # Try to open using FoundationPlist. If it's not available,
+            # fall back to plistlib and hope it's not binary encoded.
+
             try:
                 prefs = FoundationPlist.readPlist(preferences_file)
             except NameError:
-                # Plist files are probably not binary on non-OS X
-                # machines, so this should be safe.
                 try:
                     prefs = plistlib.readPlist(preferences_file)
                 except ExpatError:
-                    subprocess.call(['plutil', '-convert', 'xml1',
-                                     preferences_file])
-                    prefs = plistlib.readPlist(preferences_file)
+                    # If we're on OSX, try to convert using another
+                    # tool.
+
+                    if is_osx():
+                        subprocess.call(
+                            ["plutil", "-convert", "xml1", preferences_file])
+                        prefs = plistlib.readPlist(preferences_file)
             try:
-                self.user = prefs['jss_user']
-                self.password = prefs['jss_pass']
-                self.url = prefs['jss_url']
+                self.user = prefs["jss_user"]
+                self.password = prefs["jss_pass"]
+                self.url = prefs["jss_url"]
             except KeyError:
                 raise JSSPrefsMissingKeyError("Please provide all required "
                                               "preferences!")
             # Optional file repository array. Defaults to empty list.
             self.repos = []
-            for repo in prefs.get('repos', []):
+            for repo in prefs.get("repos", []):
                 self.repos.append(dict(repo))
 
             self.verify = prefs.get("verify", True)
@@ -165,7 +202,7 @@ class JSS(object):
         self.ssl_verify = ssl_verify
         # For some objects the JSS tries to return JSON if we don't
         # specify that we want XML.
-        headers = {"content-type": 'text/xml', 'Accept': 'application/xml'}
+        headers = {"content-type": "text/xml", "Accept": "application/xml"}
         self.session.headers.update(headers)
         # Add a TransportAdapter to force TLS, since JSS no longer
         # accepts SSLv23, which is the default.
@@ -180,15 +217,15 @@ class JSS(object):
         """
         # Responses are sent as html. Split on the newlines and give us
         # the <p> text back.
-        errorlines = response.text.encode('utf-8').split('\n')
+        errorlines = response.text.encode("utf-8").split("\n")
         error = []
         for line in errorlines:
-            e = re.search(r'<p.*>(.*)</p>', line)
+            e = re.search(r"<p.*>(.*)</p>", line)
             if e:
                 error.append(e.group(1))
 
-        error = '. '.join(error)
-        exception = exception_cls('Response Code: %s\tResponse: %s'
+        error = ". ".join(error)
+        exception = exception_cls("Response Code: %s\tResponse: %s"
                                   % (response.status_code, error))
         exception.status_code = response.status_code
         raise exception
@@ -228,7 +265,7 @@ class JSS(object):
         data.
 
         """
-        request_url = '%s%s' % (self._url, quote(url_path.encode("utf_8")))
+        request_url = "%s%s" % (self._url, quote(url_path.encode("utf_8")))
         response = self.session.get(request_url)
 
         if response.status_code == 200:
@@ -238,7 +275,7 @@ class JSS(object):
             self._error_handler(JSSGetError, response)
 
         # JSS returns xml encoded in utf-8
-        jss_results = response.text.encode('utf-8')
+        jss_results = response.text.encode("utf-8")
         try:
             xmldata = ElementTree.fromstring(jss_results)
         except ElementTree.ParseError:
@@ -248,7 +285,7 @@ class JSS(object):
     def post(self, obj_class, url_path, data):
         """Post an object to the JSS. For creating new objects only."""
         # The JSS expects a post to ID 0 to create an object
-        request_url = '%s%s' % (self._url, url_path)
+        request_url = "%s%s" % (self._url, url_path)
         data = ElementTree.tostring(data)
         response = self.session.post(request_url, data=data)
 
@@ -259,14 +296,14 @@ class JSS(object):
             self._error_handler(JSSPostError, response)
 
         # Get the ID of the new object. JSS returns xml encoded in utf-8
-        jss_results = response.text.encode('utf-8')
-        id_ = int(re.search(r'<id>([0-9]+)</id>', jss_results).group(1))
+        jss_results = response.text.encode("utf-8")
+        id_ = int(re.search(r"<id>([0-9]+)</id>", jss_results).group(1))
 
         return self.factory.get_object(obj_class, id_)
 
     def put(self, url_path, data):
         """Updates an object on the JSS."""
-        request_url = '%s%s' % (self._url, url_path)
+        request_url = "%s%s" % (self._url, url_path)
         data = ElementTree.tostring(data)
         response = self.session.put(request_url, data)
 
@@ -278,7 +315,7 @@ class JSS(object):
 
     def delete(self, url_path):
         """Delete an object from the JSS."""
-        request_url = '%s%s' % (self._url, url_path)
+        request_url = "%s%s" % (self._url, url_path)
         response = self.session.delete(request_url)
 
         if response.status_code == 200:
@@ -499,14 +536,14 @@ class JSSObjectFactory(object):
                         objects, this may be overridden to include
                         searching by other criteria. See those objects
                         for more info.
-                dict:   Get the existing object with <dict>['id']
+                dict:   Get the existing object with <dict>["id"]
                 xml.etree.ElementTree.Element:
                         Create a new object from xml
 
                 Warning! Be sure to pass ID's as ints, not str!
         subset:
-            A list of sub-tags to request, or an '&' delimited string,
-            (e.g. 'general&purchasing').
+            A list of sub-tags to request, or an "&" delimited string,
+            (e.g. "general&purchasing").
         """
         if subset:
             if not isinstance(subset, list):
@@ -526,7 +563,7 @@ class JSSObjectFactory(object):
                 if obj_class.container:
                     result = result.find(obj_class.container)
                 response_objects = [item for item in result if item is not None
-                                    and item.tag != 'size']
+                                    and item.tag != "size"]
                 objects = [JSSListData(obj_class,
                                        {i.tag: i.text for i
                                         in response_object})
@@ -548,14 +585,14 @@ class JSSObjectFactory(object):
                         subset.append("general")
                     url += "/subset/%s" % "&".join(subset)
                 xmldata = self.jss.get(url)
-                if xmldata.find('size') is not None:
+                if xmldata.find("size") is not None:
                     # May need above treatment, with .find(container),
                     # and refactoring out this otherwise duplicate code.
 
                     # Get returned a list.
                     response_objects = [item for item in xmldata
                                         if item is not None and
-                                        item.tag != 'size']
+                                        item.tag != "size"]
                     objects = [JSSListData(obj_class,
                                            {i.tag: i.text for i
                                             in response_object})
@@ -585,11 +622,11 @@ class JSSObject(ElementTree.Element):
     can_put = True
     can_post = True
     can_delete = True
-    id_url = '/id/'
-    container = ''
-    default_search = 'name'
-    search_types = {'name': '/name/'}
-    list_type = 'JSSObject'
+    id_url = "/id/"
+    container = ""
+    default_search = "name"
+    search_types = {"name": "/name/"}
+    list_type = "JSSObject"
 
     def __init__(self, jss, data, **kwargs):
         """Initialize a new JSSObject
@@ -633,29 +670,29 @@ class JSSObject(ElementTree.Element):
         except (ValueError, TypeError):
             pass
         if isinstance(data, int):
-            return '%s%s%s' % (cls._url, cls.id_url, data)
+            return "%s%s%s" % (cls._url, cls.id_url, data)
         elif data is None:
             return cls._url
         else:
-            if '=' in data:
-                key, value = data.split('=')
+            if "=" in data:
+                key, value = data.split("=")
                 if key in cls.search_types:
-                    return '%s%s%s' % (cls._url, cls.search_types[key], value)
+                    return "%s%s%s" % (cls._url, cls.search_types[key], value)
                 else:
                     raise JSSUnsupportedSearchMethodError(
                         "This object cannot be queried by %s." % key)
             else:
-                return '%s%s%s' % (cls._url,
+                return "%s%s%s" % (cls._url,
                                    cls.search_types[cls.default_search], data)
 
     @classmethod
     def get_post_url(cls):
         """Return the post URL for this object class."""
-        return '%s%s%s' % (cls._url, cls.id_url, '0')
+        return "%s%s%s" % (cls._url, cls.id_url, "0")
 
     def get_object_url(self):
         """Return the complete API url to this object."""
-        return '%s%s%s' % (self._url, self.id_url, self.id)
+        return "%s%s%s" % (self._url, self.id_url, self.id)
 
     def delete(self):
         """Delete this object from the JSS."""
@@ -715,13 +752,13 @@ class JSSObject(ElementTree.Element):
     @property
     def name(self):
         """Return object name or None."""
-        return self.findtext('name') or self.findtext('general/name')
+        return self.findtext("name") or self.findtext("general/name")
 
     @property
     def id(self):
         """Return object ID or None."""
         # Most objects have ID nested in general. Groups don't.
-        result = self.findtext('id') or self.findtext('general/id')
+        result = self.findtext("id") or self.findtext("general/id")
         # After much consideration, I will treat id's as strings.
         #   We can't assign ID's, so there's no need to perform
         #   arithmetic on them.  Having to convert to str all over the
@@ -736,7 +773,7 @@ class JSSObject(ElementTree.Element):
 
         """
         i = "\n"
-        pad = '    '
+        pad = "    "
         if level:
             i += (level - 1) * pad
         num_kids = len(elem)
@@ -767,7 +804,7 @@ class JSSObject(ElementTree.Element):
         pretty_data = copy.deepcopy(self)
         self._indent(pretty_data)
         elementstring = ElementTree.tostring(pretty_data)
-        return elementstring.encode('utf-8')
+        return elementstring.encode("utf-8")
 
     def pretty_find(self, search):
         """Pretty print the results of a find.
@@ -780,7 +817,7 @@ class JSSObject(ElementTree.Element):
             pretty_data = copy.deepcopy(result)
             self._indent(pretty_data)
             elementstring = ElementTree.tostring(pretty_data)
-            print elementstring.encode('utf-8')
+            print elementstring.encode("utf-8")
 
     def _handle_location(self, location):
         """Return an element located at location.
@@ -810,9 +847,9 @@ class JSSObject(ElementTree.Element):
         """
         element = self._handle_location(location)
         if bool(value) is True:
-            element.text = 'true'
+            element.text = "true"
         else:
-            element.text = 'false'
+            element.text = "false"
 
     def add_object_to_path(self, obj, location):
         """Add an object of type JSSContainerObject to XMLEditor's
@@ -881,7 +918,7 @@ class JSSContainerObject(JSSObject):
     e.g. Computers, Policies.
 
     """
-    list_type = 'JSSContainerObject'
+    list_type = "JSSContainerObject"
 
     def new(self, name, **kwargs):
         name_element = ElementTree.SubElement(self, "name")
@@ -937,7 +974,7 @@ class JSSGroupObject(JSSContainerObject):
         """
         # There is a size tag which the JSS manages for us, so we can
         # ignore it.
-        if self.findtext("is_smart") == 'false':
+        if self.findtext("is_smart") == "false":
             self.add_object_to_path(device, container)
         else:
             # Technically this isn't true. It will strangely accept
@@ -972,12 +1009,12 @@ class JSSDeviceObject(JSSContainerObject):
     @property
     def udid(self):
         """Return device's UDID or None."""
-        return self.findtext('general/udid')
+        return self.findtext("general/udid")
 
     @property
     def serial_number(self):
         """Return device's serial number or None."""
-        return self.findtext('general/serial_number')
+        return self.findtext("general/serial_number")
 
 
 class JSSFlatObject(JSSObject):
@@ -1008,11 +1045,11 @@ class JSSFlatObject(JSSObject):
 
 
 class Account(JSSContainerObject):
-    _url = '/accounts'
-    container = 'users'
-    id_url = '/userid/'
-    search_types = {'userid': '/userid/', 'username': '/username/',
-                    'name': '/username/'}
+    _url = "/accounts"
+    container = "users"
+    id_url = "/userid/"
+    search_types = {"userid": "/userid/", "username": "/username/",
+                    "name": "/username/"}
 
 
 class AccountGroup(JSSContainerObject):
@@ -1020,100 +1057,100 @@ class AccountGroup(JSSContainerObject):
     hierarchy they are actually part of accounts, but I seperated them.
 
     """
-    _url = '/accounts'
-    container = 'groups'
-    id_url = '/groupid/'
-    search_types = {'groupid': '/groupid/', 'groupname': '/groupname/',
-                    'name': '/groupname/'}
+    _url = "/accounts"
+    container = "groups"
+    id_url = "/groupid/"
+    search_types = {"groupid": "/groupid/", "groupname": "/groupname/",
+                    "name": "/groupname/"}
 
 
 class ActivationCode(JSSFlatObject):
-    _url = '/activationcode'
-    list_type = 'activation_code'
+    _url = "/activationcode"
+    list_type = "activation_code"
     can_delete = False
     can_post = False
     can_list = False
 
 
 class AdvancedComputerSearch(JSSContainerObject):
-    _url = '/advancedcomputersearches'
+    _url = "/advancedcomputersearches"
 
 
 class AdvancedMobileDeviceSearch(JSSContainerObject):
-    _url = '/advancedmobiledevicesearches'
+    _url = "/advancedmobiledevicesearches"
 
 
 class AdvancedUserSearch(JSSContainerObject):
-    _url = '/advancedusersearches'
+    _url = "/advancedusersearches"
 
 
 class Building(JSSContainerObject):
-    _url = '/buildings'
-    list_type = 'building'
+    _url = "/buildings"
+    list_type = "building"
 
 
 class BYOProfile(JSSContainerObject):
-    _url = '/byoprofiles'
-    list_type = 'byoprofiles'
+    _url = "/byoprofiles"
+    list_type = "byoprofiles"
     can_delete = False
     can_post = False
 
 
 class Category(JSSContainerObject):
-    _url = '/categories'
-    list_type = 'category'
+    _url = "/categories"
+    list_type = "category"
 
 
 class Class(JSSContainerObject):
-    _url = '/classes'
+    _url = "/classes"
 
 
 class Computer(JSSDeviceObject):
-    """Computer objects include a 'match' search type which queries
+    """Computer objects include a "match" search type which queries
     across multiple properties.
 
     """
-    list_type = 'computer'
-    _url = '/computers'
-    search_types = {'name': '/name/', 'serial_number': '/serialnumber/',
-                    'udid': '/udid/', 'macaddress': '/macadress/',
-                    'match': '/match/'}
+    list_type = "computer"
+    _url = "/computers"
+    search_types = {"name": "/name/", "serial_number": "/serialnumber/",
+                    "udid": "/udid/", "macaddress": "/macadress/",
+                    "match": "/match/"}
 
     @property
     def mac_addresses(self):
         """Return a list of mac addresses for this device."""
         # Computers don't tell you which network device is which.
-        mac_addresses = [self.findtext('general/mac_address')]
-        if self.findtext('general/alt_mac_address'):
-            mac_addresses.append(self.findtext('general/alt_mac_address'))
+        mac_addresses = [self.findtext("general/mac_address")]
+        if self.findtext("general/alt_mac_address"):
+            mac_addresses.append(self.findtext("general/alt_mac_address"))
             return mac_addresses
 
 
 class ComputerCheckIn(JSSFlatObject):
-    _url = '/computercheckin'
+    _url = "/computercheckin"
     can_delete = False
     can_list = False
     can_post = False
 
 
 class ComputerCommand(JSSContainerObject):
-    _url = '/computercommands'
+    _url = "/computercommands"
     can_delete = False
     can_put = False
 
 
 class ComputerConfiguration(JSSContainerObject):
-    _url = '/computerconfigurations'
-    list_type = 'computer_configuration'
+    _url = "/computerconfigurations"
+    list_type = "computer_configuration"
 
 
 class ComputerExtensionAttribute(JSSContainerObject):
-    _url = '/computerextensionattributes'
+    _url = "/computerextensionattributes"
 
 
 class ComputerGroup(JSSGroupObject):
-    _url = '/computergroups'
-    list_type = 'computer_group'
+    _url = "/computergroups"
+    list_type = "computer_group"
 
     def __init__(self, jss, data, **kwargs):
         """Init a ComputerGroup, adding in extra Elements."""
@@ -1152,48 +1189,48 @@ class ComputerGroup(JSSGroupObject):
 
 
 class ComputerInventoryCollection(JSSFlatObject):
-    _url = '/computerinventorycollection'
+    _url = "/computerinventorycollection"
     can_list = False
     can_post = False
     can_delete = False
 
 
 class ComputerInvitation(JSSContainerObject):
-    _url = '/computerinvitations'
+    _url = "/computerinvitations"
     can_put = False
-    search_types = {'name': '/name/', 'invitation': '/invitation/'}
+    search_types = {"name": "/name/", "invitation": "/invitation/"}
 
 
 class ComputerReport(JSSContainerObject):
-    _url = '/computerreports'
+    _url = "/computerreports"
     can_put = False
     can_post = False
     can_delete = False
 
 
 class Department(JSSContainerObject):
-    _url = '/departments'
-    list_type = 'department'
+    _url = "/departments"
+    list_type = "department"
 
 
 class DirectoryBinding(JSSContainerObject):
-    _url = '/directorybindings'
+    _url = "/directorybindings"
 
 
 class DiskEncryptionConfiguration(JSSContainerObject):
-    _url = '/diskencryptionconfigurations'
+    _url = "/diskencryptionconfigurations"
 
 
 class DistributionPoint(JSSContainerObject):
-    _url = '/distributionpoints'
+    _url = "/distributionpoints"
 
 
 class DockItem(JSSContainerObject):
-    _url = '/dockitems'
+    _url = "/dockitems"
 
 
 class EBook(JSSContainerObject):
-    _url = '/ebooks'
+    _url = "/ebooks"
 
 
 class FileUpload(object):
@@ -1211,7 +1248,7 @@ class FileUpload(object):
     changing the parameters, and issuing another save().
 
     """
-    _url = 'fileuploads'
+    _url = "fileuploads"
 
     def __init__(self, j, resource_type, id_type, _id, resource):
         """Prepare a new FileUpload.
@@ -1242,12 +1279,12 @@ class FileUpload(object):
         resource            String path to the file to upload.
 
         """
-        resource_types = ['computers', 'mobiledevices', 'enrollmentprofiles',
-                          'peripherals', 'policies', 'ebooks',
-                          'mobiledeviceapplicationsicon',
-                          'mobiledeviceapplicationsipa',
-                          'diskencryptionconfigurations']
-        id_types = ['id', 'name']
+        resource_types = ["computers", "mobiledevices", "enrollmentprofiles",
+                          "peripherals", "policies", "ebooks",
+                          "mobiledeviceapplicationsicon",
+                          "mobiledeviceapplicationsipa",
+                          "diskencryptionconfigurations"]
+        id_types = ["id", "name"]
 
         self.jss = j
 
@@ -1267,8 +1304,8 @@ class FileUpload(object):
         # To support curl workaround in FileUpload.save()...
         self.resource_path = resource
 
-        self.resource = {'name': (os.path.basename(resource),
-                                  open(resource, 'rb'), 'multipart/form-data')}
+        self.resource = {"name": (os.path.basename(resource),
+                                  open(resource, "rb"), "multipart/form-data")}
 
         self.set_upload_url()
 
@@ -1294,7 +1331,7 @@ class FileUpload(object):
     #    if response.status_code == 201:
     #        if self.jss.verbose:
     #            print("POST: Success")
-    #            print(response.text.encode('utf-8'))
+    #            print(response.text.encode("utf-8"))
     #    elif response.status_code >= 400:
     #        self.jss._error_handler(JSSPostError, response)
 
@@ -1306,15 +1343,15 @@ class FileUpload(object):
             # to curl.
             # This is defect D-008936.
 
-            curl = ['/usr/bin/curl', '-kvu', '%s:%s' % self.jss.session.auth,
-                    self._upload_url, '-F', 'name=@%s' %
-                    os.path.expanduser(self.resource_path), '-X', 'POST']
+            curl = ["/usr/bin/curl", "-kvu", "%s:%s" % self.jss.session.auth,
+                    self._upload_url, "-F", "name=@%s" %
+                    os.path.expanduser(self.resource_path), "-X", "POST"]
             response = subprocess.check_output(curl, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             # Handle problems with curl.
             raise JSSPostError("Curl subprocess error code: %s" % e.message)
 
-        http_response_regex = '.*HTTP/1.1 ([0-9]{3}) ([a-zA-Z ]*)'
+        http_response_regex = ".*HTTP/1.1 ([0-9]{3}) ([a-zA-Z ]*)"
         found_patterns = re.findall(http_response_regex, response)
         if len(found_patterns) > 0:
             final_response = found_patterns[-1]
@@ -1328,20 +1365,20 @@ class FileUpload(object):
 
 
 class GSXConnection(JSSFlatObject):
-    _url = '/gsxconnection'
+    _url = "/gsxconnection"
     can_list = False
     can_post = False
     can_delete = False
 
 
 class IBeacon(JSSContainerObject):
-    _url = '/ibeacons'
-    list_type = 'ibeacon'
+    _url = "/ibeacons"
+    list_type = "ibeacon"
 
 
 class JSSUser(JSSFlatObject):
     """JSSUser is deprecated."""
-    _url = '/jssuser'
+    _url = "/jssuser"
     can_list = False
     can_post = False
     can_put = False
@@ -1350,7 +1387,7 @@ class JSSUser(JSSFlatObject):
 
 
 class LDAPServer(JSSContainerObject):
-    _url = '/ldapservers'
+    _url = "/ldapservers"
 
     def search_users(self, user):
         """Search for LDAP users.
@@ -1363,7 +1400,7 @@ class LDAPServer(JSSContainerObject):
         Returns an LDAPUsersResult object.
 
         """
-        user_url = "%s/%s/%s" % (self.get_object_url(), 'user', user)
+        user_url = "%s/%s/%s" % (self.get_object_url(), "user", user)
         print(user_url)
         response = self.jss.get(user_url)
         return LDAPUsersResults(self.jss, response)
@@ -1379,14 +1416,14 @@ class LDAPServer(JSSContainerObject):
         Returns an LDAPGroupsResult object.
 
         """
-        group_url = "%s/%s/%s" % (self.get_object_url(), 'group', group)
+        group_url = "%s/%s/%s" % (self.get_object_url(), "group", group)
         response = self.jss.get(group_url)
         return LDAPGroupsResults(self.jss, response)
 
     def is_user_in_group(self, user, group):
         """Test for whether a user is in a group. Returns bool."""
-        search_url = "%s/%s/%s/%s/%s" % (self.get_object_url(), 'group', group,
-                                         'user', user)
+        search_url = "%s/%s/%s/%s/%s" % (self.get_object_url(), "group", group,
+                                         "user", user)
         response = self.jss.get(search_url)
         # Sanity check
         length = len(response)
@@ -1395,8 +1432,8 @@ class LDAPServer(JSSContainerObject):
             # User doesn't exist. Use default False value.
             pass
         elif length == 2:
-            if response.findtext('ldap_user/username') == user:
-                if response.findtext('ldap_user/is_member') == 'Yes':
+            if response.findtext("ldap_user/username") == user:
+                if response.findtext("ldap_user/is_member") == "Yes":
                     result = True
         elif len(response) >= 2:
             raise JSSGetError("Unexpected response.")
@@ -1409,15 +1446,15 @@ class LDAPServer(JSSContainerObject):
     @property
     def id(self):
         """Return object ID or None."""
-        # LDAPServer's ID is in 'connection'
-        result = self.findtext('connection/id')
+        # LDAPServer's ID is in "connection"
+        result = self.findtext("connection/id")
         return result
 
     @property
     def name(self):
         """Return object name or None."""
-        # LDAPServer's name is in 'connection'
-        result = self.findtext('connection/name')
+        # LDAPServer's name is in "connection"
+        result = self.findtext("connection/name")
         return result
 
 
@@ -1438,77 +1475,77 @@ class LDAPGroupsResults(JSSContainerObject):
 
 
 class LicensedSoftware(JSSContainerObject):
-    _url = '/licensedsoftware'
+    _url = "/licensedsoftware"
 
 
 class MacApplication(JSSContainerObject):
-    _url = '/macapplications'
-    list_type = 'mac_application'
+    _url = "/macapplications"
+    list_type = "mac_application"
 
 
 class ManagedPreferenceProfile(JSSContainerObject):
-    _url = '/managedpreferenceprofiles'
+    _url = "/managedpreferenceprofiles"
 
 
 class MobileDevice(JSSDeviceObject):
-    """Mobile Device objects include a 'match' search type which queries
+    """Mobile Device objects include a "match" search type which queries
     across multiple properties.
 
     """
-    _url = '/mobiledevices'
-    list_type = 'mobile_device'
-    search_types = {'name': '/name/', 'serial_number': '/serialnumber/',
-                    'udid': '/udid/', 'macaddress': '/macadress/',
-                    'match': '/match/'}
+    _url = "/mobiledevices"
+    list_type = "mobile_device"
+    search_types = {"name": "/name/", "serial_number": "/serialnumber/",
+                    "udid": "/udid/", "macaddress": "/macadress/",
+                    "match": "/match/"}
 
     @property
     def wifi_mac_address(self):
         """Return device's WIFI MAC address or None."""
-        return self.findtext('general/wifi_mac_address')
+        return self.findtext("general/wifi_mac_address")
 
     @property
     def bluetooth_mac_address(self):
         """Return device's Bluetooth MAC address or None."""
-        return self.findtext('general/bluetooth_mac_address') or \
-            self.findtext('general/mac_address')
+        return self.findtext("general/bluetooth_mac_address") or \
+            self.findtext("general/mac_address")
 
 
 class MobileDeviceApplication(JSSContainerObject):
-    _url = '/mobiledeviceapplications'
+    _url = "/mobiledeviceapplications"
 
 
 class MobileDeviceCommand(JSSContainerObject):
-    _url = '/mobiledevicecommands'
+    _url = "/mobiledevicecommands"
     can_put = False
     can_delete = False
-    search_types = {'name': '/name/', 'uuid': '/uuid/',
-                    'command': '/command/'}
+    search_types = {"name": "/name/", "uuid": "/uuid/",
+                    "command": "/command/"}
     # TODO: This object _can_ post, but it works a little differently
     can_post = False
 
 
 class MobileDeviceConfigurationProfile(JSSContainerObject):
-    _url = '/mobiledeviceconfigurationprofiles'
+    _url = "/mobiledeviceconfigurationprofiles"
 
 
 class MobileDeviceEnrollmentProfile(JSSContainerObject):
-    _url = '/mobiledeviceenrollmentprofiles'
-    search_types = {'name': '/name/', 'invitation': '/invitation/'}
+    _url = "/mobiledeviceenrollmentprofiles"
+    search_types = {"name": "/name/", "invitation": "/invitation/"}
 
 
 class MobileDeviceExtensionAttribute(JSSContainerObject):
-    _url = '/mobiledeviceextensionattributes'
+    _url = "/mobiledeviceextensionattributes"
 
 
 class MobileDeviceInvitation(JSSContainerObject):
-    _url = '/mobiledeviceinvitations'
+    _url = "/mobiledeviceinvitations"
     can_put = False
-    search_types = {'invitation': '/invitation/'}
+    search_types = {"invitation": "/invitation/"}
 
 
 class MobileDeviceGroup(JSSGroupObject):
-    _url = '/mobiledevicegroups'
-    list_type = 'mobile_device_group'
+    _url = "/mobiledevicegroups"
+    list_type = "mobile_device_group"
 
     def add_mobile_device(self, device):
         """Add a mobile_device to the group."""
@@ -1521,31 +1558,31 @@ class MobileDeviceGroup(JSSGroupObject):
 
 
 class MobileDeviceProvisioningProfile(JSSContainerObject):
-    _url = '/mobiledeviceprovisioningprofiles'
-    search_types = {'name': '/name/', 'uuid': '/uuid/'}
+    _url = "/mobiledeviceprovisioningprofiles"
+    search_types = {"name": "/name/", "uuid": "/uuid/"}
 
 
 class NetbootServer(JSSContainerObject):
-    _url = '/netbootservers'
+    _url = "/netbootservers"
 
 
 class NetworkSegment(JSSContainerObject):
-    _url = '/networksegments'
+    _url = "/networksegments"
 
 
 class OSXConfigurationProfile(JSSContainerObject):
-    _url = '/osxconfigurationprofiles'
+    _url = "/osxconfigurationprofiles"
 
 
 class Package(JSSContainerObject):
-    _url = '/packages'
-    list_type = 'package'
+    _url = "/packages"
+    list_type = "package"
 
     def new(self, filename, **kwargs):
         name = ElementTree.SubElement(self, "name")
         name.text = filename
         category = ElementTree.SubElement(self, "category")
-        category.text = kwargs.get('cat_name')
+        category.text = kwargs.get("cat_name")
         fname = ElementTree.SubElement(self, "filename")
         fname.text = filename
         ElementTree.SubElement(self, "info")
@@ -1578,14 +1615,14 @@ class Package(JSSContainerObject):
 
     def set_os_requirements(self, requirements):
         """Sets package OS Requirements. Pass in a string of comma
-        seperated OS versions. A lowercase 'x' is allowed as a wildcard,
-        e.g. '10.9.x'
+        seperated OS versions. A lowercase "x" is allowed as a wildcard,
+        e.g. "10.9.x"
 
         """
         self.find("os_requirements").text = requirements
 
     def set_category(self, category):
-        """Sets package category to 'category', which can be a string of
+        """Sets package category to "category", which can be a string of
         an existing category's name, or a Category object.
 
         """
@@ -1605,28 +1642,28 @@ class Package(JSSContainerObject):
         # fail. If we clear the category under those circumstances, it
         # will work.
         # See issue: D-008180
-        category = self.find('category')
+        category = self.find("category")
         if category.text == "No category assigned":
-            self.set_category('')
+            self.set_category("")
 
         super(Package, self).save()
 
 
 class Peripheral(JSSContainerObject):
-    _url = '/peripherals'
+    _url = "/peripherals"
     search_types = {}
 
 
 class PeripheralType(JSSContainerObject):
-    _url = '/peripheraltypes'
+    _url = "/peripheraltypes"
     search_types = {}
 
 
 class Policy(JSSContainerObject):
-    _url = '/policies'
-    list_type = 'policy'
+    _url = "/policies"
+    list_type = "policy"
 
-    def new(self, name='Unknown', category=None):
+    def new(self, name="Unknown", category=None):
         """Create a barebones policy.
 
         name:       Policy name
@@ -1681,7 +1718,7 @@ class Policy(JSSContainerObject):
         self.set_bool(self.recon, True)
 
     def add_object_to_scope(self, obj):
-        """Add an object 'obj' to the appropriate scope block."""
+        """Add an object "obj" to the appropriate scope block."""
         if isinstance(obj, Computer):
             self.add_object_to_path(obj, "scope/computers")
         elif isinstance(obj, ComputerGroup):
@@ -1706,7 +1743,7 @@ class Policy(JSSContainerObject):
             self.clear_list("%s%s" % ("scope/", section))
 
     def add_object_to_exclusions(self, obj):
-        """Add an object 'obj' to the appropriate scope exclusions
+        """Add an object "obj" to the appropriate scope exclusions
         block.
 
         obj should be an instance of Computer, ComputerGroup, Building,
@@ -1764,70 +1801,70 @@ class Policy(JSSContainerObject):
         # fail. If we clear the category under those circumstances, it
         # will work.
         # See issue: D-008180
-        category = self.find('general/category')
-        if category.findtext('id') == "-1":
-            category.remove(category.find('name'))
-            category.remove(category.find('id'))
+        category = self.find("general/category")
+        if category.findtext("id") == "-1":
+            category.remove(category.find("name"))
+            category.remove(category.find("id"))
 
         super(Policy, self).save()
 
 
 class Printer(JSSContainerObject):
-    _url = '/printers'
+    _url = "/printers"
 
 
 class RestrictedSoftware(JSSContainerObject):
-    _url = '/restrictedsoftware'
+    _url = "/restrictedsoftware"
 
 
 class RemovableMACAddress(JSSContainerObject):
-    _url = '/removablemacaddresses'
+    _url = "/removablemacaddresses"
 
 
 class SavedSearch(JSSContainerObject):
-    _url = '/savedsearches'
+    _url = "/savedsearches"
     can_put = False
     can_post = False
     can_delete = False
 
 
 class Script(JSSContainerObject):
-    _url = '/scripts'
-    list_type = 'script'
+    _url = "/scripts"
+    list_type = "script"
 
 
 class Site(JSSContainerObject):
-    _url = '/sites'
-    list_type = 'site'
+    _url = "/sites"
+    list_type = "site"
 
 
 class SoftwareUpdateServer(JSSContainerObject):
-    _url = '/softwareupdateservers'
+    _url = "/softwareupdateservers"
 
 
 class SMTPServer(JSSFlatObject):
-    _url = '/smtpserver'
-    id_url = ''
+    _url = "/smtpserver"
+    id_url = ""
     can_list = False
     can_post = False
     search_types = {}
 
 
 class UserExtensionAttribute(JSSContainerObject):
-    _url = '/userextensionattributes'
+    _url = "/userextensionattributes"
 
 
 class User(JSSContainerObject):
-    _url = '/users'
+    _url = "/users"
 
 
 class UserGroup(JSSContainerObject):
-    _url = '/usergroups'
+    _url = "/usergroups"
 
 
 class VPPAccount(JSSContainerObject):
-    _url = '/vppaccounts'
-    list_type = 'vpp_account'
+    _url = "/vppaccounts"
+    list_type = "vpp_account"
 
 
 class SearchCriteria(ElementTree.Element):
@@ -1866,11 +1903,11 @@ class JSSListData(dict):
 
     @property
     def id(self):
-        return int(self['id'])
+        return int(self["id"])
 
     @property
     def name(self):
-        return self['name']
+        return self["name"]
 
 
 class JSSObjectList(list):
@@ -1896,14 +1933,14 @@ class JSSObjectList(list):
         indenting!
 
         """
-        delimeter = 50 * '-' + '\n'
+        delimeter = 50 * "-" + "\n"
         output_string = delimeter
         for obj in self:
             output_string += "List index: \t%s\n" % self.index(obj)
             for k, v in obj.items():
                 output_string += "%s:\t\t%s\n" % (k, v)
             output_string += delimeter
-        return output_string.encode('utf-8')
+        return output_string.encode("utf-8")
 
     def sort(self):
         """Sort list elements by ID."""
@@ -1939,13 +1976,13 @@ class JSSObjectList(list):
         Args:
             subset:
                 For objects which support it, a list of sub-tags to
-                request, or an '&' delimited string, (e.g.
-                'general&purchasing'). Default to None.
+                request, or an "&" delimited string, (e.g.
+                "general&purchasing"). Default to None.
         """
         final_list = []
         for i in range(0, len(self)):
             result = self.factory.get_object(
-                self.obj_class, int(self[i]['id']), subset)
+                self.obj_class, int(self[i]["id"]), subset)
             final_list.append(result)
 
         return final_list
