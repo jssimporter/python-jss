@@ -70,8 +70,7 @@ class JSSPrefs(object):
         verify: (Optional) Boolean for whether to verify the JSS's
             certificate matches the SSL traffic. This certificate must
             be in your keychain. Defaults to True.
-        repos: (Optional) An array of file repositories dicts to
-            connect.
+        repos: (Optional) A list of file repositories dicts to connect.
         repos dicts:
             Each file-share distribution point requires:
             name: String name of the distribution point. Must match
@@ -141,6 +140,7 @@ class JSSPrefs(object):
             except KeyError:
                 raise JSSPrefsMissingKeyError("Please provide all required "
                                               "preferences!")
+
             # Optional file repository array. Defaults to empty list.
             self.repos = []
             for repo in prefs.get("repos", []):
@@ -153,32 +153,68 @@ class JSSPrefs(object):
 
 
 class JSS(object):
-    """Connect to a JSS and handle API requests."""
+    """Represents a JAMF Software Server, with object search methods.
+
+    Attributes:
+        base_url: String, full URL to the JSS, with port.
+        user: String API username.
+        password: String API password for user.
+        repo_prefs: List of dicts of repository configuration data.
+        verbose: Boolean whether to include extra output.
+        jss_migrated: Boolean whether JSS has had scripts "migrated".
+            Used to determine whether to upload scripts in Script
+            object XML or as files to the distribution points.
+        session: Requests session used to make all HTTP requests.
+        ssl_verify: Boolean whether to verify SSL traffic from the JSS
+            is genuine.
+        factory: JSSObjectFactory object for building JSSObjects.
+        distribution_points: DistributionPoints
+    """
+
     def __init__(self, jss_prefs=None, url=None, user=None, password=None,
-                 repo_prefs=[], ssl_verify=True, verbose=False,
+                 repo_prefs=None, ssl_verify=True, verbose=False,
                  jss_migrated=False, suppress_warnings=False):
-        """Provide either a JSSPrefs object OR specify url, user, and
-        password to init.
+        """Setup a JSS for making API requests.
 
-        jss_prefs:  A JSSPrefs object.
-        url:        Path with port to a JSS. See JSSPrefs.__doc__
-        user:       API Username.
-        password:   API Password.
-        repo_prefs: A list of dicts with repository names and passwords.
-                    See JSSPrefs.
-        ssl_verify: Boolean indicating whether to verify SSL
-                    certificates.  Defaults to True.
-        verbose:    Boolean indicating the level of logging. (Doesn't do
-                    much.)
-        jss_migrated:
-                    Boolean indicating whether scripts have been
-                    migrated to the database. Used for determining
-                    copy_script type.
-        suppress_warnings:
-                    Turns off the urllib3 warnings. Remember, these
-                    warnings are there for a reason! Use at your own
-                    risk.
+        Provide either a JSSPrefs object OR specify url, user, and
+        password to init. Other parameters are optional.
 
+        Args:
+            jss_prefs:  A JSSPrefs object.
+            url: String, full URL to a JSS, with port.
+            user: API Username.
+            password: API Password.
+
+            repo_prefs: A list of dicts with repository names and
+                passwords.
+            repos: (Optional) List of file repositories dicts to
+                    connect.
+                repo dicts:
+                    Each file-share distribution point requires:
+                        name: String name of the distribution point.
+                            Must match the value on the JSS.
+                        password: String password for the read/write
+                            user.
+
+                    This form uses the distributionpoints API call to
+                    determine the remaining information. There is also
+                    an explicit form; See distribution_points package
+                    for more info
+
+                    CDP and JDS types require one dict for the master,
+                    with key:
+                        type: String, either "CDP" or "JDS".
+
+            ssl_verify: Boolean whether to verify SSL traffic from the
+                JSS is genuine.
+            verbose: Boolean whether to include extra output.
+            jss_migrated: Boolean whether JSS has had scripts
+                "migrated". Used to determine whether to upload scripts
+                in Script object XML or as files to the distribution
+                points.
+            suppress_warnings: Turns off the urllib3 warnings. Remember,
+                these warnings are there for a reason! Use at your own
+                risk.
         """
         if jss_prefs is not None:
             url = jss_prefs.url
@@ -190,23 +226,27 @@ class JSS(object):
         if suppress_warnings:
             requests.packages.urllib3.disable_warnings()
 
-        # Used by some non-API methods.
         self.base_url = url
         self.user = user
         self.password = password
-        self.repo_prefs = repo_prefs
+        self.repo_prefs = repo_prefs if repo_prefs else []
         self.verbose = verbose
         self.jss_migrated = jss_migrated
         self.session = requests.Session()
         self.session.auth = (self.user, self.password)
         self.ssl_verify = ssl_verify
-        # For some objects the JSS tries to return JSON if we don't
-        # specify that we want XML.
+
+        # For some objects the JSS tries to return JSON, so we explictly
+        # request XML.
+
         headers = {"content-type": "text/xml", "Accept": "application/xml"}
         self.session.headers.update(headers)
+
         # Add a TransportAdapter to force TLS, since JSS no longer
         # accepts SSLv23, which is the default.
+
         self.session.mount(self.base_url, TLSAdapter())
+
         self.factory = JSSObjectFactory(self)
         self.distribution_points = distribution_points.DistributionPoints(self)
 
