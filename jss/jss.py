@@ -337,44 +337,98 @@ class JSS(object):
         return xmldata
 
     def post(self, obj_class, url_path, data):
-        """Post an object to the JSS. For creating new objects only."""
+        """POST an object to the JSS. For creating new objects only.
+
+        The data argument is POSTed to the JSS, which, upon success,
+        returns the complete XML for the new object. This data is used
+        to get the ID of the new object, and, via the
+        JSSObjectFactory, GET that ID to instantiate a new JSSObject of
+        class obj_class.
+
+        This allows incomplete (but valid) XML for an object to be used
+        to create a new object, with the JSS filling in the remaining
+        data. Also, only the JSS may specify things like ID, so this
+        method retrieves those pieces of data.
+
+        In general, it is better to use a higher level interface for
+        creating new objects, namely, creating a JSSObject subclass and
+        then using its save method.
+
+        Args:
+            obj_class: JSSObject subclass to create from POST.
+            url_path: String API endpoint path to POST (e.g.
+                "/packages/id/0")
+            data: xml.etree.ElementTree.Element with valid XML for the
+                desired obj_class.
+
+        Returns:
+            An object of class obj_class, representing a newly created
+            object on the JSS. The data is what has been returned after
+            it has been parsed by the JSS and added to the database.
+
+        Raises:
+            JSSPostError if provided url_path has a >= 400 response.
+        """
         # The JSS expects a post to ID 0 to create an object
+
         request_url = "%s%s" % (self._url, url_path)
         data = ElementTree.tostring(data)
         response = self.session.post(request_url, data=data)
 
-        if response.status_code == 201:
-            if self.verbose:
-                print "POST: Success"
+        if response.status_code == 201 and self.verbose:
+            print "POST %s: Success" % request_url
         elif response.status_code >= 400:
             self._error_handler(JSSPostError, response)
 
         # Get the ID of the new object. JSS returns xml encoded in utf-8
+
         jss_results = response.text.encode("utf-8")
         id_ = int(re.search(r"<id>([0-9]+)</id>", jss_results).group(1))
 
         return self.factory.get_object(obj_class, id_)
 
     def put(self, url_path, data):
-        """Updates an object on the JSS."""
+        """Update an existing object on the JSS.
+
+        In general, it is better to use a higher level interface for
+        updating objects, namely, making changes to a JSSObject subclass
+        and then using its save method.
+
+        Args:
+            url_path: String API endpoint path to PUT, with ID (e.g.
+                "/packages/id/<object ID>")
+            data: xml.etree.ElementTree.Element with valid XML for the
+                desired obj_class.
+        Raises:
+            JSSPutError if provided url_path has a >= 400 response.
+        """
         request_url = "%s%s" % (self._url, url_path)
         data = ElementTree.tostring(data)
         response = self.session.put(request_url, data)
 
-        if response.status_code == 201:
-            if self.verbose:
-                print "PUT: Success."
+        if response.status_code == 201 and self.verbose:
+            print "PUT %s: Success." % request_url
         elif response.status_code >= 400:
             self._error_handler(JSSPutError, response)
 
     def delete(self, url_path):
-        """Delete an object from the JSS."""
+        """Delete an object from the JSS.
+
+        In general, it is better to use a higher level interface for
+        deleting objects, namely, using a JSSObject's delete method.
+
+        Args:
+            url_path: String API endpoint path to DEL, with ID (e.g.
+                "/packages/id/<object ID>")
+
+        Raises:
+            JSSDeleteError if provided url_path has a >= 400 response.
+        """
         request_url = "%s%s" % (self._url, url_path)
         response = self.session.delete(request_url)
 
-        if response.status_code == 200:
-            if self.verbose:
-                print "DEL: Success."
+        if response.status_code == 200 and self.verbose:
+            print "DEL %s: Success." % request_url
         elif response.status_code >= 400:
             self._error_handler(JSSDeleteError, response)
 
