@@ -136,7 +136,7 @@ class TestJSS(object):
         new_policy.delete()
 
     def test_JSS_constructor_methods(self):
-        skip_these_methods = ['__init__', 'get', 'delete', 'put', 'post', '_error_handler']
+        skip_these_methods = ['__init__', 'get', 'delete', 'put', 'post', '_error_handler', "_docstring_parameter"]
         constructor_methods = [m[1] for m in inspect.getmembers(j_global) if inspect.ismethod(m[1]) and m[0] not in skip_these_methods]
         for cls in constructor_methods:
             instance = cls()
