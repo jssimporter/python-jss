@@ -775,9 +775,20 @@ class JSS(object):
 
 
 class JSSObjectFactory(object):
-    """Create JSSObjects intelligently based on a single parameter."""
+    """Create JSSObjects intelligently based on a single parameter.
+
+    Attributes:
+        jss: Copy of a JSS object to which API requests are
+        delegated.
+    """
 
     def __init__(self, jss):
+        """Configure a JSSObjectFactory
+
+        Args:
+            jss: JSS object to which API requests should be
+                delegated.
+        """
         self.jss = jss
 
     def get_object(self, obj_class, data=None, subset=None):
@@ -879,6 +890,8 @@ class JSSObjectFactory(object):
                 return self.jss.post(obj_class, url, data)
             else:
                 raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
+        else:
+            raise ValueError
 
     def _build_jss_object_list(self, response, obj_class):
         """Build a JSSListData object from response."""
@@ -886,57 +899,81 @@ class JSSObjectFactory(object):
                             if item is not None and
                             item.tag != "size"]
         objects = [
-            JSSListData(obj_class, {
-                i.tag: i.text for i in response_object})
-            for response_object in response_objects]
+            JSSListData(obj_class, {i.tag: i.text for i in response_object},
+                        self) for response_object in response_objects]
 
         return JSSObjectList(self, obj_class, objects)
 
 
 class JSSListData(dict):
-    """Holds information retrieved as part of a list operation."""
-    def __init__(self, obj_class, d):
+    """Holds overview information returned from a listing GET."""
+
+    def __init__(self, obj_class, data, factory):
+        """Configure a JSSListData item."""
         self.obj_class = obj_class
-        super(JSSListData, self).__init__(d)
+        self.factory = factory
+        super(JSSListData, self).__init__(data)
 
     @property
     def id(self):
+        """Return the object's ID property."""
         return int(self["id"])
 
     @property
     def name(self):
+        """Return the object's name property."""
         return self["name"]
+
+    def retrieve(self):
+        """Retrieve the full object XML for this item."""
+        return self.factory.get_object(self.obj_class, self.id)
 
 
 class JSSObjectList(list):
     """A list style collection of JSSObjects.
 
-    List operations retrieve only minimal information for most object
-    types.  Further, we may want to know all Computer(s) to get their
-    ID's, but that does not mean we want to do a full object search for
-    each one. Thus, methods are provided to both retrieve individual
-    members' full information, and to retrieve the full information for
-    the entire list.
+    List operations retrieve minimal or overview information for most
+    object types. For example, we may want to see all the Computers on
+    the JSS but that does not mean we want to do a full object GET for
+    each one.
 
+    The JSSObjectList provides Methods to retrieve individual members'
+    full information (retrieve_by_id, retrieve), and to retrieve the
+    full information for each member of the entire list (retrieve_all).
+
+    Attributes:
+        factory: A JSSObjectFactory for managing object construction and
+            searching.
+        obj_class: A JSSObject class (e.g. jss.Computer) that the list
+            contains.
     """
+
     def __init__(self, factory, obj_class, objects):
+        """Construct a list of JSSObjects.
+
+        Args:
+            factory: A JSSObjectFactory for managing object construction
+                in the event one of the retrieval methods is used.
+            obj_class: A JSSObject class (e.g. jss.Computer) that the
+                list contains.
+            objects: A list of JSSListData objects (incomplete data
+                about a JSSObject, as returned by the JSS from a listing
+                request).
+        """
         self.factory = factory
         self.obj_class = obj_class
         super(JSSObjectList, self).__init__(objects)
 
     def __repr__(self):
-        """Make our data human readable.
-
-        Note: Large lists of large objects may take a long time due to
-        indenting!
-
-        """
+        """Make data human readable."""
+        # Note: Large lists/objects may take a long time to indent!
         delimeter = 50 * "-" + "\n"
         output_string = delimeter
         for obj in self:
             output_string += "List index: \t%s\n" % self.index(obj)
-            for k, v in obj.items():
-                output_string += "%s:\t\t%s\n" % (k, v)
+            for key, val in obj.items():
+                # TODO: Update this to match Spruce output code.
+                output_string += "%s:\t\t%s\n" % (key, val)
             output_string += delimeter
         return output_string.encode("utf-8")
 
@@ -950,37 +987,30 @@ class JSSObjectList(list):
 
     def retrieve(self, index):
         """Return a JSSObject for the JSSListData element at index."""
-        return self.factory.get_object(self.obj_class, self[index].id)
+        return self[index].retrieve()
 
     def retrieve_by_id(self, id_):
-        """Return a JSSObject for the JSSListData element with ID
-        id_.
-
-        """
-        list_index = [int(i) for i, j in enumerate(self) if j.id == id_]
-        if len(list_index) == 1:
-            list_index = list_index[0]
-            return self.factory.get_object(self.obj_class, self[list_index].id)
+        """Return a JSSObject for the element with ID id_"""
+        items_with_id = [item for item in self if item.id == int(id_)]
+        if len(items_with_id) == 1:
+            return items_with_id[0].retrieve()
 
     def retrieve_all(self, subset=None):
         """Return a list of all JSSListData elements as full JSSObjects.
 
-        At least on my JSS, I end up with some harmless SSL errors,
-        which are dealt with.
-
-        Note: This can take a long time given a large number of objects,
-        and depending on the size of each object.
+        This can take a long time given a large number of objects,
+        and depending on the size of each object. Subsetting to only
+        include the data you need can improve performance.
 
         Args:
-            subset:
-                For objects which support it, a list of sub-tags to
+            subset: For objects which support it, a list of sub-tags to
                 request, or an "&" delimited string, (e.g.
-                "general&purchasing"). Default to None.
+                "general&purchasing").  Default to None.
         """
-        final_list = []
-        for i in range(0, len(self)):
-            result = self.factory.get_object(
-                self.obj_class, int(self[i]["id"]), subset)
-            final_list.append(result)
+        # Attempt to speed this procedure up as much as can be done.
 
-        return final_list
+        get_object = self.factory.get_object
+        obj_class = self.obj_class
+
+        return [get_object(obj_class, list_obj.id, subset)
+                for list_obj in self]

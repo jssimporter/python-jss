@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+### Added
+- Added retrieve method to `JSSListData`, making the retrieval of individual `JSSObjectList` elements more flexible.
+- Added some argument type checking.
+- Added lots of documentation.
+- Re-enabled the ability to create new objects with the JSS convenience methods (e.g. `jss.JSS.Computer`)
+- Added and improved the verbose output for HTTP requests.
+
+### Changed
+- Optimized `JSSObjectList.retrieve_all`.
+
 ## [1.3.0] - 2015-08-19 - Two Men Enter, One Man Leaves
 
 ### Added
