@@ -23,11 +23,8 @@ as JSSObjects.
 import copy
 import os
 import re
-import ssl
 import subprocess
 from urllib import quote
-import urlparse
-from xml.dom import minidom
 from xml.etree import ElementTree
 from xml.parsers.expat import ExpatError
 
@@ -778,36 +775,47 @@ class JSS(object):
 
 
 class JSSObjectFactory(object):
-    """Create JSSObjects intelligently based on a single data
-    argument.
+    """Create JSSObjects intelligently based on a single parameter."""
 
-    """
     def __init__(self, jss):
         self.jss = jss
 
     def get_object(self, obj_class, data=None, subset=None):
         """Return a subclassed JSSObject instance by querying for
-        existing objects or posting a new object. List operations return
-        a JSSObjectList.
+        existing objects or posting a new object.
 
-        obj_class is the class to retrieve.
-        data is flexible.
-            If data is type:
-                None:   Perform a list operation, or for non-container
-                        objects, return all data.
-                int:    Retrieve an object with ID of <data>
-                str:    Retrieve an object with name of <str>. For some
-                        objects, this may be overridden to include
-                        searching by other criteria. See those objects
-                        for more info.
-                dict:   Get the existing object with <dict>["id"]
-                xml.etree.ElementTree.Element:
-                        Create a new object from xml
+        Args:
+            obj_class: The JSSObject subclass type to search for or
+                create.
+            data: The data parameter performs different operations
+                depending on the type passed.
+                None: Perform a list operation, or for non-container
+                    objects, return all data.
+                int: Retrieve an object with ID of <data>.
+                str: Retrieve an object with name of <str>. For some
+                    objects, this may be overridden to include searching
+                    by other criteria. See those objects for more info.
+                xml.etree.ElementTree.Element: Create a new object from
+                    xml.
+            subset:
+                A list of XML subelement tags to request (e.g.
+                ['general', 'purchasing']), OR an '&' delimited string
+                (e.g. 'general&purchasing'). This is not supported for
+                all JSSObjects.
 
-                Warning! Be sure to pass ID's as ints, not str!
-        subset:
-            A list of sub-tags to request, or an "&" delimited string,
-            (e.g. "general&purchasing").
+        Returns:
+            JSSObjectList: for empty or None arguments to data.
+            JSSObject: Returns an object of type obj_class for searches
+                and new objects.
+            (FUTURE) Will return None if nothing is found that match
+                the search criteria.
+
+        Raises:
+            TypeError: if subset not formatted properly.
+            JSSMethodNotAllowedError: if you try to perform an operation
+                not supported by that object type.
+            JSSGetError: If object searched for is not found.
+            JSSPostError: If attempted object creation fails.
         """
         if subset:
             if not isinstance(subset, list):
@@ -817,29 +825,30 @@ class JSSObjectFactory(object):
                     raise TypeError
 
         # List objects
+
         if data is None:
             url = obj_class.get_url(data)
             if obj_class.can_list and obj_class.can_get:
                 if (subset and len(subset) == 1 and subset[0].upper() ==
-                    "BASIC") and obj_class is Computer:
+                        "BASIC") and obj_class is Computer:
                     url += "/subset/basic"
+
                 result = self.jss.get(url)
+
                 if obj_class.container:
                     result = result.find(obj_class.container)
-                response_objects = [item for item in result if item is not None
-                                    and item.tag != "size"]
-                objects = [JSSListData(obj_class,
-                                       {i.tag: i.text for i
-                                        in response_object})
-                           for response_object in response_objects]
 
-                return JSSObjectList(self, obj_class, objects)
+                return self._build_jss_object_list(result, obj_class)
+
+            # Single object
+
             elif obj_class.can_get:
-                # Single object
                 xmldata = self.jss.get(url)
                 return obj_class(self.jss, xmldata)
             else:
-                raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
+                raise JSSMethodNotAllowedError(
+                    obj_class.__class__.__name__)
+
         # Retrieve individual objects
         elif type(data) in [str, int, unicode]:
             if obj_class.can_get:
@@ -848,32 +857,40 @@ class JSSObjectFactory(object):
                     if not "general" in subset:
                         subset.append("general")
                     url += "/subset/%s" % "&".join(subset)
+
                 xmldata = self.jss.get(url)
+
+                # Some name searches may result in multiple found
+                # objects. e.g. A computer search for "MacBook Pro" may
+                # return ALL computers which have not had their name
+                # changed.
                 if xmldata.find("size") is not None:
-                    # May need above treatment, with .find(container),
-                    # and refactoring out this otherwise duplicate code.
-
-                    # Get returned a list.
-                    response_objects = [item for item in xmldata
-                                        if item is not None and
-                                        item.tag != "size"]
-                    objects = [JSSListData(obj_class,
-                                           {i.tag: i.text for i
-                                            in response_object})
-                               for response_object in response_objects]
-
-                    return JSSObjectList(self, obj_class, objects)
+                    return self._build_jss_object_list(xmldata, obj_class)
                 else:
                     return obj_class(self.jss, xmldata)
             else:
                 raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
+
         # Create a new object
-        # elif isinstance(data, JSSObjectTemplate):
-        #     if obj_class.can_post:
-        #         url = obj_class.get_post_url()
-        #         return self.jss.post(obj_class, url, data)
-        #     else:
-        #         raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
+
+        elif isinstance(data, ElementTree.Element):
+            if obj_class.can_post:
+                url = obj_class.get_post_url()
+                return self.jss.post(obj_class, url, data)
+            else:
+                raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
+
+    def _build_jss_object_list(self, response, obj_class):
+        """Build a JSSListData object from response."""
+        response_objects = [item for item in response
+                            if item is not None and
+                            item.tag != "size"]
+        objects = [
+            JSSListData(obj_class, {
+                i.tag: i.text for i in response_object})
+            for response_object in response_objects]
+
+        return JSSObjectList(self, obj_class, objects)
 
 
 class JSSListData(dict):
