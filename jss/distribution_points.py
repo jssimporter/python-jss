@@ -648,12 +648,7 @@ class MountedRepository(Repository):
 class AFPDistributionPoint(MountedRepository):
     """Represents an AFP repository.
 
-    For migrated JSS, please see __init__ and copy_script.
-
-    Please note: OS X seems to cache credentials when you use mount_afp
-    like this, so if you change your authentication information, you'll
-    have to force a re-authentication.
-
+    For a migrated JSS, please see __init__ and copy_script docs.
     """
     protocol = "afp"
     fs_type = "afpfs"
@@ -662,32 +657,31 @@ class AFPDistributionPoint(MountedRepository):
 
     def __init__(self, **connection_args):
         """Set up an AFP connection.
-        Required connection arguments:
-        URL:            URL to the mountpoint in the format, including
-                        volume name Ex: "my_repository.domain.org/jamf"
-                        (Do _not_ include protocol or auth info.)
-        mount_point:    Path to a valid mount point.
-        share_name:     The fileshare's name.
-        username:       For shares requiring authentication, the
-                        username.
-        password:       For shares requiring authentication, the
-                        password.
 
-        Optional connection arguments (Migrated script support):
-        jss:            A JSS Object. NOTE: jss_migrated must be True
+        If you have migrated your JSS, you need to pass a JSS object as
+        a keyword argument during repository setup, and the JSS object
+        needs the jss_migrated=True preference set.
+
+        Args:
+            connection_args: Dict with the following key/val pairs:
+                URL: URL to the mountpoint,including volume name e.g.:
+                    "my_repository.domain.org/jamf" (Do _not_ include
+                    protocol or auth info.)
+                mount_point: Path to a valid mount point.
+                share_name: The fileshare's name.
+                username: Share R/W username.
+                password: Share R/W password.
+
+                Optional connection arguments (Migrated script support):
+                    jss: A JSS Object. NOTE: jss_migrated must be True
                         for this to do anything.
-        If you have migrated your JSS, you need to pass a JSS object
-        as a keyword argument during repository setup, and the JSS
-        object needs the jss_migrated=True preference set.
-
         """
         super(AFPDistributionPoint, self).__init__(**connection_args)
-        # Check to see if share is already mounted, and update mount
-        # point if so.
+        # Check to see if share is mounted, and update mount point
         self.is_mounted()
 
     def _build_url(self):
-        """Helper method for building mount URL strings."""
+        """Build the URL string to mount this file share."""
         if self.connection.get("username") and self.connection.get("password"):
             auth = "%s:%s@" % (self.connection["username"],
                                self._encoded_password)
@@ -695,17 +689,15 @@ class AFPDistributionPoint(MountedRepository):
             auth = ""
 
         # Optional port number
-        if self.connection.get("port"):
-            port = ":%s" % self.connection["port"]
-        else:
-            port = ""
+        port = self.connection.get("port")
+        port = ":" + port if port else ""
 
         self.connection["mount_url"] = "%s://%s%s%s/%s" % (
             self.protocol, auth, self.connection["URL"], port,
             self.connection["share_name"])
 
     def _mount(self):
-        """OS specific mount."""
+        """Mount based on which OS is running."""
         # mount_afp "afp://scraig:<password>@address/share" <mnt_point>
         if is_osx():
             if self.connection["jss"].verbose:
@@ -735,48 +727,42 @@ class AFPDistributionPoint(MountedRepository):
 class SMBDistributionPoint(MountedRepository):
     """Represents a SMB distribution point.
 
-    For migrated JSS, please see __init__ and copy_script.
-
+    For a migrated JSS, please see __init__ and copy_script docs.
     """
-
     protocol = "smbfs"
     required_attrs = {"URL", "share_name", "mount_point", "domain", "username",
                       "password"}
 
     def __init__(self, **connection_args):
         """Set up a SMB connection.
-        Required connection arguments:
-        URL:            URL to the mountpoint in the format, including
-                        volume name Ex: "my_repository.domain.org/jamf"
-                        (Do _not_ include protocol or auth info.)
-        mount_point:    Path to a valid mount point.
-        share_name:     The fileshare's name.
-        domain:         Specify the domain.
-        username:       For shares requiring authentication, the
-                        username.
-        password:       For shares requiring authentication, the
-                        password.
 
-        Optional connection arguments (Migrated script support):
-        jss:            A JSS Object. NOTE: jss_migrated must be True
+        If you have migrated your JSS, you need to pass a JSS object as
+        a keyword argument during repository setup, and the JSS object
+        needs the jss_migrated=True preference set.
+
+        Args:
+            connection_args: Dict with the following key/val pairs:
+                URL: URL to the mountpoint,including volume name e.g.:
+                    "my_repository.domain.org/jamf" (Do _not_ include
+                    protocol or auth info.)
+                mount_point: Path to a valid mount point.
+                share_name: The fileshare's name.
+                domain: Specify the domain.
+                username: Share R/W username.
+                password: Share R/W password.
+
+                Optional connection arguments (Migrated script support):
+                    jss: A JSS Object. NOTE: jss_migrated must be True
                         for this to do anything.
-        If you have migrated your JSS, you need to pass a JSS object
-        as a keyword argument during repository setup, and the JSS
-        object needs the jss_migrated=True preference set.
-
         """
         super(SMBDistributionPoint, self).__init__(**connection_args)
-        if is_osx():
-            self.fs_type = "smbfs"
-        elif is_linux():
+        if is_linux():
             self.fs_type = "cifs"
-        # Check to see if share is already mounted, and update mount
-        # point if so.
+        # Check to see if share is mounted, and update.
         self.is_mounted()
 
     def _build_url(self):
-        """Helper method for building mount URL strings."""
-        # Build auth string
+        """Build the URL string to mount this file share."""
         if self.connection.get("username") and self.connection.get("password"):
             auth = "%s:%s@" % (self.connection["username"],
                                self._encoded_password)
@@ -786,17 +772,15 @@ class SMBDistributionPoint(MountedRepository):
             auth = ""
 
         # Optional port number
-        if self.connection.get("port"):
-            port = ":%s" % self.connection["port"]
-        else:
-            port = ""
+        port = self.connection.get("port")
+        port = ":" + port if port else ""
 
         # Construct mount_url
         self.connection["mount_url"] = "//%s%s%s/%s" % (
             auth, self.connection["URL"], port, self.connection["share_name"])
 
     def _mount(self):
-        """OS specific mount."""
+        """Mount based on which OS is running."""
         # mount -t cifs -o \
         # username=<user>,password=<password>,domain=<domain>,port=139 \
         # //server/share /mnt/<mountpoint>
