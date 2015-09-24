@@ -22,6 +22,9 @@ Helper functions for python-jss.
 import os
 
 
+PKG_TYPES = [".PKG", ".DMG", ".ZIP"]
+
+
 def is_osx():
     """Convenience function for testing OS version."""
     result = True if os.uname()[0] == "Darwin" else False
@@ -32,3 +35,23 @@ def is_linux():
     """Convenience function for testing OS version."""
     result = True if os.uname()[0] == "Linux" else False
     return result
+
+def is_package(filename):
+    """Return True if filename is a package type.
+
+    Args:
+        filename: String filename with no path.
+    """
+    return os.path.splitext(filename)[1].upper() in PKG_TYPES
+
+
+def is_script(filename):
+    """Return True if a filename is NOT a package.
+
+    Because there are so many script types, it's easier to see if
+    the file is a package than to see if it is a script.
+
+    Args:
+        filename: String filename with no path.
+    """
+    return not is_package(filename)
