@@ -23,6 +23,7 @@ repositories, CDPs, and JDSs.
 import os
 import re
 import shutil
+import socket
 import subprocess
 import sys
 import urllib
@@ -36,10 +37,9 @@ except ImportError:
     # chances are good user has not set up PyObjC, so fall back to
     # subprocess to mount. (See mount methods).
     mount_share = None
-from tools import is_osx, is_linux
+from tools import is_osx, is_linux, is_package, is_script
 
 
-PKG_TYPES = [".PKG", ".DMG", ".ZIP"]
 PKG_FILE_TYPE = 0
 EBOOK_FILE_TYPE = 1
 IN_HOUSE_APP_FILE_TYPE = 2
@@ -119,6 +119,9 @@ class DistributionPoints(object):
                             username = (
                                 dp_object.findtext("read_write_username"))
                             password = repo.get("password")
+                            # Make very sure this password is unicode.
+                            if isinstance(password, str):
+                                password = unicode(password, "utf-8")
 
                             if is_osx():
                                 mount_point = os.path.join("/Volumes",
@@ -128,6 +131,7 @@ class DistributionPoints(object):
                             else:
                                 raise JSSError("Unsupported OS.")
 
+                            # TODO: Refactor me.
                             if connection_type == "AFP":
                                 dp = AFPDistributionPoint(
                                     URL=URL, port=port, share_name=share_name,
@@ -158,6 +162,9 @@ class DistributionPoints(object):
                     domain = repo.get("domain")
                     username = repo["username"]
                     password = repo["password"]
+                    # Make very sure this password is unicode.
+                    if isinstance(password, str):
+                        password = unicode(password, "utf-8")
 
                     if is_osx():
                         mount_point = os.path.join("/Volumes", share_name)
@@ -166,6 +173,7 @@ class DistributionPoints(object):
                     else:
                         raise JSSError("Unsupported OS.")
 
+                    # TODO: Refactor me.
                     if connection_type == "AFP":
 
                         # If port isn't given, assume it's the std of
@@ -468,59 +476,56 @@ class MountedRepository(Repository):
         return os.path.ismount(self.connection["mount_point"])
 
     def _get_valid_mount_strings(self):
-        """Return a tuple of potential mount strings."""
-        # Casper Admin seems to mount in a number of ways:
-        #     - hostname/share
-        #     - fqdn/share
-        # Plus, there's the possibility of:
-        #     - IPAddress/share
-        # Then factor in the possibility that the port is included too!
+        """Return a tuple of potential mount strings.
 
-        # This gives us a total of up to six valid addresses for mount
-        # to report.
-
-        import socket
-        # Express results as a set so we don't have any redundent
-        # entries.
+        Casper Admin seems to mount in a number of ways:
+            - hostname/share
+            - fqdn/share
+        Plus, there's the possibility of:
+            - IPAddress/share
+        Then factor in the possibility that the port is included too!
+        This gives us a total of up to six valid addresses for mount
+        to report.
+        """
         results = set()
+        join = os.path.join
         URL = self.connection["URL"]
         share_name = urllib.quote(self.connection["share_name"],
                                   safe="~()*!.'")
         port = self.connection["port"]
 
         # URL from python-jss form:
-        results.add(os.path.join(URL, share_name))
-        results.add(os.path.join("%s:%s" % (URL, port), share_name))
+        results.add(join(URL, share_name))
+        results.add(join("%s:%s" % (URL, port), share_name))
 
         # IP Address form:
         # socket.gethostbyname() will return an IP address whether
         # an IP address, FQDN, or .local name is provided.
         ip_address = socket.gethostbyname(URL)
-        results.add(os.path.join(ip_address, share_name))
-        results.add(os.path.join("%s:%s" % (ip_address, port), share_name))
+        results.add(join(ip_address, share_name))
+        results.add(join("%s:%s" % (ip_address, port), share_name))
 
         # Domain name only form:
         domain_name = URL.split(".")[0]
-        results.add(os.path.join(domain_name, share_name))
-        results.add(os.path.join("%s:%s" % (domain_name, port), share_name))
+        results.add(join(domain_name, share_name))
+        results.add(join("%s:%s" % (domain_name, port), share_name))
 
         # FQDN form using getfqdn:
         # socket.getfqdn() could just resolve back to the ip
         # or be the same as the initial URL so only add it if it's
         # different than both.
         fqdn = socket.getfqdn(ip_address)
-        results.add(os.path.join(fqdn, share_name))
-        results.add(os.path.join("%s:%s" % (fqdn, port), share_name))
+        results.add(join(fqdn, share_name))
+        results.add(join("%s:%s" % (fqdn, port), share_name))
 
         return tuple(results)
 
     def copy_pkg(self, filename, id_=-1):
-        """Copy a package to the repo's subdirectory.
+        """Copy a package to the repo's Package subdirectory.
 
-        filename:           Path for file to copy.
-        id_:                Ignored. Used for compatibility with JDS
-                            repos.
-
+        Args:
+            filename: Path for file to copy.
+            id_: Ignored. Used for compatibility with JDS repos.
         """
         basename = os.path.basename(filename)
         if not self.is_mounted():
@@ -531,22 +536,17 @@ class MountedRepository(Repository):
     def copy_script(self, filename, id_=-1):
         """Copy a script to the repo's Script subdirectory.
 
-        filename:           Path for file to copy.
-        id_:                Ignored. Used for compatibility with JDS
-                            repos.
+        Scripts are copied as files to a path, or, on a "migrated" JSS,
+        are POSTed to the JSS (pass an id if you wish to associate
+        the script with an existing Script object).
 
+        Args:
+            filename: Path for file to copy.
+            id_: Int ID, used _only_ for migrated repos. Default is -1,
+                which creates a new Script.
         """
-        # Scripts are handled either as files copied to a path, or,
-        # it's possible to have a JSS that has been "migrated" to use
-        # the database to store the script in the script object, like
-        # the JDS type, but still using a MountedRepository for PKG
-        # files.
-
-        # If you have migrated your JSS, you need to pass a JSS object
-        # as a keyword argument during repository setup, and the JSS
-        # object needs the jss_migrated=True preference set.
-        if "jss" in self.connection.keys() and \
-                self.connection["jss"].jss_migrated:
+        if ("jss" in self.connection.keys() and
+                self.connection["jss"].jss_migrated):
             self._copy_script_migrated(filename, id_, SCRIPT_FILE_TYPE)
         else:
             basename = os.path.basename(filename)
@@ -555,7 +555,17 @@ class MountedRepository(Repository):
 
     def _copy_script_migrated(self, filename, id_=-1,
                               file_type=SCRIPT_FILE_TYPE):
-        """Upload a script to a migrated JSS's database."""
+        """Upload a script to a migrated JSS's database.
+
+        On a "migrated" JSS, scripts are POSTed to the JSS. Pass an id
+        if you wish to associate the script with an existing Script
+        object, otherwise, it will create a new Script object.
+
+        Args:
+            filename: Path to script file.
+            id_: Int ID of Script object to associate this file with.
+                Default is -1, which creates a new Script.
+        """
         basefname = os.path.basename(filename)
 
         resource = open(filename, "rb")
@@ -567,9 +577,13 @@ class MountedRepository(Repository):
         return response
 
     def _copy(self, filename, destination):
-        """Copy a file to the repository. Handles folders and single
-        files.  Will mount if needed.
+        """Copy a file or folder to the repository.
 
+        Will mount if needed.
+
+        Args:
+            filename: Path to copy.
+            destination: Remote path to copy file to.
         """
         full_filename = os.path.abspath(os.path.expanduser(filename))
         if not self.is_mounted():
@@ -581,18 +595,18 @@ class MountedRepository(Repository):
             shutil.copyfile(full_filename, destination)
 
     def delete(self, filename):
-        """Delete a file from the repository. Pass the file's name
-        only. This method will determine whether the file is a package
-        or a script.
+        """Delete a file from the repository.
 
+        Args:
+            filename: String filename only (i.e. no path) of file to
+                delete. Will handle deleting scripts vs. packages
+                automatically.
         """
         if not self.is_mounted():
             self.mount()
-        if is_package(filename):
-            folder = "Packages"
-        else:
-            folder = "Scripts"
+        folder = "Packages" if is_package(filename) else "Scripts"
         path = os.path.join(self.connection["mount_point"], folder, filename)
+        # TODO: This will fail to del a migrated script.
         if os.path.isdir(path):
             shutil.rmtree(path)
         elif os.path.isfile(path):
@@ -600,11 +614,12 @@ class MountedRepository(Repository):
 
     def exists(self, filename):
         """Report whether a file exists on the distribution point.
+
         Determines file type by extension.
 
-        filename:       Filename you wish to check. (No path! e.g.:
-                        "AdobeFlashPlayer-14.0.0.176.pkg")
-
+        Args:
+            filename: Filename you wish to check. (No path! e.g.:
+                "AdobeFlashPlayer-14.0.0.176.pkg")
         """
         if is_package(filename):
             filepath = os.path.join(self.connection["mount_point"],
@@ -617,17 +632,17 @@ class MountedRepository(Repository):
         return os.path.exists(filepath)
 
     def __repr__(self):
-        """Add mount status to output."""
+        """Return a formatted string of connection info."""
         # Do an "update" to get current mount points.
         self.is_mounted()
         output = super(MountedRepository, self).__repr__()
         output += "Mounted: %s\n" % self.is_mounted()
         return output
 
-    def _encode_password(self):
-        """Returns a safely encoded and quoted password."""
-        upass = unicode(self.connection["password"]).encode("utf-8")
-        return urllib.quote(upass, safe="~()*!.'")
+    @property
+    def _encoded_password(self):
+        """Returns the safely url-quoted password for this DP."""
+        return urllib.quote(self.connection["password"], safe="~()*!.'")
 
 
 class AFPDistributionPoint(MountedRepository):
@@ -661,6 +676,9 @@ class AFPDistributionPoint(MountedRepository):
         Optional connection arguments (Migrated script support):
         jss:            A JSS Object. NOTE: jss_migrated must be True
                         for this to do anything.
+        If you have migrated your JSS, you need to pass a JSS object
+        as a keyword argument during repository setup, and the JSS
+        object needs the jss_migrated=True preference set.
 
         """
         super(AFPDistributionPoint, self).__init__(**connection_args)
@@ -672,7 +690,7 @@ class AFPDistributionPoint(MountedRepository):
         """Helper method for building mount URL strings."""
         if self.connection.get("username") and self.connection.get("password"):
             auth = "%s:%s@" % (self.connection["username"],
-                               self._encode_password())
+                               self._encoded_password)
         else:
             auth = ""
 
@@ -742,6 +760,9 @@ class SMBDistributionPoint(MountedRepository):
         Optional connection arguments (Migrated script support):
         jss:            A JSS Object. NOTE: jss_migrated must be True
                         for this to do anything.
+        If you have migrated your JSS, you need to pass a JSS object
+        as a keyword argument during repository setup, and the JSS
+        object needs the jss_migrated=True preference set.
 
         """
         super(SMBDistributionPoint, self).__init__(**connection_args)
@@ -758,7 +779,7 @@ class SMBDistributionPoint(MountedRepository):
         # Build auth string
         if self.connection.get("username") and self.connection.get("password"):
             auth = "%s:%s@" % (self.connection["username"],
-                               self._encode_password())
+                               self._encoded_password)
             if self.connection.get("domain"):
                 auth = r"%s;%s" % (self.connection["domain"], auth)
         else:
@@ -1028,18 +1049,3 @@ class CDP(DistributionServer):
     """
     required_attrs = {"jss"}
     destination = "2"
-
-
-def is_package(filename):
-    """Return True if filename is a package type."""
-    return os.path.splitext(filename)[1].upper() in PKG_TYPES
-
-
-def is_script(filename):
-    """Return True of a filename is NOT a package.
-
-    Because there are so many script types, it's easier to see if
-    the file is a package than to see if it is a script.
-
-    """
-    return not is_package(filename)
