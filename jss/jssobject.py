@@ -33,6 +33,18 @@ class SearchCriteria(ElementTree.Element):
     list_type = "criterion"
 
     def __init__(self, name, priority, and_or, search_type, value):
+        """Init a SearchCriteria.
+
+        Args:
+            name: String Criteria type name (e.g. "Application Title")
+            priority: Int or Str number priority of criterion.
+            and_or: Str, either "and" or "or".
+            search_type: String Criteria search type. (e.g. "is", "is
+                not", "member of", etc). Construct a SmartGroup with the
+                criteria of interest in the web interface to determine
+                what range of values are available.
+            value: String value to search for/against.
+        """
         super(SearchCriteria, self).__init__(tag=self.list_type)
         crit_name = ElementTree.SubElement(self, "name")
         crit_name.text = name
@@ -57,9 +69,30 @@ class SearchCriteria(ElementTree.Element):
 
 
 class JSSObject(ElementTree.Element):
-    """Base class for representing all available JSS API objects.
+    """Base class for all JSS API objects.
 
+    Class Attributes:
+        can_list: Bool whether object allows a list GET request.
+        can_get: Bool whether object allows a GET request.
+        can_put: Bool whether object allows a PUT request.
+        can_post: Bool whether object allows a POST request.
+        can_delete: Bool whether object allows a DEL request.
+        id_url: String URL piece to append to use the ID property for
+            requests. (Usually "/id/")
+        container: String pluralized object name. This is used in one
+            place-Account and AccountGroup use the same API call.
+            container is used to differentiate the results.
+        default_search: String default search type to utilize for GET.
+        search_types: Dict of search types available to object:
+            Key: Search type name. At least one must match the
+                default_search.
+            Val: URL component to use to request via this search_type.
+        list_type: String singular form of object type found in
+            containers (e.g. ComputerGroup has a container with tag:
+            "computers" holding "computer" elements. The list_type is
+            "computer").
     """
+
     _url = None
     can_list = True
     can_get = True
@@ -75,12 +108,13 @@ class JSSObject(ElementTree.Element):
     def __init__(self, jss, data, **kwargs):
         """Initialize a new JSSObject
 
-        jss:    JSS object.
-        data:   Valid XML.
-
+        Args:
+            jss: JSS object.
+            data: xml.etree.ElementTree.Element data to use for
+                creating the object OR a string name to use for creating
+                a new object (provided it has an implemented new()
+                method.
         """
-        # if not isinstance(jss, JSS):
-        #     raise TypeError("Argument jss must be an instance of JSS.")
         self.jss = jss
         if type(data) in [str, unicode]:
             super(JSSObject, self).__init__(tag=self.list_type)
@@ -95,6 +129,7 @@ class JSSObject(ElementTree.Element):
                             " name.")
 
     def new(self, name, **kwargs):
+        """Create a new JSSObject with name and blank XML."""
         raise NotImplementedError
 
     def makeelement(self, tag, attrib):
@@ -107,8 +142,19 @@ class JSSObject(ElementTree.Element):
 
     @classmethod
     def get_url(cls, data):
-        """Return the URL for a get request based on data type."""
-        # Test for a string representation of an integer
+        """Return the URL for a get request based on data type.
+
+        Args:
+            data: Accepts multiple types.
+                Int: Generate URL to object with data ID.
+                None: Get basic object GET URL (list).
+                String/Unicode: Search for <data> with default_search,
+                    usually "name".
+                String/Unicode with "=": Other searches, for example
+                    Computers can be search by uuid with:
+                    "udid=E79E84CB-3227-5C69-A32C-6C45C2E77DF5"
+                    See the class "search_types" attribute for options.
+        """
         try:
             data = int(data)
         except (ValueError, TypeError):
@@ -134,21 +180,42 @@ class JSSObject(ElementTree.Element):
         """Return the post URL for this object class."""
         return "%s%s%s" % (cls._url, cls.id_url, "0")
 
+    @property
+    def url(self):
+        """Return the path subcomponent of the url to this object.
+
+        For example: "/computers/id/451"
+        """
+        if self.id:
+            url = "%s%s%s" % (self._url, self.id_url, self.id)
+        else:
+            url = None
+        return url
+
     def get_object_url(self):
-        """Return the complete API url to this object."""
-        return "%s%s%s" % (self._url, self.id_url, self.id)
+        """Return the path subcomponent of the url to this object.
+
+        For example: "/computers/id/451"
+
+        Deprecated for url property. Will remove in a future release!
+        """
+        return self.url
 
     def delete(self):
         """Delete this object from the JSS."""
         if not self.can_delete:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
-        self.jss.delete(self.get_object_url())
+        self.jss.delete(self.url)
 
     def save(self):
-        """Update existing objects or create new object on the JSS.
+        """Update or create a new object on the JSS.
 
-        Data validation is up to the client.
+        If this object is not yet on the JSS, this method will create
+        a new object with POST, otherwise, it will try to update the
+        existing object with PUT.
 
+        Data validation is up to the client; The JSS in most cases will
+        at least give you some hints as to what is invalid.
         """
         # If obj can't PUT or POST, stop here.
         if not self.can_put and not self.can_post:
