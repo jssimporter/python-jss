@@ -756,6 +756,8 @@ class SMBDistributionPoint(MountedRepository):
                         for this to do anything.
         """
         super(SMBDistributionPoint, self).__init__(**connection_args)
+        if is_osx():
+            self.fs_type = "smbfs"
         if is_linux():
             self.fs_type = "cifs"
         # Check to see if share is mounted, and update.
