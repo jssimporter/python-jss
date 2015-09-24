@@ -37,7 +37,7 @@ except ImportError:
     # chances are good user has not set up PyObjC, so fall back to
     # subprocess to mount. (See mount methods).
     mount_share = None
-from tools import is_osx, is_linux, is_package, is_script
+from tools import (is_osx, is_linux, is_package, is_script)
 
 
 PKG_FILE_TYPE = 0
@@ -816,11 +816,14 @@ class SMBDistributionPoint(MountedRepository):
 class DistributionServer(Repository):
     """Abstract class for representing JDS and CDP type repos.
 
-    The JSS has a folder to which packages are uploaded. From there, the
-    JSS handles the distribution to its Cloud and JDS points.
+    The JSS has a folder to which packages are uploaded via a private
+    API call to dbfileupload. From there, the JSS handles the
+    distribution to its Cloud and JDS points.
 
-    There are caveats to its .exists() method which you should be
-    aware of before relying on it.
+    There are caveats to its exists() method which you should be
+    aware of, along with a private API exists_with_casper method, which
+    probably works more like what one would expect. Please see those
+    methods for more information.
     """
     required_attrs = {"jss"}
     destination = "0"
@@ -828,45 +831,48 @@ class DistributionServer(Repository):
     def __init__(self, **connection_args):
         """Set up a connection to a distribution server.
 
-        Args::
-            jss: A JSS Object.
+        Args:
+            connection_args: Dict, with required key:
+                jss: A JSS Object.
         """
         super(DistributionServer, self).__init__(**connection_args)
         self.connection["URL"] = self.connection["jss"].base_url
 
     def _build_url(self):
-        """Builds the URL to POST files to."""
-        self.connection["upload_url"] = "%s/%s" % \
-                (self.connection["jss"].base_url, "dbfileupload")
-        self.connection["delete_url"] = "%s/%s" % \
-                (self.connection["jss"].base_url, "casperAdminSave.jxml")
+        """Build the URL for POSTing files."""
+        self.connection["upload_url"] = (
+            "%s/%s" % (self.connection["jss"].base_url, "dbfileupload"))
+        self.connection["delete_url"] = (
+            "%s/%s" % (self.connection["jss"].base_url,
+                       "casperAdminSave.jxml"))
 
     def copy_pkg(self, filename, id_=-1):
         """Copy a package to the distribution server.
 
-        Required Parameters:
-        filename:           Full path to file to upload.
-        id_:                ID of Package object to associate with, or
-                            -1 for new packages (default).
+        Bundle-style packages must be zipped prior to copying.
 
+        Args:
+            filename: Full path to file to upload.
+            id_: ID of Package object to associate with, or -1 for new
+                packages (default).
         """
         self._copy(filename, id_=id_, file_type=PKG_FILE_TYPE)
 
     def copy_script(self, filename, id_=-1):
         """Copy a script to the distribution server.
 
-        Required Parameters:
-        filename:           Full path to file to upload.
-        id_:                ID of Package object to associate with, or
-                            -1 for new packages (default).
-
+        Args:
+            filename: Full path to file to upload.
+            id_: ID of Script object to associate with, or -1 for new
+                Script (default).
         """
         self._copy(filename, id_=id_, file_type=SCRIPT_FILE_TYPE)
 
     def _copy(self, filename, id_=-1, file_type=0):
         """Upload a file to the distribution server.
 
-        Directories, i.e. non-flat packages will fail.
+        Directories/bundle-style packages must be zipped prior to
+        copying.
         """
         if os.path.isdir(filename):
             raise JSSUnsupportedFileType(
@@ -874,20 +880,20 @@ class DistributionServer(Repository):
                 "uploads. You are probably trying to upload a non-flat "
                 "package. Please zip or create a flat package.")
         basefname = os.path.basename(filename)
-
         resource = open(filename, "rb")
         headers = {"DESTINATION": self.destination, "OBJECT_ID": str(id_),
                    "FILE_TYPE": file_type, "FILE_NAME": basefname}
         response = self.connection["jss"].session.post(
             url=self.connection["upload_url"], data=resource, headers=headers)
-        return response
+        if self.connection["jss"].verbose:
+            print response
 
     def delete_with_casperAdminSave(self, pkg):
         """Delete a pkg from the distribution server.
 
-        pkg:        Can be a jss.Package object, an int ID of a
-                    package, or a filename.
-
+        Args:
+            pkg: Can be a jss.Package object, an int ID of a package, or
+                a filename.
         """
         # The POST needs the package ID.
         if pkg.__class__.__name__ == "Package":
@@ -900,8 +906,8 @@ class DistributionServer(Repository):
             raise TypeError
 
         data_dict = {"username": self.connection["jss"].user,
-                        "password": self.connection["jss"].password,
-                        "deletedPackageID": package_to_delete}
+                     "password": self.connection["jss"].password,
+                     "deletedPackageID": package_to_delete}
         response = self.connection["jss"].session.post(
             url=self.connection["delete_url"], data=data_dict)
         # There's no response if it works.
@@ -909,16 +915,19 @@ class DistributionServer(Repository):
     def delete(self, filename):
         """Delete a package or script from the distribution server.
 
-        This method simply finds the Package or Script object with
-        the API GET call and then deletes it.
+        This method simply finds the Package or Script object from the
+        database with the API GET call and then deletes it. This will
+        remove the file from the database blob.
 
         For setups which have file share distribution points, you will
         need to delete the files on the shares also.
+
+        Args:
+            filename: Filename (no path) to delete.
         """
         if is_package(filename):
             self.connection["jss"].Package(filename).delete()
         else:
-            # Script type.
             self.connection["jss"].Script(filename).delete()
 
     def exists(self, filename):
@@ -930,9 +939,10 @@ class DistributionServer(Repository):
         check for an object using the API /packages URL--JSS.Package()
         or /scripts and look for matches on the filename.
 
-        If this is not enough, please use the alternate exists methods.
-        For example, it's possible to create a Package object but never
-        upload a package file, and this method will still return "True".
+        If this is not enough, please use the alternate
+        exists_with_casper method.  For example, it's possible to create
+        a Package object but never upload a package file, and this
+        method will still return "True".
 
         Also, this may be slow, as it needs to retrieve the complete
         list of packages from the server.
@@ -975,10 +985,7 @@ class DistributionServer(Repository):
 
         It will test for whether the file exists on ALL configured
         distribution servers. This may register False if the JDS is busy
-        syncing them.  (Need to test this situation).
-
-        Also, casper.jxml includes checksums. If this method proves
-        reliable, checksum comparison will be added as a feature.
+        syncing them.
         """
         casper_results = casper.Casper(self.connection["jss"])
         distribution_servers = casper_results.find("distributionservers")
@@ -998,13 +1005,11 @@ class DistributionServer(Repository):
             base_set = base_set.intersection(packages)
 
         # Step three: Check for membership.
-        result = filename in base_set
-
-        return result
+        return filename in base_set
 
 
 class JDS(DistributionServer):
-    """Class for representing JDS' and their controlling JSS.
+    """Class for representing a JDS and its controlling JSS.
 
     The JSS has a folder to which packages are uploaded. From there, the
     JSS handles the distribution to its Cloud and JDS points.
@@ -1020,7 +1025,7 @@ class JDS(DistributionServer):
 
 
 class CDP(DistributionServer):
-    """Class for representing CDPs and their controlling JSS.
+    """Class for representing a CDP and its controlling JSS.
 
     The JSS has a folder to which packages are uploaded. From there, the
     JSS handles the distribution to its Cloud and JDS points.

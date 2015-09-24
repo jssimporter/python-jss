@@ -20,6 +20,7 @@ Helper functions for python-jss.
 
 
 import os
+import re
 
 
 PKG_TYPES = [".PKG", ".DMG", ".ZIP"]
@@ -35,6 +36,7 @@ def is_linux():
     """Convenience function for testing OS version."""
     result = True if os.uname()[0] == "Linux" else False
     return result
+
 
 def is_package(filename):
     """Return True if filename is a package type.
@@ -55,3 +57,18 @@ def is_script(filename):
         filename: String filename with no path.
     """
     return not is_package(filename)
+
+
+def convert_response_to_text(response):
+    """Convert a JSS HTML response to plaintext."""
+    # Responses are sent as html. Split on the newlines and give us
+    # the <p> text back.
+    errorlines = response.text.encode("utf-8").split("\n")
+    error = []
+    pattern = re.compile(r"<p.*>(.*)</p>")
+    for line in errorlines:
+        content_line = re.search(pattern, line)
+        if content_line:
+            error.append(content_line.group(1))
+
+    return ". ".join(error)

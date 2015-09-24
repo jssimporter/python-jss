@@ -37,7 +37,7 @@ from .exceptions import (
     JSSUnsupportedSearchMethodError, JSSFileUploadParameterError)
 from .jssobject import *
 from .tlsadapter import TLSAdapter
-from .tools import is_osx, is_linux
+from .tools import is_osx, is_linux, convert_response_to_text
 
 try:
     from .contrib import FoundationPlist
@@ -252,15 +252,7 @@ class JSS(object):
         """Handle HTTP errors by formatting into strings."""
         # Responses are sent as html. Split on the newlines and give us
         # the <p> text back.
-        errorlines = response.text.encode("utf-8").split("\n")
-        error = []
-        pattern = re.compile(r"<p.*>(.*)</p>")
-        for line in errorlines:
-            err_line = re.search(pattern, line)
-            if err_line:
-                error.append(err_line.group(1))
-
-        error = ". ".join(error)
+        error = convert_response_to_text(response)
         exception = exception_cls("Response Code: %s\tResponse: %s"
                                   % (response.status_code, error))
         exception.status_code = response.status_code
