@@ -1,26 +1,24 @@
 #!/usr/bin/env python
+# Copyright (C) 2014, 2015 Shea G Craig <shea.craig@da.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """casper.py
 
 Utility class for getting and presenting information from casper.jxml.
 
 The results from casper.jxml are undocumented and thus quite likely to be
 removed. Do not rely on its continued existence!
-
-Copyright (C) 2014 Shea G Craig <shea.craig@da.org>
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 
 
@@ -31,17 +29,23 @@ from xml.etree import ElementTree
 
 
 class Casper(ElementTree.Element):
+    """Interact with the JSS through its private casper endpoint.
+
+    The API user must have the Casper Admin privileges "Use Casper
+    Admin" and "Save With Casper Admin".
+    """
+
     def __init__(self, jss):
         """Initialize a Casper object.
 
-        jss:    JSS object.
-
+        Args:
+            jss: A JSS object to request the casper page from.
         """
         self.jss = jss
-        self.url = "%s%s" % (self.jss.base_url, '/casper.jxml')
-        self.auth = urllib.urlencode({'username': self.jss.user,
-                                      'password': self.jss.password})
-        super(Casper, self).__init__(tag='Casper')
+        self.url = "%s/casper.jxml" % self.jss.base_url
+        self.auth = urllib.urlencode({"username": self.jss.user,
+                                      "password": self.jss.password})
+        super(Casper, self).__init__(tag="Casper")
         self.update()
 
     def _indent(self, elem, level=0, more_sibs=False):
@@ -50,9 +54,13 @@ class Casper(ElementTree.Element):
         Method is internal to discourage indenting the self._root Element,
         thus potentially corrupting it.
 
+        Args:
+            elem: Element to indent.
+            level: Int indent level (default is 0)
+            more_sibs: Bool, whether to anticipate further siblings.
         """
         i = "\n"
-        pad = '    '
+        pad = 4 * " "
         if level:
             i += (level - 1) * pad
         num_kids = len(elem)
@@ -63,7 +71,7 @@ class Casper(ElementTree.Element):
                     elem.text += pad
             count = 0
             for kid in elem:
-                self._indent(kid, level+1, count < num_kids - 1)
+                self._indent(kid, level + 1, count < num_kids - 1)
                 count += 1
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
@@ -76,7 +84,7 @@ class Casper(ElementTree.Element):
                     elem.tail += pad
 
     def __repr__(self):
-        """Make our data human readable."""
+        """Return a string with indented Casper data."""
         # deepcopy so we don't mess with the valid XML.
         pretty_data = copy.deepcopy(self)
         self._indent(pretty_data)
@@ -84,10 +92,10 @@ class Casper(ElementTree.Element):
 
     def makeelement(self, tag, attrib):
         """Return an Element."""
-        # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
-        # super() call to its __class__.makeelement(), which will fail due to
-        # the class NOT being Element.
-        # This handles that issue.
+        # We use ElementTree.SubElement() a lot. Unfortunately, it
+        # relies on a super() call to its __class__.makeelement(), which
+        # will fail due to the class NOT being Element. This handles
+        # that issue.
         return ElementTree.Element(tag, attrib)
 
     def update(self):
