@@ -1,24 +1,22 @@
 #!/usr/bin/env python
+# Copyright (C) 2014 Shea G Craig <shea.craig@da.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """distribution_points.py
 
 Utility classes for synchronizing packages and scripts to Jamf file
-repositories.
-
-Copyright (C) 2014 Shea G Craig <shea.craig@da.org>
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+repositories, CDPs, and JDSs.
 """
 
 
@@ -47,21 +45,23 @@ EBOOK_FILE_TYPE = 1
 IN_HOUSE_APP_FILE_TYPE = 2
 SCRIPT_FILE_TYPE = 3
 
+
 class DistributionPoints(object):
-    """DistributionPoints is an object which reads DistributionPoint
+    """Manage multiple DistributionPoint objects.
+
+    DistributionPoints is an object which reads DistributionPoint
     configuration data from the JSS and serves as a container for
     objects representing the configured distribution points.
 
-    This class provides an abstract interface for uploading packages and
-    dmg's to file repositories.
+    This class provides an abstracted interface for uploading packages
+    and dmg's to file repositories.
 
     PLEASE NOTE: Not all DistributionPoint types support all of the
-    available methods, or in the same way. For example, JDS' has
+    available methods, or in the same way. For example, a JDS has
     caveats to the reliability of the exists() method.
 
-    Support for AFP/SMB shares and JDS' are included, and are selected
-    based on configuration files. Planned support for HTTP(S) and CDP
-    types will come later.
+    Support for AFP/SMB shares and JDS and CDP servers are included, and
+    are selected based on configuration files.
 
     This object can copy files to multiple repositories, avoiding the
     need to use Casper Admin to "Replicate" from one repository to
@@ -69,25 +69,25 @@ class DistributionPoints(object):
 
     See the individual Repository subclasses for information regarding
     type-specific properties and configuration.
-
     """
-    def __init__(self, jss):
-        """Populate our distribution point dict from our configuration
-        file.
 
-        The JSS server's DistributionPoints is used to automatically
+    def __init__(self, jss):
+        """Config the DP dict from configuration file.
+
+        The JSS API endpoint DistributionPoints is used to automatically
         configure AFP and SMB shares. To make use of this, the repo's
         dictionary should contain only the name of the repo, as found in
-        the web interface, and the password for the RW user. This method
-        is deprecated, and you should fully specify the required
-        connection arguments for each DP in the future.
+        the web interface, and the password for the RW user.
 
         Please see the docstrings for the different DistributionPoint
         subclasses for information regarding required configuration
         information and properties.
 
-        jss:      JSS server object
+        Args:
+            jss: JSS server object
 
+        Raises:
+            JSSError if an unsupported OS is used.
         """
         self.jss = jss
         self._children = []
@@ -96,6 +96,7 @@ class DistributionPoints(object):
         # do here.
         if self.jss.repo_prefs:
             self.dp_info = self.jss.DistributionPoint().retrieve_all()
+
             # Set up a counter for avoiding name clashes with optional
             # name variable.
             counter = 0
@@ -110,13 +111,13 @@ class DistributionPoints(object):
                         if repo["name"] == dp_object.findtext("name"):
                             name = dp_object.findtext("name")
                             URL = dp_object.findtext("ip_address")
-                            connection_type = \
-                                dp_object.findtext("connection_type")
+                            connection_type = (
+                                dp_object.findtext("connection_type"))
                             share_name = dp_object.findtext("share_name")
                             domain = dp_object.findtext("workgroup_or_domain")
                             port = dp_object.findtext("share_port")
-                            username = \
-                                dp_object.findtext("read_write_username")
+                            username = (
+                                dp_object.findtext("read_write_username"))
                             password = repo.get("password")
 
                             if is_osx():
@@ -128,17 +129,15 @@ class DistributionPoints(object):
                                 raise JSSError("Unsupported OS.")
 
                             if connection_type == "AFP":
-                                dp = AFPDistributionPoint(URL=URL, port=port,
-                                    share_name=share_name,
-                                    mount_point=mount_point,
-                                    username=username, password=password,
-                                    jss=self.jss)
+                                dp = AFPDistributionPoint(
+                                    URL=URL, port=port, share_name=share_name,
+                                    mount_point=mount_point, username=username,
+                                    password=password, jss=self.jss)
                             elif connection_type == "SMB":
-                                dp = SMBDistributionPoint(URL=URL, port=port,
-                                    share_name=share_name,
-                                    mount_point=mount_point,
-                                    domain=domain, username=username,
-                                    password=password,
+                                dp = SMBDistributionPoint(
+                                    URL=URL, port=port, share_name=share_name,
+                                    mount_point=mount_point, domain=domain,
+                                    username=username, password=password,
                                     jss=self.jss)
 
                             # No need to keep looping.
@@ -147,13 +146,14 @@ class DistributionPoints(object):
                 # Handle Explictly declared DP's.
                 elif repo.get("type") in ["AFP", "SMB"]:
                     URL = repo["URL"]
+
                     # If found, strip the scheme off the URL
-                    # it's reconstructed later
                     if "://" in URL:
                         URL = URL.split("://")[1]
 
                     connection_type = repo["type"]
                     share_name = repo["share_name"]
+
                     # Domain is not used for AFP.
                     domain = repo.get("domain")
                     username = repo["username"]
@@ -167,26 +167,22 @@ class DistributionPoints(object):
                         raise JSSError("Unsupported OS.")
 
                     if connection_type == "AFP":
+
                         # If port isn't given, assume it's the std of
                         # 548.
-                        port = repo.get("port") or "548"
-                        dp = AFPDistributionPoint(URL=URL, port=port,
-                                                share_name=share_name,
-                                                mount_point=mount_point,
-                                                username=username,
-                                                password=password,
-                                                jss=self.jss)
+                        port = repo.get("port", "548")
+                        dp = AFPDistributionPoint(
+                            URL=URL, port=port, share_name=share_name,
+                            mount_point=mount_point, username=username,
+                            password=password, jss=self.jss)
                     elif connection_type == "SMB":
                         # If port isn't given, assume it's the std of
                         # 139.
-                        port = repo.get("port") or "139"
-                        dp = SMBDistributionPoint(URL=URL, port=port,
-                                                share_name=share_name,
-                                                mount_point=mount_point,
-                                                domain=domain,
-                                                username=username,
-                                                password=password,
-                                                jss=self.jss)
+                        port = repo.get("port", "139")
+                        dp = SMBDistributionPoint(
+                            URL=URL, port=port, share_name=share_name,
+                            mount_point=mount_point, domain=domain,
+                            username=username, password=password, jss=self.jss)
 
                 elif repo.get("type") == "JDS":
                     dp = JDS(jss=self.jss)
@@ -207,13 +203,17 @@ class DistributionPoints(object):
         self._children.pop(index)
 
     def copy(self, filename, id_=-1):
-        """Copy file to all repos, guessing file type and destination
-        based on its extension.
+        """Copy a package or script to all repos.
 
-        filename:       String path to the local file to copy.
-        id_:            Package or Script object ID to target. For use
-                        with JDS DP's only.
+        Determines appropriate location (for file shares) and type based
+        on file extension.
 
+        Args:
+            filename: String path to the local file to copy.
+            id_: Package or Script object ID to target. For use with JDS
+                and CDP DP's only. If uploading a package that does not
+                have a corresponding object, use id_ of -1, which is the
+                default.
         """
         if is_package(filename):
             for repo in self._children:
@@ -224,10 +224,13 @@ class DistributionPoints(object):
                 repo.copy_script(filename, id_)
 
     def copy_pkg(self, filename, id_=-1):
-        """Copy a pkg or dmg to all repositories.
+        """Copy a pkg, dmg, or zip to all repositories.
 
-        filename:       String path to the local file to copy.
-
+        Args:
+            filename: String path to the local file to copy.
+            id_: Integer ID you wish to associate package with for a JDS
+                or CDP only. Default is -1, which is used for creating
+                a new package object in the database.
         """
         for repo in self._children:
             repo.copy_pkg(filename, id_)
@@ -235,20 +238,30 @@ class DistributionPoints(object):
     def copy_script(self, filename, id_=-1):
         """Copy a script to all repositories.
 
-        filename:       String path to the local file to copy.
+        Takes into account whether a JSS has been migrated. See the
+        individual DistributionPoint types for more information.
 
+        Args:
+            filename: String path to the local file to copy.
+            id_: Integer ID you wish to associate script with for a JDS
+                or CDP only. Default is -1, which is used for creating
+                a new script object in the database.
         """
         for repo in self._children:
             repo.copy_script(filename, id_)
 
     def delete(self, filename):
         """Delete a file from all repositories which support it.
+
         Individual repositories will determine correct location to
         delete from (Scripts vs. Packages).
 
-        filename:       The filename you wish to delete (do not
-                        include a path).
+        This will not remove the corresponding Package or Script object
+        from the JSS's database!
 
+        Args:
+            filename: The filename you wish to delete (do not include a
+                path).
         """
         for repo in self._children:
             if hasattr(repo, "delete"):
@@ -264,7 +277,6 @@ class DistributionPoints(object):
         """Umount all mountable distribution points.
 
         Defaults to using forced method.
-
         """
         for child in self._children:
             if hasattr(child, "umount"):
@@ -272,86 +284,92 @@ class DistributionPoints(object):
 
     def exists(self, filename):
         """Report whether a file exists on all distribution points.
+
         Determines file type by extension.
 
-        filename:       Filename you wish to check. (No path! e.g.:
-                        "AdobeFlashPlayer-14.0.0.176.pkg")
+        Args:
+            filename: Filename you wish to check. (No path! e.g.:
+                "AdobeFlashPlayer-14.0.0.176.pkg")
 
+        Returns:
+            Boolean
         """
         result = True
         for repo in self._children:
             if not repo.exists(filename):
                 result = False
-
         return result
 
     def __repr__(self):
-        """Nice display of our file shares."""
-        output = ""
+        """Print out information on distribution points."""
+        output = []
         index = 0
         for child in self._children:
-            output += 79 * "-" + "\n"
-            output += "Index: %s" % index
-            output += child.__repr__()
+            output.append("%s" % (79 * "-"))
+            output.append("Index: %s" % index)
+            output.append(child.__repr__())
             index += 1
 
-        return output
+        return "\n".join(output)
 
 
 class Repository(object):
-    """Base class for file repositories."""
+    """Base class for file repositories.
+
+    This class is not usable on its own; however, it provides the base
+    init which all subclasses should use.
+
+    Attributes:
+        connection: Dictionary for storing connection arguments.
+    """
+
     def __init__(self, **connection_args):
         """Store the connection information."""
         if self.required_attrs.issubset(set(connection_args.keys())):
-            self.connection = {}
-            for key, value in connection_args.iteritems():
-                self.connection[key] = value
-
+            self.connection = connection_args
             self._build_url()
         else:
-            # Put a custom exception in here.
             missing_attrs = self.required_attrs.difference(
                 set(connection_args.keys()))
-            raise Exception("Missing REQUIRED argument(s) %s to %s"
-                            "distribution point." % (list(missing_attrs),
-                                                     self.__class__))
+            raise JSSError(
+                "Missing REQUIRED argument(s) %s to %s distribution point." %
+                (list(missing_attrs), self.__class__))
 
-    # Not really needed, since all subclasses implement this.
-    # Placeholder for whether I do want to formally specify the
-    # interface like this.
-    #def _copy(self, filename):
-    #    raise NotImplementedError("Base class 'Repository' should not be used"
-    #                              " for copying!")
+    def _copy(self, filename):
+        """Copy a package or script file."""
+        raise NotImplementedError("Base class 'Repository' should not be "
+                                  "used for copying!")
 
     def __repr__(self):
-        output = ""
-        output += "\nDistribution Point: %s\n" % self.connection["URL"]
-        output += "Type: %s\n" % type(self)
-        output += "Connection Information:\n"
+        """Return string representation of connection arguments."""
+        output = ["Distribution Point: %s" % self.connection["URL"]]
+        output.append("Type: %s" % type(self))
+        output.append("Connection Information:")
         for key, val in self.connection.items():
-            output += "\t%s: %s\n" % (key, val)
+            output.append("\t%s: %s" % (key, val))
 
-        return output
+        return "\n".join(output) + "\n"
 
 
 class MountedRepository(Repository):
-    """Parent class for mountable file shares."""
+    """Parent class for mountable file shares.
+
+    Attributes:
+        fs_type: Class attribute, string protocol type (currently AFP
+            or SMB).
+    """
     fs_type = "undefined"
 
     def __init__(self, **connection_args):
+        """Init a MountedRepository by calling super."""
         super(MountedRepository, self).__init__(**connection_args)
 
     def _build_url(self):
+        """Build a connection URL."""
         pass
 
-    def mount(self, nobrowse=False):
-        """Mount the repository.
-
-        Args:
-            nobrowse: Bool indicating whether you want share to be
-                hidden from the GUI (OS X only).
-        """
-        # Is this volume already mounted; if so, we're done.
+    def mount(self):
+        """Mount the repository."""
         if not self.is_mounted():
             # OS X mounting is handled automagically in /Volumes:
             # DO NOT mkdir there!
@@ -359,17 +377,17 @@ class MountedRepository(Repository):
             if not is_osx():
                 if not os.path.exists(self.connection["mount_point"]):
                     os.mkdir(self.connection["mount_point"])
-            # Try to mount
-            self._mount(nobrowse)
+            self._mount()
 
     def umount(self, forced=True):
         """Try to unmount our mount point.
 
-        Defaults to using forced method. If OS is Linux, it will leave
-        the mount point in place.
+        Defaults to using forced method. If OS is Linux, it will not
+        delete the mount point.
 
+        Args:
+            forced: Bool whether to force the unmount. Default is True.
         """
-        # If not mounted, don't bother.
         if self.is_mounted():
             if is_osx():
                 cmd = ["/usr/sbin/diskutil", "unmount",
@@ -384,7 +402,7 @@ class MountedRepository(Repository):
                 subprocess.check_call(cmd)
 
     def is_mounted(self):
-        """ Test for whether a mount point is mounted.
+        """Test for whether a mount point is mounted.
 
         If it is currently mounted, determine the path where it's
         mounted and update the connection's mount_point accordingly.
@@ -399,16 +417,18 @@ class MountedRepository(Repository):
 
         valid_mount_strings = self._get_valid_mount_strings()
         was_mounted = False
+        if is_osx():
+            mount_string_regex = re.compile("\(([\w]*),*.*\)$")
+            mount_point_regex = re.compile("on ([\w/ -]*) \(.*$")
+        elif is_linux():
+            mount_string_regex = re.compile("type ([\w]*) \(.*\)$")
+            mount_point_regex = re.compile("on ([\w/ -]*) type .*$")
+        else:
+            raise JSSError("Unsupported OS.")
 
         for mount in mount_check:
-            if is_osx():
-                fs_match = re.search("\(([\w]*),*.*\)$", mount)
-            if is_linux():
-                fs_match = re.search("type ([\w]*) \(.*\)$", mount)
-            if fs_match:
-                fs_type = fs_match.group(1)
-            else:
-                fs_type = None
+            fs_match = re.search(mount_string_regex, mount)
+            fs_type = fs_match.group(1) if fs_match else None
             # Automounts, non-network shares, and network shares
             # all have a slightly different format, so it's easiest to
             # just split.
@@ -420,16 +440,8 @@ class MountedRepository(Repository):
                 # the last "on", but before the options (wrapped in
                 # parenthesis). Considers alphanumerics, / , _ , - and a
                 # blank space as valid, but no crazy chars.
-                if is_osx():
-                    mount_point_match = re.search("on ([\w/ -]*) \(.*$",
-                                                  mount)
-                elif is_linux():
-                    mount_point_match = re.search(
-                        "on ([\w/ -]*) type .*$", mount)
-                if mount_point_match:
-                    mount_point = mount_point_match.group(1)
-                else:
-                    mount_point = None
+                match = re.search(mount_point_regex, mount)
+                mount_point = match.group(1) if match else None
                 was_mounted = True
                 # Reset the connection's mount point to the discovered
                 # value.
@@ -448,8 +460,8 @@ class MountedRepository(Repository):
             # name to avoid conflicts.
             count = 1
             while os.path.ismount(self.connection["mount_point"]):
-                self.connection["mount_point"] = "%s-%s" % \
-                    (self.connection["mount_point"], count)
+                self.connection["mount_point"] = (
+                    "%s-%s" % (self.connection["mount_point"], count))
                 count += 1
 
         # Do an inexpensive double check...
@@ -674,7 +686,7 @@ class AFPDistributionPoint(MountedRepository):
             self.protocol, auth, self.connection["URL"], port,
             self.connection["share_name"])
 
-    def _mount(self, nobrowse):
+    def _mount(self):
         """OS specific mount."""
         # mount_afp "afp://scraig:<password>@address/share" <mnt_point>
         if is_osx():
@@ -685,9 +697,6 @@ class AFPDistributionPoint(MountedRepository):
                     self.connection["mount_url"])
             else:
                 # Non-Apple OS X python:
-                #if nobrowse:
-                #    args.insert(1, "-o")
-                #    args.insert(2, "nobrowse")
                 args = ["mount", "-t", self.protocol,
                         self.connection["mount_url"],
                         self.connection["mount_point"]]
@@ -765,7 +774,7 @@ class SMBDistributionPoint(MountedRepository):
         self.connection["mount_url"] = "//%s%s%s/%s" % (
             auth, self.connection["URL"], port, self.connection["share_name"])
 
-    def _mount(self, nobrowse):
+    def _mount(self):
         """OS specific mount."""
         # mount -t cifs -o \
         # username=<user>,password=<password>,domain=<domain>,port=139 \
@@ -781,9 +790,6 @@ class SMBDistributionPoint(MountedRepository):
                 args = ["mount", "-t", self.protocol,
                         self.connection["mount_url"],
                         self.connection["mount_point"]]
-                #if nobrowse:
-                #    args.insert(1, "-o")
-                #    args.insert(2, "nobrowse")
                 if self.connection["jss"].verbose:
                     print " ".join(args)
                 subprocess.check_call(args)
