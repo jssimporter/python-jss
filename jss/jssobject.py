@@ -217,49 +217,30 @@ class JSSObject(ElementTree.Element):
         Data validation is up to the client; The JSS in most cases will
         at least give you some hints as to what is invalid.
         """
-        # If obj can't PUT or POST, stop here.
-        if not self.can_put and not self.can_post:
-            raise JSSMethodNotAllowedError(self.__class__.__name__)
-        # Most objects can both PUT and POST. This block handles them.
-        # It will also handle those which can only PUT.
-        elif self.can_put:
-            url = self.get_object_url()
+        # Object probably exists if it has an ID (user can't assign
+        # one).  The only objects that don't have an ID are those that
+        # cannot list.
+        if self.can_put and (not self.can_list or self.id):
             try:
-                self.jss.put(url, self)
-                updated_data = self.jss.get(url)
+                self.jss.put(self.url, self)
+                updated_data = self.jss.get(self.url)
             except JSSPutError as put_error:
-                # Object doesn't exist, try creating a new one.
-                if put_error.status_code == 404:
-                    if self.can_post:
-                        url = self.get_post_url()
-                        try:
-                            updated_data = self.jss.post(self.__class__, url,
-                                                         self)
-                        except JSSPostError as e:
-                            raise JSSPostError(e)
-                    else:
-                        raise JSSMethodNotAllowedError(self.__class__.__name__)
-                else:
-                    # Something else went wrong
-                    raise JSSPutError(put_error)
-
-        # Finally, handle those which can only POST.
-        elif not self.can_put and self.can_post:
+                # Something when wrong.
+                raise JSSPutError(put_error)
+        elif self.can_post:
             url = self.get_post_url()
             try:
                 updated_data = self.jss.post(self.__class__, url, self)
-            except JSSPostError as e:
-                raise JSSPostError(e)
+            except JSSPostError as err:
+                raise JSSPostError(err)
+        else:
+            raise JSSMethodNotAllowedError(self.__class__.__name__)
 
-        # If successful, replace current instance's data with new,
-        # JSS-filled data.
+        # Replace current instance's data with new, JSS-validated data.
         self.clear()
         for child in updated_data.getchildren():
             self._children.append(child)
 
-    # Shared properties:
-    # Almost all JSSObjects have at least name and id properties, so
-    # provide a convenient accessor.
     @property
     def name(self):
         """Return object name or None."""
@@ -269,12 +250,11 @@ class JSSObject(ElementTree.Element):
     def id(self):
         """Return object ID or None."""
         # Most objects have ID nested in general. Groups don't.
-        result = self.findtext("id") or self.findtext("general/id")
-        # After much consideration, I will treat id's as strings.
-        #   We can't assign ID's, so there's no need to perform
-        #   arithmetic on them.  Having to convert to str all over the
-        #   place is gross.  str equivalency still works.
-        return result
+        # After much consideration, I will treat id's as strings. We
+        # can't assign ID's, so there's no need to perform arithmetic on
+        # them, and having to convert to str all over the place is
+        # gross. str equivalency still works.
+        return self.findtext("id") or self.findtext("general/id")
 
     def _indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing.
@@ -282,9 +262,13 @@ class JSSObject(ElementTree.Element):
         Method is internal to discourage indenting the self._root
         Element, thus potentially corrupting it.
 
+        Args:
+            elem: Element to indent.
+            level: Int indent level (default is 0)
+            more_sibs: Bool, whether to anticipate further siblings.
         """
         i = "\n"
-        pad = "    "
+        pad = 4 * " "
         if level:
             i += (level - 1) * pad
         num_kids = len(elem)
@@ -297,7 +281,7 @@ class JSSObject(ElementTree.Element):
             for kid in elem:
                 if kid.tag == "data":
                     kid.text = "*DATA*"
-                self._indent(kid, level+1, count < num_kids - 1)
+                self._indent(kid, level + 1, count < num_kids - 1)
                 count += 1
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
@@ -310,15 +294,18 @@ class JSSObject(ElementTree.Element):
                     elem.tail += pad
 
     def __repr__(self):
-        """Make our data human readable."""
+        """Return a string with indented XML data."""
         # deepcopy so we don't mess with the valid XML.
         pretty_data = copy.deepcopy(self)
         self._indent(pretty_data)
-        elementstring = ElementTree.tostring(pretty_data)
-        return elementstring.encode("utf-8")
+        return ElementTree.tostring(pretty_data).encode("utf-8")
 
     def pretty_find(self, search):
         """Pretty print the results of a find.
+
+        The inherited find method only prints the tag name and memory
+        location when used interactively. This method instead pretty
+        prints the element and all of its children as indented XML.
 
         Args:
             search: xpath passed onto the find method.
@@ -327,14 +314,21 @@ class JSSObject(ElementTree.Element):
         if result is not None:
             pretty_data = copy.deepcopy(result)
             self._indent(pretty_data)
-            elementstring = ElementTree.tostring(pretty_data)
-            print elementstring.encode("utf-8")
+            print ElementTree.tostring(pretty_data).encode("utf-8")
 
     def _handle_location(self, location):
-        """Return an element located at location.
+        """Return an element located at location with flexible args.
 
-        Handles a string xpath as per ElementTree.find or an element.
+        Args:
+            location: String xpath to use in an Element.find search OR
+                an Element (which is simply returned).
 
+        Returns:
+            The found Element.
+
+        Raises:
+            ValueError if the location is a string that results in a
+            find of None.
         """
         if not isinstance(location, ElementTree.Element):
             element = self.find(location)
@@ -911,7 +905,7 @@ class LDAPServer(JSSContainerObject):
         Returns an LDAPUsersResult object.
 
         """
-        user_url = "%s/%s/%s" % (self.get_object_url(), "user", user)
+        user_url = "%s/%s/%s" % (self.url, "user", user)
         print user_url
         response = self.jss.get(user_url)
         return LDAPUsersResults(self.jss, response)
@@ -927,13 +921,13 @@ class LDAPServer(JSSContainerObject):
         Returns an LDAPGroupsResult object.
 
         """
-        group_url = "%s/%s/%s" % (self.get_object_url(), "group", group)
+        group_url = "%s/%s/%s" % (self.url, "group", group)
         response = self.jss.get(group_url)
         return LDAPGroupsResults(self.jss, response)
 
     def is_user_in_group(self, user, group):
         """Test for whether a user is in a group. Returns bool."""
-        search_url = "%s/%s/%s/%s/%s" % (self.get_object_url(), "group", group,
+        search_url = "%s/%s/%s/%s/%s" % (self.url, "group", group,
                                          "user", user)
         response = self.jss.get(search_url)
         # Sanity check

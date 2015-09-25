@@ -252,7 +252,7 @@ class TestJSSObject(object):
         assert_raises(JSSMethodNotAllowedError, j_global.factory.get_object,
                       NoGetObject, None)
         bad_policy = NoPostObject(j_global, "No workie")
-        assert_raises(JSSPutError, bad_policy.save)
+        assert_raises(JSSMethodNotAllowedError, bad_policy.save)
 
         np = NoPutNoPostObject(j_global, "TestNoPutNoPost")
         assert_raises(JSSMethodNotAllowedError, np.save)

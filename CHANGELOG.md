@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Changed
 - Optimized `JSSObjectList.retrieve_all`.
+- Reorganized `JSSObject.save` method. It was very convoluted. Now it reads better, is more error resistant, and should work exactly the same. Specifically, it assumes that if your JSSObject has no ID, then it is a new object (because only the JSS can assign one) and thus needs to PUT. If it _does_ have an ID, then it POSTs it. Potentially this could be an issue where if you retrieved an object, and then wanted to completely replace it with different data, and then tried to save, it would then be missing the ID and would PUT, creating a new object (or fail because of the name conflict); I don't see that as a real issue though.
 
 ## [1.3.0] - 2015-08-19 - Two Men Enter, One Man Leaves
 
