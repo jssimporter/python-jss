@@ -822,7 +822,7 @@ class JSSObjectFactory(object):
         """
         if subset:
             if not isinstance(subset, list):
-                if isinstance(subset, (str, unicode)):
+                if isinstance(subset, basestring):
                     subset = subset.split("&")
                 else:
                     raise TypeError

@@ -20,10 +20,13 @@ Classes representing JSS database objects and their API endpoints
 
 
 import copy
+import mimetypes
 import os
 import re
 import subprocess
 from xml.etree import ElementTree
+
+import requests
 
 from .exceptions import *
 
@@ -116,7 +119,7 @@ class JSSObject(ElementTree.Element):
                 method.
         """
         self.jss = jss
-        if type(data) in [str, unicode]:
+        if isinstance(data, basestring):
             super(JSSObject, self).__init__(tag=self.list_type)
             self.new(data, **kwargs)
         elif isinstance(data, ElementTree.Element):
@@ -338,72 +341,88 @@ class JSSObject(ElementTree.Element):
             element = location
         return element
 
-    def search(self, tag):
-        """Return elements with tag using getiterator."""
-        # TODO: getiterator is deprecated, and I'm not sure why this
-        # function is even here any more!
-        return self.getiterator(tag)
-
     def set_bool(self, location, value):
-        """For an object at path, set the string representation of a
-        boolean value to value. Mostly just to prevent me from
-        forgetting to convert to string.
+        """Set a boolean value.
 
+        Casper booleans in XML are string literals of "true" or "false".
+        This method sets the text value of "location" to the correct
+        string representation of a boolean.
+
+        Args:
+            location: Element or a string path argument to find()
+            value: Boolean or string value to set. (Accepts
+            "true"/"True"/"TRUE"; all other strings are False).
         """
         element = self._handle_location(location)
-        if bool(value) is True:
+        if isinstance(value, basestring):
+            value = True if value.upper() == "TRUE" else False
+        elif not isinstance(value, bool):
+            raise ValueError
+        if value is True:
             element.text = "true"
         else:
             element.text = "false"
 
     def add_object_to_path(self, obj, location):
-        """Add an object of type JSSContainerObject to XMLEditor's
-        context object at "path".
+        """Add an object of type JSSContainerObject to location.
 
-        location can be an Element or a string path argument to find()
+        This method determines the correct list representation of an
+        object and adds it to "location". For example, add a Computer to
+        a ComputerGroup. The ComputerGroup will not have a child
+        Computers/Computer tag with subelements "name" and "id".
 
+        Args:
+            obj: A JSSContainerObject subclass.
+            location: Element or a string path argument to find()
         """
         location = self._handle_location(location)
         location.append(obj.as_list_data())
-        results = [item for item in location.getchildren() if
-                   item.findtext("id") == obj.id][0]
-        return results
 
     def remove_object_from_list(self, obj, list_element):
         """Remove an object from a list element.
 
-        object:     Accepts JSSObjects, id's, and names
-        list:   Accepts an element or a string path to that element
-
+        Args:
+            obj: Accepts JSSObjects, id's, and names
+            list_element: Accepts an Element or a string path to that
+                element
         """
         list_element = self._handle_location(list_element)
 
         if isinstance(obj, JSSObject):
             results = [item for item in list_element.getchildren() if
                        item.findtext("id") == obj.id]
-        elif type(obj) in [int, str, unicode]:
+        elif isinstance(obj, (int, basestring)):
             results = [item for item in list_element.getchildren() if
                        item.findtext("id") == str(obj) or
                        item.findtext("name") == obj]
 
         if len(results) == 1:
             list_element.remove(results[0])
-        else:
-            raise ValueError("There is either more than one object, or no "
-                             "matches at that path!")
+        elif len(results) > 1:
+            raise ValueError("There is more than one matching object at that "
+                             "path!")
 
     def clear_list(self, list_element):
-        """Clear all list items from path.
+        """Clear an Element or everything below a path.
 
-        list_element can be a string argument to find(), or an element.
+        For example, to clear all Computers in a ComputerGroup:
+            `computer_group_instance.clear_list("computers")`
 
+        Args:
+            list_element: Accepts an Element or a string path to that
+                element, to remove.
         """
         list_element = self._handle_location(list_element)
         list_element.clear()
 
     @classmethod
     def from_file(cls, jss, filename):
-        """Creates a new JSSObject from an external XML file."""
+        """Create a new JSSObject from an external XML file.
+
+        Args:
+            jss: A JSS object.
+            filename: String path to an XML file.
+        """
         tree = ElementTree.parse(filename)
         root = tree.getroot()
         new_object = cls(jss, data=root)
@@ -411,28 +430,41 @@ class JSSObject(ElementTree.Element):
 
     @classmethod
     def from_string(cls, jss, xml_string):
-        """Creates a new JSSObject from an XML string."""
+        """Creates a new JSSObject from an XML string.
+
+        Args:
+            jss: A JSS object.
+            xml_string: String XML file data used to create object.
+        """
         root = ElementTree.fromstring(xml_string)
         new_object = cls(jss, data=root)
         return new_object
 
 
 class JSSContainerObject(JSSObject):
-    """Subclass for object types which can contain lists.
+    """Subclass for types which can contain lists of other objects.
 
     e.g. Computers, Policies.
-
     """
     list_type = "JSSContainerObject"
 
     def new(self, name, **kwargs):
+        """Create an empty XML object.
+
+        Args:
+            name: String name of object.
+        """
         name_element = ElementTree.SubElement(self, "name")
         name_element.text = name
 
     def as_list_data(self):
-        """Return an Element with id and name data for adding to
-        lists.
+        """Return an Element to be used in a list.
 
+        Most lists want an element with tag of list_type, and
+        subelements of id and name.
+
+        Returns:
+            Element: list representation of object.
         """
         element = ElementTree.Element(self.list_type)
         id_ = ElementTree.SubElement(element, "id")
@@ -443,10 +475,21 @@ class JSSContainerObject(JSSObject):
 
 
 class JSSGroupObject(JSSContainerObject):
-    """Abstract XMLEditor for ComputerGroup and MobileDeviceGroup."""
+    """Abstract class for ComputerGroup and MobileDeviceGroup."""
 
     def add_criterion(self, name, priority, and_or, search_type, value):
-        """Add a search criteria object to a smart group."""
+        """Add a search criteria object to a smart group.
+
+        Args:
+            name: String Criteria type name (e.g. "Application Title")
+            priority: Int or Str number priority of criterion.
+            and_or: Str, either "and" or "or".
+            search_type: String Criteria search type. (e.g. "is", "is
+                not", "member of", etc). Construct a SmartGroup with the
+                criteria of interest in the web interface to determine
+                what range of values are available.
+            value: String value to search for/against.
+        """
         criterion = SearchCriteria(name, priority, and_or, search_type, value)
         self.criteria.append(criterion)
 
@@ -471,11 +514,11 @@ class JSSGroupObject(JSSContainerObject):
                 self.criteria = ElementTree.SubElement(self, "criteria")
 
     def add_device(self, device, container):
-        """Add a device to a group. Wraps XMLEditor.add_object_toPath.
+        """Add a device to a group. Wraps JSSObject.add_object_to_path.
 
-        device can be a JSSObject, and ID value, or the name of a valid
-        object.
-
+        Args:
+            device: A JSSObject to add (as list data), to this object.
+            location: Element or a string path argument to find()
         """
         # There is a size tag which the JSS manages for us, so we can
         # ignore it.
@@ -487,10 +530,10 @@ class JSSGroupObject(JSSContainerObject):
             raise ValueError("Devices may not be added to smart groups.")
 
     def has_member(self, device_object):
-        """Return whether group has a device as a member.
+        """Return bool whether group has a device as a member.
 
         Args:
-            Device object (Computer or MobileDevice). Membership is
+            device_object (Computer or MobileDevice). Membership is
             determined by ID, as names can be shared amongst devices.
         """
         if isinstance(device_object, Computer):
@@ -505,12 +548,8 @@ class JSSGroupObject(JSSContainerObject):
 
 
 class JSSDeviceObject(JSSContainerObject):
-    """Provides convenient accessors for properties of devices.
+    """Abstact class for device types."""
 
-    This is helpful since Computers and MobileDevices allow us to query
-    based on these properties.
-
-    """
     @property
     def udid(self):
         """Return device's UDID or None."""
@@ -527,17 +566,21 @@ class JSSFlatObject(JSSObject):
 
     These objects have in common that they cannot be created. They can,
     however, be updated.
-
     """
     search_types = {}
 
     def new(self, name, **kwargs):
-        """JSSFlatObjects and their subclasses cannot be created."""
+        """Do nothing. This object cannot be created."""
         raise JSSPostError("This object type cannot be created.")
 
     @classmethod
     def get_url(cls, data):
-        """Return the URL for a get request based on data type."""
+        """Return the URL to this object.
+
+        Args:
+            data: Must be None. This is in-place to mimic other, more
+                featured object types.
+        """
         if data is not None:
             raise JSSUnsupportedSearchMethodError(
                 "This object cannot be queried by %s." % data)
@@ -545,11 +588,24 @@ class JSSFlatObject(JSSObject):
             return cls._url
 
     def get_object_url(self):
-        """Return the complete API url to this object."""
+        """Return the url to this object. Deprecated.
+
+        Use url instead.
+        """
+        return self.url
+
+    @property
+    def url(self):
+        """Return the path subcomponent of the url to this object.
+
+        For example: "/activationcode"
+        """
+        # Flat objects have no ID property, so there is only one URL.
         return self.get_url(None)
 
 
 class Account(JSSContainerObject):
+    """JSS account."""
     _url = "/accounts"
     container = "users"
     id_url = "/userid/"
@@ -558,10 +614,12 @@ class Account(JSSContainerObject):
 
 
 class AccountGroup(JSSContainerObject):
-    """Account groups are groups of users on the JSS. Within the API
-    hierarchy they are actually part of accounts, but I seperated them.
+    """Account groups are groups of users on the JSS.
 
+    Within the API hierarchy they are actually part of accounts, but I
+    seperated them.
     """
+
     _url = "/accounts"
     container = "groups"
     id_url = "/groupid/"
@@ -611,10 +669,6 @@ class Class(JSSContainerObject):
 
 
 class Computer(JSSDeviceObject):
-    """Computer objects include a "match" search type which queries
-    across multiple properties.
-
-    """
     list_type = "computer"
     _url = "/computers"
     search_types = {"name": "/name/", "serial_number": "/serialnumber/",
@@ -623,8 +677,10 @@ class Computer(JSSDeviceObject):
 
     @property
     def mac_addresses(self):
-        """Return a list of mac addresses for this device."""
-        # Computers don't tell you which network device is which.
+        """Return a list of mac addresses for this device.
+
+        Computers don't tell you which network device is which.
+        """
         mac_addresses = [self.findtext("general/mac_address")]
         if self.findtext("general/alt_mac_address"):
             mac_addresses.append(self.findtext("general/alt_mac_address"))
@@ -642,6 +698,9 @@ class ComputerCommand(JSSContainerObject):
     _url = "/computercommands"
     can_delete = False
     can_put = False
+    # TODO: You _can_ POST computer commands, but it is not yet
+    # implemented
+    can_post = False
 
 
 class ComputerConfiguration(JSSContainerObject):
@@ -670,27 +729,38 @@ class ComputerGroup(JSSGroupObject):
         self.criteria = self.find("criteria")
 
     def new(self, name, **kwargs):
-        """Creates a computer group template.
+        """Create a computer group from scratch.
 
         Smart groups with no criteria by default select ALL computers.
 
+        Args:
+            name: String name of group.
+            kwargs: One kwarg of "smart" is accepted, with bool val.
         """
         element_name = ElementTree.SubElement(self, "name")
         element_name.text = name
         # is_smart is a JSSGroupObject @property.
         ElementTree.SubElement(self, "is_smart")
         self.criteria = ElementTree.SubElement(self, "criteria")
-        # Assing smartness if specified, otherwise default to False.
+        # If specified add is_smart, otherwise default to False.
         self.is_smart = kwargs.get("smart", False)
         self.computers = ElementTree.SubElement(self, "computers")
 
-    def add_computer(self, device):
-        """Add a computer to the group."""
-        super(ComputerGroup, self).add_device(device, "computers")
+    def add_computer(self, computer):
+        """Add a computer to the group.
+
+        Args:
+            computer: A Computer object to add to the group.
+        """
+        super(ComputerGroup, self).add_device(computer, "computers")
 
     def remove_computer(self, device):
-        """Remove a computer from the group."""
-        super(ComputerGroup, self).remove_object_from_list(device, "computers")
+        """Remove a computer from the group.
+
+        Args:
+            computer: A Computer object to add to the group.
+        """
+        super(ComputerGroup, self).remove_object_from_list(computer, "computers")
 
 
 class ComputerInventoryCollection(JSSFlatObject):
@@ -751,38 +821,36 @@ class FileUpload(object):
 
     However, you can reuse the FileUpload object if you wish, by
     changing the parameters, and issuing another save().
-
     """
     _url = "fileuploads"
 
     def __init__(self, j, resource_type, id_type, _id, resource):
         """Prepare a new FileUpload.
 
-        j:                  A JSS object to POST the upload to.
-
-        resource_type:      String. Acceptable Values:
-                            Attachments:
-                                computers
-                                mobiledevices
-                                enrollmentprofiles
-                                peripherals
-                            Icons:
-                                policies
-                                ebooks
-                                mobiledeviceapplicationsicon
-                            Mobile Device Application:
-                                mobiledeviceapplicationsipa
-                            Disk Encryption
-                                diskencryptionconfigurations
-        id_type:            String of desired ID type:
-                                id
-                                name
-
-        _id                 Int or String referencing the identity value
-                            of the resource to add the FileUpload to.
-
-        resource            String path to the file to upload.
-
+        Args:
+            j: A JSS object to POST the upload to.
+            resource_type:
+                String. Acceptable Values:
+                    Attachments:
+                        computers
+                        mobiledevices
+                        enrollmentprofiles
+                        peripherals
+                    Icons:
+                        policies
+                        ebooks
+                        mobiledeviceapplicationsicon
+                    Mobile Device Application:
+                        mobiledeviceapplicationsipa
+                    Disk Encryption
+                        diskencryptionconfigurations
+            id_type:
+                String of desired ID type:
+                    id
+                    name
+            _id: Int or String referencing the identity value of the
+                resource to add the FileUpload to.
+            resource: String path to the file to upload.
         """
         resource_types = ["computers", "mobiledevices", "enrollmentprofiles",
                           "peripherals", "policies", "ebooks",
@@ -806,67 +874,37 @@ class FileUpload(object):
                                               "%s" % id_types)
         self._id = str(_id)
 
-        # To support curl workaround in FileUpload.save()...
-        self.resource_path = resource
+        basename = os.path.basename(resource)
+        content_type = mimetypes.guess_type(basename)[0]
+        self.resource = {"name": (basename, open(resource, "rb"),
+                                  content_type)}
+        self._set_upload_url()
 
-        self.resource = {"name": (os.path.basename(resource),
-                                  open(resource, "rb"), "multipart/form-data")}
-
-        self.set_upload_url()
-
-    def set_upload_url(self):
-        """Use to generate the full URL to POST to."""
+    def _set_upload_url(self):
+        """Generate the full URL for a POST."""
         self._upload_url = "/".join([self.jss._url, self._url,
                                      self.resource_type, self.id_type,
                                      str(self._id)])
 
-    #def save(self):
-    #    """POST the object to the JSS."""
-    #    try:
-    #        response = requests.post(self._upload_url,
-    #                                 auth=self.jss.session.auth,
-    #                                 verify=self.jss.session.verify,
-    #                                 files=self.resource)
-    #    except JSSPostError as e:
-    #        if e.status_code == 409:
-    #            raise JSSPostError(e)
-    #        else:
-    #            raise JSSMethodNotAllowedError(self.__class__.__name__)
-
-    #    if response.status_code == 201:
-    #        if self.jss.verbose:
-    #            print "POST: Success"
-    #            print response.text.encode("utf-8")
-    #    elif response.status_code >= 400:
-    #        self.jss._error_handler(JSSPostError, response)
-
     def save(self):
-        """POST the object to the JSS. WORKAROUND version."""
+        """POST the object to the JSS."""
         try:
-            # A regression introduced in JSS 9.64 prevents this from
-            # working correctly. Until a solution is found, shell out
-            # to curl.
-            # This is defect D-008936.
+            response = requests.post(self._upload_url,
+                                     auth=self.jss.session.auth,
+                                     verify=self.jss.session.verify,
+                                     files=self.resource)
+        except JSSPostError as e:
+            if e.status_code == 409:
+                raise JSSPostError(e)
+            else:
+                raise JSSMethodNotAllowedError(self.__class__.__name__)
 
-            curl = ["/usr/bin/curl", "-kvu", "%s:%s" % self.jss.session.auth,
-                    self._upload_url, "-F", "name=@%s" %
-                    os.path.expanduser(self.resource_path), "-X", "POST"]
-            response = subprocess.check_output(curl, stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as e:
-            # Handle problems with curl.
-            raise JSSPostError("Curl subprocess error code: %s" % e.message)
-
-        http_response_regex = ".*HTTP/1.1 ([0-9]{3}) ([a-zA-Z ]*)"
-        found_patterns = re.findall(http_response_regex, response)
-        if len(found_patterns) > 0:
-            final_response = found_patterns[-1]
-        else:
-            raise JSSPostError("Unknown curl error.")
-        if int(final_response[0]) >= 400:
-            raise JSSPostError("Curl error: %s, %s" % final_response)
-        elif int(final_response[0]) == 201:
+        if response.status_code == 201:
             if self.jss.verbose:
                 print "POST: Success"
+                print response.text.encode("utf-8")
+        elif response.status_code >= 400:
+            self.jss._error_handler(JSSPostError, response)
 
 
 class GSXConnection(JSSFlatObject):
@@ -897,13 +935,16 @@ class LDAPServer(JSSContainerObject):
     def search_users(self, user):
         """Search for LDAP users.
 
-        It is not entirely clear how the JSS determines the results-
-        are regexes allowed, or globbing?
+        Args:
+            user: User to search for. It is not entirely clear how the
+                JSS determines the results- are regexes allowed, or
+                globbing?
 
-        Will raise a JSSGetError if no results are found.
+        Returns:
+            LDAPUsersResult object.
 
-        Returns an LDAPUsersResult object.
-
+        Raises:
+            Will raise a JSSGetError if no results are found.
         """
         user_url = "%s/%s/%s" % (self.url, "user", user)
         print user_url
@@ -913,20 +954,34 @@ class LDAPServer(JSSContainerObject):
     def search_groups(self, group):
         """Search for LDAP groups.
 
-        It is not entirely clear how the JSS determines the results-
-        are regexes allowed, or globbing?
+        Args:
+            group: Group to search for. It is not entirely clear how the
+                JSS determines the results- are regexes allowed, or
+                globbing?
 
-        Will raise a JSSGetError if no results are found.
+        Returns:
+            LDAPGroupsResult object.
 
-        Returns an LDAPGroupsResult object.
-
+        Raises:
+            JSSGetError if no results are found.
         """
         group_url = "%s/%s/%s" % (self.url, "group", group)
         response = self.jss.get(group_url)
         return LDAPGroupsResults(self.jss, response)
 
     def is_user_in_group(self, user, group):
-        """Test for whether a user is in a group. Returns bool."""
+        """Test for whether a user is in a group.
+
+        There is also the ability in the API to test for whether
+        multiple users are members of an LDAP group, but you should just
+        call is_user_in_group over an enumerated list of users.
+
+        Args:
+            user: String username.
+            group: String group name.
+
+        Returns bool.
+        """
         search_url = "%s/%s/%s/%s/%s" % (self.url, "group", group,
                                          "user", user)
         response = self.jss.get(search_url)
@@ -943,10 +998,6 @@ class LDAPServer(JSSContainerObject):
         elif len(response) >= 2:
             raise JSSGetError("Unexpected response.")
         return result
-
-    # There is also the ability to test for whether multiple users are
-    # members of an LDAP group, but you should just call
-    # is_user_in_group over an enumerated list of users.
 
     @property
     def id(self):
@@ -995,8 +1046,8 @@ class ManagedPreferenceProfile(JSSContainerObject):
 class MobileDevice(JSSDeviceObject):
     """Mobile Device objects include a "match" search type which queries
     across multiple properties.
-
     """
+
     _url = "/mobiledevices"
     list_type = "mobile_device"
     search_types = {"name": "/name/", "serial_number": "/serialnumber/",
@@ -1026,6 +1077,7 @@ class MobileDeviceCommand(JSSContainerObject):
     search_types = {"name": "/name/", "uuid": "/uuid/",
                     "command": "/command/"}
     # TODO: This object _can_ post, but it works a little differently
+    # and is not yet implemented
     can_post = False
 
 
@@ -1053,11 +1105,19 @@ class MobileDeviceGroup(JSSGroupObject):
     list_type = "mobile_device_group"
 
     def add_mobile_device(self, device):
-        """Add a mobile_device to the group."""
+        """Add a mobile_device to the group.
+
+        Args:
+            device: A MobileDevice object to add to group.
+        """
         super(MobileDeviceGroup, self).add_device(device, "mobile_devices")
 
     def remove_mobile_device(self, device):
-        """Remove a mobile_device from the group."""
+        """Remove a mobile_device from the group.
+
+        Args:
+            device: A MobileDevice object to remove from the group.
+        """
         super(MobileDeviceGroup, self).remove_object_from_list(
             device, "mobile_devices")
 
@@ -1084,6 +1144,15 @@ class Package(JSSContainerObject):
     list_type = "package"
 
     def new(self, filename, **kwargs):
+        """Create a new Package from scratch.
+
+        Args:
+            filename: String filename of the package to use for the
+                Package object's Display Name (here, "name").
+            kwargs:
+                Accepted keyword args include:
+                    cat_name: Name of category to assign Package.
+        """
         name = ElementTree.SubElement(self, "name")
         name.text = filename
         category = ElementTree.SubElement(self, "category")
@@ -1119,17 +1188,20 @@ class Package(JSSContainerObject):
         send_notification.text = "false"
 
     def set_os_requirements(self, requirements):
-        """Sets package OS Requirements. Pass in a string of comma
-        seperated OS versions. A lowercase "x" is allowed as a wildcard,
-        e.g. "10.9.x"
+        """Set package OS Requirements
 
+        Args:
+            requirements: A string of comma seperated OS versions. A
+                lowercase "x" is allowed as a wildcard, e.g.  "10.9.x"
         """
         self.find("os_requirements").text = requirements
 
     def set_category(self, category):
-        """Sets package category to "category", which can be a string of
-        an existing category's name, or a Category object.
+        """Set package category
 
+        Args:
+            category: String of an existing category's name, or a
+                Category object.
         """
         # For some reason, packages only have the category name, not the
         # ID.
@@ -1138,20 +1210,6 @@ class Package(JSSContainerObject):
         else:
             name = category
         self.find("category").text = name
-
-    def save(self):
-        """Save a new package to the JSS, or update an existing one."""
-        # Jamf seems to have changed the way a missing category is
-        # handled. If you try to update an existing policy with the data
-        # returned from a GET on a policy that has no category, it will
-        # fail. If we clear the category under those circumstances, it
-        # will work.
-        # See issue: D-008180
-        category = self.find("category")
-        if category.text == "No category assigned":
-            self.set_category("")
-
-        super(Package, self).save()
 
 
 class Peripheral(JSSContainerObject):
@@ -1169,11 +1227,11 @@ class Policy(JSSContainerObject):
     list_type = "policy"
 
     def new(self, name="Unknown", category=None):
-        """Create a barebones policy.
+        """Create a Policy from scratch.
 
-        name:       Policy name
-        category:   An instance of Category
-
+        Args:
+            name: String Policy name
+            category: A Category object or string name of the category.
         """
         # General
         self.general = ElementTree.SubElement(self, "general")
@@ -1185,10 +1243,11 @@ class Policy(JSSContainerObject):
         self.frequency.text = "Once per computer"
         self.category = ElementTree.SubElement(self.general, "category")
         if category:
-            # Without a category, the JSS will add an id of -1, with
-            # name "Unknown". But... See D-008180
             self.category_name = ElementTree.SubElement(self.category, "name")
-            self.category_name.text = category.name
+            if isinstance(category, Category):
+                self.category_name.text = category.name
+            elif isinstance(category, basestring):
+                self.category_name.text = category
 
         # Scope
         self.scope = ElementTree.SubElement(self, "scope")
@@ -1223,7 +1282,18 @@ class Policy(JSSContainerObject):
         self.set_bool(self.recon, True)
 
     def add_object_to_scope(self, obj):
-        """Add an object "obj" to the appropriate scope block."""
+        """Add an object to the appropriate scope block.
+
+        Args:
+            obj: JSSObject to add to scope. Accepted subclasses are:
+                Computer
+                ComputerGroup
+                Building
+                Department
+
+        Raises:
+            TypeError if invalid obj type is provided.
+        """
         if isinstance(obj, Computer):
             self.add_object_to_path(obj, "scope/computers")
         elif isinstance(obj, ComputerGroup):
@@ -1248,12 +1318,19 @@ class Policy(JSSContainerObject):
             self.clear_list("%s%s" % ("scope/", section))
 
     def add_object_to_exclusions(self, obj):
-        """Add an object "obj" to the appropriate scope exclusions
+        """Add an object to the appropriate scope exclusions
         block.
 
-        obj should be an instance of Computer, ComputerGroup, Building,
-        or Department.
+        Args:
+            obj: JSSObject to add to exclusions. Accepted subclasses
+                    are:
+                Computer
+                ComputerGroup
+                Building
+                Department
 
+        Raises:
+            TypeError if invalid obj type is provided.
         """
         if isinstance(obj, Computer):
             self.add_object_to_path(obj, "scope/exclusions/computers")
@@ -1267,9 +1344,10 @@ class Policy(JSSContainerObject):
             raise TypeError
 
     def add_package(self, pkg):
-        """Add a jss.Package object to the policy with
-        action=install.
+        """Add a Package object to the policy with action=install.
 
+        Args:
+            pkg: A Package object to add.
         """
         if isinstance(pkg, Package):
             package = self.add_object_to_path(
@@ -1278,40 +1356,28 @@ class Policy(JSSContainerObject):
             action.text = "Install"
 
     def set_self_service(self, state=True):
-        """Convenience setter for self_service."""
+        """Set use_for_self_service to bool state."""
         self.set_bool(self.find("self_service/use_for_self_service"), state)
 
     def set_recon(self, state=True):
-        """Convenience setter for recon."""
+        """Set policy's recon value to bool state."""
         self.set_bool(self.find("maintenance/recon"), state)
 
     def set_category(self, category):
         """Set the policy's category.
 
-        category should be a category object.
-
+        Args:
+            category: A category object.
         """
         pcategory = self.find("general/category")
         pcategory.clear()
-        id_ = ElementTree.SubElement(pcategory, "id")
-        id_.text = category.id
         name = ElementTree.SubElement(pcategory, "name")
-        name.text = category.name
-
-    def save(self):
-        """Save a new policy to the JSS, or update an existing one."""
-        # Jamf seems to have changed the way a missing category is
-        # handled. If you try to update an existing policy with the data
-        # returned from a GET on a policy that has no category, it will
-        # fail. If we clear the category under those circumstances, it
-        # will work.
-        # See issue: D-008180
-        category = self.find("general/category")
-        if category.findtext("id") == "-1":
-            category.remove(category.find("name"))
-            category.remove(category.find("id"))
-
-        super(Policy, self).save()
+        if isinstance(category, Category):
+            id_ = ElementTree.SubElement(pcategory, "id")
+            id_.text = category.id
+            name.text = category.name
+        elif isinstance(category, basestring):
+            name.text = category
 
 
 class Printer(JSSContainerObject):
@@ -1370,4 +1436,3 @@ class UserGroup(JSSContainerObject):
 class VPPAccount(JSSContainerObject):
     _url = "/vppaccounts"
     list_type = "vpp_account"
-

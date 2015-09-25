@@ -15,6 +15,21 @@ All notable changes to this project will be documented in this file. This projec
 ### Changed
 - Optimized `JSSObjectList.retrieve_all`.
 - Reorganized `JSSObject.save` method. It was very convoluted. Now it reads better, is more error resistant, and should work exactly the same. Specifically, it assumes that if your JSSObject has no ID, then it is a new object (because only the JSS can assign one) and thus needs to PUT. If it _does_ have an ID, then it POSTs it. Potentially this could be an issue where if you retrieved an object, and then wanted to completely replace it with different data, and then tried to save, it would then be missing the ID and would PUT, creating a new object (or fail because of the name conflict); I don't see that as a real issue though.
+- Removed return value of `JSSObject.add_object_to_path` since it also
+  has side effects.
+- Removed `JSSObject.search` since it implements a deprecated Element
+  method that wasn't being used anywhere.
+- Restored requests method of posting FileUploads. Now uses mimetypes to
+  detect file type and uses it in header.
+- JAMF fixed D-008180, where the JSS rejected Packages and policies with
+  a category of "No Category Assigned", even though that's what the JSS
+  supplied in GET requests. This was fixed in JSS v9.7. Therefore,
+  python-jss removed its overriden methods `Package.save` and
+  `Policy.save`. It's likely this was broader than just Packages and
+  Policies, but python-jss hadn't implemented or tested other objects.
+
+### Fixed
+- `JSSObject.set_bool` improved to not have broken string behavior.
 
 ## [1.3.0] - 2015-08-19 - Two Men Enter, One Man Leaves
 
