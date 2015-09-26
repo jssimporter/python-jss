@@ -72,3 +72,14 @@ def convert_response_to_text(response):
             error.append(content_line.group(1))
 
     return ". ".join(error)
+
+
+def error_handler(exception_cls, response):
+    """Handle HTTP errors by formatting into strings."""
+    # Responses are sent as html. Split on the newlines and give us
+    # the <p> text back.
+    error = convert_response_to_text(response)
+    exception = exception_cls("Response Code: %s\tResponse: %s" %
+                              (response.status_code, error))
+    exception.status_code = response.status_code
+    raise exception

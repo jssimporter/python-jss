@@ -38,13 +38,33 @@ Private package contents include:
 
 
 from .casper import Casper
+from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
+                                 JDS, CDP)
 from .distribution_points import DistributionPoints
 from .exceptions import (
     JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
     JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
     JSSUnsupportedSearchMethodError, JSSFileUploadParameterError,
     JSSUnsupportedFileType, JSSError)
-from .jss import *
+from .jamf_software_server import (JSS, JSSPrefs)
+from .jssobject import JSSObject
+from .jssobjects import (
+    Account, AccountGroup, ActivationCode, AdvancedComputerSearch,
+    AdvancedMobileDeviceSearch, AdvancedUserSearch, Building, BYOProfile,
+    Category, Class, Computer, ComputerCheckIn, ComputerCommand,
+    ComputerConfiguration, ComputerExtensionAttribute, ComputerGroup,
+    ComputerInventoryCollection, ComputerInvitation, ComputerReport,
+    Department, DirectoryBinding, DiskEncryptionConfiguration,
+    DistributionPoint, DockItem, EBook, FileUpload, GSXConnection, IBeacon,
+    JSSUser, LDAPServer, LicensedSoftware, MacApplication,
+    ManagedPreferenceProfile, MobileDevice, MobileDeviceApplication,
+    MobileDeviceCommand, MobileDeviceConfigurationProfile,
+    MobileDeviceEnrollmentProfile, MobileDeviceExtensionAttribute,
+    MobileDeviceInvitation, MobileDeviceGroup, MobileDeviceProvisioningProfile,
+    NetbootServer, NetworkSegment, OSXConfigurationProfile, Package,
+    Peripheral, PeripheralType, Policy, Printer, RestrictedSoftware,
+    RemovableMACAddress, SavedSearch, Script, Site, SoftwareUpdateServer,
+    SMTPServer, UserExtensionAttribute, User, UserGroup, VPPAccount)
 from .tools import is_osx, is_linux
 
 

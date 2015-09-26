@@ -31,12 +31,28 @@ import requests
 
 from . import distribution_points
 from .exceptions import (
-    JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
-    JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
-    JSSUnsupportedSearchMethodError, JSSFileUploadParameterError)
-from .jssobject import *
+    JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError, JSSError,
+    JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError)
+from .jssobjects import (
+    Account, AccountGroup, ActivationCode, AdvancedComputerSearch,
+    AdvancedMobileDeviceSearch, AdvancedUserSearch, Building, BYOProfile,
+    Category, Class, Computer, ComputerCheckIn, ComputerCommand,
+    ComputerConfiguration, ComputerExtensionAttribute, ComputerGroup,
+    ComputerInventoryCollection, ComputerInvitation, ComputerReport,
+    Department, DirectoryBinding, DiskEncryptionConfiguration,
+    DistributionPoint, DockItem, EBook, GSXConnection, IBeacon, JSSUser,
+    LDAPServer, LicensedSoftware, MacApplication, ManagedPreferenceProfile,
+    MobileDevice, MobileDeviceApplication, MobileDeviceCommand,
+    MobileDeviceConfigurationProfile, MobileDeviceEnrollmentProfile,
+    MobileDeviceExtensionAttribute, MobileDeviceInvitation, MobileDeviceGroup,
+    MobileDeviceProvisioningProfile, NetbootServer, NetworkSegment,
+    OSXConfigurationProfile, Package, Peripheral, PeripheralType, Policy,
+    Printer, RestrictedSoftware, RemovableMACAddress, SavedSearch, Script,
+    Site, SoftwareUpdateServer, SMTPServer, UserExtensionAttribute, User,
+    UserGroup, VPPAccount)
+from .jssobjectlist import (JSSObjectList, JSSListData)
 from .tlsadapter import TLSAdapter
-from .tools import is_osx, is_linux, convert_response_to_text
+from .tools import (error_handler, is_osx, is_linux)
 
 try:
     from .contrib import FoundationPlist
@@ -223,6 +239,7 @@ class JSS(object):
         if suppress_warnings:
             requests.packages.urllib3.disable_warnings()
 
+        self._base_url = ""
         self.base_url = url
         self.user = user
         self.password = password
@@ -246,16 +263,6 @@ class JSS(object):
 
         self.factory = JSSObjectFactory(self)
         self.distribution_points = distribution_points.DistributionPoints(self)
-
-    def _error_handler(self, exception_cls, response):
-        """Handle HTTP errors by formatting into strings."""
-        # Responses are sent as html. Split on the newlines and give us
-        # the <p> text back.
-        error = convert_response_to_text(response)
-        exception = exception_cls("Response Code: %s\tResponse: %s"
-                                  % (response.status_code, error))
-        exception.status_code = response.status_code
-        raise exception
 
     @property
     def _url(self):
@@ -314,7 +321,7 @@ class JSS(object):
         if response.status_code == 200 and self.verbose:
             print "GET %s: Success." % request_url
         elif response.status_code >= 400:
-            self._error_handler(JSSGetError, response)
+            error_handler(JSSGetError, response)
 
         # JSS returns xml encoded in utf-8
         jss_results = response.text.encode("utf-8")
@@ -367,7 +374,7 @@ class JSS(object):
         if response.status_code == 201 and self.verbose:
             print "POST %s: Success" % request_url
         elif response.status_code >= 400:
-            self._error_handler(JSSPostError, response)
+            error_handler(JSSPostError, response)
 
         # Get the ID of the new object. JSS returns xml encoded in utf-8
 
@@ -398,7 +405,7 @@ class JSS(object):
         if response.status_code == 201 and self.verbose:
             print "PUT %s: Success." % request_url
         elif response.status_code >= 400:
-            self._error_handler(JSSPutError, response)
+            error_handler(JSSPutError, response)
 
     def delete(self, url_path):
         """Delete an object from the JSS.
@@ -419,7 +426,7 @@ class JSS(object):
         if response.status_code == 200 and self.verbose:
             print "DEL %s: Success." % request_url
         elif response.status_code >= 400:
-            self._error_handler(JSSDeleteError, response)
+            error_handler(JSSDeleteError, response)
 
     # Convenience methods for all JSSObject types ######################
 
@@ -899,114 +906,3 @@ class JSSObjectFactory(object):
                         self) for response_object in response_objects]
 
         return JSSObjectList(self, obj_class, objects)
-
-
-class JSSListData(dict):
-    """Holds overview information returned from a listing GET."""
-
-    def __init__(self, obj_class, data, factory):
-        """Configure a JSSListData item."""
-        self.obj_class = obj_class
-        self.factory = factory
-        super(JSSListData, self).__init__(data)
-
-    @property
-    def id(self):   # pylint: disable=invalid-name
-        """Return the object's ID property."""
-        return int(self["id"])
-
-    @property
-    def name(self):
-        """Return the object's name property."""
-        return self["name"]
-
-    def retrieve(self):
-        """Retrieve the full object XML for this item."""
-        return self.factory.get_object(self.obj_class, self.id)
-
-
-class JSSObjectList(list):
-    """A list style collection of JSSObjects.
-
-    List operations retrieve minimal or overview information for most
-    object types. For example, we may want to see all the Computers on
-    the JSS but that does not mean we want to do a full object GET for
-    each one.
-
-    The JSSObjectList provides Methods to retrieve individual members'
-    full information (retrieve_by_id, retrieve), and to retrieve the
-    full information for each member of the entire list (retrieve_all).
-
-    Attributes:
-        factory: A JSSObjectFactory for managing object construction and
-            searching.
-        obj_class: A JSSObject class (e.g. jss.Computer) that the list
-            contains.
-    """
-
-    def __init__(self, factory, obj_class, objects):
-        """Construct a list of JSSObjects.
-
-        Args:
-            factory: A JSSObjectFactory for managing object construction
-                in the event one of the retrieval methods is used.
-            obj_class: A JSSObject class (e.g. jss.Computer) that the
-                list contains.
-            objects: A list of JSSListData objects (incomplete data
-                about a JSSObject, as returned by the JSS from a listing
-                request).
-        """
-        self.factory = factory
-        self.obj_class = obj_class
-        super(JSSObjectList, self).__init__(objects)
-
-    def __repr__(self):
-        """Make data human readable."""
-        # Note: Large lists/objects may take a long time to indent!
-        delimeter = 50 * "-" + "\n"
-        output_string = delimeter
-        for obj in self:
-            output_string += "List index: \t%s\n" % self.index(obj)
-            for key, val in obj.items():
-                # TODO: Update this to match Spruce output code.
-                output_string += "%s:\t\t%s\n" % (key, val)
-            output_string += delimeter
-        return output_string.encode("utf-8")
-
-    def sort(self):
-        """Sort list elements by ID."""
-        super(JSSObjectList, self).sort(key=lambda k: k.id)
-
-    def sort_by_name(self):
-        """Sort list elements by name."""
-        super(JSSObjectList, self).sort(key=lambda k: k.name)
-
-    def retrieve(self, index):
-        """Return a JSSObject for the JSSListData element at index."""
-        return self[index].retrieve()
-
-    def retrieve_by_id(self, id_):
-        """Return a JSSObject for the element with ID id_"""
-        items_with_id = [item for item in self if item.id == int(id_)]
-        if len(items_with_id) == 1:
-            return items_with_id[0].retrieve()
-
-    def retrieve_all(self, subset=None):
-        """Return a list of all JSSListData elements as full JSSObjects.
-
-        This can take a long time given a large number of objects,
-        and depending on the size of each object. Subsetting to only
-        include the data you need can improve performance.
-
-        Args:
-            subset: For objects which support it, a list of sub-tags to
-                request, or an "&" delimited string, (e.g.
-                "general&purchasing").  Default to None.
-        """
-        # Attempt to speed this procedure up as much as can be done.
-
-        get_object = self.factory.get_object
-        obj_class = self.obj_class
-
-        return [get_object(obj_class, list_obj.id, subset)
-                for list_obj in self]
