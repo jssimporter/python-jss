@@ -24,8 +24,9 @@ Public package contents include:
         copying, deleting, and testing for files, as well as a
         controller class for abstracting all configured DPs.
     exceptions: python-jss custom exceptions.
-    jss: Main module containing classes for representing a JSS, and
-        each of the objects the JSS supports (packages, computers, etc).
+    jss: Main module containing classes for representing a JSS
+    jssobject: Represents each of the objects the JSS supports
+        (packages, computers, etc).
 
 Private package contents include:
     contrib: Code from other authors used in python-jss.
@@ -36,15 +37,15 @@ Private package contents include:
 """
 
 
-from casper import Casper
-from distribution_points import DistributionPoints
-from exceptions import (
+from .casper import Casper
+from .distribution_points import DistributionPoints
+from .exceptions import (
     JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
     JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
     JSSUnsupportedSearchMethodError, JSSFileUploadParameterError,
     JSSUnsupportedFileType, JSSError)
-from jss import *
-from tools import is_osx, is_linux
+from .jss import *
+from .tools import is_osx, is_linux
 
 
 __version__ = "1.3.1"

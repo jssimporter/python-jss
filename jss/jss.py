@@ -20,7 +20,6 @@ as JSSObjects.
 """
 
 
-import copy
 import os
 import re
 import subprocess
@@ -427,7 +426,7 @@ class JSS(object):
     # Define a docstring to add with a decorator. Why? To avoid having
     # the identical docstring repeat for each object type!
 
-    def _docstring_parameter(obj_type, subset=False):
+    def _docstring_parameter(obj_type, subset=False):   # pylint: disable=no-self-argument
         """Decorator for adding _docstring to repetitive methods."""
         docstring = (
             "Flexibly search the JSS for objects of type {}.\n\n\tArgs:\n\t\t"
@@ -451,6 +450,7 @@ class JSS(object):
             subset_string = ""
 
         def dec(obj):
+            """Dynamically decorate a docstring."""
             class_name = str(obj_type)[:-2].rsplit(".")[-1]
             updated_docstring = docstring.format(class_name, subset_string,
                                                  class_name)
@@ -459,6 +459,7 @@ class JSS(object):
             return obj
         return dec
 
+    #pylint: disable=invalid-name
     @_docstring_parameter(Account)
     def Account(self, data=None):
         """{dynamic_docstring}"""
@@ -766,6 +767,9 @@ class JSS(object):
         return self.factory.get_object(VPPAccount, data)
 
 
+    #pylint: enable=invalid-name
+
+
 class JSSObjectFactory(object):
     """Create JSSObjects intelligently based on a single parameter.
 
@@ -853,7 +857,7 @@ class JSSObjectFactory(object):
                     obj_class.__class__.__name__)
 
         # Retrieve individual objects
-        elif type(data) in [str, int, unicode]:
+        elif isinstance(data, (basestring, int)):
             if obj_class.can_get:
                 url = obj_class.get_url(data)
                 if subset:
@@ -907,7 +911,7 @@ class JSSListData(dict):
         super(JSSListData, self).__init__(data)
 
     @property
-    def id(self):
+    def id(self):   # pylint: disable=invalid-name
         """Return the object's ID property."""
         return int(self["id"])
 

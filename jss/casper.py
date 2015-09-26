@@ -23,7 +23,6 @@ removed. Do not rely on its continued existence!
 
 
 import copy
-import requests
 import urllib
 from xml.etree import ElementTree
 

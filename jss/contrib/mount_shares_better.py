@@ -10,23 +10,26 @@ Mount file shares on OS X.
 
 
 import CoreFoundation
-import Foundation
+import Foundation  # pylint: disable=unused-import
 import objc
 
 
 class AttrDict(dict):
+    """Attribute Dictionary"""
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
 
 
-NetFS = AttrDict()
+NetFS = AttrDict()  # pylint: disable=invalid-name
 # Can cheat and provide 'None' for the identifier, it'll just use
 # frameworkPath instead.
 # scan_classes=False means only add the contents of this Framework.
+# pylint: disable=invalid-name
 NetFS_bundle = objc.initFrameworkWrapper(
     'NetFS', frameworkIdentifier=None,
     frameworkPath=objc.pathForFramework('NetFS.framework'), globals=NetFS,
     scan_classes=False)
+# pylint: enable=invalid-name
 
 # https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 # Fix NetFSMountURLSync signature
@@ -46,7 +49,7 @@ def mount_share(share_path):
     """
     sh_url = CoreFoundation.CFURLCreateWithString(None, share_path, None)
     # Set UI to reduced interaction
-    open_options  = {NetFS.kNAUIOptionKey: NetFS.kNAUIOptionNoUI}
+    open_options = {NetFS.kNAUIOptionKey: NetFS.kNAUIOptionNoUI}
     # Allow mounting sub-directories of root shares
     mount_options = {NetFS.kNetFSAllowSubMountsKey: True}
     # Build our connected pointers for our results
@@ -54,7 +57,7 @@ def mount_share(share_path):
                                              open_options, mount_options, None)
     # Check if it worked
     if result != 0:
-         raise Exception('Error mounting url "%s": %s' % (share_path, output))
+        raise Exception('Error mounting url "%s": %s' % (share_path, output))
     # Return the mountpath
     return str(output[0])
 
@@ -72,7 +75,7 @@ def mount_share_at_path(share_path, mount_path):
     sh_url = CoreFoundation.CFURLCreateWithString(None, share_path, None)
     mo_url = CoreFoundation.CFURLCreateWithString(None, mount_path, None)
     # Set UI to reduced interaction
-    open_options  = {NetFS.kNAUIOptionKey: NetFS.kNAUIOptionNoUI}
+    open_options = {NetFS.kNAUIOptionKey: NetFS.kNAUIOptionNoUI}
     # Allow mounting sub-directories of root shares
     # Also specify the share should be mounted directly at (not under)
     # mount_path
@@ -83,7 +86,7 @@ def mount_share_at_path(share_path, mount_path):
                                              open_options, mount_options, None)
     # Check if it worked
     if result != 0:
-         raise Exception('Error mounting url "%s" at path "%s": %s' %
-                         (share_path, mount_path, output))
+        raise Exception('Error mounting url "%s" at path "%s": %s' %
+                        (share_path, mount_path, output))
     # Return the mountpath
     return str(output[0])
