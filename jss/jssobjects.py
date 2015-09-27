@@ -378,7 +378,6 @@ class LDAPServer(JSSContainerObject):
             Will raise a JSSGetError if no results are found.
         """
         user_url = "%s/%s/%s" % (self.url, "user", user)
-        print user_url
         response = self.jss.get(user_url)
         return LDAPUsersResults(self.jss, response)
 
