@@ -146,11 +146,11 @@ class JSSPrefs(object):
                         subprocess.call(
                             ["plutil", "-convert", "xml1", preferences_file])
                         prefs = plistlib.readPlist(preferences_file)
-            try:
-                self.user = prefs["jss_user"]
-                self.password = prefs["jss_pass"]
-                self.url = prefs["jss_url"]
-            except KeyError:
+
+            self.user = prefs.get("jss_user")
+            self.password = prefs.get("jss_pass")
+            self.url = prefs.get("jss_url")
+            if not all(self.user, self.password, self.url):
                 raise JSSPrefsMissingKeyError("Please provide all required "
                                               "preferences!")
 

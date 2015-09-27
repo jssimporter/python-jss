@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file. This projec
 - Added lots of documentation.
 - Re-enabled the ability to create new objects with the JSS convenience methods (e.g. `jss.JSS.Computer`)
 - Added and improved the verbose output for HTTP requests.
+- Added a __repr__ to `JSSListData` so you can now better interact with them.
 
 ### Changed
 - Optimized `JSSObjectList.retrieve_all`.
@@ -27,6 +28,8 @@ All notable changes to this project will be documented in this file. This projec
   python-jss removed its overriden methods `Package.save` and
   `Policy.save`. It's likely this was broader than just Packages and
   Policies, but python-jss hadn't implemented or tested other objects.
+- Internal package structure drastically changed to make modules smaller and more managable.
+- Improved the formatting of `JSSObjectList` objects.
 
 ### Fixed
 - `JSSObject.set_bool` improved to not have broken string behavior.

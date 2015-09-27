@@ -17,19 +17,27 @@
 
 Python wrapper for the JAMF Casper JSS API.
 
+"import jss" to import all public classes.
+
 Public package contents include:
     casper: Class using the Casper private API call to casper.jxml.
-    distribution_points: Classes for configuring file share
+    distribution_point: Classes for AFP, SMB, CDP, and JDS DPs.
+    distribution_points: Class for managing distribution point classes.
         distribution points, JDS, and CDP distribution servers, and
         copying, deleting, and testing for files, as well as a
         controller class for abstracting all configured DPs.
     exceptions: python-jss custom exceptions.
-    jss: Main module containing classes for representing a JSS
-    jssobject: Represents each of the objects the JSS supports
+    jamf_software_server: Class for representing a JSS, and for
+        preference files to configure one.
+    jssobject: Base class used for JSS objects. Useful for testing
+        (e.g. isinstance(obj, JSSObject)
+    jssobjects: Represents each of the objects the JSS supports
         (packages, computers, etc).
 
 Private package contents include:
     contrib: Code from other authors used in python-jss.
+    jssobjectlist: Classes for representing lists of objects returned
+        from the JSS' GET searches.
     tlsadapter: Adapter to allow python HTTP requests to use TLS, and
         with the correct ciphers to match current JAMF recommendations.
     tools: Assorted functions for common tasks used throughout the
