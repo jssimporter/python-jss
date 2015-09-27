@@ -26,6 +26,7 @@ from xml.etree import ElementTree
 from nose.tools import *
 
 from jss import *
+from jss.jssobjectlist import JSSObjectList
 
 
 # Setup a global JSS object for test usage.

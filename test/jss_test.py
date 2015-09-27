@@ -18,6 +18,8 @@ objects.
 
 """
 
+
+import os
 import subprocess
 import inspect
 from xml.etree import ElementTree
@@ -25,6 +27,7 @@ from xml.etree import ElementTree
 from nose.tools import *
 
 from jss import *
+from jss.jssobjectlist import JSSObjectList
 try:
     from jss.contrib import FoundationPlist
 except ImportError as e:

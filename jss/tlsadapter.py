@@ -68,6 +68,7 @@ CIPHER_LIST = ":".join(["ECDHE-RSA-AES256-GCM-SHA384",
 
 class TLSAdapter(HTTPAdapter):
     """Transport adapter that uses TLS vs. default of SSLv23."""
+
     def init_poolmanager(self, connections, maxsize, block=False):
         """Set up a poolmanager to use TLS and our cipher list."""
         self.poolmanager = PoolManager(
