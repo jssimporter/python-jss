@@ -20,14 +20,44 @@ JSS.
 """
 
 
-class JSSListData(dict):
+from collections import MutableMapping
+
+
+class JSSListData(MutableMapping):
     """Holds overview information returned from a listing GET."""
 
     def __init__(self, obj_class, data, factory):
         """Configure a JSSListData item."""
         self.obj_class = obj_class
         self.factory = factory
-        super(JSSListData, self).__init__(data)
+        self.store = dict(data)
+
+    def __getitem__(self, key):
+        return self.store[key]
+
+    def __setitem__(self, key, value):
+        self.store[key] = value
+
+    def __delitem__(self, key):
+        del self.store[key]
+
+    def __iter__(self):
+        return iter(self.store)
+
+    def __len__(self):
+        return len(self.store)
+
+    def __repr__(self):
+        """Make data human readable."""
+        # Note: Large lists/objects may take a long time to indent!
+        max_key_width = max([len(key) for key in self.store.keys()])
+        max_val_width = max([len(unicode(val)) for val in self.store.values()])
+        max_width = max_key_width + max_val_width + 2
+        output = []
+        for key, val in self.store.items():
+            output.append(u"{:>{max_key}}: {:>{max_val}}".format(
+                key, val, max_key=max_key_width, max_val=max_val_width))
+        return "\n".join(output).encode("utf-8")
 
     @property
     def id(self):   # pylint: disable=invalid-name
@@ -82,15 +112,24 @@ class JSSObjectList(list):
     def __repr__(self):
         """Make data human readable."""
         # Note: Large lists/objects may take a long time to indent!
-        delimeter = 50 * "-" + "\n"
-        output_string = delimeter
+        max_key_width = max([len(key) for obj in self for key in obj.keys()])
+        list_index = "List index"
+        if max_key_width < len(list_index):
+            max_key_width = len(list_index)
+        max_val_width = max([len(unicode(val)) for obj in self for val in
+                             obj.values()])
+        max_width = max_key_width + max_val_width + 2
+        delimeter = max_width * "-"
+        output = [delimeter]
         for obj in self:
-            output_string += "List index: \t%s\n" % self.index(obj)
+            output.append("{:>{max_key}}: {:>{max_val}}".format(
+                list_index, self.index(obj), max_key=max_key_width,
+                max_val=max_val_width))
             for key, val in obj.items():
-                # TODO: Update this to match Spruce output code.
-                output_string += "%s:\t\t%s\n" % (key, val)
-            output_string += delimeter
-        return output_string.encode("utf-8")
+                output.append(u"{:>{max_key}}: {:>{max_val}}".format(
+                    key, val, max_key=max_key_width, max_val=max_val_width))
+            output.append(delimeter)
+        return "\n".join(output).encode("utf-8")
 
     def sort(self):
         """Sort list elements by ID."""
