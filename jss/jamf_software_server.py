@@ -150,7 +150,7 @@ class JSSPrefs(object):
             self.user = prefs.get("jss_user")
             self.password = prefs.get("jss_pass")
             self.url = prefs.get("jss_url")
-            if not all(self.user, self.password, self.url):
+            if not all([self.user, self.password, self.url]):
                 raise JSSPrefsMissingKeyError("Please provide all required "
                                               "preferences!")
 

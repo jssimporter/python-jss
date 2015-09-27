@@ -50,7 +50,7 @@ class JSSListData(MutableMapping):
     def __repr__(self):
         """Make data human readable."""
         # Note: Large lists/objects may take a long time to indent!
-        max_key_width = max([len(key) for key in self.store.keys()])
+        max_key_width = max([len(key) for key in self.store])
         max_val_width = max([len(unicode(val)) for val in self.store.values()])
         max_width = max_key_width + max_val_width + 2
         output = []
@@ -112,7 +112,7 @@ class JSSObjectList(list):
     def __repr__(self):
         """Make data human readable."""
         # Note: Large lists/objects may take a long time to indent!
-        max_key_width = max([len(key) for obj in self for key in obj.keys()])
+        max_key_width = max([len(key) for obj in self for key in obj])
         list_index = "List index"
         if max_key_width < len(list_index):
             max_key_width = len(list_index)
