@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [1.4.0] - 2015-08-19 - The Final Countdown
+
 ### Added
 - Added retrieve method to `JSSListData`, making the retrieval of individual `JSSObjectList` elements more flexible.
 - Added some argument type checking.
@@ -18,8 +20,6 @@ All notable changes to this project will be documented in this file. This projec
 ### Changed
 - Optimized `JSSObjectList.retrieve_all`.
 - Reorganized `JSSObject.save` method. It was very convoluted. Now it reads better, is more error resistant, and should work exactly the same. Specifically, it assumes that if your JSSObject has no ID, then it is a new object (because only the JSS can assign one) and thus needs to PUT. If it _does_ have an ID, then it POSTs it. Potentially this could be an issue where if you retrieved an object, and then wanted to completely replace it with different data, and then tried to save, it would then be missing the ID and would PUT, creating a new object (or fail because of the name conflict); I don't see that as a real issue though.
-- Removed return value of `JSSObject.add_object_to_path` since it also
-  has side effects.
 - Removed `JSSObject.search` since it implements a deprecated Element
   method that wasn't being used anywhere.
 - Restored requests method of posting FileUploads. Now uses mimetypes to
@@ -30,7 +30,7 @@ All notable changes to this project will be documented in this file. This projec
   python-jss removed its overriden methods `Package.save` and
   `Policy.save`. It's likely this was broader than just Packages and
   Policies, but python-jss hadn't implemented or tested other objects.
-- Internal package structure drastically changed to make modules smaller and more managable.
+- Internal package structure drastically changed to make modules smaller and more manageable.
 - Improved the formatting of `JSSObjectList` objects.
 
 ### Fixed
@@ -528,7 +528,8 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 - Initial release.
 
 
-[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.3.0...HEAD
+[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/sheagcraig/python-jss/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/sheagcraig/python-jss/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/sheagcraig/python-jss/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/sheagcraig/python-jss/compare/v1.1.0...v1.2.0

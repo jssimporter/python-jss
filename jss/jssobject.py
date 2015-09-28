@@ -334,9 +334,15 @@ class JSSObject(ElementTree.Element):
         Args:
             obj: A JSSContainerObject subclass.
             location: Element or a string path argument to find()
+
+        Returns:
+            Element for the object just added.
         """
         location = self._handle_location(location)
         location.append(obj.as_list_data())
+        results = [item for item in location.getchildren() if
+                   item.findtext("id") == obj.id][0]
+        return results
 
     def remove_object_from_list(self, obj, list_element):
         """Remove an object from a list element.

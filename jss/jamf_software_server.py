@@ -210,7 +210,8 @@ class JSS(object):
         elif response.status_code >= 400:
             error_handler(JSSGetError, response)
 
-        # JSS returns xml encoded in utf-8
+        # requests GETs JSS data as XML encoded in utf-8, but
+        # ElementTree.fromstring wants a string.
         jss_results = response.text.encode("utf-8")
         try:
             xmldata = ElementTree.fromstring(jss_results)
