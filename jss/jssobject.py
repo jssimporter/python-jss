@@ -19,12 +19,21 @@ Base Classes representing JSS database objects and their API endpoints
 """
 
 
-import copy
 from xml.etree import ElementTree
 
 from .exceptions import (JSSUnsupportedSearchMethodError,
                          JSSMethodNotAllowedError, JSSPutError, JSSPostError)
-from .tools import indent_xml
+from .tools import element_repr
+
+
+# python-jss is intended to allow easy, pythonic access to the JSS. As
+# such, a heavy emphasis is placed its use for interactive discovery
+# and exploration. Because JSSObjects are subclassed from Element, the
+# __repr__ method is changed to our custom, pretty-printing one. This
+# allows things like Element.find("general") to return something more
+# useful than just the tag name when not assigned.
+ElementTree.Element.__repr__ = element_repr
+
 
 class SearchCriteria(ElementTree.Element):
     """Object for encapsulating a smart group search criteria."""
@@ -255,29 +264,6 @@ class JSSObject(ElementTree.Element):
         # them, and having to convert to str all over the place is
         # gross. str equivalency still works.
         return self.findtext("id") or self.findtext("general/id")
-
-    def __repr__(self):
-        """Return a string with indented XML data."""
-        # deepcopy so we don't mess with the valid XML.
-        pretty_data = copy.deepcopy(self)
-        indent_xml(pretty_data)
-        return ElementTree.tostring(pretty_data).encode("utf-8")
-
-    def pretty_find(self, search):
-        """Pretty print the results of a find.
-
-        The inherited find method only prints the tag name and memory
-        location when used interactively. This method instead pretty
-        prints the element and all of its children as indented XML.
-
-        Args:
-            search: xpath passed onto the find method.
-        """
-        result = self.find(search)
-        if result is not None:
-            pretty_data = copy.deepcopy(result)
-            self._indent(pretty_data)
-            print ElementTree.tostring(pretty_data).encode("utf-8")
 
     def _handle_location(self, location):
         """Return an element located at location with flexible args.

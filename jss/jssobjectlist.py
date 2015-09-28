@@ -52,7 +52,6 @@ class JSSListData(MutableMapping):
         # Note: Large lists/objects may take a long time to indent!
         max_key_width = max([len(key) for key in self.store])
         max_val_width = max([len(unicode(val)) for val in self.store.values()])
-        max_width = max_key_width + max_val_width + 2
         output = []
         for key, val in self.store.items():
             output.append(u"{:>{max_key}}: {:>{max_val}}".format(

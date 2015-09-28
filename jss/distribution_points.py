@@ -28,12 +28,6 @@ from .exceptions import JSSError
 from .tools import (is_osx, is_linux, is_package)
 
 
-PKG_FILE_TYPE = 0
-EBOOK_FILE_TYPE = 1
-IN_HOUSE_APP_FILE_TYPE = 2
-SCRIPT_FILE_TYPE = 3
-
-
 class DistributionPoints(object):
     """Manage multiple DistributionPoint objects.
 

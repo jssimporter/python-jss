@@ -32,6 +32,8 @@ All notable changes to this project will be documented in this file. This projec
   Policies, but python-jss hadn't implemented or tested other objects.
 - Internal package structure drastically changed to make modules smaller and more manageable.
 - Improved the formatting of `JSSObjectList` objects.
+- Replaced the Element.__repr__ method with the indenting pretty-printing one that has been in python-jss for awhile now. This allows all non-assigned results from Element subclass methods to pretty-print the XML.
+- Removed the recently added `JSSObject.pretty_find` as it's no longer needed.
 
 ### Fixed
 - `JSSObject.set_bool` improved to not have broken string behavior.

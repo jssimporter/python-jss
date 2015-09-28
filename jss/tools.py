@@ -19,8 +19,10 @@ Helper functions for python-jss.
 """
 
 
+import copy
 import os
 import re
+from xml.etree import ElementTree
 
 
 PKG_TYPES = [".PKG", ".DMG", ".ZIP"]
@@ -140,3 +142,14 @@ def indent_xml(elem, level=0, more_sibs=False):
             elem.tail = i
             if more_sibs:
                 elem.tail += pad
+
+
+def element_repr(self):
+    """Return a string with indented XML data.
+
+    Used to replace the __repr__ method of Element.
+    """
+    # deepcopy so we don't mess with the valid XML.
+    pretty_data = copy.deepcopy(self)
+    indent_xml(pretty_data)
+    return ElementTree.tostring(pretty_data).encode("utf-8")

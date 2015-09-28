@@ -22,11 +22,19 @@ removed. Do not rely on its continued existence!
 """
 
 
-import copy
 import urllib
 from xml.etree import ElementTree
 
-from .tools import indent_xml
+from .tools import element_repr
+
+
+# python-jss is intended to allow easy, pythonic access to the JSS. As
+# such, a heavy emphasis is placed its use for interactive discovery
+# and exploration. Because JSSObjects are subclassed from Element, the
+# __repr__ method is changed to our custom, pretty-printing one. This
+# allows things like Element.find("general") to return something more
+# useful than just the tag name when not assigned.
+ElementTree.Element.__repr__ = element_repr
 
 
 class Casper(ElementTree.Element):
@@ -48,13 +56,6 @@ class Casper(ElementTree.Element):
                                       "password": self.jss.password})
         super(Casper, self).__init__(tag="Casper")
         self.update()
-
-    def __repr__(self):
-        """Return a string with indented Casper data."""
-        # deepcopy so we don't mess with the valid XML.
-        pretty_data = copy.deepcopy(self)
-        indent_xml(pretty_data)
-        return ElementTree.tostring(pretty_data).encode("utf_8")
 
     def makeelement(self, tag, attrib):
         """Return an Element."""

@@ -59,6 +59,7 @@ from .exceptions import (
     JSSUnsupportedFileType, JSSError)
 from .jamf_software_server import JSS
 from .jssobject import JSSObject
+from .jssobjectlist import JSSObjectList
 from .jssobjects import (
     Account, AccountGroup, ActivationCode, AdvancedComputerSearch,
     AdvancedMobileDeviceSearch, AdvancedUserSearch, Building, BYOProfile,
