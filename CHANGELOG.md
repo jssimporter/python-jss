@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file. This projec
 - Re-enabled the ability to create new objects with the JSS convenience methods (e.g. `jss.JSS.Computer`)
 - Added and improved the verbose output for HTTP requests.
 - Added a __repr__ to `JSSListData` so you can now better interact with them.
+- Added the `suppress_warnings` key to the preference domain and `JSSPrefs` object.
+- Added an interactive configuration procedure to the JSSPrefs class. If you don't already have a plist file, on instantiation it will prompt your for all configuration information.
 
 ### Changed
 - Optimized `JSSObjectList.retrieve_all`.

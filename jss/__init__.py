@@ -33,6 +33,9 @@ Public package contents include:
         (e.g. isinstance(obj, JSSObject)
     jssobjects: Represents each of the objects the JSS supports
         (packages, computers, etc).
+    jss_prefs: Class for loading python-jss configuration via a plist
+        file, and for use as an argument to JSS. Includes an
+        interactive setup helper.
 
 Private package contents include:
     contrib: Code from other authors used in python-jss.
@@ -54,7 +57,7 @@ from .exceptions import (
     JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
     JSSUnsupportedSearchMethodError, JSSFileUploadParameterError,
     JSSUnsupportedFileType, JSSError)
-from .jamf_software_server import (JSS, JSSPrefs)
+from .jamf_software_server import JSS
 from .jssobject import JSSObject
 from .jssobjects import (
     Account, AccountGroup, ActivationCode, AdvancedComputerSearch,
@@ -73,6 +76,7 @@ from .jssobjects import (
     Peripheral, PeripheralType, Policy, Printer, RestrictedSoftware,
     RemovableMACAddress, SavedSearch, Script, Site, SoftwareUpdateServer,
     SMTPServer, UserExtensionAttribute, User, UserGroup, VPPAccount)
+from .jss_prefs import JSSPrefs
 from .tools import is_osx, is_linux
 
 

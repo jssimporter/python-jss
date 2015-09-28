@@ -26,6 +26,8 @@ import copy
 import urllib
 from xml.etree import ElementTree
 
+from .tools import indent_xml
+
 
 class Casper(ElementTree.Element):
     """Interact with the JSS through its private casper endpoint.
@@ -47,46 +49,11 @@ class Casper(ElementTree.Element):
         super(Casper, self).__init__(tag="Casper")
         self.update()
 
-    def _indent(self, elem, level=0, more_sibs=False):
-        """Indent an xml element object to prepare for pretty printing.
-
-        Method is internal to discourage indenting the self._root Element,
-        thus potentially corrupting it.
-
-        Args:
-            elem: Element to indent.
-            level: Int indent level (default is 0)
-            more_sibs: Bool, whether to anticipate further siblings.
-        """
-        i = "\n"
-        pad = 4 * " "
-        if level:
-            i += (level - 1) * pad
-        num_kids = len(elem)
-        if num_kids:
-            if not elem.text or not elem.text.strip():
-                elem.text = i + pad
-                if level:
-                    elem.text += pad
-            count = 0
-            for kid in elem:
-                self._indent(kid, level + 1, count < num_kids - 1)
-                count += 1
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-                if more_sibs:
-                    elem.tail += pad
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = i
-                if more_sibs:
-                    elem.tail += pad
-
     def __repr__(self):
         """Return a string with indented Casper data."""
         # deepcopy so we don't mess with the valid XML.
         pretty_data = copy.deepcopy(self)
-        self._indent(pretty_data)
+        indent_xml(pretty_data)
         return ElementTree.tostring(pretty_data).encode("utf_8")
 
     def makeelement(self, tag, attrib):

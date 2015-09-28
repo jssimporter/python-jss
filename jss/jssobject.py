@@ -24,6 +24,7 @@ from xml.etree import ElementTree
 
 from .exceptions import (JSSUnsupportedSearchMethodError,
                          JSSMethodNotAllowedError, JSSPutError, JSSPostError)
+from .tools import indent_xml
 
 class SearchCriteria(ElementTree.Element):
     """Object for encapsulating a smart group search criteria."""
@@ -255,48 +256,11 @@ class JSSObject(ElementTree.Element):
         # gross. str equivalency still works.
         return self.findtext("id") or self.findtext("general/id")
 
-    def _indent(self, elem, level=0, more_sibs=False):
-        """Indent an xml element object to prepare for pretty printing.
-
-        Method is internal to discourage indenting the self._root
-        Element, thus potentially corrupting it.
-
-        Args:
-            elem: Element to indent.
-            level: Int indent level (default is 0)
-            more_sibs: Bool, whether to anticipate further siblings.
-        """
-        i = "\n"
-        pad = 4 * " "
-        if level:
-            i += (level - 1) * pad
-        num_kids = len(elem)
-        if num_kids:
-            if not elem.text or not elem.text.strip():
-                elem.text = i + pad
-                if level:
-                    elem.text += pad
-            count = 0
-            for kid in elem:
-                if kid.tag == "data":
-                    kid.text = "*DATA*"
-                self._indent(kid, level + 1, count < num_kids - 1)
-                count += 1
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-                if more_sibs:
-                    elem.tail += pad
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = i
-                if more_sibs:
-                    elem.tail += pad
-
     def __repr__(self):
         """Return a string with indented XML data."""
         # deepcopy so we don't mess with the valid XML.
         pretty_data = copy.deepcopy(self)
-        self._indent(pretty_data)
+        indent_xml(pretty_data)
         return ElementTree.tostring(pretty_data).encode("utf-8")
 
     def pretty_find(self, search):

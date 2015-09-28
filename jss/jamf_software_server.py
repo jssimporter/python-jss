@@ -20,19 +20,15 @@ as JSSObjects.
 """
 
 
-import os
 import re
-import subprocess
 from urllib import quote
 from xml.etree import ElementTree
-from xml.parsers.expat import ExpatError
 
 import requests
 
 from . import distribution_points
-from .exceptions import (
-    JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError, JSSError,
-    JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError)
+from .exceptions import (JSSGetError, JSSPutError, JSSPostError,
+                         JSSDeleteError, JSSMethodNotAllowedError)
 from .jssobjects import (
     Account, AccountGroup, ActivationCode, AdvancedComputerSearch,
     AdvancedMobileDeviceSearch, AdvancedUserSearch, Building, BYOProfile,
@@ -52,117 +48,7 @@ from .jssobjects import (
     UserGroup, VPPAccount)
 from .jssobjectlist import (JSSObjectList, JSSListData)
 from .tlsadapter import TLSAdapter
-from .tools import (error_handler, is_osx, is_linux)
-
-try:
-    from .contrib import FoundationPlist
-except ImportError as err:
-    # If using OSX, FoundationPlist will need Foundation/PyObjC
-    # available, or it won't import.
-
-    if is_osx():
-        print "Warning: Import of FoundationPlist failed:", err
-        print "See README for information on this issue."
-    import plistlib
-
-
-class JSSPrefs(object):
-    """Object representing JSS credentials and configuration.
-
-    This JSSPrefs object can be used as an argument for a new JSS.
-    By default and with no arguments, it uses the preference domain
-    "com.github.sheagcraig.python-jss.plist". However, alternate
-    configurations can be supplied to the __init__ method to use
-    something else.
-
-    Preference file should include the following keys:
-        jss_url: String, full path, including port, to JSS, e.g.
-            "https://mycasper.donkey.com:8443".
-        jss_user: String, API username to use.
-        jss_pass: String, API password.
-        verify: (Optional) Boolean for whether to verify the JSS's
-            certificate matches the SSL traffic. This certificate must
-            be in your keychain. Defaults to True.
-        repos: (Optional) A list of file repositories dicts to connect.
-        repos dicts:
-            Each file-share distribution point requires:
-            name: String name of the distribution point. Must match
-                the value on the JSS.
-            password: String password for the read/write user.
-
-            This form uses the distributionpoints API call to determine
-            the remaining information. There is also an explicit form;
-            See distribution_points package for more info
-
-            CDP and JDS types require one dict for the master, with
-            key:
-                type: String, either "CDP" or "JDS".
-    """
-
-    def __init__(self, preferences_file=None):
-        """Create a preferences object.
-
-        This JSSPrefs object can be used as an argument for a new JSS.
-        By default and with no arguments, it uses the preference domain
-        "com.github.sheagcraig.python-jss.plist". However, alternate
-        configurations can be supplied to the __init__ method to use
-        something else.
-
-        See the JSSPrefs __doc__ for information on supported
-        preferences.
-
-        Args:
-            preferences_file: String path to an alternate location to
-                look for preferences.
-
-        Raises:
-            JSSError if using an unsupported OS.
-        """
-        if preferences_file is None:
-            plist_name = "com.github.sheagcraig.python-jss.plist"
-            if is_osx():
-                preferences_file = os.path.join("~", "Library", "Preferences",
-                                                plist_name)
-            elif is_linux():
-                preferences_file = os.path.join("~", "." + plist_name)
-            else:
-                raise JSSError("Unsupported OS.")
-
-        preferences_file = os.path.expanduser(preferences_file)
-        if os.path.exists(preferences_file):
-            # Try to open using FoundationPlist. If it's not available,
-            # fall back to plistlib and hope it's not binary encoded.
-
-            try:
-                prefs = FoundationPlist.readPlist(preferences_file)
-            except NameError:
-                try:
-                    prefs = plistlib.readPlist(preferences_file)
-                except ExpatError:
-                    # If we're on OSX, try to convert using another
-                    # tool.
-
-                    if is_osx():
-                        subprocess.call(
-                            ["plutil", "-convert", "xml1", preferences_file])
-                        prefs = plistlib.readPlist(preferences_file)
-
-            self.user = prefs.get("jss_user")
-            self.password = prefs.get("jss_pass")
-            self.url = prefs.get("jss_url")
-            if not all([self.user, self.password, self.url]):
-                raise JSSPrefsMissingKeyError("Please provide all required "
-                                              "preferences!")
-
-            # Optional file repository array. Defaults to empty list.
-            self.repos = []
-            for repo in prefs.get("repos", []):
-                self.repos.append(dict(repo))
-
-            self.verify = prefs.get("verify", True)
-
-        else:
-            raise JSSPrefsMissingFileError("Preferences file not found!")
+from .tools import error_handler
 
 
 class JSS(object):
@@ -235,6 +121,7 @@ class JSS(object):
             password = jss_prefs.password
             repo_prefs = jss_prefs.repos
             ssl_verify = jss_prefs.verify
+            suppress_warnings = jss_prefs.suppress_warnings
 
         if suppress_warnings:
             requests.packages.urllib3.disable_warnings()

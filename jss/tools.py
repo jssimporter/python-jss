@@ -83,3 +83,60 @@ def error_handler(exception_cls, response):
                               (response.status_code, error))
     exception.status_code = response.status_code
     raise exception
+
+def loop_until_valid_response(prompt, valid_responses):
+    """Ask user to enter input until it is considered valid.
+
+    Args:
+        prompt: String to display as a prompt.
+        valid_responses: Dict of valid responses.
+            Keys: String, all uppercase, of valid input. Input will be
+                compared after upper-casing.
+            Vals: Result value to return
+
+    Returns:
+        The value of the selected key.
+    """
+    response = ""
+    while response.upper() not in valid_responses:
+        response = raw_input(prompt)
+
+    return valid_responses[response.upper()]
+
+
+def indent_xml(elem, level=0, more_sibs=False):
+    """Indent an xml element object to prepare for pretty printing.
+
+    To avoid changing the contents of the original Element, it is
+    recommended that a copy is made to send to this function.
+
+    Args:
+        elem: Element to indent.
+        level: Int indent level (default is 0)
+        more_sibs: Bool, whether to anticipate further siblings.
+    """
+    i = "\n"
+    pad = "    "
+    if level:
+        i += (level - 1) * pad
+    num_kids = len(elem)
+    if num_kids:
+        if not elem.text or not elem.text.strip():
+            elem.text = i + pad
+            if level:
+                elem.text += pad
+        count = 0
+        for kid in elem:
+            if kid.tag == "data":
+                kid.text = "*DATA*"
+            indent_xml(kid, level + 1, count < num_kids - 1)
+            count += 1
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+            if more_sibs:
+                elem.tail += pad
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+            if more_sibs:
+                elem.tail += pad
