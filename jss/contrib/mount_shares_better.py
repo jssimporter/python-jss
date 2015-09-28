@@ -8,10 +8,13 @@
 Mount file shares on OS X.
 """
 
-
-import CoreFoundation
+# PyLint cannot properly find names inside Cocoa libraries, so issues bogus
+# No name 'Foo' in module 'Bar' warnings. Disable them.
+# pylint: disable=no-name-in-module
+from CoreFoundation import CFURLCreateWithString
 import Foundation  # pylint: disable=unused-import
-import objc
+from objc import (initFrameworkWrapper, pathForFramework, loadBundleFunctions)
+# pylint: enable=no-name-in-module
 
 
 class AttrDict(dict):
@@ -25,17 +28,16 @@ NetFS = AttrDict()  # pylint: disable=invalid-name
 # frameworkPath instead.
 # scan_classes=False means only add the contents of this Framework.
 # pylint: disable=invalid-name
-NetFS_bundle = objc.initFrameworkWrapper(
+NetFS_bundle = initFrameworkWrapper(
     'NetFS', frameworkIdentifier=None,
-    frameworkPath=objc.pathForFramework('NetFS.framework'), globals=NetFS,
+    frameworkPath=pathForFramework('NetFS.framework'), globals=NetFS,
     scan_classes=False)
 # pylint: enable=invalid-name
 
 # https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 # Fix NetFSMountURLSync signature
 del NetFS['NetFSMountURLSync']
-objc.loadBundleFunctions(NetFS_bundle, NetFS,
-                         [('NetFSMountURLSync', 'i@@@@@@o^@')])
+loadBundleFunctions(NetFS_bundle, NetFS, [('NetFSMountURLSync', 'i@@@@@@o^@')])
 
 
 def mount_share(share_path):
@@ -47,7 +49,7 @@ def mount_share(share_path):
     Returns:
         The mount point or raises an error.
     """
-    sh_url = CoreFoundation.CFURLCreateWithString(None, share_path, None)
+    sh_url = CFURLCreateWithString(None, share_path, None)
     # Set UI to reduced interaction
     open_options = {NetFS.kNAUIOptionKey: NetFS.kNAUIOptionNoUI}
     # Allow mounting sub-directories of root shares
@@ -72,8 +74,8 @@ def mount_share_at_path(share_path, mount_path):
     Returns:
         The mount point or raises an error
     """
-    sh_url = CoreFoundation.CFURLCreateWithString(None, share_path, None)
-    mo_url = CoreFoundation.CFURLCreateWithString(None, mount_path, None)
+    sh_url = CFURLCreateWithString(None, share_path, None)
+    mo_url = CFURLCreateWithString(None, mount_path, None)
     # Set UI to reduced interaction
     open_options = {NetFS.kNAUIOptionKey: NetFS.kNAUIOptionNoUI}
     # Allow mounting sub-directories of root shares
