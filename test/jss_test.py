@@ -188,9 +188,6 @@ class TestJSSObjectFactory(object):
 
 
 class TestJSSObject(object):
-    def test_JSSObject_new(self):
-        assert_raises(NotImplementedError, JSSObject, j_global, "Test")
-
     def test_jssobject_unsupported_search_method_error(self):
         assert_raises(JSSUnsupportedSearchMethodError,
                       j_global.Policy, 'taco=alpastor')
@@ -329,7 +326,7 @@ class TestJSSObjectNewMethods(object):
 
     @with_setup(setup)
     def test_ComputerGroup_Smart(self):
-        cg = ComputerGroup(j_global, TESTGROUP, smart=True)
+        cg = ComputerGroup(j_global, TESTGROUP, is_smart=True)
         cg.add_criterion("Computer Name", 0, "and", "like", "craigs-imac")
         cg.findtext("criteria/criterion/name")
         cg.save()
@@ -356,7 +353,7 @@ class TestJSSObjectNewMethods(object):
         assert_is_instance(policy, Policy)
         computer = j_global.Computer('craigs-imac')
         policy.add_object_to_scope(computer)
-        policy_string = r"""<policy>
+        policy_string = sorted(r"""<policy>
     <general>
         <name>python-jss-test-policy</name>
         <enabled>true</enabled>
@@ -371,7 +368,7 @@ class TestJSSObjectNewMethods(object):
             </computer>
         </computers>
         <computer_groups />
-        <buldings />
+        <buildings />
         <departments />
         <exclusions>
             <computers />
@@ -390,8 +387,8 @@ class TestJSSObjectNewMethods(object):
         <recon>true</recon>
     </maintenance>
 </policy>
-"""
-        assert_equal(policy.__repr__(), policy_string)
+""".splitlines())
+        assert_equal(sorted(policy.__repr__().splitlines()), policy_string)
         policy.save()
         # Test whether JSS accepts our new() object. Will throw an exception if
         # it doesn't work; replaces data if it does, thus they should no longer

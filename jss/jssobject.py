@@ -98,6 +98,21 @@ class JSSObject(ElementTree.Element):
             containers (e.g. ComputerGroup has a container with tag:
             "computers" holding "computer" elements. The list_type is
             "computer").
+        data_keys: Dictionary of keys to create if instantiating a
+            blank object using the _new method.
+            Keys: String names of keys to create at top level.
+            Vals: Values to set for the key.
+                Int and bool values get converted to string.
+                Dicts are recursively added (so their keys are added to
+                    parent key, etc).
+
+    Private Class Attributes:
+        _name_path: String XML path to where the name of the object
+            is stored. Most objects use a name tag at the root, so this
+            is not used. Some, however, put it into general/game. If
+            you are implementing data_keys for an object type not yet
+            impelemented, make sure to set this if it differs from the
+            default/inherited value.
     """
 
     _url = None
@@ -107,6 +122,7 @@ class JSSObject(ElementTree.Element):
     can_post = True
     can_delete = True
     id_url = "/id/"
+    _name_path = ""
     container = ""
     default_search = "name"
     search_types = {"name": "/name/"}
@@ -120,13 +136,13 @@ class JSSObject(ElementTree.Element):
             jss: JSS object.
             data: xml.etree.ElementTree.Element data to use for
                 creating the object OR a string name to use for creating
-                a new object (provided it has an implemented new()
+                a new object (provided it has an implemented _new()
                 method.
         """
         self.jss = jss
         if isinstance(data, basestring):
             super(JSSObject, self).__init__(tag=self.list_type)
-            self.new(data, **kwargs)
+            self._new(data, **kwargs)
         elif isinstance(data, ElementTree.Element):
             super(JSSObject, self).__init__(tag=data.tag)
             for child in data.getchildren():
@@ -136,7 +152,7 @@ class JSSObject(ElementTree.Element):
                             "xml.etree.ElemenTree.Element, or a string for the"
                             " name.")
 
-    def new(self, name, **kwargs):
+    def _new(self, name, **kwargs):
         """Create a new JSSObject with name and "keys".
 
         Generate a default XML template for this object, based on
@@ -156,16 +172,18 @@ class JSSObject(ElementTree.Element):
                 Ignores kwargs that aren't in object's keys attribute.
         """
         # Name is required, so set it outside of the helper func.
-        ElementTree.SubElement(self, "name").text = name
+        if self._name_path:
+            parent = self
+            for path_element in self._name_path.split("/"):
+                self._set_xml_from_keys(parent, (path_element, None))
+                parent = parent.find(path_element)
 
-        for key in kwargs:
-            if key not in self.data_keys and self.jss.verbose:
-                print ("%s is not an allowed keyword argument. "
-                       "Ignoring." % key)
+            parent.text = name
+        else:
+            ElementTree.SubElement(self, "name").text = name
 
         for item in self.data_keys.items():
             self._set_xml_from_keys(self, item, **kwargs)
-
 
     def _set_xml_from_keys(self, root, item, **kwargs):
         """Create SubElements of root with kwargs.
@@ -184,21 +202,28 @@ class JSSObject(ElementTree.Element):
                 Dicts will be recursively added to their key's Element.
         """
         key, val = item
+        target_key = root.find(key)
+        if target_key is None:
+            target_key = ElementTree.SubElement(root, key)
+
         if isinstance(val, dict):
-            element = ElementTree.SubElement(root, key)
-            for item in val.items():
-                self._set_xml_from_keys(element, item)
+            for dict_item in val.items():
+                self._set_xml_from_keys(target_key, dict_item, **kwargs)
             return
 
-        # Convert bool to lowercase strings.
-        if isinstance(kwargs.get(key), bool):
-            kwargs[key] = str(kwargs[key]).lower()
-        elif key in kwargs and kwargs[key] is None:
-            kwargs[key] = ""
-        elif isinstance(kwargs.get(key), int):
-            kwargs[key] = str(kwargs[key])
+        # Convert kwarg data to the appropriate string.
+        if key in kwargs:
+            kwarg = kwargs[key]
+            if isinstance(kwarg, bool):
+                kwargs[key] = str(kwargs[key]).lower()
+            elif kwarg is None:
+                kwargs[key] = ""
+            elif isinstance(kwarg, int):
+                kwargs[key] = str(kwargs[key])
+            elif isinstance(kwarg, JSSObject):
+                kwargs[key] = kwargs[key].name
 
-        ElementTree.SubElement(root, key).text = kwargs.get(key, val)
+        target_key.text = kwargs.get(key, val)
 
     def makeelement(self, tag, attrib):
         """Return an Element."""
@@ -587,7 +612,7 @@ class JSSFlatObject(JSSObject):
     """
     search_types = {}
 
-    def new(self, name, **kwargs):
+    def _new(self, name, **kwargs):
         """Do nothing. This object cannot be created."""
         raise JSSPostError("This object type cannot be created.")
 

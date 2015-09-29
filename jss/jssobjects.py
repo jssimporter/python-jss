@@ -144,36 +144,31 @@ class ComputerExtensionAttribute(JSSContainerObject):
 class ComputerGroup(JSSGroupObject):
     _url = "/computergroups"
     list_type = "computer_group"
+    data_keys = {
+        "is_smart": False,
+        "criteria": None,
+        "computers": None,}
 
     def __init__(self, jss, data, **kwargs):
-        """Init a ComputerGroup, adding in extra Elements."""
-        # Temporary solution to #34.
-        # When grabbing a ComputerGroup from the JSS, we don't get the
-        # convenience properties for accessing some of the elements
-        # that the new() method adds. For now, this just adds in a
-        # criteria property. But...
-        # TODO(Shea): Find a generic/higher level way to add these
-        #   convenience accessors.
-        super(ComputerGroup, self).__init__(jss, data, **kwargs)
-        self.criteria = self.find("criteria")
+        """Init a ComputerGroup
 
-    def new(self, name, **kwargs):
-        """Create a computer group from scratch.
-
-        Smart groups with no criteria by default select ALL computers.
+        Adds convenience attributes to assist in configuring.
 
         Args:
-            name: String name of group.
-            kwargs: One kwarg of "smart" is accepted, with bool val.
+            name: String name of the object to use as the
+                object's name property.
+            kwargs:
+                Accepted keyword args can be viewed by checking the
+                "data_keys" class attribute. Typically, they include all
+                top-level keys, and non-duplicated keys used elsewhere.
+
+                Values will be cast to string. (Int 10, bool False
+                become string values "10" and "false").
+
+                Ignores kwargs that aren't in object's keys attribute.
         """
-        element_name = ElementTree.SubElement(self, "name")
-        element_name.text = name
-        # is_smart is a JSSGroupObject @property.
-        ElementTree.SubElement(self, "is_smart")
-        self.criteria = ElementTree.SubElement(self, "criteria")
-        # If specified add is_smart, otherwise default to False.
-        self.is_smart = kwargs.get("smart", False)
-        self.computers = ElementTree.SubElement(self, "computers")
+        super(ComputerGroup, self).__init__(jss, data, **kwargs)
+        self.criteria = self.find("criteria")
 
     def add_computer(self, computer):
         """Add a computer to the group.
@@ -189,7 +184,8 @@ class ComputerGroup(JSSGroupObject):
         Args:
             computer: A Computer object to add to the group.
         """
-        super(ComputerGroup, self).remove_object_from_list(computer, "computers")
+        super(ComputerGroup, self).remove_object_from_list(computer,
+                                                           "computers")
 
 
 class ComputerInventoryCollection(JSSFlatObject):
@@ -593,7 +589,7 @@ class Package(JSSContainerObject):
         "triggering_files": None,
         "send_notification": "false",}
 
-    def new(self, name, **kwargs):
+    def _new(self, name, **kwargs):
         """Create a new Package from scratch.
 
         Args:
@@ -607,10 +603,9 @@ class Package(JSSContainerObject):
                 Values will be cast to string. (Int 10, bool False
                 become string values "10" and "false").
         """
-
         # We want these to match, so circumvent the for loop.
         # ElementTree.SubElement(self, "name").text = name
-        super(Package, self).new(name, **kwargs)
+        super(Package, self)._new(name, **kwargs)
         ElementTree.SubElement(self, "filename").text = name
 
     def set_os_requirements(self, requirements):
@@ -653,61 +648,82 @@ class PeripheralType(JSSContainerObject):
 class Policy(JSSContainerObject):
     _url = "/policies"
     list_type = "policy"
+    _name_path = "general/name"
+    data_keys = {
+        "general": {
+            "enabled": "true",
+            "frequency": "Once per computer",
+            "category": "",},
+        "scope": {
+            "computers": None,
+            "computer_groups": None,
+            "buildings": None,
+            "departments": None,
+            "exclusions": {
+                "computers": None,
+                "computer_groups": None,
+                "buildings": None,
+                "departments": None,},},
+        "self_service": {
+            "use_for_self_service": "true"},
+        "package_configuration": {
+            "packages": None},
+        "maintenance": {
+            "recon": "true"},
+    }
 
-    def new(self, name="Unknown", category=None):   # pylint: disable=W0221
-        """Create a Policy from scratch.
+    def __init__(self, jss, name, **kwargs):
+        """Init a Policy from scratch.
+
+        Adds convenience attributes to assist in configuring.
 
         Args:
-            name: String Policy name
-            category: A Category object or string name of the category.
+            name: String name of the object to use as the
+                object's name property.
+            kwargs:
+                Accepted keyword args can be viewed by checking the
+                "data_keys" class attribute. Typically, they include all
+                top-level keys, and non-duplicated keys used elsewhere.
+
+                Values will be cast to string. (Int 10, bool False
+                become string values "10" and "false").
+
+                Ignores kwargs that aren't in object's keys attribute.
         """
+        super(Policy, self).__init__(jss, name, **kwargs)
+
+        # Set convenience attributes.
+        # This is an experiment. If it prooves to be more cumbersome
+        # than it is worth, they may come out.
         # General
-        self.general = ElementTree.SubElement(self, "general")
-        self.name_element = ElementTree.SubElement(self.general, "name")
-        self.name_element.text = name
-        self.enabled = ElementTree.SubElement(self.general, "enabled")
-        self.set_bool(self.enabled, True)
-        self.frequency = ElementTree.SubElement(self.general, "frequency")
-        self.frequency.text = "Once per computer"
-        self.category = ElementTree.SubElement(self.general, "category")
-        if category:
-            self.category_name = ElementTree.SubElement(self.category, "name")
-            if isinstance(category, Category):
-                self.category_name.text = category.name
-            elif isinstance(category, basestring):
-                self.category_name.text = category
+        self.general = self.find("general")
+        self.enabled = self.general.find("enabled")
+        self.frequency = self.general.find("frequency")
+        self.category = self.general.find("category")
 
         # Scope
-        self.scope = ElementTree.SubElement(self, "scope")
-        self.computers = ElementTree.SubElement(self.scope, "computers")
-        self.computer_groups = ElementTree.SubElement(self.scope,
-                                                      "computer_groups")
-        self.buildings = ElementTree.SubElement(self.scope, "buldings")
-        self.departments = ElementTree.SubElement(self.scope, "departments")
-        self.exclusions = ElementTree.SubElement(self.scope, "exclusions")
-        self.excluded_computers = ElementTree.SubElement(self.exclusions,
-                                                         "computers")
-        self.excluded_computer_groups = ElementTree.SubElement(
-            self.exclusions, "computer_groups")
-        self.excluded_buildings = ElementTree.SubElement(
-            self.exclusions, "buildings")
-        self.excluded_departments = ElementTree.SubElement(self.exclusions,
-                                                           "departments")
+        self.scope = self.find("scope")
+        self.computers = self.scope.find("computers")
+        self.computer_groups = self.scope.find("computer_groups")
+        self.buildings = self.scope.find("buildings")
+        self.departments = self.scope.find("departments")
+        self.exclusions = self.scope.find("exclusions")
+        self.excluded_computers = self.exclusions.find("computers")
+        self.excluded_computer_groups = self.exclusions.find("computer_groups")
+        self.excluded_buildings = self.exclusions.find("buildings")
+        self.excluded_departments = self.exclusions.find("departments")
 
         # Self Service
-        self.self_service = ElementTree.SubElement(self, "self_service")
-        self.use_for_self_service = ElementTree.SubElement(
-            self.self_service, "use_for_self_service")
-        self.set_bool(self.use_for_self_service, True)
-
+        self.self_service = self.find("self_service")
+        self.use_for_self_service = self.self_service.find(
+            "use_for_self_service")
         # Package Configuration
-        self.pkg_config = ElementTree.SubElement(self, "package_configuration")
-        self.pkgs = ElementTree.SubElement(self.pkg_config, "packages")
-
+        self.pkg_config = self.find("package_configuration")
+        self.pkgs = self.pkg_config.find("packages")
         # Maintenance
-        self.maintenance = ElementTree.SubElement(self, "maintenance")
-        self.recon = ElementTree.SubElement(self.maintenance, "recon")
-        self.set_bool(self.recon, True)
+        self.maintenance = self.find("maintenance")
+        self.recon = self.maintenance.find("recon")
+
 
     def add_object_to_scope(self, obj):
         """Add an object to the appropriate scope block.

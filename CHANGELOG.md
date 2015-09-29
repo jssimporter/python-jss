@@ -35,6 +35,9 @@ All notable changes to this project will be documented in this file. This projec
 - Improved the formatting of `JSSObjectList` objects.
 - Replaced the Element.__repr__ method with the indenting pretty-printing one that has been in python-jss for awhile now. This allows all non-assigned results from Element subclass methods to pretty-print the XML.
 - Removed the recently added `JSSObject.pretty_find` as it's no longer needed.
+- Changed the method for creating "new" JSSObjects. Now, generating a blank XML for JSSObjects uses a class attribute `data_keys` to generate the structure. It allows for setting default values.
+	- Now, the `__init__` and `_new` methods accept any of the `data_keys` as keyword args to be set during creation.
+- Renamed `JSSObject.new` to `JSSObject._new` to discourage client use.
 
 ### Fixed
 - `JSSObject.set_bool` improved to not have broken string behavior.
