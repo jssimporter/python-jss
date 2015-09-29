@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file. This projec
 - Added a __repr__ to `JSSListData` so you can now better interact with them.
 - Added the `suppress_warnings` key to the preference domain and `JSSPrefs` object.
 - Added an interactive configuration procedure to the JSSPrefs class. If you don't already have a plist file, on instantiation it will prompt your for all configuration information.
+- Added a `pre_callback` and `post_callback` parameter to `DistributionPoints.copy`. This allows you to provide some feedback for long copying operations. In the future, if desired, more may be added to long-running methods like `JSSObjectList.retrieve_all()`.
 
 ### Changed
 - Optimized `JSSObjectList.retrieve_all`.

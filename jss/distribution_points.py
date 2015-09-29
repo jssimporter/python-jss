@@ -188,7 +188,7 @@ class DistributionPoints(object):
         """Remove a distribution point by index."""
         self._children.pop(index)
 
-    def copy(self, filename, id_=-1):
+    def copy(self, filename, id_=-1, callback=None):
         """Copy a package or script to all repos.
 
         Determines appropriate location (for file shares) and type based
@@ -200,14 +200,26 @@ class DistributionPoints(object):
                 and CDP DP's only. If uploading a package that does not
                 have a corresponding object, use id_ of -1, which is the
                 default.
+            pre_callback: Func to call before each distribution point
+                starts copying. Should accept a Repository connection
+                dictionary as a parameter. Will be called like:
+                    `pre_callback(repo.connection)`
+            post_callback: Func to call after each distribution point
+                finishes copying. Should accept a Repository connection
+                dictionary as a parameter. Will be called like:
+                    `pre_callback(repo.connection)`
         """
-        if is_package(filename):
-            for repo in self._children:
-                repo.copy_pkg(filename, id_)
-        else:
-            for repo in self._children:
-                # All other file types can go to scripts.
-                repo.copy_script(filename, id_)
+        for repo in self._children:
+            if is_package(filename):
+                    copy_method = repo.copy_pkg
+            else:
+                    # All other file types can go to scripts.
+                    copy_method = repo.copy_script
+            if pre_callback:
+                pre_callback(repo.connection)
+            copy_method(filename, id_)
+            if post_callback:
+                post_callback(repo.connection)
 
     def copy_pkg(self, filename, id_=-1):
         """Copy a pkg, dmg, or zip to all repositories.

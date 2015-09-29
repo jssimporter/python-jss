@@ -204,8 +204,6 @@ class JSSPrefs(object):
         try:
             dpts = jss_server.DistributionPoint()
         except JSSGetError:
-            # TODO: Ensure this is the right exception.
-            # Something went wrong.
             print ("Fetching distribution point info failed. If you want to "
                    "configure distribution points, ensure that your API user "
                    "has read permissions for distribution points, and that "
