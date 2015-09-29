@@ -111,6 +111,7 @@ class JSSObject(ElementTree.Element):
     default_search = "name"
     search_types = {"name": "/name/"}
     list_type = "JSSObject"
+    data_keys = {}
 
     def __init__(self, jss, data, **kwargs):
         """Initialize a new JSSObject
@@ -136,8 +137,68 @@ class JSSObject(ElementTree.Element):
                             " name.")
 
     def new(self, name, **kwargs):
-        """Create a new JSSObject with name and blank XML."""
-        raise NotImplementedError
+        """Create a new JSSObject with name and "keys".
+
+        Generate a default XML template for this object, based on
+        the class attribute "keys".
+
+        Args:
+            name: String name of the object to use as the
+                object's name property.
+            kwargs:
+                Accepted keyword args can be viewed by checking the
+                "data_keys" class attribute. Typically, they include all
+                top-level keys, and non-duplicated keys used elsewhere.
+
+                Values will be cast to string. (Int 10, bool False
+                become string values "10" and "false").
+
+                Ignores kwargs that aren't in object's keys attribute.
+        """
+        # Name is required, so set it outside of the helper func.
+        ElementTree.SubElement(self, "name").text = name
+
+        for key in kwargs:
+            if key not in self.data_keys and self.jss.verbose:
+                print ("%s is not an allowed keyword argument. "
+                       "Ignoring." % key)
+
+        for item in self.data_keys.items():
+            self._set_xml_from_keys(self, item, **kwargs)
+
+
+    def _set_xml_from_keys(self, root, item, **kwargs):
+        """Create SubElements of root with kwargs.
+
+        Args:
+            root: Element to add SubElements to.
+            item: Tuple key/value pair from self.data_keys to add.
+            kwargs:
+                For each item in self.data_keys, if it has a
+                corresponding kwarg, create a SubElement at root with
+                the kwarg's value.
+
+                Int and bool values will be cast to string. (Int 10,
+                bool False become string values "10" and "false").
+
+                Dicts will be recursively added to their key's Element.
+        """
+        key, val = item
+        if isinstance(val, dict):
+            element = ElementTree.SubElement(root, key)
+            for item in val.items():
+                self._set_xml_from_keys(element, item)
+            return
+
+        # Convert bool to lowercase strings.
+        if isinstance(kwargs.get(key), bool):
+            kwargs[key] = str(kwargs[key]).lower()
+        elif key in kwargs and kwargs[key] is None:
+            kwargs[key] = ""
+        elif isinstance(kwargs.get(key), int):
+            kwargs[key] = str(kwargs[key])
+
+        ElementTree.SubElement(root, key).text = kwargs.get(key, val)
 
     def makeelement(self, tag, attrib):
         """Return an Element."""
@@ -230,6 +291,16 @@ class JSSObject(ElementTree.Element):
         # one).  The only objects that don't have an ID are those that
         # cannot list.
         if self.can_put and (not self.can_list or self.id):
+            # The JSS will reject PUT requests for objects that do not have
+            # a category. The JSS assigns a name of "No category assigned",
+            # which it will reject. Therefore, if that is the category
+            # name, changed it to "", which is accepted.
+            categories = [elem for elem in self.findall("category")]
+            categories.extend([elem for elem in self.findall("category/name")])
+            for cat_tag in categories:
+                if cat_tag.text == "No category assigned":
+                    cat_tag.text = ""
+
             try:
                 self.jss.put(self.url, self)
                 updated_data = self.jss.get(self.url)
@@ -399,15 +470,6 @@ class JSSContainerObject(JSSObject):
     e.g. Computers, Policies.
     """
     list_type = "JSSContainerObject"
-
-    def new(self, name, **kwargs):
-        """Create an empty XML object.
-
-        Args:
-            name: String name of object.
-        """
-        name_element = ElementTree.SubElement(self, "name")
-        name_element.text = name
 
     def as_list_data(self):
         """Return an Element to be used in a list.

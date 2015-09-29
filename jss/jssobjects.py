@@ -237,6 +237,7 @@ class EBook(JSSContainerObject):
     _url = "/ebooks"
 
 
+# pylint: disable=too-few-public-methods
 class FileUpload(object):
     """FileUploads are a special case in the API. They allow you to add
     file resources to a number of objects on the JSS.
@@ -337,6 +338,8 @@ class FileUpload(object):
         elif response.status_code >= 400:
             error_handler(JSSPostError, response)
 
+
+# pylint: enable=too-few-public-methods
 
 class GSXConnection(JSSFlatObject):
     _url = "/gsxconnection"
@@ -572,50 +575,43 @@ class OSXConfigurationProfile(JSSContainerObject):
 class Package(JSSContainerObject):
     _url = "/packages"
     list_type = "package"
+    data_keys = {
+        "category": None,
+        "info": None,
+        "notes": None,
+        "priority": "10",
+        "reboot_required": "false",
+        "fill_user_template": "false",
+        "fill_existing_users": "false",
+        "boot_volume_required": "true",
+        "allow_uninstalled": "false",
+        "os_requirements": None,
+        "required_processor": "None",   # Really. The string "None".
+        "switch_with_package": "Do Not Install",
+        "install_if_reported_available": "false",
+        "reinstall_option": "Do Not Reinstall",
+        "triggering_files": None,
+        "send_notification": "false",}
 
-    def new(self, filename, **kwargs):
+    def new(self, name, **kwargs):
         """Create a new Package from scratch.
 
         Args:
-            filename: String filename of the package to use for the
+            name: String filename of the package to use for the
                 Package object's Display Name (here, "name").
+                Will also be used as the "filename" value. Casper will
+                let you specify different values, but it is not
+                recommended.
             kwargs:
-                Accepted keyword args include:
-                    cat_name: Name of category to assign Package.
+                Accepted keyword args include all top-level keys.
+                Values will be cast to string. (Int 10, bool False
+                become string values "10" and "false").
         """
-        name = ElementTree.SubElement(self, "name")
-        name.text = filename
-        category = ElementTree.SubElement(self, "category")
-        category.text = kwargs.get("cat_name")
-        fname = ElementTree.SubElement(self, "filename")
-        fname.text = filename
-        ElementTree.SubElement(self, "info")
-        ElementTree.SubElement(self, "notes")
-        priority = ElementTree.SubElement(self, "priority")
-        priority.text = "10"
-        reboot = ElementTree.SubElement(self, "reboot_required")
-        reboot.text = "false"
-        fut = ElementTree.SubElement(self, "fill_user_template")
-        fut.text = "false"
-        feu = ElementTree.SubElement(self, "fill_existing_users")
-        feu.text = "false"
-        boot_volume = ElementTree.SubElement(self, "boot_volume_required")
-        boot_volume.text = "true"
-        allow_uninstalled = ElementTree.SubElement(self, "allow_uninstalled")
-        allow_uninstalled.text = "false"
-        ElementTree.SubElement(self, "os_requirements")
-        required_proc = ElementTree.SubElement(self, "required_processor")
-        required_proc.text = "None"
-        switch_w_package = ElementTree.SubElement(self, "switch_with_package")
-        switch_w_package.text = "Do Not Install"
-        install_if = ElementTree.SubElement(self,
-                                            "install_if_reported_available")
-        install_if.text = "false"
-        reinstall_option = ElementTree.SubElement(self, "reinstall_option")
-        reinstall_option.text = "Do Not Reinstall"
-        ElementTree.SubElement(self, "triggering_files")
-        send_notification = ElementTree.SubElement(self, "send_notification")
-        send_notification.text = "false"
+
+        # We want these to match, so circumvent the for loop.
+        # ElementTree.SubElement(self, "name").text = name
+        super(Package, self).new(name, **kwargs)
+        ElementTree.SubElement(self, "filename").text = name
 
     def set_os_requirements(self, requirements):
         """Set package OS Requirements
@@ -652,11 +648,13 @@ class PeripheralType(JSSContainerObject):
     search_types = {}
 
 
+# pylint: disable=too-many-instance-attributes
+# This class has a lot of convenience attributes. Sorry pylint.
 class Policy(JSSContainerObject):
     _url = "/policies"
     list_type = "policy"
 
-    def new(self, name="Unknown", category=None):
+    def new(self, name="Unknown", category=None):   # pylint: disable=W0221
         """Create a Policy from scratch.
 
         Args:
@@ -809,6 +807,7 @@ class Policy(JSSContainerObject):
         elif isinstance(category, basestring):
             name.text = category
 
+# pylint: enable=too-many-instance-attributes, too-many-locals
 
 class Printer(JSSContainerObject):
     _url = "/printers"
