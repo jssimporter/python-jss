@@ -43,7 +43,7 @@ except ImportError as err:
         print "See README for information on this issue."
     import plistlib
 
-
+# pylint: disable=too-few-public-methods
 class JSSPrefs(object):
     """Object representing JSS credentials and configuration.
 
@@ -100,7 +100,9 @@ class JSSPrefs(object):
 
         Args:
             preferences_file: String path to an alternate location to
-                look for preferences.
+            look for preferences. Defaults base on OS:
+                OS X: "~/Library/Preferences/com.github.sheagcraig.python-jss.plist"
+                Linux: "~/.com.github.sheagcraig.python-jss.plist"
 
         Raises:
             JSSError if using an unsupported OS.
@@ -118,24 +120,25 @@ class JSSPrefs(object):
             else:
                 raise JSSError("Unsupported OS.")
 
-        preferences_file = os.path.expanduser(preferences_file)
-        if os.path.exists(preferences_file):
+        self.preferences_file = os.path.expanduser(preferences_file)
+        if os.path.exists(self.preferences_file):
             # Try to open using FoundationPlist. If it's not available,
             # fall back to plistlib and hope it's not binary encoded.
 
             try:
-                prefs = FoundationPlist.readPlist(preferences_file)
+                prefs = FoundationPlist.readPlist(self.preferences_file)
             except NameError:
                 try:
-                    prefs = plistlib.readPlist(preferences_file)
+                    prefs = plistlib.readPlist(self.preferences_file)
                 except ExpatError:
                     # If we're on OSX, try to convert using another
                     # tool.
 
                     if is_osx():
                         subprocess.call(
-                            ["plutil", "-convert", "xml1", preferences_file])
-                        prefs = plistlib.readPlist(preferences_file)
+                            ["plutil", "-convert", "xml1",
+                             self.preferences_file])
+                        prefs = plistlib.readPlist(self.preferences_file)
 
             self.user = prefs.get("jss_user")
             self.password = prefs.get("jss_pass")
@@ -153,18 +156,22 @@ class JSSPrefs(object):
             self.suppress_warnings = prefs.get("suppress_warnings", True)
 
         else:
-            self._run_interactive_configuration(preferences_file)
-            if not os.path.exists(preferences_file):
+            self.run_interactive_configuration()
+            if not os.path.exists(self.preferences_file):
                 raise JSSPrefsMissingFileError("Preferences file not found!")
             else:
                 self.__init__()   # pylint: disable=non-parent-init-called
 
-    def _run_interactive_configuration(self, preferences_file):
-        """Prompt user for config and write to plist."""
+    def run_interactive_configuration(self):
+        """Prompt user for config and write to plist
+
+        Uses preferences_file argument from JSSPrefs.__init__ as path
+        to write.
+        """
         root = ElementTree.Element("dict")
         print ("It seems like you do not have a preferences file configured. "
                "Please answer the following questions to generate a plist at "
-               "%s for use with python-jss." % preferences_file)
+               "%s for use with python-jss." % self.preferences_file)
 
         url = raw_input("The complete URL to your JSS, with port (e.g. "
                         "'https://mycasperserver.org:8443')\nURL: ")
@@ -231,14 +238,14 @@ class JSSPrefs(object):
                     "Please enter the R/W user's password for distribution "
                     "point: %s: " % dpt.get("name", "<NO NAME CONFIGURED>"))
 
-        self._handle_dist_server("JDS", repos_array)
-        self._handle_dist_server("CDP", repos_array)
+        _handle_dist_server("JDS", repos_array)
+        _handle_dist_server("CDP", repos_array)
 
         # prettify the XML
         indent_xml(root)
 
         tree = ElementTree.ElementTree(root)
-        with open(preferences_file, "w") as prefs_file:
+        with open(self.preferences_file, "w") as prefs_file:
             prefs_file.write(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" "
@@ -248,17 +255,17 @@ class JSSPrefs(object):
             prefs_file.write("</plist>")
         print "Preferences created.\n"
 
-    def _handle_dist_server(self, ds_type, repos_array):
-        """Ask user for whether to use a type of dist server."""
-        if ds_type not in ("JDS", "CDP"):
-            raise ValueError("Must be JDS or CDP")
-        prompt = "Does your JSS use a %s? (Y|N): " % ds_type
-        responses = {"Y": True, "YES": True, "N": False, "NO": False}
-        result = loop_until_valid_response(prompt, responses)
+def _handle_dist_server(ds_type, repos_array):
+    """Ask user for whether to use a type of dist server."""
+    if ds_type not in ("JDS", "CDP"):
+        raise ValueError("Must be JDS or CDP")
+    prompt = "Does your JSS use a %s? (Y|N): " % ds_type
+    responses = {"Y": True, "YES": True, "N": False, "NO": False}
+    result = loop_until_valid_response(prompt, responses)
 
-        if result:
-            repo_dict = ElementTree.SubElement(repos_array, "dict")
-            repo_name_key = ElementTree.SubElement(repo_dict, "key")
-            repo_name_key.text = "type"
-            repo_name_string = ElementTree.SubElement(repo_dict, "string")
-            repo_name_string.text = ds_type
+    if result:
+        repo_dict = ElementTree.SubElement(repos_array, "dict")
+        repo_name_key = ElementTree.SubElement(repo_dict, "key")
+        repo_name_key.text = "type"
+        repo_name_string = ElementTree.SubElement(repo_dict, "string")
+        repo_name_string.text = ds_type
