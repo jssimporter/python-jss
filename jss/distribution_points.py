@@ -188,7 +188,7 @@ class DistributionPoints(object):
         """Remove a distribution point by index."""
         self._children.pop(index)
 
-    def copy(self, filename, id_=-1, callback=None):
+    def copy(self, filename, id_=-1, pre_callback=None, post_callback=None):
         """Copy a package or script to all repos.
 
         Determines appropriate location (for file shares) and type based
