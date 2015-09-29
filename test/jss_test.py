@@ -287,7 +287,7 @@ class TestJSSDeviceObjects(object):
     # Don't currently have any iOS devices in test JSS, so this will
     # fail.
     def test_MobileDevice_properties(self):
-        computer = j_global.MobileDevice('name=Mstesting')
+        computer = j_global.MobileDevice('name=abenson-jsstest')
         assert_equal(computer.wifi_mac_address, 'B0:65:BD:13:EF:47')
         assert_equal(computer.bluetooth_mac_address, 'B0:65:BD:13:EF:48')
 
