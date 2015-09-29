@@ -29,23 +29,7 @@ import requests
 from . import distribution_points
 from .exceptions import (JSSGetError, JSSPutError, JSSPostError,
                          JSSDeleteError, JSSMethodNotAllowedError)
-from .jssobjects import (
-    Account, AccountGroup, ActivationCode, AdvancedComputerSearch,
-    AdvancedMobileDeviceSearch, AdvancedUserSearch, Building, BYOProfile,
-    Category, Class, Computer, ComputerCheckIn, ComputerCommand,
-    ComputerConfiguration, ComputerExtensionAttribute, ComputerGroup,
-    ComputerInventoryCollection, ComputerInvitation, ComputerReport,
-    Department, DirectoryBinding, DiskEncryptionConfiguration,
-    DistributionPoint, DockItem, EBook, GSXConnection, IBeacon, JSSUser,
-    LDAPServer, LicensedSoftware, MacApplication, ManagedPreferenceProfile,
-    MobileDevice, MobileDeviceApplication, MobileDeviceCommand,
-    MobileDeviceConfigurationProfile, MobileDeviceEnrollmentProfile,
-    MobileDeviceExtensionAttribute, MobileDeviceInvitation, MobileDeviceGroup,
-    MobileDeviceProvisioningProfile, NetbootServer, NetworkSegment,
-    OSXConfigurationProfile, Package, Peripheral, PeripheralType, Policy,
-    Printer, RestrictedSoftware, RemovableMACAddress, SavedSearch, Script,
-    Site, SoftwareUpdateServer, SMTPServer, UserExtensionAttribute, User,
-    UserGroup, VPPAccount)
+from . import jssobjects
 from .jssobjectlist import (JSSObjectList, JSSListData)
 from .tlsadapter import TLSAdapter
 from .tools import error_handler
@@ -355,311 +339,322 @@ class JSS(object):
         return dec
 
     #pylint: disable=invalid-name
-    @_docstring_parameter(Account)
+    @_docstring_parameter(jssobjects.Account)
     def Account(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(Account, data)
+        return self.factory.get_object(jssobjects.Account, data)
 
-    @_docstring_parameter(AccountGroup)
+    @_docstring_parameter(jssobjects.AccountGroup)
     def AccountGroup(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(AccountGroup, data)
+        return self.factory.get_object(jssobjects.AccountGroup, data)
 
-    @_docstring_parameter(AdvancedComputerSearch)
+    @_docstring_parameter(jssobjects.AdvancedComputerSearch)
     def AdvancedComputerSearch(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(AdvancedComputerSearch, data)
+        return self.factory.get_object(jssobjects.AdvancedComputerSearch, data)
 
-    @_docstring_parameter(AdvancedMobileDeviceSearch)
+    @_docstring_parameter(jssobjects.AdvancedMobileDeviceSearch)
     def AdvancedMobileDeviceSearch(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(AdvancedMobileDeviceSearch, data)
+        return self.factory.get_object(jssobjects.AdvancedMobileDeviceSearch,
+                                       data)
 
-    @_docstring_parameter(AdvancedUserSearch)
+    @_docstring_parameter(jssobjects.AdvancedUserSearch)
     def AdvancedUserSearch(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(AdvancedUserSearch, data)
+        return self.factory.get_object(jssobjects.AdvancedUserSearch, data)
 
-    @_docstring_parameter(ActivationCode)
+    @_docstring_parameter(jssobjects.ActivationCode)
     def ActivationCode(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(ActivationCode, data)
+        return self.factory.get_object(jssobjects.ActivationCode, data)
 
-    @_docstring_parameter(Building)
+    @_docstring_parameter(jssobjects.Building)
     def Building(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(Building, data)
+        return self.factory.get_object(jssobjects.Building, data)
 
-    @_docstring_parameter(BYOProfile)
+    @_docstring_parameter(jssobjects.BYOProfile)
     def BYOProfile(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(BYOProfile, data)
+        return self.factory.get_object(jssobjects.BYOProfile, data)
 
-    @_docstring_parameter(Category)
+    @_docstring_parameter(jssobjects.Category)
     def Category(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(Category, data)
+        return self.factory.get_object(jssobjects.Category, data)
 
-    @_docstring_parameter(Class)
+    @_docstring_parameter(jssobjects.Class)
     def Class(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(Class, data)
+        return self.factory.get_object(jssobjects.Class, data)
 
-    @_docstring_parameter(Computer, subset=True)
+    @_docstring_parameter(jssobjects.Computer, subset=True)
     def Computer(self, data=None, subset=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(Computer, data, subset)
+        return self.factory.get_object(jssobjects.Computer, data, subset)
 
-    @_docstring_parameter(ComputerCheckIn)
+    @_docstring_parameter(jssobjects.ComputerCheckIn)
     def ComputerCheckIn(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(ComputerCheckIn, data)
+        return self.factory.get_object(jssobjects.ComputerCheckIn, data)
 
-    @_docstring_parameter(ComputerCommand)
+    @_docstring_parameter(jssobjects.ComputerCommand)
     def ComputerCommand(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(ComputerCommand, data)
+        return self.factory.get_object(jssobjects.ComputerCommand, data)
 
-    @_docstring_parameter(ComputerConfiguration)
+    @_docstring_parameter(jssobjects.ComputerConfiguration)
     def ComputerConfiguration(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(ComputerConfiguration, data)
+        return self.factory.get_object(jssobjects.ComputerConfiguration, data)
 
-    @_docstring_parameter(ComputerExtensionAttribute)
+    @_docstring_parameter(jssobjects.ComputerExtensionAttribute)
     def ComputerExtensionAttribute(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(ComputerExtensionAttribute, data)
+        return self.factory.get_object(jssobjects.ComputerExtensionAttribute,
+                                       data)
 
-    @_docstring_parameter(ComputerGroup)
+    @_docstring_parameter(jssobjects.ComputerGroup)
     def ComputerGroup(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(ComputerGroup, data)
+        return self.factory.get_object(jssobjects.ComputerGroup, data)
 
-    @_docstring_parameter(ComputerInventoryCollection)
+    @_docstring_parameter(jssobjects.ComputerInventoryCollection)
     def ComputerInventoryCollection(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(ComputerInventoryCollection, data)
+        return self.factory.get_object(jssobjects.ComputerInventoryCollection,
+                                       data)
 
-    @_docstring_parameter(ComputerInvitation)
+    @_docstring_parameter(jssobjects.ComputerInvitation)
     def ComputerInvitation(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(ComputerInvitation, data)
+        return self.factory.get_object(jssobjects.ComputerInvitation, data)
 
-    @_docstring_parameter(ComputerReport)
+    @_docstring_parameter(jssobjects.ComputerReport)
     def ComputerReport(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(ComputerReport, data)
+        return self.factory.get_object(jssobjects.ComputerReport, data)
 
-    @_docstring_parameter(Department)
+    @_docstring_parameter(jssobjects.Department)
     def Department(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(Department, data)
+        return self.factory.get_object(jssobjects.Department, data)
 
-    @_docstring_parameter(DirectoryBinding)
+    @_docstring_parameter(jssobjects.DirectoryBinding)
     def DirectoryBinding(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(DirectoryBinding, data)
+        return self.factory.get_object(jssobjects.DirectoryBinding, data)
 
-    @_docstring_parameter(DiskEncryptionConfiguration)
+    @_docstring_parameter(jssobjects.DiskEncryptionConfiguration)
     def DiskEncryptionConfiguration(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(DiskEncryptionConfiguration, data)
+        return self.factory.get_object(jssobjects.DiskEncryptionConfiguration,
+                                       data)
 
-    @_docstring_parameter(DistributionPoint)
+    @_docstring_parameter(jssobjects.DistributionPoint)
     def DistributionPoint(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(DistributionPoint, data)
+        return self.factory.get_object(jssobjects.DistributionPoint, data)
 
-    @_docstring_parameter(DockItem)
+    @_docstring_parameter(jssobjects.DockItem)
     def DockItem(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(DockItem, data)
+        return self.factory.get_object(jssobjects.DockItem, data)
 
-    @_docstring_parameter(EBook, subset=True)
+    @_docstring_parameter(jssobjects.EBook, subset=True)
     def EBook(self, data=None, subset=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(EBook, data, subset)
+        return self.factory.get_object(jssobjects.EBook, data, subset)
 
     # FileUploads' only function is to upload, so a method here is not
     # provided.
 
-    @_docstring_parameter(GSXConnection)
+    @_docstring_parameter(jssobjects.GSXConnection)
     def GSXConnection(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(GSXConnection, data)
+        return self.factory.get_object(jssobjects.GSXConnection, data)
 
-    @_docstring_parameter(IBeacon)
+    @_docstring_parameter(jssobjects.IBeacon)
     def IBeacon(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(IBeacon, data)
+        return self.factory.get_object(jssobjects.IBeacon, data)
 
-    @_docstring_parameter(JSSUser)
+    @_docstring_parameter(jssobjects.JSSUser)
     def JSSUser(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(JSSUser, data)
+        return self.factory.get_object(jssobjects.JSSUser, data)
 
-    @_docstring_parameter(LDAPServer)
+    @_docstring_parameter(jssobjects.LDAPServer)
     def LDAPServer(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(LDAPServer, data)
+        return self.factory.get_object(jssobjects.LDAPServer, data)
 
-    @_docstring_parameter(LicensedSoftware)
+    @_docstring_parameter(jssobjects.LicensedSoftware)
     def LicensedSoftware(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(LicensedSoftware, data)
+        return self.factory.get_object(jssobjects.LicensedSoftware, data)
 
-    @_docstring_parameter(MacApplication, subset=True)
+    @_docstring_parameter(jssobjects.MacApplication, subset=True)
     def MacApplication(self, data=None, subset=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(MacApplication, data, subset)
+        return self.factory.get_object(jssobjects.MacApplication, data, subset)
 
-    @_docstring_parameter(ManagedPreferenceProfile, subset=True)
+    @_docstring_parameter(jssobjects.ManagedPreferenceProfile, subset=True)
     def ManagedPreferenceProfile(self, data=None, subset=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(ManagedPreferenceProfile, data, subset)
+        return self.factory.get_object(jssobjects.ManagedPreferenceProfile,
+                                       data, subset)
 
-    @_docstring_parameter(MobileDevice, subset=True)
+    @_docstring_parameter(jssobjects.MobileDevice, subset=True)
     def MobileDevice(self, data=None, subset=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(MobileDevice, data, subset)
+        return self.factory.get_object(jssobjects.MobileDevice, data, subset)
 
-    @_docstring_parameter(MobileDeviceApplication, subset=True)
+    @_docstring_parameter(jssobjects.MobileDeviceApplication, subset=True)
     def MobileDeviceApplication(self, data=None, subset=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(MobileDeviceApplication, data, subset)
+        return self.factory.get_object(jssobjects.MobileDeviceApplication,
+                                       data, subset)
 
-    @_docstring_parameter(MobileDeviceCommand)
+    @_docstring_parameter(jssobjects.MobileDeviceCommand)
     def MobileDeviceCommand(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(MobileDeviceCommand, data)
+        return self.factory.get_object(jssobjects.MobileDeviceCommand, data)
 
-    @_docstring_parameter(MobileDeviceConfigurationProfile, subset=True)
+    @_docstring_parameter(jssobjects.MobileDeviceConfigurationProfile,
+                          subset=True)
     def MobileDeviceConfigurationProfile(self, data=None, subset=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(MobileDeviceConfigurationProfile, data,
-                                       subset)
+        return self.factory.get_object(
+            jssobjects.MobileDeviceConfigurationProfile, data, subset)
 
-    @_docstring_parameter(MobileDeviceEnrollmentProfile, subset=True)
+    @_docstring_parameter(jssobjects.MobileDeviceEnrollmentProfile,
+                          subset=True)
     def MobileDeviceEnrollmentProfile(self, data=None, subset=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(MobileDeviceEnrollmentProfile, data,
-                                       subset)
+        return self.factory.get_object(
+            jssobjects.MobileDeviceEnrollmentProfile, data, subset)
 
-    @_docstring_parameter(MobileDeviceExtensionAttribute)
+    @_docstring_parameter(jssobjects.MobileDeviceExtensionAttribute)
     def MobileDeviceExtensionAttribute(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(MobileDeviceExtensionAttribute, data)
+        return self.factory.get_object(
+            jssobjects.MobileDeviceExtensionAttribute, data)
 
-    @_docstring_parameter(MobileDeviceInvitation)
+    @_docstring_parameter(jssobjects.MobileDeviceInvitation)
     def MobileDeviceInvitation(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(MobileDeviceInvitation, data)
+        return self.factory.get_object(jssobjects.MobileDeviceInvitation, data)
 
-    @_docstring_parameter(MobileDeviceGroup)
+    @_docstring_parameter(jssobjects.MobileDeviceGroup)
     def MobileDeviceGroup(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(MobileDeviceGroup, data)
+        return self.factory.get_object(jssobjects.MobileDeviceGroup, data)
 
-    @_docstring_parameter(MobileDeviceProvisioningProfile, subset=True)
+    @_docstring_parameter(jssobjects.MobileDeviceProvisioningProfile,
+                          subset=True)
     def MobileDeviceProvisioningProfile(self, data=None, subset=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(MobileDeviceProvisioningProfile, data,
-                                       subset)
+        return self.factory.get_object(
+            jssobjects.MobileDeviceProvisioningProfile, data, subset)
 
-    @_docstring_parameter(NetbootServer)
+    @_docstring_parameter(jssobjects.NetbootServer)
     def NetbootServer(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(NetbootServer, data)
+        return self.factory.get_object(jssobjects.NetbootServer, data)
 
-    @_docstring_parameter(NetworkSegment)
+    @_docstring_parameter(jssobjects.NetworkSegment)
     def NetworkSegment(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(NetworkSegment, data)
+        return self.factory.get_object(jssobjects.NetworkSegment, data)
 
-    @_docstring_parameter(OSXConfigurationProfile, subset=True)
+    @_docstring_parameter(jssobjects.OSXConfigurationProfile, subset=True)
     def OSXConfigurationProfile(self, data=None, subset=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(OSXConfigurationProfile, data, subset)
+        return self.factory.get_object(jssobjects.OSXConfigurationProfile,
+                                       data, subset)
 
-    @_docstring_parameter(Package)
+    @_docstring_parameter(jssobjects.Package)
     def Package(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(Package, data)
+        return self.factory.get_object(jssobjects.Package, data)
 
-    @_docstring_parameter(Peripheral, subset=True)
+    @_docstring_parameter(jssobjects.Peripheral, subset=True)
     def Peripheral(self, data=None, subset=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(Peripheral, data, subset)
+        return self.factory.get_object(jssobjects.Peripheral, data, subset)
 
-    @_docstring_parameter(PeripheralType)
+    @_docstring_parameter(jssobjects.PeripheralType)
     def PeripheralType(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(PeripheralType, data)
+        return self.factory.get_object(jssobjects.PeripheralType, data)
 
-    @_docstring_parameter(Policy, subset=True)
+    @_docstring_parameter(jssobjects.Policy, subset=True)
     def Policy(self, data=None, subset=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(Policy, data, subset)
+        return self.factory.get_object(jssobjects.Policy, data, subset)
 
-    @_docstring_parameter(Printer)
+    @_docstring_parameter(jssobjects.Printer)
     def Printer(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(Printer, data)
+        return self.factory.get_object(jssobjects.Printer, data)
 
-    @_docstring_parameter(RestrictedSoftware)
+    @_docstring_parameter(jssobjects.RestrictedSoftware)
     def RestrictedSfotware(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(RestrictedSoftware, data)
+        return self.factory.get_object(jssobjects.RestrictedSoftware, data)
 
-    @_docstring_parameter(RemovableMACAddress)
+    @_docstring_parameter(jssobjects.RemovableMACAddress)
     def RemovableMACAddress(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(RemovableMACAddress, data)
+        return self.factory.get_object(jssobjects.RemovableMACAddress, data)
 
-    @_docstring_parameter(SavedSearch)
+    @_docstring_parameter(jssobjects.SavedSearch)
     def SavedSearch(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(SavedSearch, data)
+        return self.factory.get_object(jssobjects.SavedSearch, data)
 
-    @_docstring_parameter(Script)
+    @_docstring_parameter(jssobjects.Script)
     def Script(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(Script, data)
+        return self.factory.get_object(jssobjects.Script, data)
 
-    @_docstring_parameter(Site)
+    @_docstring_parameter(jssobjects.Site)
     def Site(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(Site, data)
+        return self.factory.get_object(jssobjects.Site, data)
 
-    @_docstring_parameter(SoftwareUpdateServer)
+    @_docstring_parameter(jssobjects.SoftwareUpdateServer)
     def SoftwareUpdateServer(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(SoftwareUpdateServer, data)
+        return self.factory.get_object(jssobjects.SoftwareUpdateServer, data)
 
-    @_docstring_parameter(SMTPServer)
+    @_docstring_parameter(jssobjects.SMTPServer)
     def SMTPServer(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(SMTPServer, data)
+        return self.factory.get_object(jssobjects.SMTPServer, data)
 
-    @_docstring_parameter(UserExtensionAttribute)
+    @_docstring_parameter(jssobjects.UserExtensionAttribute)
     def UserExtensionAttribute(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(UserExtensionAttribute, data)
+        return self.factory.get_object(jssobjects.UserExtensionAttribute, data)
 
-    @_docstring_parameter(User)
+    @_docstring_parameter(jssobjects.User)
     def User(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(User, data)
+        return self.factory.get_object(jssobjects.User, data)
 
-    @_docstring_parameter(UserGroup)
+    @_docstring_parameter(jssobjects.UserGroup)
     def UserGroup(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(UserGroup, data)
+        return self.factory.get_object(jssobjects.UserGroup, data)
 
-    @_docstring_parameter(VPPAccount)
+    @_docstring_parameter(jssobjects.VPPAccount)
     def VPPAccount(self, data=None):
         """{dynamic_docstring}"""
-        return self.factory.get_object(VPPAccount, data)
+        return self.factory.get_object(jssobjects.VPPAccount, data)
 
 
     #pylint: enable=invalid-name
