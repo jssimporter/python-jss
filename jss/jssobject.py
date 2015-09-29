@@ -39,7 +39,7 @@ class SearchCriteria(ElementTree.Element):
     """Object for encapsulating a smart group search criteria."""
     list_type = "criterion"
 
-    def __init__(self, name, priority, and_or, search_type, value):
+    def __init__(self, name, priority, and_or, search_type, value):   # pylint: disable=too-many-arguments
         """Init a SearchCriteria.
 
         Args:
@@ -516,7 +516,7 @@ class JSSContainerObject(JSSObject):
 class JSSGroupObject(JSSContainerObject):
     """Abstract class for ComputerGroup and MobileDeviceGroup."""
 
-    def add_criterion(self, name, priority, and_or, search_type, value):
+    def add_criterion(self, name, priority, and_or, search_type, value):   # pylint: disable=too-many-arguments
         """Add a search criteria object to a smart group.
 
         Args:
