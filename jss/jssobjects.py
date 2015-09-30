@@ -703,27 +703,27 @@ class Policy(JSSContainerObject):
 
         # Scope
         self.scope = self.find("scope")
-        self.computers = self.scope.find("computers")
-        self.computer_groups = self.scope.find("computer_groups")
-        self.buildings = self.scope.find("buildings")
-        self.departments = self.scope.find("departments")
-        self.exclusions = self.scope.find("exclusions")
-        self.excluded_computers = self.scope.find("exclusions/computers")
-        self.excluded_computer_groups = self.scope.find(
-            "exclusions/computer_groups")
-        self.excluded_buildings = self.scope.find("exclusions/buildings")
-        self.excluded_departments = self.scope.find("exclusions/departments")
+        self.computers = self.find("scope/computers")
+        self.computer_groups = self.find("scope/computer_groups")
+        self.buildings = self.find("scope/buildings")
+        self.departments = self.find("scope/departments")
+        self.exclusions = self.find("scope/exclusions")
+        self.excluded_computers = self.find("scope/exclusions/computers")
+        self.excluded_computer_groups = self.find(
+            "scope/exclusions/computer_groups")
+        self.excluded_buildings = self.find("scope/exclusions/buildings")
+        self.excluded_departments = self.find("scope/exclusions/departments")
 
         # Self Service
         self.self_service = self.find("self_service")
-        self.use_for_self_service = self.self_service.find(
-            "use_for_self_service")
+        self.use_for_self_service = self.find("self_service/"
+                                              "use_for_self_service")
         # Package Configuration
         self.pkg_config = self.find("package_configuration")
-        self.pkgs = self.pkg_config.find("packages")
+        self.pkgs = self.find("package_configuration/packages")
         # Maintenance
         self.maintenance = self.find("maintenance")
-        self.recon = self.maintenance.find("recon")
+        self.recon = self.find("maintenance/recon")
 
 
     def add_object_to_scope(self, obj):
