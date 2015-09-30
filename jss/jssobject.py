@@ -473,8 +473,7 @@ class JSSObject(ElementTree.Element):
         """
         tree = ElementTree.parse(filename)
         root = tree.getroot()
-        new_object = cls(jss, data=root)
-        return new_object
+        return cls(jss, root)
 
     @classmethod
     def from_string(cls, jss, xml_string):
@@ -485,8 +484,7 @@ class JSSObject(ElementTree.Element):
             xml_string: String XML file data used to create object.
         """
         root = ElementTree.fromstring(xml_string)
-        new_object = cls(jss, data=root)
-        return new_object
+        return cls(jss, root)
 
 
 class JSSContainerObject(JSSObject):

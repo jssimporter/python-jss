@@ -708,10 +708,11 @@ class Policy(JSSContainerObject):
         self.buildings = self.scope.find("buildings")
         self.departments = self.scope.find("departments")
         self.exclusions = self.scope.find("exclusions")
-        self.excluded_computers = self.exclusions.find("computers")
-        self.excluded_computer_groups = self.exclusions.find("computer_groups")
-        self.excluded_buildings = self.exclusions.find("buildings")
-        self.excluded_departments = self.exclusions.find("departments")
+        self.excluded_computers = self.scope.find("exclusions/computers")
+        self.excluded_computer_groups = self.scope.find(
+            "exclusions/computer_groups")
+        self.excluded_buildings = self.scope.find("exclusions/buildings")
+        self.excluded_departments = self.scope.find("exclusions/departments")
 
         # Self Service
         self.self_service = self.find("self_service")
