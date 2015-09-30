@@ -727,7 +727,7 @@ class JSSObjectFactory(object):
             url = obj_class.get_url(data)
             if obj_class.can_list and obj_class.can_get:
                 if (subset and len(subset) == 1 and subset[0].upper() ==
-                        "BASIC") and obj_class is Computer:
+                        "BASIC") and obj_class is jssobjects.Computer:
                     url += "/subset/basic"
 
                 result = self.jss.get(url)
