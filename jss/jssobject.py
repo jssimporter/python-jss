@@ -550,8 +550,6 @@ class JSSGroupObject(JSSContainerObject):
         self.set_bool("is_smart", value)
         if value is True:
             if self.find("criteria") is None:
-                # TODO: Find a better way to handle class properties
-                # like this.
                 # pylint: disable=attribute-defined-outside-init
                 self.criteria = ElementTree.SubElement(self, "criteria")
                 # pylint: enable=attribute-defined-outside-init
