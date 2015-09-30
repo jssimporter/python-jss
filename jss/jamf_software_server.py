@@ -721,63 +721,68 @@ class JSSObjectFactory(object):
                 else:
                     raise TypeError
 
-        # List objects
-
         if data is None:
-            url = obj_class.get_url(data)
-            if obj_class.can_list and obj_class.can_get:
-                if (subset and len(subset) == 1 and subset[0].upper() ==
-                        "BASIC") and obj_class is jssobjects.Computer:
-                    url += "/subset/basic"
-
-                result = self.jss.get(url)
-
-                if obj_class.container:
-                    result = result.find(obj_class.container)
-
-                return self._build_jss_object_list(result, obj_class)
-
-            # Single object
-
-            elif obj_class.can_get:
-                xmldata = self.jss.get(url)
-                return obj_class(self.jss, xmldata)
-            else:
-                raise JSSMethodNotAllowedError(
-                    obj_class.__class__.__name__)
-
-        # Retrieve individual objects
+            return self._get_list(obj_class, data, subset)
         elif isinstance(data, (basestring, int)):
-            if obj_class.can_get:
-                url = obj_class.get_url(data)
-                if subset:
-                    if not "general" in subset:
-                        subset.append("general")
-                    url += "/subset/%s" % "&".join(subset)
-
-                xmldata = self.jss.get(url)
-
-                # Some name searches may result in multiple found
-                # objects. e.g. A computer search for "MacBook Pro" may
-                # return ALL computers which have not had their name
-                # changed.
-                if xmldata.find("size") is not None:
-                    return self._build_jss_object_list(xmldata, obj_class)
-                else:
-                    return obj_class(self.jss, xmldata)
-            else:
-                raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
-
-        # Create a new object
-
+            return self._get_individual_object(obj_class, data, subset)
         elif isinstance(data, ElementTree.Element):
-            if obj_class.can_post:
-                url = obj_class.get_post_url()
-                return self.jss.post(obj_class, url, data)
-            else:
-                raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
+            return self._get_new_object(obj_class, data)
         else:
             raise ValueError
+
+    def _get_list(self, obj_class, data, subset):
+        """Perform a listing GET on object type."""
+        url = obj_class.get_url(data)
+        if obj_class.can_list and obj_class.can_get:
+            if (subset and len(subset) == 1 and subset[0].upper() ==
+                    "BASIC") and obj_class is jssobjects.Computer:
+                url += "/subset/basic"
+
+            result = self.jss.get(url)
+
+            if obj_class.container:
+                result = result.find(obj_class.container)
+
+            return self._build_jss_object_list(result, obj_class)
+
+        # Single object
+
+        elif obj_class.can_get:
+            xmldata = self.jss.get(url)
+            return obj_class(self.jss, xmldata)
+        else:
+            raise JSSMethodNotAllowedError(
+                obj_class.__class__.__name__)
+
+    def _get_individual_object(self, obj_class, data, subset):
+        """GET an individual object."""
+        if obj_class.can_get:
+            url = obj_class.get_url(data)
+            if subset:
+                if not "general" in subset:
+                    subset.append("general")
+                url += "/subset/%s" % "&".join(subset)
+
+            xmldata = self.jss.get(url)
+
+            # Some name searches may result in multiple found
+            # objects. e.g. A computer search for "MacBook Pro" may
+            # return ALL computers which have not had their name
+            # changed.
+            if xmldata.find("size") is not None:
+                return self._build_jss_object_list(xmldata, obj_class)
+            else:
+                return obj_class(self.jss, xmldata)
+        else:
+            raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
+
+    def _get_new_object(self, obj_class, data):
+        """Create a new object."""
+        if obj_class.can_post:
+            url = obj_class.get_post_url()
+            return self.jss.post(obj_class, url, data)
+        else:
+            raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
 
     def _build_jss_object_list(self, response, obj_class):
         """Build a JSSListData object from response."""
