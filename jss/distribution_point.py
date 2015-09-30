@@ -83,7 +83,141 @@ class Repository(object):
         raise NotImplementedError
 
 
-class MountedRepository(Repository):
+
+class FileRepository(Repository):
+    """Local file shares."""
+
+    def _build_url(self):
+        """Build a connection URL."""
+        pass
+
+    def copy_pkg(self, filename, _):
+        """Copy a package to the repo's Package subdirectory.
+
+        Args:
+            filename: Path for file to copy.
+            _: Ignored. Used for compatibility with JDS repos.
+        """
+        basename = os.path.basename(filename)
+        self._copy(filename, os.path.join(self.connection["mount_point"],
+                                          "Packages", basename))
+
+    def copy_script(self, filename, id_=-1):
+        """Copy a script to the repo's Script subdirectory.
+
+        Scripts are copied as files to a path, or, on a "migrated" JSS,
+        are POSTed to the JSS (pass an id if you wish to associate
+        the script with an existing Script object).
+
+        Args:
+            filename: Path for file to copy.
+            id_: Int ID, used _only_ for migrated repos. Default is -1,
+                which creates a new Script.
+        """
+        if ("jss" in self.connection.keys() and
+                self.connection["jss"].jss_migrated):
+            self._copy_script_migrated(filename, id_, SCRIPT_FILE_TYPE)
+        else:
+            basename = os.path.basename(filename)
+            self._copy(filename, os.path.join(self.connection["mount_point"],
+                                              "Scripts", basename))
+
+    def _copy_script_migrated(self, filename, id_=-1,
+                              file_type=SCRIPT_FILE_TYPE):
+        """Upload a script to a migrated JSS's database.
+
+        On a "migrated" JSS, scripts are POSTed to the JSS. Pass an id
+        if you wish to associate the script with an existing Script
+        object, otherwise, it will create a new Script object.
+
+        Args:
+            filename: Path to script file.
+            id_: Int ID of Script object to associate this file with.
+                Default is -1, which creates a new Script.
+        """
+        basefname = os.path.basename(filename)
+
+        resource = open(filename, "rb")
+        headers = {"DESTINATION": "1", "OBJECT_ID": str(id_), "FILE_TYPE":
+                   file_type, "FILE_NAME": basefname}
+        response = self.connection["jss"].session.post(
+            url="%s/%s" % (self.connection["jss"].base_url, "dbfileupload"),
+            data=resource, headers=headers)
+        return response
+
+    def _copy(self, filename, destination):
+        """Copy a file or folder to the repository.
+
+        Will mount if needed.
+
+        Args:
+            filename: Path to copy.
+            destination: Remote path to copy file to.
+        """
+        full_filename = os.path.abspath(os.path.expanduser(filename))
+
+        if os.path.isdir(full_filename):
+            shutil.copytree(full_filename, destination)
+        elif os.path.isfile(full_filename):
+            shutil.copyfile(full_filename, destination)
+
+    def delete(self, filename):
+        """Delete a file from the repository.
+
+        Args:
+            filename: String filename only (i.e. no path) of file to
+                delete. Will handle deleting scripts vs. packages
+                automatically.
+        """
+        folder = "Packages" if is_package(filename) else "Scripts"
+        path = os.path.join(self.connection["mount_point"], folder, filename)
+        # TODO: This will fail to del a migrated script.
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        elif os.path.isfile(path):
+            os.remove(path)
+
+    def exists(self, filename):
+        """Report whether a file exists on the distribution point.
+
+        Determines file type by extension.
+
+        Args:
+            filename: Filename you wish to check. (No path! e.g.:
+                "AdobeFlashPlayer-14.0.0.176.pkg")
+        """
+        if is_package(filename):
+            filepath = os.path.join(self.connection["mount_point"],
+                                    "Packages", filename)
+        else:
+            filepath = os.path.join(self.connection["mount_point"],
+                                    "Scripts", filename)
+        return os.path.exists(filepath)
+
+
+class LocalRepository(FileRepository):
+    required_attrs = {"mount_point", "share_name"}
+    def __init__(self, **connection_args):
+        """Set up Local file share.
+
+        If you have migrated your JSS, you need to pass a JSS object as
+        a keyword argument during repository setup, and the JSS object
+        needs the jss_migrated=True preference set.
+
+        Args:
+            connection_args: Dict with the following key/val pairs:
+                mount_point: Path to a valid mount point.
+                share_name: The fileshare's name.
+
+                Optional connection arguments (Migrated script support):
+                    jss: A JSS Object. NOTE: jss_migrated must be True
+                        for this to do anything.
+        """
+        super(LocalRepository, self).__init__(**connection_args)
+        self.connection["url"] = "local://%s" % self.connection["mount_point"]
+
+
+class MountedRepository(FileRepository):
     """Parent class for mountable file shares.
 
     Attributes:
@@ -95,10 +229,6 @@ class MountedRepository(Repository):
     def __init__(self, **connection_args):
         """Init a MountedRepository by calling super."""
         super(MountedRepository, self).__init__(**connection_args)
-
-    def _build_url(self):
-        """Build a connection URL."""
-        pass
 
     def mount(self):
         """Mount the repository."""
@@ -248,62 +378,18 @@ class MountedRepository(Repository):
 
         return tuple(results)
 
-    def copy_pkg(self, filename, _):
-        """Copy a package to the repo's Package subdirectory.
+    # def auto_mounter(original, *args, **kwargs):
+    def auto_mounter(original):
+        """Decorator for automatically mounting, if needed."""
+        def mounter(*args):
+            """If not mounted, mount."""
+            self = args[0]
+            if not self.is_mounted():
+                self.mount()
+            return original(*args)
+        return mounter
 
-        Args:
-            filename: Path for file to copy.
-            _: Ignored. Used for compatibility with JDS repos.
-        """
-        basename = os.path.basename(filename)
-        if not self.is_mounted():
-            self.mount()
-        self._copy(filename, os.path.join(self.connection["mount_point"],
-                                          "Packages", basename))
-
-    def copy_script(self, filename, id_=-1):
-        """Copy a script to the repo's Script subdirectory.
-
-        Scripts are copied as files to a path, or, on a "migrated" JSS,
-        are POSTed to the JSS (pass an id if you wish to associate
-        the script with an existing Script object).
-
-        Args:
-            filename: Path for file to copy.
-            id_: Int ID, used _only_ for migrated repos. Default is -1,
-                which creates a new Script.
-        """
-        if ("jss" in self.connection.keys() and
-                self.connection["jss"].jss_migrated):
-            self._copy_script_migrated(filename, id_, SCRIPT_FILE_TYPE)
-        else:
-            basename = os.path.basename(filename)
-            self._copy(filename, os.path.join(self.connection["mount_point"],
-                                              "Scripts", basename))
-
-    def _copy_script_migrated(self, filename, id_=-1,
-                              file_type=SCRIPT_FILE_TYPE):
-        """Upload a script to a migrated JSS's database.
-
-        On a "migrated" JSS, scripts are POSTed to the JSS. Pass an id
-        if you wish to associate the script with an existing Script
-        object, otherwise, it will create a new Script object.
-
-        Args:
-            filename: Path to script file.
-            id_: Int ID of Script object to associate this file with.
-                Default is -1, which creates a new Script.
-        """
-        basefname = os.path.basename(filename)
-
-        resource = open(filename, "rb")
-        headers = {"DESTINATION": "1", "OBJECT_ID": str(id_), "FILE_TYPE":
-                   file_type, "FILE_NAME": basefname}
-        response = self.connection["jss"].session.post(
-            url="%s/%s" % (self.connection["jss"].base_url, "dbfileupload"),
-            data=resource, headers=headers)
-        return response
-
+    @auto_mounter
     def _copy(self, filename, destination):
         """Copy a file or folder to the repository.
 
@@ -313,15 +399,9 @@ class MountedRepository(Repository):
             filename: Path to copy.
             destination: Remote path to copy file to.
         """
-        full_filename = os.path.abspath(os.path.expanduser(filename))
-        if not self.is_mounted():
-            self.mount()
+        super(MountedRepository, self)._copy(filename, destination)
 
-        if os.path.isdir(full_filename):
-            shutil.copytree(full_filename, destination)
-        elif os.path.isfile(full_filename):
-            shutil.copyfile(full_filename, destination)
-
+    @auto_mounter
     def delete(self, filename):
         """Delete a file from the repository.
 
@@ -330,16 +410,9 @@ class MountedRepository(Repository):
                 delete. Will handle deleting scripts vs. packages
                 automatically.
         """
-        if not self.is_mounted():
-            self.mount()
-        folder = "Packages" if is_package(filename) else "Scripts"
-        path = os.path.join(self.connection["mount_point"], folder, filename)
-        # TODO: This will fail to del a migrated script.
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-        elif os.path.isfile(path):
-            os.remove(path)
+        super(MountedRepository, self).delete(filename)
 
+    @auto_mounter
     def exists(self, filename):
         """Report whether a file exists on the distribution point.
 
@@ -349,15 +422,7 @@ class MountedRepository(Repository):
             filename: Filename you wish to check. (No path! e.g.:
                 "AdobeFlashPlayer-14.0.0.176.pkg")
         """
-        if is_package(filename):
-            filepath = os.path.join(self.connection["mount_point"],
-                                    "Packages", filename)
-        else:
-            filepath = os.path.join(self.connection["mount_point"],
-                                    "Scripts", filename)
-        if not self.is_mounted():
-            self.mount()
-        return os.path.exists(filepath)
+        return super(MountedRepository, self).exists(filename)
 
     def __repr__(self):
         """Return a formatted string of connection info."""

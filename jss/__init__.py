@@ -50,7 +50,7 @@ Private package contents include:
 
 from .casper import Casper
 from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
-                                 JDS, CDP)
+                                 JDS, CDP, LocalRepository)
 from .distribution_points import DistributionPoints
 from .exceptions import (
     JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,

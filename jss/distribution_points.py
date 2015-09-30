@@ -23,7 +23,7 @@ repositories, CDPs, and JDSs.
 import os
 
 from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
-                                 JDS, CDP)
+                                 JDS, CDP, LocalRepository)
 from .exceptions import JSSError
 from .tools import (is_osx, is_linux, is_package)
 
@@ -174,6 +174,11 @@ class DistributionPoints(object):
                     dpt = JDS(jss=self.jss)
                 elif repo.get("type") == "CDP":
                     dpt = CDP(jss=self.jss)
+                elif repo.get("type") == "Local":
+                    mount_point = repo["mount_point"]
+                    share_name = repo["share_name"]
+                    dpt = LocalRepository(mount_point=mount_point,
+                                          share_name=share_name, jss=self.jss)
                 else:
                     raise ValueError("Distribution Point Type not recognized.")
 
