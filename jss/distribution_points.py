@@ -42,8 +42,8 @@ class DistributionPoints(object):
     available methods, or in the same way. For example, a JDS has
     caveats to the reliability of the exists() method.
 
-    Support for AFP/SMB shares and JDS and CDP servers are included, and
-    are selected based on configuration files.
+    Support for Local repositories, AFP/SMB shares and JDS and CDP
+    servers are included, and are selected based on configuration files.
 
     This object can copy files to multiple repositories, avoiding the
     need to use Casper Admin to "Replicate" from one repository to
@@ -86,90 +86,10 @@ class DistributionPoints(object):
                     # Must be AFP or SMB.
                     # Use JSS.DistributionPoints information to
                     # automatically configure this DP.
-                    for dp_object in self.dp_info:
-                        if repo["name"] == dp_object.findtext("name"):
-                            url = dp_object.findtext("ip_address")
-                            connection_type = (
-                                dp_object.findtext("connection_type"))
-                            share_name = dp_object.findtext("share_name")
-                            domain = dp_object.findtext("workgroup_or_domain")
-                            port = dp_object.findtext("share_port")
-                            username = (
-                                dp_object.findtext("read_write_username"))
-                            password = repo.get("password")
-                            # Make very sure this password is unicode.
-                            if isinstance(password, str):
-                                password = unicode(password, "utf-8")
-
-                            if is_osx():
-                                mount_point = os.path.join("/Volumes",
-                                                           share_name)
-                            elif is_linux():
-                                mount_point = os.path.join("/mnt", share_name)
-                            else:
-                                raise JSSError("Unsupported OS.")
-
-                            # TODO: Refactor me.
-                            if connection_type == "AFP":
-                                dpt = AFPDistributionPoint(
-                                    url=url, port=port, share_name=share_name,
-                                    mount_point=mount_point, username=username,
-                                    password=password, jss=self.jss)
-                            elif connection_type == "SMB":
-                                dpt = SMBDistributionPoint(
-                                    url=url, port=port, share_name=share_name,
-                                    mount_point=mount_point, domain=domain,
-                                    username=username, password=password,
-                                    jss=self.jss)
-
-                            # No need to keep looping.
-                            break
-
+                    dpt = self._get_auto_configured_dp(repo)
                 # Handle Explictly declared DP's.
                 elif repo.get("type") in ["AFP", "SMB"]:
-                    url = repo["URL"]
-
-                    # If found, strip the scheme off the URL
-                    if "://" in url:
-                        url = url.split("://")[1]
-
-                    connection_type = repo["type"]
-                    share_name = repo["share_name"]
-
-                    # Domain is not used for AFP.
-                    domain = repo.get("domain")
-                    username = repo["username"]
-                    password = repo["password"]
-                    # Make very sure this password is unicode.
-                    if isinstance(password, str):
-                        password = unicode(password, "utf-8")
-
-                    if is_osx():
-                        mount_point = os.path.join("/Volumes", share_name)
-                    elif is_linux():
-                        mount_point = os.path.join("/mnt", share_name)
-                    else:
-                        raise JSSError("Unsupported OS.")
-
-                    # TODO: Refactor me.
-                    if connection_type == "AFP":
-
-                        # If port isn't given, assume it's the std of
-                        # 548.
-                        port = repo.get("port", "548")
-                        dpt = AFPDistributionPoint(
-                            url=url, port=port, share_name=share_name,
-                            mount_point=mount_point, username=username,
-                            password=password, jss=self.jss)
-                    elif connection_type == "SMB":
-                        # If port isn't given, assume it's the std of
-                        # 139.
-                        port = repo.get("port", "139")
-                        dpt = SMBDistributionPoint(
-                            url=url, port=port, share_name=share_name,
-                            mount_point=mount_point, domain=domain,
-                            username=username, password=password, jss=self.jss)
-
+                    dpt = self._get_explictly_configured_dp(repo)
                 elif repo.get("type") == "JDS":
                     dpt = JDS(jss=self.jss)
                 elif repo.get("type") == "CDP":
@@ -184,6 +104,88 @@ class DistributionPoints(object):
 
                 # Add the DP to the list.
                 self._children.append(dpt)
+
+    def _get_auto_configured_dp(self, repo):
+        "Return a file share DP from auto-configured data."""
+        for dp_object in self.dp_info:
+            if repo["name"] == dp_object.findtext("name"):
+                url = dp_object.findtext("ip_address")
+                connection_type = dp_object.findtext("connection_type")
+                share_name = dp_object.findtext("share_name")
+                domain = dp_object.findtext("workgroup_or_domain")
+                port = dp_object.findtext("share_port")
+                username = dp_object.findtext("read_write_username")
+                password = repo.get("password")
+                # Make very sure this password is unicode.
+                if isinstance(password, str):
+                    password = unicode(password, "utf-8")
+
+                if is_osx():
+                    mount_point = os.path.join("/Volumes", share_name)
+                elif is_linux():
+                    mount_point = os.path.join("/mnt", share_name)
+                else:
+                    raise JSSError("Unsupported OS.")
+
+                if connection_type == "AFP":
+                    dpt = AFPDistributionPoint(
+                        url=url, port=port, share_name=share_name,
+                        mount_point=mount_point, username=username,
+                        password=password, jss=self.jss)
+                elif connection_type == "SMB":
+                    dpt = SMBDistributionPoint(
+                        url=url, port=port, share_name=share_name,
+                        mount_point=mount_point, domain=domain,
+                        username=username, password=password,
+                        jss=self.jss)
+
+                return dpt
+
+    def _get_explictly_configured_dp(self, repo):
+        "Return a file share DP from auto-configured data."""
+        url = repo["URL"]
+
+        # If found, strip the scheme off the URL
+        if "://" in url:
+            url = url.split("://")[1]
+
+        connection_type = repo["type"]
+        share_name = repo["share_name"]
+
+        # Domain is not used for AFP.
+        domain = repo.get("domain")
+        username = repo["username"]
+        password = repo["password"]
+        # Make very sure this password is unicode.
+        if isinstance(password, str):
+            password = unicode(password, "utf-8")
+
+        if is_osx():
+            mount_point = os.path.join("/Volumes", share_name)
+        elif is_linux():
+            mount_point = os.path.join("/mnt", share_name)
+        else:
+            raise JSSError("Unsupported OS.")
+
+        if connection_type == "AFP":
+
+            # If port isn't given, assume it's the std of
+            # 548.
+            port = repo.get("port", "548")
+            dpt = AFPDistributionPoint(
+                url=url, port=port, share_name=share_name,
+                mount_point=mount_point, username=username, password=password,
+                jss=self.jss)
+        elif connection_type == "SMB":
+            # If port isn't given, assume it's the std of
+            # 139.
+            port = repo.get("port", "139")
+            dpt = SMBDistributionPoint(
+                url=url, port=port, share_name=share_name,
+                mount_point=mount_point, domain=domain, username=username,
+                password=password, jss=self.jss)
+
+        return dpt
 
     def add_distribution_point(self, distribution_point):
         """Add a distribution point to the list."""
