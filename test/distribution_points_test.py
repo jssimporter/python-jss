@@ -51,6 +51,7 @@ class TestDistributionPoints(object):
 
     def test_copying_pkg(self):
         filename = 'test/distribution_points_test.py.zip'
+        j_global.distribution_points.delete(os.path.basename(filename))
         j_global.distribution_points.copy(filename)
         assert_true(j_global.distribution_points.exists(os.path.basename(filename)))
         # This test leaves packages cluttering up the repo.

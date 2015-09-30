@@ -86,6 +86,7 @@ def error_handler(exception_cls, response):
     exception.status_code = response.status_code
     raise exception
 
+
 def loop_until_valid_response(prompt):
     """Loop over entering input until it is a valid bool-ish response.
 
