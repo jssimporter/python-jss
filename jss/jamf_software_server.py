@@ -722,16 +722,26 @@ class JSSObjectFactory(object):
                     raise TypeError
 
         if data is None:
-            return self._get_list(obj_class, data, subset)
+            return self.get_list(obj_class, data, subset)
         elif isinstance(data, (basestring, int)):
-            return self._get_individual_object(obj_class, data, subset)
+            return self.get_individual_object(obj_class, data, subset)
         elif isinstance(data, ElementTree.Element):
-            return self._get_new_object(obj_class, data)
+            return self.get_new_object(obj_class, data)
         else:
             raise ValueError
 
-    def _get_list(self, obj_class, data, subset):
-        """Perform a listing GET on object type."""
+    def get_list(self, obj_class, data, subset):
+        """Get a list of objects as JSSObjectList.
+
+        Args:
+            obj_class: The JSSObject subclass type to search for.
+            data: None
+            subset: Some objects support a subset for listing; namely
+                Computer, with subset="basic".
+
+        Returns:
+            JSSObjectList
+        """
         url = obj_class.get_url(data)
         if obj_class.can_list and obj_class.can_get:
             if (subset and len(subset) == 1 and subset[0].upper() ==
@@ -754,8 +764,34 @@ class JSSObjectFactory(object):
             raise JSSMethodNotAllowedError(
                 obj_class.__class__.__name__)
 
-    def _get_individual_object(self, obj_class, data, subset):
-        """GET an individual object."""
+    def get_individual_object(self, obj_class, data, subset):
+        """Return a JSSObject of type obj_class searched for by data.
+
+        Args:
+            obj_class: The JSSObject subclass type to search for.
+            data: The data parameter performs different operations
+                depending on the type passed.
+                int: Retrieve an object with ID of <data>.
+                str: Retrieve an object with name of <str>. For some
+                    objects, this may be overridden to include searching
+                    by other criteria. See those objects for more info.
+            subset:
+                A list of XML subelement tags to request (e.g.
+                ['general', 'purchasing']), OR an '&' delimited string
+                (e.g. 'general&purchasing'). This is not supported for
+                all JSSObjects.
+
+        Returns:
+            JSSObject: Returns an object of type obj_class.
+            (FUTURE) Will return None if nothing is found that match
+                the search criteria.
+
+        Raises:
+            TypeError: if subset not formatted properly.
+            JSSMethodNotAllowedError: if you try to perform an operation
+                not supported by that object type.
+            JSSGetError: If object searched for is not found.
+        """
         if obj_class.can_get:
             url = obj_class.get_url(data)
             if subset:
@@ -776,8 +812,22 @@ class JSSObjectFactory(object):
         else:
             raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
 
-    def _get_new_object(self, obj_class, data):
-        """Create a new object."""
+    def get_new_object(self, obj_class, data):
+        """Create a new object.
+
+        Args:
+            obj_class: The JSSObject subclass type to create.
+            data: xml.etree.ElementTree.Element; Create a new object
+                from xml.
+
+        Returns:
+            JSSObject: Returns an object of type obj_class.
+
+        Raises:
+            JSSMethodNotAllowedError: if you try to perform an operation
+                not supported by that object type.
+            JSSPostError: If attempted object creation fails.
+        """
         if obj_class.can_post:
             url = obj_class.get_post_url()
             return self.jss.post(obj_class, url, data)
