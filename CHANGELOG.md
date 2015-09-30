@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
-## [1.4.0] - 2015-08-19 - The Final Countdown
+## [1.4.0] - 2015-09-30 - The Final Countdown
 
 ### Added
 - Added retrieve method to `JSSListData`, making the retrieval of individual `JSSObjectList` elements more flexible.
