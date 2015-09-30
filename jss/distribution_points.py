@@ -211,10 +211,10 @@ class DistributionPoints(object):
         """
         for repo in self._children:
             if is_package(filename):
-                    copy_method = repo.copy_pkg
+                copy_method = repo.copy_pkg
             else:
-                    # All other file types can go to scripts.
-                    copy_method = repo.copy_script
+                # All other file types can go to scripts.
+                copy_method = repo.copy_script
             if pre_callback:
                 pre_callback(repo.connection)
             copy_method(filename, id_)
