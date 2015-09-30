@@ -35,6 +35,10 @@ from .tlsadapter import TLSAdapter
 from .tools import error_handler
 
 
+# Pylint wants us to store our many attributes in a dictionary.
+# However, to maintain backwards compatibility with the interface,
+# we can't do that.
+# pylint: disable=too-many-instance-attributes, too-many-public-methods
 class JSS(object):
     """Represents a JAMF Software Server, with object search methods.
 
@@ -54,6 +58,7 @@ class JSS(object):
         distribution_points: DistributionPoints
     """
 
+    # pylint: disable=too-many-arguments
     def __init__(self, jss_prefs=None, url=None, user=None, password=None,
                  repo_prefs=None, ssl_verify=True, verbose=False,
                  jss_migrated=False, suppress_warnings=False):
@@ -134,6 +139,8 @@ class JSS(object):
 
         self.factory = JSSObjectFactory(self)
         self.distribution_points = distribution_points.DistributionPoints(self)
+
+    # pylint: disable=too-many-arguments
 
     @property
     def _url(self):
@@ -659,6 +666,8 @@ class JSS(object):
 
     #pylint: enable=invalid-name
 
+
+# pylint: disable=too-many-instance-attributes, too-many-public-methods
 
 class JSSObjectFactory(object):
     """Create JSSObjects intelligently based on a single parameter.
