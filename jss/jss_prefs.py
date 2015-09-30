@@ -43,7 +43,7 @@ except ImportError as err:
         print "See README for information on this issue."
     import plistlib
 
-# pylint: disable=too-few-public-methods
+
 class JSSPrefs(object):
     """Object representing JSS credentials and configuration.
 
@@ -122,47 +122,51 @@ class JSSPrefs(object):
 
         self.preferences_file = os.path.expanduser(preferences_file)
         if os.path.exists(self.preferences_file):
-            # Try to open using FoundationPlist. If it's not available,
-            # fall back to plistlib and hope it's not binary encoded.
-
-            try:
-                prefs = FoundationPlist.readPlist(self.preferences_file)
-            except NameError:
-                try:
-                    prefs = plistlib.readPlist(self.preferences_file)
-                except ExpatError:
-                    # If we're on OSX, try to convert using another
-                    # tool.
-
-                    if is_osx():
-                        subprocess.call(
-                            ["plutil", "-convert", "xml1",
-                             self.preferences_file])
-                        prefs = plistlib.readPlist(self.preferences_file)
-
-            self.user = prefs.get("jss_user")
-            self.password = prefs.get("jss_pass")
-            self.url = prefs.get("jss_url")
-            if not all([self.user, self.password, self.url]):
-                raise JSSPrefsMissingKeyError("Please provide all required "
-                                              "preferences!")
-
-            # Optional file repository array. Defaults to empty list.
-            self.repos = []
-            for repo in prefs.get("repos", []):
-                self.repos.append(dict(repo))
-
-            self.verify = prefs.get("verify", True)
-            self.suppress_warnings = prefs.get("suppress_warnings", True)
+            self.parse_plist(self.preferences_file)
 
         else:
-            self.run_interactive_configuration()
+            self.configure()
             if not os.path.exists(self.preferences_file):
                 raise JSSPrefsMissingFileError("Preferences file not found!")
             else:
                 self.__init__()   # pylint: disable=non-parent-init-called
 
-    def run_interactive_configuration(self):
+    def parse_plist(self, preferences_file):
+        """Try to reset preferences from preference_file."""
+        preferences_file = os.path.expanduser(preferences_file)
+
+        # Try to open using FoundationPlist. If it's not available,
+        # fall back to plistlib and hope it's not binary encoded.
+        try:
+            prefs = FoundationPlist.readPlist(preferences_file)
+        except NameError:
+            try:
+                prefs = plistlib.readPlist(preferences_file)
+            except ExpatError:
+                # If we're on OSX, try to convert using another
+                # tool.
+                if is_osx():
+                    subprocess.call(["plutil", "-convert", "xml1",
+                                     preferences_file])
+                    prefs = plistlib.readPlist(preferences_file)
+
+        self.preferences_file = preferences_file
+        self.user = prefs.get("jss_user")
+        self.password = prefs.get("jss_pass")
+        self.url = prefs.get("jss_url")
+        if not all([self.user, self.password, self.url]):
+            raise JSSPrefsMissingKeyError("Please provide all required "
+                                          "preferences!")
+
+        # Optional file repository array. Defaults to empty list.
+        self.repos = []
+        for repo in prefs.get("repos", []):
+            self.repos.append(dict(repo))
+
+        self.verify = prefs.get("verify", True)
+        self.suppress_warnings = prefs.get("suppress_warnings", True)
+
+    def configure(self):
         """Prompt user for config and write to plist
 
         Uses preferences_file argument from JSSPrefs.__init__ as path
@@ -173,40 +177,33 @@ class JSSPrefs(object):
                "Please answer the following questions to generate a plist at "
                "%s for use with python-jss." % self.preferences_file)
 
-        url = raw_input("The complete URL to your JSS, with port (e.g. "
-                        "'https://mycasperserver.org:8443')\nURL: ")
-        url_key = ElementTree.SubElement(root, "key")
-        url_key.text = "jss_url"
-        url_string = ElementTree.SubElement(root, "string")
-        url_string.text = url
+        self.url = _get_user_input(
+            "The complete URL to your JSS, with port (e.g. "
+            "'https://mycasperserver.org:8443')\nURL: ", "jss_url", root)
 
-        user = raw_input("API Username: ")
-        user_key = ElementTree.SubElement(root, "key")
-        user_key.text = "jss_user"
-        user_string = ElementTree.SubElement(root, "string")
-        user_string.text = user
+        self.user = _get_user_input("API Username: ", "jss_user", root)
 
-        password = getpass.getpass("API User's Password: ")
-        password_key = ElementTree.SubElement(root, "key")
-        password_key.text = "jss_pass"
-        password_string = ElementTree.SubElement(root, "string")
-        password_string.text = password
+        self.password = _get_user_input("API User's Password: ", "jss_pass",
+                                        root, getpass.getpass)
 
         verify_prompt = ("Do you want to verify that traffic is encrypted by "
                          "a certificate that you trust?: (Y|N) ")
-        responses = {"Y": "true", "YES": "true", "N": "false", "NO": "false"}
-        verify = loop_until_valid_response(verify_prompt, responses)
-        verify_key = ElementTree.SubElement(root, "key")
-        verify_key.text = "verify"
-        ElementTree.SubElement(root, verify)
+        self.verify = _get_user_input(verify_prompt, "verify", root,
+                                      loop_until_valid_response)
 
-        repos = ElementTree.SubElement(root, "key")
-        repos.text = "repos"
+        self._handle_repos(root)
+
+        self._write_plist(root)
+        print "Preferences created.\n"
+
+    def _handle_repos(self, root):
+        """Handle repo configuration."""
+        ElementTree.SubElement(root, "key").text = "repos"
         repos_array = ElementTree.SubElement(root, "array")
 
         # Make a temporary jss object to try to pull repo information.
-        jss_server = JSS(url=url, user=user, password=password,
-                         ssl_verify=False, suppress_warnings=True)
+        jss_server = JSS(url=self.url, user=self.user, password=self.password,
+                         ssl_verify=self.verify, suppress_warnings=True)
         print "Fetching distribution point info..."
         try:
             dpts = jss_server.DistributionPoint()
@@ -241,6 +238,8 @@ class JSSPrefs(object):
         _handle_dist_server("JDS", repos_array)
         _handle_dist_server("CDP", repos_array)
 
+    def _write_plist(self, root):
+        """Write plist file based on our generated tree."""
         # prettify the XML
         indent_xml(root)
 
@@ -253,15 +252,26 @@ class JSSPrefs(object):
                 "<plist version=\"1.0\">\n")
             tree.write(prefs_file, xml_declaration=False, encoding="utf-8")
             prefs_file.write("</plist>")
-        print "Preferences created.\n"
+
+
+def _get_user_input(prompt, key_name, parent, input_func=raw_input):
+    """Prompt the user for a value, and assign it to key_name."""
+    val = input_func(prompt)
+    ElementTree.SubElement(parent, "key").text = key_name
+    if isinstance(val, bool):
+        string_val = "true" if val else "false"
+        ElementTree.SubElement(parent, string_val)
+    else:
+        ElementTree.SubElement(parent, "string").text = val
+    return val
+
 
 def _handle_dist_server(ds_type, repos_array):
     """Ask user for whether to use a type of dist server."""
     if ds_type not in ("JDS", "CDP"):
         raise ValueError("Must be JDS or CDP")
     prompt = "Does your JSS use a %s? (Y|N): " % ds_type
-    responses = {"Y": True, "YES": True, "N": False, "NO": False}
-    result = loop_until_valid_response(prompt, responses)
+    result = loop_until_valid_response(prompt)
 
     if result:
         repo_dict = ElementTree.SubElement(repos_array, "dict")

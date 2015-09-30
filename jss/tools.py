@@ -86,24 +86,22 @@ def error_handler(exception_cls, response):
     exception.status_code = response.status_code
     raise exception
 
-def loop_until_valid_response(prompt, valid_responses):
-    """Ask user to enter input until it is considered valid.
+def loop_until_valid_response(prompt):
+    """Loop over entering input until it is a valid bool-ish response.
 
     Args:
-        prompt: String to display as a prompt.
-        valid_responses: Dict of valid responses.
-            Keys: String, all uppercase, of valid input. Input will be
-                compared after upper-casing.
-            Vals: Result value to return
+        prompt: Text presented to user.
 
     Returns:
-        The value of the selected key.
+        The bool value equivalent of what was entered.
     """
+    responses = {"Y": True, "YES": True, "TRUE": True,
+                 "N": False, "NO": False, "FALSE": False}
     response = ""
-    while response.upper() not in valid_responses:
+    while response.upper() not in responses:
         response = raw_input(prompt)
 
-    return valid_responses[response.upper()]
+    return responses[response.upper()]
 
 
 def indent_xml(elem, level=0, more_sibs=False):
