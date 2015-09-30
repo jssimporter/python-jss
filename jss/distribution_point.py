@@ -45,6 +45,18 @@ IN_HOUSE_APP_FILE_TYPE = 2
 SCRIPT_FILE_TYPE = 3
 
 
+def auto_mounter(original):
+    """Decorator for automatically mounting, if needed."""
+    def mounter(*args):
+        """If not mounted, mount."""
+        self = args[0]
+        if not self.is_mounted():
+            self.mount()
+        return original(*args)
+    return mounter
+
+
+# pylint: disable=too-few-public-methods
 class Repository(object):
     """Base class for file repositories.
 
@@ -83,6 +95,7 @@ class Repository(object):
         raise NotImplementedError
 
 
+# pylint: enable=too-few-public-methods
 
 class FileRepository(Repository):
     """Local file shares."""
@@ -145,7 +158,7 @@ class FileRepository(Repository):
             data=resource, headers=headers)
         return response
 
-    def _copy(self, filename, destination):
+    def _copy(self, filename, destination):   # pylint: disable=no-self-use
         """Copy a file or folder to the repository.
 
         Will mount if needed.
@@ -164,6 +177,9 @@ class FileRepository(Repository):
     def delete(self, filename):
         """Delete a file from the repository.
 
+        This method will not delete a script from a migrated JSS.
+        Please remove migrated scripts with jss.Script.delete.
+
         Args:
             filename: String filename only (i.e. no path) of file to
                 delete. Will handle deleting scripts vs. packages
@@ -171,7 +187,6 @@ class FileRepository(Repository):
         """
         folder = "Packages" if is_package(filename) else "Scripts"
         path = os.path.join(self.connection["mount_point"], folder, filename)
-        # TODO: This will fail to del a migrated script.
         if os.path.isdir(path):
             shutil.rmtree(path)
         elif os.path.isfile(path):
@@ -196,7 +211,9 @@ class FileRepository(Repository):
 
 
 class LocalRepository(FileRepository):
+    """Casper repo located on a local filesystem path."""
     required_attrs = {"mount_point", "share_name"}
+
     def __init__(self, **connection_args):
         """Set up Local file share.
 
@@ -377,17 +394,6 @@ class MountedRepository(FileRepository):
         results.add(join("%s:%s" % (fqdn, port), share_name))
 
         return tuple(results)
-
-    # def auto_mounter(original, *args, **kwargs):
-    def auto_mounter(original):
-        """Decorator for automatically mounting, if needed."""
-        def mounter(*args):
-            """If not mounted, mount."""
-            self = args[0]
-            if not self.is_mounted():
-                self.mount()
-            return original(*args)
-        return mounter
 
     @auto_mounter
     def _copy(self, filename, destination):
@@ -742,7 +748,6 @@ class DistributionServer(Repository):
         Also, this may be slow, as it needs to retrieve the complete
         list of packages from the server.
         """
-        # TODO: Should we use it anyway?
         # Technically, the results of the casper.jxml page list the
         # package files on the server. This is an undocumented
         # interface, however.
