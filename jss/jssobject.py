@@ -19,6 +19,7 @@ Base Classes representing JSS database objects and their API endpoints
 """
 
 
+import cPickle
 import os
 from xml.etree import ElementTree
 
@@ -500,6 +501,38 @@ class JSSObject(ElementTree.Element):
     def to_string(self):
         """Return indented object XML as string."""
         return self.__repr__()
+
+    def pickle(self, path):
+        """Write object to python pickle.
+
+        Pickling is Python's method for serializing/deserializing
+        Python objects. This allows you to save a fully functional
+        JSSObject to disk, and then load it later, without having to
+        retrieve it from the JSS.
+
+        Args:
+            path: String file path to the file you wish to (over)write.
+                Path will have ~ expanded prior to opening.
+        """
+        with open(os.path.expanduser(path), "wb") as pickle:
+            cPickle.Pickler(pickle, cPickle.HIGHEST_PROTOCOL).dump(self)
+
+    @classmethod
+    def from_pickle(cls, path):
+        """Load object from pickle file.
+
+        Pickling is Python's method for serializing/deserializing
+        Python objects. This allows you to save a fully functional
+        JSSObject to disk, and then load it later, without having to
+        retrieve it from the JSS.
+
+        Args:
+            path: String file path to the file you wish to load from.
+                Path will have ~ expanded prior to opening.
+        """
+        with open(os.path.expanduser(path), "rb") as pickle:
+            return cPickle.Unpickler(pickle).load()
+
 
 class JSSContainerObject(JSSObject):
     """Subclass for types which can contain lists of other objects.
