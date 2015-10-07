@@ -21,6 +21,8 @@ JSS.
 
 
 from collections import MutableMapping
+import cPickle
+import os
 
 
 class JSSListData(MutableMapping):
@@ -165,5 +167,44 @@ class JSSObjectList(list):
         get_object = self.factory.get_object
         obj_class = self.obj_class
 
-        return [get_object(obj_class, list_obj.id, subset)
-                for list_obj in self]
+        full_objects = [get_object(obj_class, list_obj.id, subset) for list_obj
+                        in self]
+        return JSSObjectList(self.factory, obj_class, full_objects)
+
+    def pickle(self, path):
+        """Write objects to python pickle.
+
+        Pickling is Python's method for serializing/deserializing
+        Python objects. This allows you to save a fully functional
+        JSSObject to disk, and then load it later, without having to
+        retrieve it from the JSS.
+
+        This method will pickle each item as it's current type; so
+        JSSListData objects will be serialized as JSSListData, and
+        JSSObjects as JSSObjects. If you want full data, do:
+            my_list.retrieve_all().pickle("filename")
+
+        Args:
+            path: String file path to the file you wish to (over)write.
+                Path will have ~ expanded prior to opening.
+        """
+        with open(os.path.expanduser(path), "wb") as pickle:
+            cPickle.Pickler(pickle, cPickle.HIGHEST_PROTOCOL).dump(self)
+
+    @classmethod
+    def from_pickle(cls, path):
+        """Load objects from pickle file.
+
+        Pickling is Python's method for serializing/deserializing
+        Python objects. This allows you to save a fully functional
+        JSSObject to disk, and then load it later, without having to
+        retrieve it from the JSS.
+
+        This method loads up a JSSObjectList from a pickle file.
+
+        Args:
+            path: String file path to the file you wish to load from.
+                Path will have ~ expanded prior to opening.
+        """
+        with open(os.path.expanduser(path), "rb") as pickle:
+            return cPickle.Unpickler(pickle).load()
