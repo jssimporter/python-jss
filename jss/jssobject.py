@@ -19,6 +19,7 @@ Base Classes representing JSS database objects and their API endpoints
 """
 
 
+import os
 from xml.etree import ElementTree
 
 from .exceptions import (JSSUnsupportedSearchMethodError,
@@ -486,6 +487,14 @@ class JSSObject(ElementTree.Element):
         root = ElementTree.fromstring(xml_string)
         return cls(jss, root)
 
+    def to_file(self, path):
+        """Write object XML to path."""
+        with open(os.path.expanduser(path), "w") as ofile:
+            ofile.write(self.__repr__())
+
+    def to_string(self):
+        """Return indented object XML as string."""
+        return self.__repr__()
 
 class JSSContainerObject(JSSObject):
     """Subclass for types which can contain lists of other objects.
