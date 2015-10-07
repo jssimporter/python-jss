@@ -6,8 +6,12 @@ All notable changes to this project will be documented in this file. This projec
 ## [Unreleased][unreleased]
 
 ### Added
-- Added `JSSObject.to_string` and `JSSObject.to_file` methods to JSSObject.
-- Added `JSSObject.pickle` and `JSSObject.from_pickle` methods to JSSObject.
+- Added `JSSObject.to_string` and `JSSObject.to_file` methods.
+- Added `JSSObject.pickle` and `JSSObject.from_pickle` methods.
+- Added `JSSObjectList.pickle` and `JSSObjectList.from_pickle`.
+
+### Changed
+- `JSSObjectList.retrieve_all` now returns a `JSSObjectList` instead of a list. This is to support being able to pickle/unpickle the contained objects all at once.
 
 ## [1.4.0] - 2015-09-30 - The Final Countdown
 
