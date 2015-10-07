@@ -488,7 +488,12 @@ class JSSObject(ElementTree.Element):
         return cls(jss, root)
 
     def to_file(self, path):
-        """Write object XML to path."""
+        """Write object XML to path.
+
+        Args:
+            path: String file path to the file you wish to (over)write.
+                Path will have ~ expanded prior to opening.
+        """
         with open(os.path.expanduser(path), "w") as ofile:
             ofile.write(self.__repr__())
 
