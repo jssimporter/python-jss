@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Added
 - Added `JSSObject.to_string` and `JSSObject.to_file` methods to JSSObject.
+- Added `JSSObject.pickle` and `JSSObject.from_pickle` methods to JSSObject.
 
 ## [1.4.0] - 2015-09-30 - The Final Countdown
 
