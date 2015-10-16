@@ -485,7 +485,7 @@ class JSSObject(ElementTree.Element):
             jss: A JSS object.
             xml_string: String XML file data used to create object.
         """
-        root = ElementTree.fromstring(xml_string)
+        root = ElementTree.fromstring(xml_string.encode('utf-8'))
         return cls(jss, root)
 
     def to_file(self, path):
