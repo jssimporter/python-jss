@@ -479,7 +479,7 @@ class JSSObject(ElementTree.Element):
 
     @classmethod
     def from_string(cls, jss, xml_string):
-        """Creates a new JSSObject from an XML string.
+        """Creates a new JSSObject from an UTF-8 XML string.
 
         Args:
             jss: A JSS object.
