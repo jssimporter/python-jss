@@ -648,6 +648,7 @@ class PeripheralType(JSSContainerObject):
 class Policy(JSSContainerObject):
     _url = "/policies"
     list_type = "policy"
+    search_types = {"name": "/name/", "category": "/category/"}
     _name_path = "general/name"
     data_keys = {
         "general": {
