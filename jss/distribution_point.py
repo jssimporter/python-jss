@@ -583,7 +583,7 @@ class SMBDistributionPoint(MountedRepository):
     def _mount(self):
         """Mount based on which OS is running."""
         # mount -t cifs -o \
-        # username=<user>,password=<password>,domain=<domain>,port=139 \
+        # username=<user>,password=<password>,domain=<domain>,port=445 \
         # //server/share /mnt/<mountpoint>
         if is_osx():
             if mount_share:
