@@ -178,8 +178,8 @@ class DistributionPoints(object):
                 jss=self.jss)
         elif connection_type == "SMB":
             # If port isn't given, assume it's the std of
-            # 139.
-            port = repo.get("port", "139")
+            # 445.
+            port = repo.get("port", "445")
             dpt = SMBDistributionPoint(
                 url=url, port=port, share_name=share_name,
                 mount_point=mount_point, domain=domain, username=username,
