@@ -101,7 +101,8 @@ class JSSObjectList(list):
             factory: A JSSObjectFactory for managing object construction
                 in the event one of the retrieval methods is used.
             obj_class: A JSSObject class (e.g. jss.Computer) that the
-                list contains.
+                list contains, or None, if you are providing the full
+                    objects.
             objects: A list of JSSListData objects (incomplete data
                 about a JSSObject, as returned by the JSS from a listing
                 request).
@@ -113,24 +114,31 @@ class JSSObjectList(list):
     def __repr__(self):
         """Make data human readable."""
         # Note: Large lists/objects may take a long time to indent!
-        max_key_width = max([len(key) for obj in self for key in obj])
-        list_index = "List index"
-        if max_key_width < len(list_index):
-            max_key_width = len(list_index)
-        max_val_width = max([len(unicode(val)) for obj in self for val in
-                             obj.values()])
-        max_width = max_key_width + max_val_width + 2
-        delimeter = max_width * "-"
-        output = [delimeter]
-        for obj in self:
-            output.append("{:>{max_key}}: {:>{max_val}}".format(
-                list_index, self.index(obj), max_key=max_key_width,
-                max_val=max_val_width))
-            for key, val in obj.items():
-                output.append(u"{:>{max_key}}: {:>{max_val}}".format(
-                    key, val, max_key=max_key_width, max_val=max_val_width))
-            output.append(delimeter)
-        return "\n".join(output).encode("utf-8")
+        if self and all([isinstance(item, JSSListData) for item in self]):
+            max_key_width = max([len(key) for obj in self for key in obj])
+            list_index = "List index"
+            if max_key_width < len(list_index):
+                max_key_width = len(list_index)
+            max_val_width = max([len(unicode(val)) for obj in self for val in
+                                obj.values()])
+            max_width = max_key_width + max_val_width + 2
+            delimeter = max_width * "-"
+            output = [delimeter]
+            for obj in self:
+                output.append("{:>{max_key}}: {:>{max_val}}".format(
+                    list_index, self.index(obj), max_key=max_key_width,
+                    max_val=max_val_width))
+                for key, val in obj.items():
+                    output.append(u"{:>{max_key}}: {:>{max_val}}".format(
+                        key, val, max_key=max_key_width,
+                        max_val=max_val_width))
+                output.append(delimeter)
+            return "\n".join(output).encode("utf-8")
+        else:
+            output = []
+            for item in self:
+                output.append(item.__repr__())
+            return "[\n%s]" % ",\n".join(output)
 
     def sort(self):
         """Sort list elements by ID."""
