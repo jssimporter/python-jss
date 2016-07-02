@@ -20,6 +20,8 @@ as JSSObjects.
 """
 
 
+import cPickle
+import os
 import re
 from urllib import quote
 from xml.etree import ElementTree
@@ -29,6 +31,7 @@ import requests
 from . import distribution_points
 from .exceptions import (JSSGetError, JSSPutError, JSSPostError,
                          JSSDeleteError, JSSMethodNotAllowedError)
+from .jssobject import JSSFlatObject
 from . import jssobjects
 from .jssobjectlist import (JSSObjectList, JSSListData)
 from .tlsadapter import TLSAdapter
@@ -346,6 +349,137 @@ class JSS(object):
         return dec
 
     #pylint: disable=invalid-name
+
+    def pickle_all(self, path):
+        """Back up entire JSS to a Python Pickle.
+
+        For each object type, retrieve all objects, and then pickle
+        the entire smorgasbord. This will almost certainly take a long
+        time!
+
+        Pickling is Python's method for serializing/deserializing
+        Python objects. This allows you to save a fully functional
+        JSSObject to disk, and then load it later, without having to
+        retrieve it from the JSS.
+
+        Args:
+            path: String file path to the file you wish to (over)write.
+                Path will have ~ expanded prior to opening.
+        """
+        all_search_methods = [(name, self.__getattribute__(name)) for name in
+                              dir(self) if name[0].isupper()]
+        # all_search_methods = [("Account", self.__getattribute__("Account")), ("Package", self.__getattribute__("Package"))]
+        all_objects = {}
+        for method in all_search_methods:
+            result = method[1]()
+            if isinstance(result, JSSFlatObject):
+                all_objects[method[0]] = result
+            else:
+                try:
+                    all_objects[method[0]] = result.retrieve_all()
+                except JSSGetError:
+                    # A failure to get means the object type has zero
+                    # results.
+                    print method[0], " has no results! (GETERRROR)"
+                    all_objects[method[0]] = []
+        # all_objects = {method[0]: method[1]().retrieve_all()
+        #                for method in all_search_methods}
+        with open(os.path.expanduser(path), "wb") as pickle:
+            cPickle.Pickler(pickle, cPickle.HIGHEST_PROTOCOL).dump(all_objects)
+
+    def from_pickle(cls, path):
+        """Load all objects from pickle file and return as dict.
+
+        The dict returned will have keys named the same as the
+        JSSObject classes contained, and the values will be
+        JSSObjectLists of all full objects of that class (for example,
+        the equivalent of my_jss.Computer().retrieve_all()).
+
+        This method can potentially take a very long time!
+
+        Pickling is Python's method for serializing/deserializing
+        Python objects. This allows you to save a fully functional
+        JSSObject to disk, and then load it later, without having to
+        retrieve it from the JSS.
+
+        Args:
+            path: String file path to the file you wish to load from.
+                Path will have ~ expanded prior to opening.
+        """
+        with open(os.path.expanduser(path), "rb") as pickle:
+            return cPickle.Unpickler(pickle).load()
+
+    def write_all(self, path):
+        """Back up entire JSS to XML file.
+
+        For each object type, retrieve all objects, and then pickle
+        the entire smorgasbord. This will almost certainly take a long
+        time!
+
+        Pickling is Python's method for serializing/deserializing
+        Python objects. This allows you to save a fully functional
+        JSSObject to disk, and then load it later, without having to
+        retrieve it from the JSS.
+
+        Args:
+            path: String file path to the file you wish to (over)write.
+                Path will have ~ expanded prior to opening.
+        """
+        all_search_methods = [(name, self.__getattribute__(name)) for name in
+                              dir(self) if name[0].isupper()]
+        # all_search_methods = [("Account", self.__getattribute__("Account")), ("Package", self.__getattribute__("Package"))]
+        all_objects = {}
+        for method in all_search_methods:
+            result = method[1]()
+            if isinstance(result, JSSFlatObject):
+                all_objects[method[0]] = result
+            else:
+                try:
+                    all_objects[method[0]] = result.retrieve_all()
+                except JSSGetError:
+                    # A failure to get means the object type has zero
+                    # results.
+                    print method[0], " has no results! (GETERRROR)"
+                    all_objects[method[0]] = []
+        # all_objects = {method[0]: method[1]().retrieve_all()
+        #                for method in all_search_methods}
+        with open(os.path.expanduser(path), "w") as ofile:
+            root = ElementTree.Element("JSS")
+            for obj_type, objects in all_objects.items():
+                if objects is not None:
+                    sub_element = ElementTree.SubElement(root, obj_type)
+                    sub_element.extend(objects)
+
+            et = ElementTree.ElementTree(root)
+            et.write(ofile, encoding="utf-8")
+
+    def load_from_xml(self, path):
+        """Load all objects from XML file and return as dict.
+
+        The dict returned will have keys named the same as the
+        JSSObject classes contained, and the values will be
+        JSSObjectLists of all full objects of that class (for example,
+        the equivalent of my_jss.Computer().retrieve_all()).
+
+        This method can potentially take a very long time!
+
+        Args:
+            path: String file path to the file you wish to load from.
+                Path will have ~ expanded prior to opening.
+        """
+        with open(os.path.expanduser(path), "r") as ifile:
+            et = ElementTree.parse(ifile)
+
+        root = et.getroot()
+
+        all_objects = {}
+        for child in root:
+            obj_type = self.__getattribute__(child.tag)
+            objects = [obj_type(obj) for obj in child]
+            all_objects[child.tag] = JSSObjectList(self.factory, None, objects)
+
+        return all_objects
+
     @_docstring_parameter(jssobjects.Account)
     def Account(self, data=None):
         """{dynamic_docstring}"""
@@ -837,11 +971,12 @@ class JSSObjectFactory(object):
                 not supported by that object type.
             JSSPostError: If attempted object creation fails.
         """
-        if obj_class.can_post:
-            url = obj_class.get_post_url()
-            return self.jss.post(obj_class, url, data)
-        else:
-            raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
+        # if obj_class.can_post:
+        #     url = obj_class.get_post_url()
+        #     return self.jss.post(obj_class, url, data)
+        return obj_class(self.jss, data)
+        # else:
+        #     raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
 
     def _build_jss_object_list(self, response, obj_class):
         """Build a JSSListData object from response."""
