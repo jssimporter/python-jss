@@ -479,13 +479,13 @@ class JSSObject(ElementTree.Element):
 
     @classmethod
     def from_string(cls, jss, xml_string):
-        """Creates a new JSSObject from an XML string.
+        """Creates a new JSSObject from an UTF-8 XML string.
 
         Args:
             jss: A JSS object.
             xml_string: String XML file data used to create object.
         """
-        root = ElementTree.fromstring(xml_string)
+        root = ElementTree.fromstring(xml_string.encode('utf-8'))
         return cls(jss, root)
 
     def to_file(self, path):

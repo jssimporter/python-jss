@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Changed
 - `JSSObjectList.retrieve_all` now returns a `JSSObjectList` instead of a list. This is to support being able to pickle/unpickle the contained objects all at once.
+- `JSSObject.from_string` encodes input to utf-8 now. ElementTree.fromstring doesn't accept unicode, so anything outside of ascii throws an exception.
 
 ## [1.4.0] - 2015-09-30 - The Final Countdown
 
