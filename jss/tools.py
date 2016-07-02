@@ -46,6 +46,8 @@ def is_package(filename):
     Args:
         filename: String filename with no path.
     """
+    # TODO: Possible rewording
+    # return filename.upper().endswith(tuple(PKG_TYPES))
     return os.path.splitext(filename)[1].upper() in PKG_TYPES
 
 
