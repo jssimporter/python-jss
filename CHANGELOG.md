@@ -9,10 +9,15 @@ All notable changes to this project will be documented in this file. This projec
 - Added `JSSObject.to_string` and `JSSObject.to_file` methods to JSSObject.
 - Added `JSSObject.pickle` and `JSSObject.from_pickle` methods.
 - Added `JSSObjectList.pickle` and `JSSObjectList.from_pickle`.
+- Added category search to `Policy`. (#50 Thanks @jlrgraham)
 
 ### Changed
 - `JSSObjectList.retrieve_all` now returns a `JSSObjectList` instead of a list. This is to support being able to pickle/unpickle the contained objects all at once.
-- `JSSObject.from_string` encodes input to utf-8 now. ElementTree.fromstring doesn't accept unicode, so anything outside of ascii throws an exception.
+- `JSSObject.from_string` encodes input to utf-8 now. ElementTree.fromstring doesn't accept unicode, so anything outside of ascii throws an exception. (#44 Thanks @systemheld!)
+- SMB now defaults to port 445 (#51 #53 Thanks @ChrOst)
+
+### Fixed
+- Fix file type constants in `distribution_point.py` to satisfy Requests' requirement for string-type headers (#55 thanks @ftiff!)
 
 ## [1.4.0] - 2015-09-30 - The Final Countdown
 
