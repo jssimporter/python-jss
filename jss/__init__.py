@@ -82,4 +82,4 @@ from .jss_prefs import JSSPrefs
 from .tools import is_osx, is_linux
 
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
