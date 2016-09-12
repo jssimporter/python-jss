@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [1.5.0] - 2016-09-12 - Brick House
+
 ### Added
 - Added optional `action` argument to `Policy.add_package`. Now you can specify that you want to "Cache", "Install Cached", or "Install". Uses "Install" by default. (#48)
 - Added `CommandFlush` object (new endpoint in JSS API).
@@ -561,7 +563,8 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 - Initial release.
 
 
-[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.4.0...HEAD
+[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/sheagcraig/python-jss/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/sheagcraig/python-jss/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/sheagcraig/python-jss/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/sheagcraig/python-jss/compare/v1.2.0...v1.2.1
