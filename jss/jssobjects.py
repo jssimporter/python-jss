@@ -150,8 +150,33 @@ class CommandFlush(JSSObject):
             data = ElementTree.tostring(data)
         response = self.delete(data)
 
-    def command_flush_for(self, id_type, command_id):
-        pass
+    def command_flush_for(self, id_type, command_id, status):
+        """Flush commands for an individual device.
+
+        Args:
+            id_type (str): One of 'computers', 'computergroups',
+                'mobiledevices', or 'mobiledevicegroups'.
+            id_value (str, int, list): ID value(s) for the devices to
+                flush. More than one device should be passed as IDs
+                in a list or tuple.
+            status (str): One of 'Pending', 'Failed', 'Pending+Failed'.
+
+        Raises:
+            JSSDeleteError if provided url_path has a >= 400 response.
+        """
+        id_types = ('computers', 'computergroups', 'mobiledevices',
+                    'mobiledevicegroups')
+        status_types = ('Pending', 'Failed', 'Pending+Failed')
+        if id_type not in id_types or status not in status_types:
+            raise ValueError("Invalid arguments.")
+
+        if isinstance(command_id, list):
+            command_id = ",".join(str(item) for item in command_id)
+
+        flush_url = "{}/{}/id/{}/status/{}".format(
+            self.url, id_type, command_id, status)
+
+        self.jss.delete(flush_url)
 
 
 class Computer(JSSDeviceObject):
