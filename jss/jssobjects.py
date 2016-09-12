@@ -26,9 +26,10 @@ from xml.etree import ElementTree
 import requests
 
 from .exceptions import (JSSMethodNotAllowedError, JSSPostError,
-                         JSSFileUploadParameterError, JSSGetError)
+                         JSSFileUploadParameterError, JSSGetError,
+                         JSSDeleteError)
 from .jssobject import (JSSContainerObject, JSSFlatObject,
-                        JSSGroupObject, JSSDeviceObject)
+                        JSSGroupObject, JSSDeviceObject, JSSObject)
 from .tools import error_handler
 
 
@@ -86,6 +87,8 @@ class BYOProfile(JSSContainerObject):
     list_type = "byoprofiles"
     can_delete = False
     can_post = False
+    search_types = {"sitename": "/site/name/", "siteid": "/site/id/",
+                    "name": "/name/"}
 
 
 class Category(JSSContainerObject):
@@ -95,6 +98,60 @@ class Category(JSSContainerObject):
 
 class Class(JSSContainerObject):
     _url = "/classes"
+
+
+class CommandFlush(JSSObject):
+    _url = "/commandflush"
+    can_list = False
+    can_get = False
+    can_put = False
+    can_post = False
+
+    def __init__(self, jss):
+        """Initialize a new CommandFlush
+
+        Args:
+            jss: JSS object.
+        """
+        self.jss = jss
+
+    @property
+    def url(self):
+        """Return the path subcomponent of the url to this object."""
+        return self._url
+
+    def command_flush_with_xml(self, data):
+        """Flush commands for devices with a supplied xml string.
+
+        From the Casper API docs:
+        Status and devices specified in an XML file. Id lists may be
+        specified for <computers>, <computer_groups>, <mobile_devices>,
+        <mobile_device_groups>. Sample file:
+            <commandflush>
+              <status>Pending+Failed</status>
+              <mobile_devices>
+                <mobile_device>
+                  <id>1</id>
+                </mobile_device>
+                <mobile_device>
+                  <id>2</id>
+                </mobile_device>
+              </mobile_devices>
+            </commandflush>
+
+        Args:
+            data (string): XML string following the above structure or
+                an ElementTree/Element.
+
+        Raises:
+            JSSDeleteError if provided url_path has a >= 400 response.
+        """
+        if not isinstance(data, basestring):
+            data = ElementTree.tostring(data)
+        response = self.delete(data)
+
+    def command_flush_for(self, id_type, command_id):
+        pass
 
 
 class Computer(JSSDeviceObject):

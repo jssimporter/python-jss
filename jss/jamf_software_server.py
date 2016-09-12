@@ -289,7 +289,7 @@ class JSS(object):
         elif response.status_code >= 400:
             error_handler(JSSPutError, response)
 
-    def delete(self, url_path):
+    def delete(self, url_path, data=None):
         """Delete an object from the JSS.
 
         In general, it is better to use a higher level interface for
@@ -303,7 +303,10 @@ class JSS(object):
             JSSDeleteError if provided url_path has a >= 400 response.
         """
         request_url = "%s%s" % (self._url, url_path)
-        response = self.session.delete(request_url)
+        if data:
+            response = self.session.delete(request_url, data=data)
+        else:
+            response = self.session.delete(request_url)
 
         if response.status_code == 200 and self.verbose:
             print "DEL %s: Success." % request_url

@@ -298,11 +298,14 @@ class JSSObject(ElementTree.Element):
         """
         return self.url
 
-    def delete(self):
+    def delete(self, data=None):
         """Delete this object from the JSS."""
         if not self.can_delete:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
-        self.jss.delete(self.url)
+        if data:
+            self.jss.delete(self.url, data)
+        else:
+            self.jss.delete(self.url)
 
     def save(self):
         """Update or create a new object on the JSS.

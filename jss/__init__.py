@@ -63,7 +63,7 @@ from .jssobjectlist import JSSObjectList
 from .jssobjects import (
     Account, AccountGroup, ActivationCode, AdvancedComputerSearch,
     AdvancedMobileDeviceSearch, AdvancedUserSearch, Building, BYOProfile,
-    Category, Class, Computer, ComputerCheckIn, ComputerCommand,
+    Category, Class, CommandFlush, Computer, ComputerCheckIn, ComputerCommand,
     ComputerConfiguration, ComputerExtensionAttribute, ComputerGroup,
     ComputerInventoryCollection, ComputerInvitation, ComputerReport,
     Department, DirectoryBinding, DiskEncryptionConfiguration,
