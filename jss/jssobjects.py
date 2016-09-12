@@ -598,7 +598,12 @@ class LogFlush(JSSObject):
                         "Year". e.g. ("Three+Months")
                         Please note: The documentation for this
                         specifies the singular form (e.g. "Month"),
-                        and plural ("Months") at different times.
+                        and plural ("Months") at different times, and
+                        further the construction is listed as
+                        "THREE MONTHS" elsewhere. Limited testing
+                        indicates that pluralization does not matter,
+                        nor does capitalization. The "+" seems optional
+                        as well.
                         Please test!
                     Device Arrays:
                         Again, acceptable values are not listed in the
@@ -625,6 +630,8 @@ class LogFlush(JSSObject):
                 specifies the singular form (e.g. "Month"), and plural
                 ("Months") at different times, and further the
                 construction is listed as "THREE MONTHS" elsewhere.
+                Limited testing indicates that pluralization does not
+                matter, nor does capitalization.
                 Please test!
 
                 No validation is performed on this prior to the request
@@ -635,6 +642,10 @@ class LogFlush(JSSObject):
         """
         if not log_type:
             log_type = "policies"
+
+        # The XML for the /logflush basic endpoint allows spaces
+        # instead of "+", so do a replace here just in case.
+        interval = interval.replace(" ", "+")
 
         flush_url = "{}/{}/interval/{}".format(
             self.url, log_type, interval)
@@ -658,6 +669,8 @@ class LogFlush(JSSObject):
                 specifies the singular form (e.g. "Month"), and plural
                 ("Months") at different times, and further the
                 construction is listed as "THREE MONTHS" elsewhere.
+                Limited testing indicates that pluralization does not
+                matter, nor does capitalization.
                 Please test!
 
                 No validation is performed on this prior to the request
@@ -668,6 +681,10 @@ class LogFlush(JSSObject):
         """
         if not log_type:
             log_type = "policies"
+
+        # The XML for the /logflush basic endpoint allows spaces
+        # instead of "+", so do a replace here just in case.
+        interval = interval.replace(" ", "+")
 
         flush_url = "{}/{}/id/{}/interval/{}".format(
             self.url, log_type, obj_id, interval)
