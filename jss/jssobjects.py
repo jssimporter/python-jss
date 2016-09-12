@@ -545,6 +545,136 @@ class LicensedSoftware(JSSContainerObject):
     _url = "/licensedsoftware"
 
 
+class LogFlush(JSSObject):
+    _url = "/logflush"
+    can_list = False
+    can_get = False
+    can_put = False
+    can_post = False
+
+    def __init__(self, jss):
+        """Initialize a new LogFlush
+
+        Args:
+            jss: JSS object.
+        """
+        self.jss = jss
+
+    @property
+    def url(self):
+        """Return the path subcomponent of the url to this object."""
+        return self._url
+
+    def log_flush_with_xml(self, data):
+        """Flush logs for devices with a supplied xml string.
+
+        From the Casper API docs:
+            log, log_id, interval, and devices specified in an XML file.
+            Sample file:
+              <logflush>
+                <log>policy</log>
+                <log_id>2</log_id>
+                <interval>THREE MONTHS</interval>
+                <computers>
+                  <computer>
+                    <id>1</id>
+                  </computer>
+                  <computer>
+                    <id>2</id>
+                  </computer>
+                </computers>
+              </logflush>
+
+        Args:
+            data (string): XML string following the above structure or
+                an ElementTree/Element.
+                Elements:
+                    logflush (root)
+                    log (Unknown; "policy" is the only one listed in
+                         docs).
+                    log_id: Log ID value.
+                     interval: Combination of "Zero", "One", "Two",
+                        "Three", "Six", and "Day", "Week", "Month",
+                        "Year". e.g. ("Three+Months")
+                        Please note: The documentation for this
+                        specifies the singular form (e.g. "Month"),
+                        and plural ("Months") at different times.
+                        Please test!
+                    Device Arrays:
+                        Again, acceptable values are not listed in the
+                        docs, aside from the example ("computers").
+                        Presumably "mobiledevices", and possibly
+                        "computergroups" and "mobiledevicegroups" work.
+
+        Raises:
+            JSSDeleteError if provided url_path has a >= 400 response.
+        """
+        if not isinstance(data, basestring):
+            data = ElementTree.tostring(data)
+        response = self.delete(data)
+
+    def log_flush_for_interval(self, log_type, interval):
+        """Flush logs for an interval of time.
+
+        Args:
+            log_type (str): Only documented type is "policies". This
+                will be applied by default if nothing is passed.
+            interval (str): Combination of "Zero", "One", "Two",
+                "Three", "Six", and "Day", "Week", "Month", "Year". e.g.
+                ("Three+Months") Please note: The documentation for this
+                specifies the singular form (e.g. "Month"), and plural
+                ("Months") at different times, and further the
+                construction is listed as "THREE MONTHS" elsewhere.
+                Please test!
+
+                No validation is performed on this prior to the request
+                being made.
+
+        Raises:
+            JSSDeleteError if provided url_path has a >= 400 response.
+        """
+        if not log_type:
+            log_type = "policies"
+
+        flush_url = "{}/{}/interval/{}".format(
+            self.url, log_type, interval)
+
+        self.jss.delete(flush_url)
+
+    def log_flush_for_obj_for_interval(self, log_type, obj_id, interval):
+        """Flush logs for an interval of time for a specific object.
+
+        Please note, log_type is a variable according to the API docs,
+        but acceptable values are not listed. Only "policies" is
+        demonstrated as an acceptable value.
+
+        Args:
+            log_type (str): Only documented type is "policies". This
+                will be applied by default if nothing is passed.
+            obj_id (str or int): ID of the object to have logs flushed.
+            interval (str): Combination of "Zero", "One", "Two",
+                "Three", "Six", and "Day", "Week", "Month", "Year". e.g.
+                ("Three+Months") Please note: The documentation for this
+                specifies the singular form (e.g. "Month"), and plural
+                ("Months") at different times, and further the
+                construction is listed as "THREE MONTHS" elsewhere.
+                Please test!
+
+                No validation is performed on this prior to the request
+                being made.
+
+        Raises:
+            JSSDeleteError if provided url_path has a >= 400 response.
+        """
+        if not log_type:
+            log_type = "policies"
+
+        flush_url = "{}/{}/id/{}/interval/{}".format(
+            self.url, log_type, obj_id, interval)
+
+        self.jss.delete(flush_url)
+
+
 class MacApplication(JSSContainerObject):
     _url = "/macapplications"
     list_type = "mac_application"

@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Added
 - Added `CommandFlush` object (new endpoint in JSS API).
+- Added `LogFlush` object (new endpoint in JSS API).
 - Added `JSSObject.to_string` and `JSSObject.to_file` methods to JSSObject.
 - Added `JSSObject.pickle` and `JSSObject.from_pickle` methods.
 - Added `JSSObjectList.pickle` and `JSSObjectList.from_pickle`.

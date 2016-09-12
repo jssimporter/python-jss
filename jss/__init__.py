@@ -68,7 +68,7 @@ from .jssobjects import (
     ComputerInventoryCollection, ComputerInvitation, ComputerReport,
     Department, DirectoryBinding, DiskEncryptionConfiguration,
     DistributionPoint, DockItem, EBook, FileUpload, GSXConnection, IBeacon,
-    JSSUser, LDAPServer, LicensedSoftware, MacApplication,
+    JSSUser, LDAPServer, LicensedSoftware, LogFlush, MacApplication,
     ManagedPreferenceProfile, MobileDevice, MobileDeviceApplication,
     MobileDeviceCommand, MobileDeviceConfigurationProfile,
     MobileDeviceEnrollmentProfile, MobileDeviceExtensionAttribute,
