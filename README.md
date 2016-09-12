@@ -47,4 +47,4 @@ As I'm currently developing on Fedora, these requirements are specific to RedHat
 ## Usage:
 Please see [the wiki](https://github.com/sheagcraig/python-jss/wiki) for complete documentation.
 
-Also, [my blog](http://labs.da.org/wordpress/sheagcraig/) has a series of posts about using [python-jss](https://github.com/sheagcraig/python-jss), [JSSImporter](https://github.com/sheagcraig/JSSImporter), and [jss_helper](https://github.com/sheagcraig/jss_helper), and solving unique problems using these tools.
+Also, [my blog](http://sheagcraig.github.io) has a series of posts about using [python-jss](https://github.com/sheagcraig/python-jss), [JSSImporter](https://github.com/sheagcraig/JSSImporter), and [jss_helper](https://github.com/sheagcraig/jss_helper), and solving unique problems using these tools.

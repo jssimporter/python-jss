@@ -6,19 +6,21 @@ All notable changes to this project will be documented in this file. This projec
 ## [Unreleased][unreleased]
 
 ### Added
+- Added optional `action` argument to `Policy.add_package`. Now you can specify that you want to "Cache", "Install Cached", or "Install". Uses "Install" by default. (#48)
 - Added `CommandFlush` object (new endpoint in JSS API).
-- Added `ComputerApplication` object (untested at this time).
-- Added `ComputerApplicationUsage` object (untested at this time).
-- Added `ComputerHardwareSoftwareReport` object (untested at this time).
-- Added `ComputerHistory` object (untested at this time).
 - Added `LogFlush` object (new endpoint in JSS API).
-- Added `Patch` object (untested at this time).
+- Added `Patch` object.
 - Added `VPPAssignment` object (untested at this time).
 - Added `VPPInvitation` object (untested at this time).
 - Added `JSSObject.to_string` and `JSSObject.to_file` methods to JSSObject.
 - Added `JSSObject.pickle` and `JSSObject.from_pickle` methods.
 - Added `JSSObjectList.pickle` and `JSSObjectList.from_pickle`.
 - Added category search to `Policy`. (#50 Thanks @jlrgraham)
+- Added stub objects. With these new endpoints, the Casper API now allows multiple parameters in a single URL (aside from the `subset` param). As I have limited development time for this project, these endpoints have stub objects added, but no `JSS` helper method, testing, or easy import with `import jss`. The TODO list has an item to add an ability to handle an arbitrary number of keyword arguments to a a GET request to support these new endpoints. Until then, the following objects serve as placeholders:
+	- Added `ComputerApplication` object (untested at this time).
+	- Added `ComputerApplicationUsage` object.
+	- Added `ComputerHardwareSoftwareReport` object (untested at this time).
+	- Added `ComputerHistory` object (untested at this time).
 
 ### Changed
 - `JSSObjectList.retrieve_all` now returns a `JSSObjectList` instead of a list. This is to support being able to pickle/unpickle the contained objects all at once.

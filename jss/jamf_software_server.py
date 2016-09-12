@@ -725,6 +725,10 @@ class JSS(object):
         """{dynamic_docstring}"""
         return self.factory.get_object(jssobjects.Package, data)
 
+    @_docstring_parameter(jssobjects.Patch)
+    def Patch(self, data=None):
+        """{dynamic_docstring}"""
+        return self.factory.get_object(jssobjects.Patch, data)
     @_docstring_parameter(jssobjects.Peripheral, subset=True)
     def Peripheral(self, data=None, subset=None):
         """{dynamic_docstring}"""

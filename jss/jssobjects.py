@@ -200,7 +200,7 @@ class Computer(JSSDeviceObject):
 
 class ComputerApplication(JSSContainerObject):
     """Unimplemented at this time."""
-    _url = "/computerapplications"
+    _url = "/computerapplications/application"
     can_delete = False
     can_put = False
     can_post = False
@@ -210,12 +210,14 @@ class ComputerApplication(JSSContainerObject):
 
 
 class ComputerApplicationUsage(JSSContainerObject):
-    """Unimplemented at this time."""
     _url = "/computerapplicationusage"
     can_delete = False
     can_put = False
     can_post = False
     list_type = "computer_application_usage"
+
+    def __init__(self, data):
+        raise NotImplementedError
 
 
 class ComputerCheckIn(JSSFlatObject):
@@ -901,7 +903,11 @@ class Package(JSSContainerObject):
 
 class Patch(JSSContainerObject):
     _url = "/patches"
+    list_type = "software_title"
     can_post = False
+    # The /patches/id/{id}/version/{version} variant is not currently
+    # implemented.
+
 
 class Peripheral(JSSContainerObject):
     _url = "/peripherals"
@@ -1059,17 +1065,28 @@ class Policy(JSSContainerObject):
         else:
             raise TypeError
 
-    def add_package(self, pkg):
+    def add_package(self, pkg, action_type="Install"):
         """Add a Package object to the policy with action=install.
 
         Args:
             pkg: A Package object to add.
+            action_type (str, optional): One of "Install", "Cache", or
+                "Install Cached".  Defaults to "Install".
         """
         if isinstance(pkg, Package):
+            if action_type not in ("Install", "Cache", "Install Cached"):
+                raise ValueError
             package = self.add_object_to_path(
                 pkg, "package_configuration/packages")
-            action = ElementTree.SubElement(package, "action")
-            action.text = "Install"
+            # If there's already an action specified, get it, then
+            # overwrite. Otherwise, make a new subelement.
+            action = package.find("action")
+            if not action:
+                action = ElementTree.SubElement(package, "action")
+            action.text = action_type
+        else:
+            raise ValueError("Please pass a Package object to parameter: "
+                             "pkg.")
 
     def set_self_service(self, state=True):
         """Set use_for_self_service to bool state."""
@@ -1157,6 +1174,7 @@ class VPPAccount(JSSContainerObject):
 
 class VPPAssignment(JSSContainerObject):
     _url = "/vppassignments"
+
 
 class VPPInvitation(JSSContainerObject):
     _url = "/vppinvitations"
