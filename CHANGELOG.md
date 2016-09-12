@@ -7,7 +7,14 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Added
 - Added `CommandFlush` object (new endpoint in JSS API).
+- Added `ComputerApplication` object (untested at this time).
+- Added `ComputerApplicationUsage` object (untested at this time).
+- Added `ComputerHardwareSoftwareReport` object (untested at this time).
+- Added `ComputerHistory` object (untested at this time).
 - Added `LogFlush` object (new endpoint in JSS API).
+- Added `Patch` object (untested at this time).
+- Added `VPPAssignment` object (untested at this time).
+- Added `VPPInvitation` object (untested at this time).
 - Added `JSSObject.to_string` and `JSSObject.to_file` methods to JSSObject.
 - Added `JSSObject.pickle` and `JSSObject.from_pickle` methods.
 - Added `JSSObjectList.pickle` and `JSSObjectList.from_pickle`.

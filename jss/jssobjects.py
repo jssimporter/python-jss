@@ -198,6 +198,26 @@ class Computer(JSSDeviceObject):
             return mac_addresses
 
 
+class ComputerApplication(JSSContainerObject):
+    """Unimplemented at this time."""
+    _url = "/computerapplications"
+    can_delete = False
+    can_put = False
+    can_post = False
+    list_type = "computer_application"
+
+    # Does not support ID lookups.
+
+
+class ComputerApplicationUsage(JSSContainerObject):
+    """Unimplemented at this time."""
+    _url = "/computerapplicationusage"
+    can_delete = False
+    can_put = False
+    can_post = False
+    list_type = "computer_application_usage"
+
+
 class ComputerCheckIn(JSSFlatObject):
     _url = "/computercheckin"
     can_delete = False
@@ -266,8 +286,25 @@ class ComputerGroup(JSSGroupObject):
         Args:
             computer: A Computer object to add to the group.
         """
-        super(ComputerGroup, self).remove_object_from_list(computer,
-                                                           "computers")
+        super(ComputerGroup, self).remove_object_from_list(
+            computer, "computers")
+
+
+class ComputerHardwareSoftwareReport(JSSContainerObject):
+    """Unimplemented at this time."""
+    _url = "/computerhardwaresoftwarereports"
+    can_delete = False
+    can_put = False
+    can_post = False
+
+
+class ComputerHistory(JSSContainerObject):
+    _url = "/computerhistory"
+    can_delete = False
+    can_put = False
+    can_post = False
+    search_types = {"name": "/name/", "serial_number": "/serialnumber/",
+                    "udid": "/udid/", "macaddress": "/macadress/"}
 
 
 class ComputerInventoryCollection(JSSFlatObject):
@@ -752,12 +789,6 @@ class MobileDeviceExtensionAttribute(JSSContainerObject):
     _url = "/mobiledeviceextensionattributes"
 
 
-class MobileDeviceInvitation(JSSContainerObject):
-    _url = "/mobiledeviceinvitations"
-    can_put = False
-    search_types = {"invitation": "/invitation/"}
-
-
 class MobileDeviceGroup(JSSGroupObject):
     _url = "/mobiledevicegroups"
     list_type = "mobile_device_group"
@@ -778,6 +809,12 @@ class MobileDeviceGroup(JSSGroupObject):
         """
         super(MobileDeviceGroup, self).remove_object_from_list(
             device, "mobile_devices")
+
+
+class MobileDeviceInvitation(JSSContainerObject):
+    _url = "/mobiledeviceinvitations"
+    can_put = False
+    search_types = {"invitation": "/invitation/"}
 
 
 class MobileDeviceProvisioningProfile(JSSContainerObject):
@@ -861,6 +898,10 @@ class Package(JSSContainerObject):
             name = category
         self.find("category").text = name
 
+
+class Patch(JSSContainerObject):
+    _url = "/patches"
+    can_post = False
 
 class Peripheral(JSSContainerObject):
     _url = "/peripherals"
@@ -1060,12 +1101,12 @@ class Printer(JSSContainerObject):
     _url = "/printers"
 
 
-class RestrictedSoftware(JSSContainerObject):
-    _url = "/restrictedsoftware"
-
-
 class RemovableMACAddress(JSSContainerObject):
     _url = "/removablemacaddresses"
+
+
+class RestrictedSoftware(JSSContainerObject):
+    _url = "/restrictedsoftware"
 
 
 class SavedSearch(JSSContainerObject):
@@ -1085,16 +1126,16 @@ class Site(JSSContainerObject):
     list_type = "site"
 
 
-class SoftwareUpdateServer(JSSContainerObject):
-    _url = "/softwareupdateservers"
-
-
 class SMTPServer(JSSFlatObject):
     _url = "/smtpserver"
     id_url = ""
     can_list = False
     can_post = False
     search_types = {}
+
+
+class SoftwareUpdateServer(JSSContainerObject):
+    _url = "/softwareupdateservers"
 
 
 class UserExtensionAttribute(JSSContainerObject):
@@ -1113,4 +1154,10 @@ class VPPAccount(JSSContainerObject):
     _url = "/vppaccounts"
     list_type = "vpp_account"
 
+
+class VPPAssignment(JSSContainerObject):
+    _url = "/vppassignments"
+
+class VPPInvitation(JSSContainerObject):
+    _url = "/vppinvitations"
 # pylint: enable=missing-docstring

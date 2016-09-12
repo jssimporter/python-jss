@@ -65,18 +65,19 @@ from .jssobjects import (
     AdvancedMobileDeviceSearch, AdvancedUserSearch, Building, BYOProfile,
     Category, Class, CommandFlush, Computer, ComputerCheckIn, ComputerCommand,
     ComputerConfiguration, ComputerExtensionAttribute, ComputerGroup,
-    ComputerInventoryCollection, ComputerInvitation, ComputerReport,
-    Department, DirectoryBinding, DiskEncryptionConfiguration,
+    ComputerHistory, ComputerInventoryCollection, ComputerInvitation,
+    ComputerReport, Department, DirectoryBinding, DiskEncryptionConfiguration,
     DistributionPoint, DockItem, EBook, FileUpload, GSXConnection, IBeacon,
     JSSUser, LDAPServer, LicensedSoftware, LogFlush, MacApplication,
     ManagedPreferenceProfile, MobileDevice, MobileDeviceApplication,
     MobileDeviceCommand, MobileDeviceConfigurationProfile,
     MobileDeviceEnrollmentProfile, MobileDeviceExtensionAttribute,
     MobileDeviceInvitation, MobileDeviceGroup, MobileDeviceProvisioningProfile,
-    NetbootServer, NetworkSegment, OSXConfigurationProfile, Package,
+    NetbootServer, NetworkSegment, OSXConfigurationProfile, Package, Patch,
     Peripheral, PeripheralType, Policy, Printer, RestrictedSoftware,
     RemovableMACAddress, SavedSearch, Script, Site, SoftwareUpdateServer,
-    SMTPServer, UserExtensionAttribute, User, UserGroup, VPPAccount)
+    SMTPServer, UserExtensionAttribute, User, UserGroup, VPPAccount,
+    VPPAssignment, VPPInvitation)
 from .jss_prefs import JSSPrefs
 from .tools import is_osx, is_linux
 
