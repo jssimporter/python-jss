@@ -30,7 +30,7 @@ Public package contents include:
     jamf_software_server: Class for representing a JSS, and for
         preference files to configure one.
     jssobject: Base class used for JSS objects. Useful for testing
-        (e.g. isinstance(obj, JSSObject)
+        (e.g. "isinstance(obj, JSSObject)").
     jssobjects: Represents each of the objects the JSS supports
         (packages, computers, etc).
     jss_prefs: Class for loading python-jss configuration via a plist
