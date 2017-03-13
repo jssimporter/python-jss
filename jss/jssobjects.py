@@ -229,11 +229,20 @@ class ComputerCheckIn(JSSFlatObject):
 
 class ComputerCommand(JSSContainerObject):
     _url = "/computercommands"
+    list_type = "computer_command"
     search_types = {"name": "/name/", "uuid": "/uuid/",
                     "status": "/status/", "id": "/id/"}
     can_delete = False
     can_put = False
-    can_post = False
+
+    _name_path = "/general/command"
+    data_keys = {
+        "general": {
+            "command": "BlankPush",
+            "passcode": None
+        },
+        "computers": None
+    }
 
     def send(self, command_type, computer_ids):
         """Issue a command for a Computer object.
@@ -256,7 +265,6 @@ class ComputerCommand(JSSContainerObject):
 
         return self.jss.post(ComputerCommand, command_url, None)
         
-
 
 class ComputerConfiguration(JSSContainerObject):
     _url = "/computerconfigurations"
