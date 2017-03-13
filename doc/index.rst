@@ -12,6 +12,7 @@ API Documentation:
    :maxdepth: 2
 
    jss/api/jss.rst
+   jss/api/distribution_point/index.rst
    jss/api/exceptions.rst
    jss/api/jssprefs.rst
    jss/api/jssobjects.rst
