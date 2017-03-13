@@ -229,11 +229,33 @@ class ComputerCheckIn(JSSFlatObject):
 
 class ComputerCommand(JSSContainerObject):
     _url = "/computercommands"
+    search_types = {"name": "/name/", "uuid": "/uuid/",
+                    "status": "/status/", "id": "/id/"}
     can_delete = False
     can_put = False
-    # TODO: You _can_ POST computer commands, but it is not yet
-    # implemented
     can_post = False
+
+    def send(self, command_type, computer_ids):
+        """Issue a command for a Computer object.
+
+        Returns:
+            A newly created ComputerCommand object. The data is what has been returned after
+            it has been parsed by the JSS and added to the database.
+
+        Raises:
+            JSSPostError if provided url_path has a >= 400 response.
+        """
+        if isinstance(computer_ids, list):
+            computer_ids = ','.join(computer_ids)
+
+        command_url = '{}/command/{}/id/{}'.format(
+            self.url,
+            command_type,
+            computer_ids
+        )
+
+        return self.jss.post(ComputerCommand, command_url, None)
+        
 
 
 class ComputerConfiguration(JSSContainerObject):
