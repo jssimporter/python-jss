@@ -6,13 +6,18 @@
 Welcome to python-jss's documentation!
 ======================================
 
-Contents:
+API Documentation:
 
 .. toctree::
    :maxdepth: 2
 
-   jss/jssflatobject.rst
-   jss/casper.rst
+   jss/api/jss.rst
+   jss/api/exceptions.rst
+   jss/api/jssprefs.rst
+   jss/api/jssobjects.rst
+   jss/api/jssobjectfactory.rst
+   jss/api/jssflatobject.rst
+   jss/api/casper.rst
 
 
 
