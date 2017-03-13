@@ -11,14 +11,8 @@ API Documentation:
 .. toctree::
    :maxdepth: 2
 
-   jss/api/jss.rst
-   jss/api/distribution_point/index.rst
-   jss/api/exceptions.rst
-   jss/api/jssprefs.rst
-   jss/api/jssobjects.rst
-   jss/api/jssobjectfactory.rst
-   jss/api/jssflatobject.rst
-   jss/api/casper.rst
+   jss/api/index.rst
+   jss/guides/index.rst
 
 
 
