@@ -7,7 +7,11 @@ Developer Guides
 
     introduction.rst
     installing.rst
-    preferences.rst
+    configuration.rst
     basics.rst
+    validation.rst
+    notes.rst
+    
+    
     
     
