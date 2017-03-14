@@ -6,14 +6,11 @@
 Welcome to python-jss's documentation!
 ======================================
 
-API Documentation:
-
 .. toctree::
    :maxdepth: 2
 
-   jss/api/index.rst
    jss/guides/index.rst
-
+   jss/api/index.rst
 
 
 Indices and tables
