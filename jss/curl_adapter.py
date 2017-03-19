@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2014-2016 Shea G Craig
+# Copyright (C) 2014-2017 Shea G Craig
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,21 +35,21 @@ from .response_adapter import CurlResponseAdapter
 
 
 class CurlAdapter(object):
-    """Adapter to use Curl for all Casper API calls"""
+    """Adapter to use Curl for all Casper API calls
+
+    Attributes:
+        auth (2-tuple of str): Username and password for making requests.
+        ssl_verify (bool): Whether to verify SSL traffic. Defaults to
+            True.
+        use_tls: Whether to use TLS. Defaults to True.
+        headers (dict): Request header to use for requests.
+    """
     headers = {"content-type": "text/xml", "Accept": "application/xml"}
 
     def __init__(self):
-        self.auth = None
-        self.ssl_verify = None
+        self.auth = ('', '')
+        self.ssl_verify = True
         self.use_tls = True
-
-    @property
-    def auth(self):
-        return "{}:{}".format(*self._auth)
-
-    @auth.setter
-    def auth(self, auth):
-        self._auth = auth
 
     def get(self, url):
         command = self._build_command(url)
@@ -84,7 +84,7 @@ class CurlAdapter(object):
         pass
 
     def _build_command(self, url, **kwargs):
-        command = ["curl", "-u", self.auth]
+        command = ["curl", "-u", '{}:{}'.format(*self.auth)]
         # Remove the progress bar that curl displays in a subprocess.
         command.append("--silent")
         command += ["--write-out", "|%{response_code}"]
