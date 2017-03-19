@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2014 Shea G Craig <shea.craig@da.org>
+# Copyright (C) 2014-2017 Shea G Craig
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
