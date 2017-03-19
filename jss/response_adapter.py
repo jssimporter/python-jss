@@ -50,7 +50,8 @@ class CurlResponseAdapter(object):
             self.status_code = int(status_code)
         except ValueError:
             self.status_code = 0
-        # TODO: Curl/subprocess probably returns bytes rather than Unicode.
-        self.text = text
+        # Requests' text attribute returns unicode, so convert curl's
+        # returned bytes.
+        self.text = text.decode('UTF-8')
 
 
