@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2014, 2015 Shea G Craig <shea.craig@da.org>
+# Copyright (C) 2014-2017 Shea G Craig
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,9 +60,9 @@ class JSS(object):
     """
 
     # pylint: disable=too-many-arguments
-    def __init__(self, jss_prefs=None, url=None, user=None, password=None,
-                 repo_prefs=None, ssl_verify=True, verbose=False,
-                 jss_migrated=False, suppress_warnings=False):
+    def __init__(
+        self, jss_prefs=None, url=None, user=None, password=None,
+        repo_prefs=None, ssl_verify=True, verbose=False, jss_migrated=False):
         """Setup a JSS for making API requests.
 
         Provide either a JSSPrefs object OR specify url, user, and
@@ -101,9 +101,6 @@ class JSS(object):
                 "migrated". Used to determine whether to upload scripts
                 in Script object XML or as files to the distribution
                 points.
-            suppress_warnings: Turns off the urllib3 warnings. Remember,
-                these warnings are there for a reason! Use at your own
-                risk.
         """
         if jss_prefs is not None:
             url = jss_prefs.url
