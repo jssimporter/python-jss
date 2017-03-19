@@ -187,6 +187,23 @@ class JSS(object):
         """
         self.session.ssl_verify = value
 
+    def mount_network_adapter(self, network_adapter):
+        """Mount a network adapter that uses the Requests API.
+
+        The existing user, password, and ssl_verify values are
+        transferred to the new adapter.
+
+        Args:
+            network_adapter: A network adapter object that uses the
+                basic Requests API. Included in python-jss are the
+                CurlAdapter and RequestsAdapter.
+        """
+        auth = (self.user, self.password)
+        ssl_verify = self.ssl_verify
+        self.session = network_adapter
+        self.user, self.password = auth
+        self.ssl_verify = ssl_verify
+
     def get(self, url_path):
         """GET a url, handle errors, and return an etree.
 
