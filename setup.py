@@ -33,11 +33,8 @@ setup(name = 'python-jss',
       description = 'Python wrapper for JSS API.',
       long_description = read_md('README.md'),
       author = 'Shea G. Craig',
-      author_email = 'shea.craig@da.org',
       url = 'https://github.com/sheagcraig/python-jss/',
       license = 'GPLv3',
-      # pyOpenSSL is required, but included in requests.
-      install_requires=["requests", "ndg-httpsclient", "pyasn1"],
       classifiers = [
           'Development Status :: 5 - Production/Stable',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)']
