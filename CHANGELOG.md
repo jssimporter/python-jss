@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file. This projec
 - Added `CurlAdapter`, `ResponseAdapter`, and `RequestsAdapter` to wrap curl in requests' API. This is primarily to deal with the fact that Apple's shipped OpenSSL is extremely out of date (requests uses pyopenssl, which uses the out-of-date OpenSSL). Since current recommendations from Jamf are to run the Casper server using only TLS1.2, this puts us in a bind. So, by default, python-jss will now use curl for networking. Developers seeking the advantages of using requests can replace the networking adapter they want to use (see `jss.jamf_software_server.JSS`).
 
 ### Changed
-- Moved the `suppress_warnings` preference out of `JSS` and into the requests adapter. You may not instantiate a `JSS` with this argument now.
+- Moved the `suppress_warnings` preference out of `JSS` and into the requests adapter. The `JSS` initialization will accept that keyword argument to ease the (sudden) deprecation, but it just won't do anything. Use the `RequestsAdapter.suppress_warnings()` method if you need it.
 - Instantiating a `JSS` object will now default to using the `CurlAdapter` for
   networking. Use `JSS.mount_networking_adapter()` to replace it with the
   `RequestsAdapter` and gain things like sessions.
