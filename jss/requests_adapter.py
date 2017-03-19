@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2014-2016 Shea G Craig
+# Copyright (C) 2014-2017 Shea G Craig
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ to also add an NSURLSession adapter.
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-from .response_adapter import RequestsResponseAdapter, CurlResponseAdapter
+from .response_adapter import RequestsResponseAdapter
 from .tlsadapter import TLSAdapter
 
 
