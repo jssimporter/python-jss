@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2014, 2015 Shea G Craig <shea.craig@da.org>
+# Copyright (C) 2014-2017 Shea G Craig
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ Private package contents include:
 
 
 from .casper import Casper
+from .curl_adapter import CurlAdapter
 from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
                                  JDS, CDP, LocalRepository)
 from .distribution_points import DistributionPoints
@@ -79,7 +80,17 @@ from .jssobjects import (
     SMTPServer, UserExtensionAttribute, User, UserGroup, VPPAccount,
     VPPAssignment, VPPInvitation)
 from .jss_prefs import JSSPrefs
+
+# If a system doesn't have the required dependencies for requests, do
+# nothing.
+try:
+    from .requests_adapter import RequestsAdapter
+    from .response_adapter import RequestsResponseAdapter
+except ImportError:
+    pass
+
+from .response_adapter import CurlResponseAdapter
 from .tools import is_osx, is_linux
 
 
-__version__ = "1.5.0"
+__version__ = "2.0.0"
