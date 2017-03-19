@@ -26,15 +26,13 @@ import re
 from urllib import quote
 from xml.etree import ElementTree
 
-import requests
-
 from . import distribution_points
+from .curl_adapter import CurlAdapter
 from .exceptions import (JSSGetError, JSSPutError, JSSPostError,
                          JSSDeleteError, JSSMethodNotAllowedError)
 from .jssobject import JSSFlatObject
 from . import jssobjects
 from .jssobjectlist import (JSSObjectList, JSSListData)
-from .tlsadapter import TLSAdapter
 from .tools import error_handler
 
 
@@ -115,30 +113,15 @@ class JSS(object):
             ssl_verify = jss_prefs.verify
             suppress_warnings = jss_prefs.suppress_warnings
 
-        if suppress_warnings:
-            requests.packages.urllib3.disable_warnings()
-
-        self._base_url = ""
         self.base_url = url
+
+        self.session = CurlAdapter()
         self.user = user
         self.password = password
         self.repo_prefs = repo_prefs if repo_prefs else []
         self.verbose = verbose
         self.jss_migrated = jss_migrated
-        self.session = requests.Session()
-        self.session.auth = (self.user, self.password)
-        self.ssl_verify = ssl_verify
-
-        # For some objects the JSS tries to return JSON, so we explictly
-        # request XML.
-
-        headers = {"content-type": "text/xml", "Accept": "application/xml"}
-        self.session.headers.update(headers)
-
-        # Add a TransportAdapter to force TLS, since JSS no longer
-        # accepts SSLv23, which is the default.
-
-        self.session.mount(self.base_url, TLSAdapter())
+        self.session.ssl_verify = ssl_verify
 
         self.factory = JSSObjectFactory(self)
         self.distribution_points = distribution_points.DistributionPoints(self)
@@ -160,6 +143,34 @@ class JSS(object):
         """The URL to the Casper JSS, including port if needed."""
         # Remove the frequently included yet incorrect trailing slash.
         self._base_url = url.rstrip("/")
+
+    @property
+    def user(self):
+        """Username used to connect to the Casper API"""
+        return self.session.auth[0]
+
+    @user.setter
+    def user(self, value):
+        """Username used to connect to the Casper API.
+
+        Args:
+            value (str): username.
+        """
+        self.session.auth = (value, self.session.auth[1])
+
+    @property
+    def password(self):
+        """Password used to connect to the Casper API"""
+        return self.session.auth[1]
+
+    @password.setter
+    def password(self, value):
+        """Password used to connect to the Casper API.
+
+        Args:
+            value (str): password.
+        """
+        self.session.auth = (self.session.auth[0], value)
 
     @property
     def ssl_verify(self):
@@ -805,7 +816,7 @@ class JSS(object):
         return self.factory.get_object(jssobjects.VPPAccount, data)
 
 
-    #pylint: enable=invalid-name
+    # pylint: enable=invalid-name
 
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
