@@ -176,7 +176,7 @@ class JSS(object):
     @property
     def ssl_verify(self):
         """Boolean value for whether to verify SSL traffic is valid."""
-        return self.session.verify
+        return self.session.ssl_verify
 
     @ssl_verify.setter
     def ssl_verify(self, value):
@@ -185,7 +185,7 @@ class JSS(object):
         Args:
             value: Boolean.
         """
-        self.session.verify = value
+        self.session.ssl_verify = value
 
     def get(self, url_path):
         """GET a url, handle errors, and return an etree.
