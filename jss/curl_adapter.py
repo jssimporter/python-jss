@@ -31,6 +31,7 @@ to also add an NSURLSession adapter.
 
 import subprocess
 
+from .exceptions import JSSError, JSSSSLVerifyError
 from .response_adapter import CurlResponseAdapter
 
 
@@ -52,30 +53,37 @@ class CurlAdapter(object):
         self.use_tls = True
 
     def get(self, url):
-        command = self._build_command(url)
-        response = subprocess.check_output(command)
-        return CurlResponseAdapter(response)
+        return self._request(url)
 
     def post(self, url, data):
         post_args = {
             "--header": "Content-Type: text/xml", "--request": "POST",
             "--data": data}
-        command = self._build_command(url, **post_args)
-        response = subprocess.check_output(command)
-        return CurlResponseAdapter(response)
+        return self._request(url, put_args)
 
     def put(self, url, data):
         put_args = {
             "--header": "Content-Type: text/xml", "--request": "PUT",
             "--data": data}
-        command = self._build_command(url, **put_args)
-        response = subprocess.check_output(command)
-        return CurlResponseAdapter(response)
+        return self._request(url, put_args)
 
     def delete(self, url, data=None):
         delete_args = {"--request": "DELETE"}
-        command = self._build_command(url, **delete_args)
-        response = subprocess.check_output(command)
+        return self._request(url, delete_args)
+
+    def _request(self, url, args=None):
+        if not args:
+            args = {}
+        command = self._build_command(url, **args)
+        try:
+            response = subprocess.check_output(command)
+        except subprocess.CalledProcessError as err:
+            if err.returncode == 60:
+                raise JSSSSLVerifyError(
+                    'The JSS\'s certificate cannot be verified.')
+            else:
+                raise JSSError('Unknown curl error')
+
         return CurlResponseAdapter(response)
 
     def suppress_warnings(self):
