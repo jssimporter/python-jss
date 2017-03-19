@@ -21,6 +21,8 @@ Python wrapper for the JAMF Casper JSS API.
 
 Public package contents include:
     casper: Class using the Casper private API call to casper.jxml.
+    curl_adapter: Networking adapter to use the curl command with the
+        Requests API.
     distribution_point: Classes for AFP, SMB, CDP, and JDS DPs.
     distribution_points: Class for managing distribution point classes.
         distribution points, JDS, and CDP distribution servers, and
@@ -36,12 +38,15 @@ Public package contents include:
     jss_prefs: Class for loading python-jss configuration via a plist
         file, and for use as an argument to JSS. Includes an
         interactive setup helper.
+    requests_adapter: Networking adapter to use the Requests library.
+    response_adapter: Adapter for wrapping Curl response objects with the
+        Requests API.
 
 Private package contents include:
     contrib: Code from other authors used in python-jss.
     jssobjectlist: Classes for representing lists of objects returned
         from the JSS' GET searches.
-    tlsadapter: Adapter to allow python HTTP requests to use TLS, and
+    tlsadapter: Adapter to allow Requests to use TLS, and
         with the correct ciphers to match current JAMF recommendations.
     tools: Assorted functions for common tasks used throughout the
         package.
@@ -56,8 +61,8 @@ from .distribution_points import DistributionPoints
 from .exceptions import (
     JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
     JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
-    JSSUnsupportedSearchMethodError, JSSFileUploadParameterError,
-    JSSUnsupportedFileType, JSSError)
+    JSSSSLVerifyError, JSSUnsupportedSearchMethodError,
+    JSSFileUploadParameterError, JSSUnsupportedFileType, JSSError)
 from .jamf_software_server import JSS
 from .jssobject import JSSObject
 from .jssobjectlist import JSSObjectList
