@@ -62,7 +62,8 @@ class JSS(object):
     # pylint: disable=too-many-arguments
     def __init__(
         self, jss_prefs=None, url=None, user=None, password=None,
-        repo_prefs=None, ssl_verify=True, verbose=False, jss_migrated=False):
+        repo_prefs=None, ssl_verify=True, verbose=False, jss_migrated=False,
+        **kwargs):
         """Setup a JSS for making API requests.
 
         Provide either a JSSPrefs object OR specify url, user, and
@@ -109,6 +110,9 @@ class JSS(object):
             repo_prefs = jss_prefs.repos
             ssl_verify = jss_prefs.verify
             suppress_warnings = jss_prefs.suppress_warnings
+
+        # TODO: This method currently accepts '**kwargs' to soften
+        # the deprecation of the urllib warnings removal.
 
         self.base_url = url
 
