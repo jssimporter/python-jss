@@ -58,6 +58,9 @@ class JSSMethodNotAllowedError(JSSError):
     """Casper object not allowed to use that method."""
     pass
 
+class JSSSSLVerifyError(JSSError):
+    """Server's certificate could not be verified."""
+    pass
 
 class JSSUnsupportedSearchMethodError(JSSError):
     """Unrecognized or unsupported GET search argument."""
