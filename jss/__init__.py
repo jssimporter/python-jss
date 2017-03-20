@@ -90,11 +90,9 @@ from .jss_prefs import JSSPrefs
 # nothing.
 try:
     from .requests_adapter import RequestsAdapter
-    from .response_adapter import RequestsResponseAdapter
 except ImportError:
     pass
 
-from .response_adapter import CurlResponseAdapter
 from .tools import is_osx, is_linux
 
 

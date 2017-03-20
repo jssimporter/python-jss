@@ -32,7 +32,6 @@ to also add an NSURLSession adapter.
 import subprocess
 
 from .exceptions import JSSError, JSSSSLVerifyError
-from .response_adapter import CurlResponseAdapter
 
 
 class CurlAdapter(object):
@@ -104,10 +103,24 @@ class CurlAdapter(object):
             command.append("--tlsv1")
 
         for key, val in kwargs.items():
-            command += [key, val]
+            command += [key.encode('UTF-8'), val.encode('UTF-8')]
 
         command.append(url)
 
         return command
 
 
+class CurlResponseAdapter(object):
+    """Wrapper for Curl responses"""
+
+    def __init__(self, response):
+        self.response = response
+        content, _, status_code = response.rpartition("|")
+        try:
+            self.status_code = int(status_code)
+        except ValueError:
+            self.status_code = 0
+        self.content = content
+        # Requests' text attribute returns unicode, so convert curl's
+        # returned bytes.
+        self.text = content.decode('UTF-8')

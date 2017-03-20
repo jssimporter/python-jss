@@ -32,7 +32,6 @@ to also add an NSURLSession adapter.
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-from .response_adapter import RequestsResponseAdapter
 from .tlsadapter import TLSAdapter
 
 
@@ -70,17 +69,28 @@ class RequestsAdapter(object):
         """Mount the TLSAdapter for SSLv3 communication"""
         self.session.mount(base_url, TLSAdapter())
 
-    def get(self, url):
-        return RequestsResponseAdapter(self.session.get(url))
+    def get(self, url, headers=None):
+        if not headers:
+            headers = {}
+        return self.session.get(url, headers=headers)
 
-    def post(self, url, data):
-        return RequestsResponseAdapter(self.session.post(url, data))
+    def post(self, url, data, headers=None):
+        if not headers:
+            headers = {}
+        return self.session.post(url, data=data, headers=headers)
 
-    def put(self, url, data):
-        return RequestsResponseAdapter(self.session.put(url, data))
+    def put(self, url, data, headers=None):
+        if not headers:
+            headers = {}
+        return self.session.put(url, data=data, headers=headers)
 
-    def delete(self, url, data=None):
-        return RequestsResponseAdapter(self.session.delete(url, data=data))
+    def delete(self, url, data=None, headers=None):
+        if not headers:
+            headers = {}
+        if data:
+            return self.session.delete(url, data=data)
+        else:
+            return self.session.delete(url)
 
     def suppress_warnings(self):
         """Disable urllib3's warning messages"""
