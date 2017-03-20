@@ -43,6 +43,7 @@ class RequestsAdapter(object):
         self.session = requests.Session()
         self.session.headers.update(self.headers)
         self.use_tls(base_url)
+        self.ssl_verify = True
 
     @property
     def auth(self):
