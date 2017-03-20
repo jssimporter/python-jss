@@ -1063,6 +1063,32 @@ class Policy(JSSContainerObject):
         else:
             raise TypeError
 
+    def add_object_to_limitations(self, obj):
+        """Add an object to the appropriate scope limitations
+        block.
+
+        Args:
+            obj: JSSObject to add to limitations. Accepted subclasses
+                are:
+                    User
+                    UserGroup
+                    NetworkSegment
+                    IBeacon
+
+        Raises:
+            TypeError if invalid obj type is provided.
+        """
+        if isinstance(obj, User):
+            self.add_object_to_path(obj, "scope/limitations/users")
+        elif isinstance(obj, UserGroup):
+            self.add_object_to_path(obj, "scope/limitations/user_groups")
+        elif isinstance(obj, NetworkSegment):
+            self.add_object_to_path(obj, "scope/limitations/network_segments")
+        elif isinstance(obj, IBeacon):
+            self.add_object_to_path(obj, "scope/limitations/ibeacons")
+        else:
+            raise TypeError
+
     def add_package(self, pkg, action_type="Install"):
         """Add a Package object to the policy with action=install.
 
@@ -1111,6 +1137,7 @@ class Policy(JSSContainerObject):
             name.text = category
 
 # pylint: enable=too-many-instance-attributes, too-many-locals
+
 
 class Printer(JSSContainerObject):
     _url = "/printers"
