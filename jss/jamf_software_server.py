@@ -122,7 +122,7 @@ class JSS(object):
         self.repo_prefs = repo_prefs if repo_prefs else []
         self.verbose = verbose
         self.jss_migrated = jss_migrated
-        self.session.ssl_verify = ssl_verify
+        self.ssl_verify = ssl_verify
 
         self.factory = JSSObjectFactory(self)
         self.distribution_points = distribution_points.DistributionPoints(self)
@@ -180,7 +180,7 @@ class JSS(object):
     @property
     def ssl_verify(self):
         """Boolean value for whether to verify SSL traffic is valid."""
-        return self.session.ssl_verify
+        return self.session.verify
 
     @ssl_verify.setter
     def ssl_verify(self, value):
@@ -189,7 +189,7 @@ class JSS(object):
         Args:
             value: Boolean.
         """
-        self.session.ssl_verify = value
+        self.session.verify = value
 
     def mount_network_adapter(self, network_adapter):
         """Mount a network adapter that uses the Requests API.
@@ -310,7 +310,7 @@ class JSS(object):
         """
         request_url = "%s%s" % (self._url, quote_and_encode(url_path))
         data = ElementTree.tostring(data, encoding='UTF-8')
-        response = self.session.put(request_url, data)
+        response = self.session.put(request_url, data=data)
 
         if response.status_code == 201 and self.verbose:
             print "PUT %s: Success." % request_url
@@ -326,13 +326,15 @@ class JSS(object):
         Args:
             url_path: String API endpoint path to DEL, with ID (e.g.
                 "/packages/id/<object ID>")
+            data: xml.etree.ElementTree.Element with valid XML for the
+                desired obj_class. Most classes don't need this.
 
         Raises:
             JSSDeleteError if provided url_path has a >= 400 response.
         """
         request_url = "%s%s" % (self._url, quote_and_encode(url_path))
         if data:
-            data = data.encode('UTF-8')
+            data = ElementTree.tostring(data, encoding='UTF-8')
             response = self.session.delete(request_url, data=data)
         else:
             response = self.session.delete(request_url)
