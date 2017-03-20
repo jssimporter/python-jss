@@ -23,7 +23,6 @@ as JSSObjects.
 import cPickle
 import os
 import re
-from urllib import quote
 from xml.etree import ElementTree
 
 from . import distribution_points
@@ -33,7 +32,7 @@ from .exceptions import (JSSGetError, JSSPutError, JSSPostError,
 from .jssobject import JSSFlatObject
 from . import jssobjects
 from .jssobjectlist import (JSSObjectList, JSSListData)
-from .tools import error_handler
+from .tools import error_handler, quote_and_encode
 
 
 # Pylint wants us to store our many attributes in a dictionary.
@@ -52,7 +51,8 @@ class JSS(object):
         jss_migrated: Boolean whether JSS has had scripts "migrated".
             Used to determine whether to upload scripts in Script
             object XML or as files to the distribution points.
-        session: Requests session used to make all HTTP requests.
+        session: "Session" used to make all HTTP requests through
+            whichever network adapter is in use (default is CurlAdapter).
         ssl_verify: Boolean whether to verify SSL traffic from the JSS
             is genuine.
         factory: JSSObjectFactory object for building JSSObjects.
@@ -225,7 +225,7 @@ class JSS(object):
             This behavior will change in the future for 404/Not Found
             to returning None.
         """
-        request_url = "%s%s" % (self._url, quote(url_path.encode("utf_8")))
+        request_url = "%s%s" % (self._url, quote_and_encode(url_path))
         response = self.session.get(request_url)
 
         if response.status_code == 200 and self.verbose:
@@ -233,13 +233,11 @@ class JSS(object):
         elif response.status_code >= 400:
             error_handler(JSSGetError, response)
 
-        # requests GETs JSS data as XML encoded in utf-8, but
-        # ElementTree.fromstring wants a string.
-        jss_results = response.text.encode("utf-8")
+        # ElementTree in python2 only accepts bytes.
         try:
-            xmldata = ElementTree.fromstring(jss_results)
+            xmldata = ElementTree.fromstring(response.content)
         except ElementTree.ParseError:
-            raise JSSGetError("Error Parsing XML:\n%s" % jss_results)
+            raise JSSGetError("Error Parsing XML:\n%s" % response.content)
 
         return xmldata
 
@@ -278,8 +276,8 @@ class JSS(object):
         """
         # The JSS expects a post to ID 0 to create an object
 
-        request_url = "%s%s" % (self._url, url_path)
-        data = ElementTree.tostring(data)
+        request_url = "%s%s" % (self._url, quote_and_encode(url_path))
+        data = ElementTree.tostring(data, encoding='UTF-8')
         response = self.session.post(request_url, data=data)
 
         if response.status_code == 201 and self.verbose:
@@ -287,10 +285,7 @@ class JSS(object):
         elif response.status_code >= 400:
             error_handler(JSSPostError, response)
 
-        # Get the ID of the new object. JSS returns xml encoded in utf-8
-
-        jss_results = response.text.encode("utf-8")
-        id_ = int(re.search(r"<id>([0-9]+)</id>", jss_results).group(1))
+        id_ = int(re.search(r"<id>([0-9]+)</id>", response.text).group(1))
 
         return self.factory.get_object(obj_class, id_)
 
@@ -309,8 +304,8 @@ class JSS(object):
         Raises:
             JSSPutError if provided url_path has a >= 400 response.
         """
-        request_url = "%s%s" % (self._url, url_path)
-        data = ElementTree.tostring(data)
+        request_url = "%s%s" % (self._url, quote_and_encode(url_path))
+        data = ElementTree.tostring(data, encoding='UTF-8')
         response = self.session.put(request_url, data)
 
         if response.status_code == 201 and self.verbose:
@@ -331,8 +326,9 @@ class JSS(object):
         Raises:
             JSSDeleteError if provided url_path has a >= 400 response.
         """
-        request_url = "%s%s" % (self._url, url_path)
+        request_url = "%s%s" % (self._url, quote_and_encode(url_path))
         if data:
+            data = data.encode('UTF-8')
             response = self.session.delete(request_url, data=data)
         else:
             response = self.session.delete(request_url)
