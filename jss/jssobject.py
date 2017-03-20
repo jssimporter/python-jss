@@ -482,13 +482,18 @@ class JSSObject(ElementTree.Element):
 
     @classmethod
     def from_string(cls, jss, xml_string):
-        """Creates a new JSSObject from an UTF-8 XML string.
+        """Creates a new JSSObject from a string or unicode.
 
         Args:
             jss: A JSS object.
-            xml_string: String XML file data used to create object.
+            xml_string (str or unicode): XML file data used to create
+                object.
         """
-        root = ElementTree.fromstring(xml_string.encode('utf-8'))
+        # ElementTree.fromstring in python2 really wants bytes.
+        # There's no harm in encoding bytes, but this is more explicit.
+        if isinstance(xml_string, unicode):
+            xml_string = xml_string.encode('UTF-8')
+        root = ElementTree.fromstring(xml_string)
         return cls(jss, root)
 
     def to_file(self, path):
@@ -502,7 +507,7 @@ class JSSObject(ElementTree.Element):
             ofile.write(self.__repr__())
 
     def to_string(self):
-        """Return indented object XML as string."""
+        """Return indented object XML as bytes."""
         return self.__repr__()
 
     def pickle(self, path):

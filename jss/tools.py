@@ -22,6 +22,7 @@ Helper functions for python-jss.
 import copy
 import os
 import re
+from urllib import quote
 from xml.etree import ElementTree
 
 
@@ -153,4 +154,8 @@ def element_repr(self):
     # deepcopy so we don't mess with the valid XML.
     pretty_data = copy.deepcopy(self)
     indent_xml(pretty_data)
-    return ElementTree.tostring(pretty_data).encode("utf-8")
+    return ElementTree.tostring(pretty_data, encoding='UTF-8')
+
+
+def quote_and_encode(self, string):
+    return quote(string.encode('UTF_8'))
