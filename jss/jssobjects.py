@@ -438,10 +438,8 @@ class FileUpload(object):
     def save(self):
         """POST the object to the JSS."""
         try:
-            response = requests.post(self._upload_url,
-                                     auth=self.jss.session.auth,
-                                     verify=self.jss.session.verify,
-                                     files=self.resource)
+            response = self.jss.session.post(
+                self._upload_url, files=self.resource)
         except JSSPostError as error:
             if error.status_code == 409:
                 raise JSSPostError(error)
@@ -451,7 +449,7 @@ class FileUpload(object):
         if response.status_code == 201:
             if self.jss.verbose:
                 print "POST: Success"
-                print response.text.encode("utf-8")
+                print response.content
         elif response.status_code >= 400:
             error_handler(JSSPostError, response)
 
