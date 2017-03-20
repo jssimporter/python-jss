@@ -39,9 +39,10 @@ class RequestsAdapter(object):
     """Adapter to use Requests for all Casper API calls"""
     headers = {"content-type": "text/xml", "Accept": "application/xml"}
 
-    def __init__(self):
+    def __init__(self, base_url):
         self.session = requests.Session()
         self.session.headers.update(self.headers)
+        self.use_tls(base_url)
 
     @property
     def auth(self):
