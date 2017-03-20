@@ -157,7 +157,9 @@ class JSS(object):
         Args:
             value (str): username.
         """
-        self.session.auth = (value, self.session.auth[1])
+        auth = self.session.auth
+        password = auth[1] if auth else ''
+        self.session.auth = (value, password)
 
     @property
     def password(self):
@@ -171,7 +173,9 @@ class JSS(object):
         Args:
             value (str): password.
         """
-        self.session.auth = (self.session.auth[0], value)
+        auth = self.session.auth
+        user = auth[0] if auth else ''
+        self.session.auth = (user, value)
 
     @property
     def ssl_verify(self):
