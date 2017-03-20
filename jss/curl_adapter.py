@@ -59,7 +59,7 @@ class CurlAdapter(object):
         post_args = {
             "--header": "Content-Type: text/xml", "--request": "POST",
             "--data": data}
-        return self._request(url, put_args)
+        return self._request(url, post_args)
 
     def put(self, url, data):
         put_args = {
