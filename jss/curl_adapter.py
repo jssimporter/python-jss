@@ -50,26 +50,26 @@ class CurlAdapter(object):
 
     def __init__(self):
         self.auth = ('', '')
-        self.ssl_verify = True
+        self.verify = True
         self.use_tls = True
 
     def get(self, url, headers=None):
         return self._request(url, headers)
 
-    def post(self, url, data, headers=None):
+    def post(self, url, data=None, headers=None, files=None):
         header = ['Content-Type: text/xml']
         if headers:
             header += headers
 
-        post_kwargs = {"--request": "POST", "--data": data}
-        return self._request(url, header, **post_kwargs)
+        post_kwargs = {"--request": "POST"}
+        return self._request(url, header, data, files, **post_kwargs)
 
-    def put(self, url, data, headers=None):
+    def put(self, url, data=None, headers=None, files=None):
         header = ['Content-Type: text/xml']
         if headers:
             header += headers
-        put_args = {"--request": "PUT", "--data": data}
-        return self._request(url, header, **put_args)
+        put_args = {"--request": "PUT"}
+        return self._request(url, header, data, files, **put_args)
 
     def delete(self, url, data=None, headers=None):
         delete_args = {"--request": "DELETE"}
@@ -78,8 +78,8 @@ class CurlAdapter(object):
             delete_args['--data'] = data
         return self._request(url, headers, **delete_args)
 
-    def _request(self, url, headers=None, **kwargs):
-        command = self._build_command(url, headers, **kwargs)
+    def _request(self, url, headers=None, data=None, files=None, **kwargs):
+        command = self._build_command(url, headers, data, files, **kwargs)
 
         # Ensure all arguments to curl are encoded. This is the last
         # point of contact, so just do it here and keep it Unicode
@@ -99,7 +99,8 @@ class CurlAdapter(object):
 
         return CurlResponseAdapter(response)
 
-    def _build_command(self, url, headers=None, **kwargs):
+    def _build_command(
+        self, url, headers=None, data=None, files=None, **kwargs):
         """Construct the argument list for curl.
 
         Encode all unicode to bytes with UTF-8 on the way out.
@@ -124,7 +125,7 @@ class CurlAdapter(object):
         # the resulting CurlResponseAdapter.
         command += ["--write-out", "|%{response_code}"]
 
-        if self.ssl_verify == False:
+        if self.verify == False:
             command.append("--insecure")
 
         if self.use_tls:
@@ -133,6 +134,15 @@ class CurlAdapter(object):
         if headers:
             for header in headers:
                 command += ['--header', header]
+
+        if data:
+            command += ["--data", data]
+
+        if files:
+            path = files['name'][1].name
+            content_type = files['name'][2]
+            file_data = 'name=@{};type={}'.format(path, content_type)
+            command += ["--form", file_data]
 
         for key, val in kwargs.items():
             command += [key, val]
