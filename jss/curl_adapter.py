@@ -51,28 +51,32 @@ class CurlAdapter(object):
         self.ssl_verify = True
         self.use_tls = True
 
-    def get(self, url):
-        return self._request(url)
+    def get(self, url, headers=None):
+        return self._request(url, None, headers)
 
-    def post(self, url, data):
+    def post(self, url, data, headers=None):
         post_args = {
             "--header": "Content-Type: text/xml", "--request": "POST",
             "--data": data}
-        return self._request(url, post_args)
+        return self._request(url, post_args, headers)
 
-    def put(self, url, data):
+    def put(self, url, data, headers=None):
         put_args = {
             "--header": "Content-Type: text/xml", "--request": "PUT",
             "--data": data}
-        return self._request(url, put_args)
+        return self._request(url, put_args, headers)
 
-    def delete(self, url, data=None):
+    def delete(self, url, data=None, headers=None):
         delete_args = {"--request": "DELETE"}
-        return self._request(url, delete_args)
+        if data:
+            delete_args['--data'] = data
+        return self._request(url, delete_args, headers)
 
-    def _request(self, url, args=None):
+    def _request(self, url, args=None, headers=None):
         if not args:
             args = {}
+        if headers:
+            args['headers'] = headers
         command = self._build_command(url, **args)
         try:
             response = subprocess.check_output(command)
