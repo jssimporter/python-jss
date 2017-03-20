@@ -146,13 +146,13 @@ def indent_xml(elem, level=0, more_sibs=False):
                 elem.tail += pad
 
 
-def element_repr(self):
+def element_repr(elem):
     """Return a string with indented XML data.
 
     Used to replace the __repr__ method of Element.
     """
     # deepcopy so we don't mess with the valid XML.
-    pretty_data = copy.deepcopy(self)
+    pretty_data = copy.deepcopy(elem)
     indent_xml(pretty_data)
     return ElementTree.tostring(pretty_data, encoding='UTF-8')
 
