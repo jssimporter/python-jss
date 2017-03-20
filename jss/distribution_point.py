@@ -709,8 +709,8 @@ class DistributionServer(Repository):
         data_dict = {"username": self.connection["jss"].user,
                      "password": self.connection["jss"].password,
                      "deletedPackageID": package_to_delete}
-        self.connection["jss"].session.post(url=self.connection["delete_url"],
-                                            data=data_dict)
+        self.connection["jss"].session.post(
+            url=self.connection["delete_url"], data=data_dict)
         # There's no response if it works.
 
     def delete(self, filename):
