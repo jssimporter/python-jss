@@ -68,7 +68,7 @@ def convert_response_to_text(response):
     """Convert a JSS HTML response to plaintext."""
     # Responses are sent as html. Split on the newlines and give us
     # the <p> text back.
-    errorlines = response.text.encode("utf-8").split("\n")
+    errorlines = response.content.split("\n")
     error = []
     pattern = re.compile(r"<p.*>(.*)</p>")
     for line in errorlines:
