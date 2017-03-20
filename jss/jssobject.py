@@ -214,6 +214,7 @@ class JSSObject(ElementTree.Element):
             return
 
         # Convert kwarg data to the appropriate string.
+        # TODO: Factor out repeated kwargs[key] usage
         if key in kwargs:
             kwarg = kwargs[key]
             if isinstance(kwarg, bool):
@@ -303,7 +304,7 @@ class JSSObject(ElementTree.Element):
         if not self.can_delete:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
         if data:
-            self.jss.delete(self.url, data)
+            self.jss.delete(self.url, data=data)
         else:
             self.jss.delete(self.url)
 
@@ -332,7 +333,7 @@ class JSSObject(ElementTree.Element):
                     cat_tag.text = ""
 
             try:
-                self.jss.put(self.url, self)
+                self.jss.put(self.url, data=self)
                 updated_data = self.jss.get(self.url)
             except JSSPutError as put_error:
                 # Something when wrong.
@@ -340,7 +341,7 @@ class JSSObject(ElementTree.Element):
         elif self.can_post:
             url = self.get_post_url()
             try:
-                updated_data = self.jss.post(self.__class__, url, self)
+                updated_data = self.jss.post(self.__class__, url, data=self)
             except JSSPostError as err:
                 raise JSSPostError(err)
         else:
@@ -490,7 +491,6 @@ class JSSObject(ElementTree.Element):
                 object.
         """
         # ElementTree.fromstring in python2 really wants bytes.
-        # There's no harm in encoding bytes, but this is more explicit.
         if isinstance(xml_string, unicode):
             xml_string = xml_string.encode('UTF-8')
         root = ElementTree.fromstring(xml_string)
