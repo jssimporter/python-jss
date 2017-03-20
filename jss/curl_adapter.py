@@ -15,17 +15,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """curl_adapter.py
 
-Adapter objects to provide an API for drop-in replacements
-for http requests.
+Adapter object to provide the Requests API wrapped around curl.
 
-These classes primarily exists to work around the somewhat broken python
-environment provided by Apple. python-jss initially used the requests
-package to perform secure communications, but after macOS 10.11 stopped
-making it easy for downstream python-jss projects to install without
-user site-package installs (JSSImporter in AutoPkgr...), it was decided
-that an adapter should be created. Then, curl could be offered as a
-an easier default networking layer. At some point, it would be nice
-to also add an NSURLSession adapter.
+macOS ships with a combination of python and openssl that cannot do TLS,
+which is required to work with current JSS versions.
+
+python-jss offers two options:
+1. Add the Requests library, along with updating a number of its
+   dependencies.
+2. Use subprocess to funnel web requests through curl, which is built on
+   Macs against the Cocoa networking frameworks.
+
+This module provides the second option, a wrapper around Curl that uses
+the same API as Requests, to facilitate replacing the networking layer
+for more advanced users. CurlAdapter is the default when instantiating a
+JSS object beginning with python-jss 2.0.0.
 """
 
 
@@ -42,9 +46,7 @@ class CurlAdapter(object):
         ssl_verify (bool): Whether to verify SSL traffic. Defaults to
             True.
         use_tls: Whether to use TLS. Defaults to True.
-        headers (dict): Request header to use for requests.
     """
-    headers = {"content-type": "text/xml", "Accept": "application/xml"}
 
     def __init__(self):
         self.auth = ('', '')
@@ -52,32 +54,40 @@ class CurlAdapter(object):
         self.use_tls = True
 
     def get(self, url, headers=None):
-        return self._request(url, None, headers)
+        return self._request(url, headers)
 
     def post(self, url, data, headers=None):
-        post_args = {
-            "--header": "Content-Type: text/xml", "--request": "POST",
-            "--data": data}
-        return self._request(url, post_args, headers)
+        header = ['Content-Type: text/xml']
+        if headers:
+            header += headers
+
+        post_kwargs = {"--request": "POST", "--data": data}
+        return self._request(url, header, **post_kwargs)
 
     def put(self, url, data, headers=None):
-        put_args = {
-            "--header": "Content-Type: text/xml", "--request": "PUT",
-            "--data": data}
-        return self._request(url, put_args, headers)
+        header = ['Content-Type: text/xml']
+        if headers:
+            header += headers
+        put_args = {"--request": "PUT", "--data": data}
+        return self._request(url, header, **put_args)
 
     def delete(self, url, data=None, headers=None):
         delete_args = {"--request": "DELETE"}
         if data:
+            headers += ['Content-Type: text/xml']
             delete_args['--data'] = data
-        return self._request(url, delete_args, headers)
+        return self._request(url, headers, **delete_args)
 
-    def _request(self, url, args=None, headers=None):
-        if not args:
-            args = {}
-        if headers:
-            args['headers'] = headers
-        command = self._build_command(url, **args)
+    def _request(self, url, headers=None, **kwargs):
+        command = self._build_command(url, headers, **kwargs)
+
+        # Ensure all arguments to curl are encoded. This is the last
+        # point of contact, so just do it here and keep it Unicode
+        # everywhere else.
+        command = [
+            item.encode('UTF-8') if isinstance(item, unicode) else item
+            for item in command]
+
         try:
             response = subprocess.check_output(command)
         except subprocess.CalledProcessError as err:
@@ -89,15 +99,29 @@ class CurlAdapter(object):
 
         return CurlResponseAdapter(response)
 
-    def suppress_warnings(self):
-        """Included for compatibility with RequestsAdapter"""
-        # TODO: Remove
-        pass
+    def _build_command(self, url, headers=None, **kwargs):
+        """Construct the argument list for curl.
 
-    def _build_command(self, url, **kwargs):
-        command = ["curl", "-u", '{}:{}'.format(*self.auth)]
+        Encode all unicode to bytes with UTF-8 on the way out.
+
+        Args:
+            url (str): Full URL to request.
+            headers (container): Header strings to use. Defaults to None.
+            kwargs (str: str): Extra commandline arguments and their
+                values to be added to the curl command.
+
+        Returns:
+            list of arguments to subprocess for making request via curl.
+        """
+        # Curl expects auth information as a ':' delimited string.
+        auth = '{}:{}'.format(*self.auth)
+        command = ["curl", "-u", auth]
+
         # Remove the progress bar that curl displays in a subprocess.
         command.append("--silent")
+
+        # Add the returncode to the output so we can parse it into
+        # the resulting CurlResponseAdapter.
         command += ["--write-out", "|%{response_code}"]
 
         if self.ssl_verify == False:
@@ -106,12 +130,21 @@ class CurlAdapter(object):
         if self.use_tls:
             command.append("--tlsv1")
 
+        if headers:
+            for header in headers:
+                command += ['--header', header]
+
         for key, val in kwargs.items():
-            command += [key.encode('UTF-8'), val.encode('UTF-8')]
+            command += [key, val]
 
         command.append(url)
 
         return command
+
+    def suppress_warnings(self):
+        """Included for compatibility with RequestsAdapter"""
+        # TODO: Remove
+        pass
 
 
 class CurlResponseAdapter(object):
