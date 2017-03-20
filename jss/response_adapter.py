@@ -45,13 +45,14 @@ class CurlResponseAdapter(object):
 
     def __init__(self, response):
         self.response = response
-        text, _, status_code = response.rpartition("|")
+        content, _, status_code = response.rpartition("|")
         try:
             self.status_code = int(status_code)
         except ValueError:
             self.status_code = 0
+        self.content = content
         # Requests' text attribute returns unicode, so convert curl's
         # returned bytes.
-        self.text = text.decode('UTF-8')
+        self.text = content.decode('UTF-8')
 
 
