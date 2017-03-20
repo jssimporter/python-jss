@@ -67,8 +67,9 @@ class Casper(ElementTree.Element):
 
     def update(self):
         """Request an updated set of data from casper.jxml."""
-        response = self.jss.session.post(self.url, data=self.auth)
-        response_xml = ElementTree.fromstring(response.text.encode("utf_8"))
+        response = self.jss.session.post(
+            self.url, data=self.auth.encode('UTF-8'))
+        response_xml = ElementTree.fromstring(response.content)
 
         # Remove previous data, if any, and then add in response's XML.
         self.clear()

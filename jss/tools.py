@@ -157,5 +157,5 @@ def element_repr(self):
     return ElementTree.tostring(pretty_data, encoding='UTF-8')
 
 
-def quote_and_encode(self, string):
+def quote_and_encode(string):
     return quote(string.encode('UTF_8'))

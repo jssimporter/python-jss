@@ -147,7 +147,7 @@ class CommandFlush(JSSObject):
             JSSDeleteError if provided url_path has a >= 400 response.
         """
         if not isinstance(data, basestring):
-            data = ElementTree.tostring(data)
+            data = ElementTree.tostring(data, encoding='UTF-8')
         response = self.delete(data)
 
     def command_flush_for(self, id_type, command_id, status):
@@ -654,7 +654,7 @@ class LogFlush(JSSObject):
             JSSDeleteError if provided url_path has a >= 400 response.
         """
         if not isinstance(data, basestring):
-            data = ElementTree.tostring(data)
+            data = ElementTree.tostring(data, encoding='UTF-8')
         response = self.delete(data)
 
     def log_flush_for_interval(self, log_type, interval):
