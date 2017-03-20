@@ -52,8 +52,19 @@ class Casper(ElementTree.Element):
         """
         self.jss = jss
         self.url = "%s/casper.jxml" % self.jss.base_url
-        self.auth = urllib.urlencode({"username": self.jss.user,
-                                      "password": self.jss.password})
+
+        # This may be incorrect, but the assumption here is that this
+        # request wants the auth information as urlencoded data; and
+        # urlencode needs bytes.
+        # TODO: If we can just pass in bytes rather than
+        # urlencoded-bytes, we can remove this and let the request
+        # adapter handle the outgoing data encoding.
+        user = (self.jss.user.encode('UTF-8') if
+                isinstance(self.jss.user, unicode) else self.jss.user)
+        password = (self.jss.password.encode('UTF-8') if
+                isinstance(self.jss.password, unicode) else self.jss.password)
+        self.auth = urllib.urlencode(
+            {"username": user, "password": password})
         super(Casper, self).__init__(tag="Casper")
         self.update()
 
@@ -68,7 +79,7 @@ class Casper(ElementTree.Element):
     def update(self):
         """Request an updated set of data from casper.jxml."""
         response = self.jss.session.post(
-            self.url, data=self.auth.encode('UTF-8'))
+            self.url, data=self.auth)
         response_xml = ElementTree.fromstring(response.content)
 
         # Remove previous data, if any, and then add in response's XML.
