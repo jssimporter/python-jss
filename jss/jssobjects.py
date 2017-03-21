@@ -33,6 +33,27 @@ from .jssobject import (JSSContainerObject, JSSFlatObject,
 from .tools import error_handler
 
 
+__all__ = (
+    'Account', 'AccountGroup', 'ActivationCode', 'AdvancedComputerSearch',
+    'AdvancedMobileDeviceSearch', 'AdvancedUserSearch', 'Building',
+    'BYOProfile', 'Category', 'Class', 'CommandFlush', 'Computer',
+    'ComputerCheckIn', 'ComputerCommand', 'ComputerConfiguration',
+    'ComputerExtensionAttribute', 'ComputerGroup', 'ComputerHistory',
+    'ComputerInventoryCollection', 'ComputerInvitation', 'ComputerReport',
+    'Department', 'DirectoryBinding', 'DiskEncryptionConfiguration',
+    'DistributionPoint', 'DockItem', 'EBook', 'FileUpload', 'GSXConnection',
+    'IBeacon', 'JSSUser', 'LDAPServer', 'LicensedSoftware', 'LogFlush',
+    'MacApplication', 'ManagedPreferenceProfile', 'MobileDevice',
+    'MobileDeviceApplication', 'MobileDeviceCommand',
+    'MobileDeviceConfigurationProfile', 'MobileDeviceEnrollmentProfile',
+    'MobileDeviceExtensionAttribute', 'MobileDeviceInvitation',
+    'MobileDeviceGroup', 'MobileDeviceProvisioningProfile', 'NetbootServer',
+    'NetworkSegment', 'OSXConfigurationProfile', 'Package', 'Patch',
+    'Peripheral', 'PeripheralType', 'Policy', 'Printer', 'RestrictedSoftware',
+    'RemovableMACAddress', 'SavedSearch', 'Script', 'Site',
+    'SoftwareUpdateServer', 'SMTPServer', 'UserExtensionAttribute', 'User',
+    'UserGroup', 'VPPAccount', 'VPPAssignment', 'VPPInvitation')
+
 # pylint: disable=missing-docstring
 class Account(JSSContainerObject):
     """JSS account."""
@@ -185,6 +206,7 @@ class Computer(JSSDeviceObject):
     search_types = {"name": "/name/", "serial_number": "/serialnumber/",
                     "udid": "/udid/", "macaddress": "/macadress/",
                     "match": "/match/"}
+    can_subset = True
 
     @property
     def mac_addresses(self):
@@ -352,6 +374,7 @@ class DockItem(JSSContainerObject):
 
 class EBook(JSSContainerObject):
     _url = "/ebooks"
+    can_subset = True
 
 
 # pylint: disable=too-few-public-methods
@@ -370,6 +393,7 @@ class FileUpload(object):
     changing the parameters, and issuing another save().
     """
     _url = "fileuploads"
+    can_subset = False
 
     def __init__(self, j, resource_type, id_type, _id, resource):
         """Prepare a new FileUpload.
@@ -732,10 +756,12 @@ class LogFlush(JSSObject):
 class MacApplication(JSSContainerObject):
     _url = "/macapplications"
     list_type = "mac_application"
+    can_subset = True
 
 
 class ManagedPreferenceProfile(JSSContainerObject):
     _url = "/managedpreferenceprofiles"
+    can_subset = True
 
 
 class MobileDevice(JSSDeviceObject):
@@ -748,6 +774,7 @@ class MobileDevice(JSSDeviceObject):
     search_types = {"name": "/name/", "serial_number": "/serialnumber/",
                     "udid": "/udid/", "macaddress": "/macadress/",
                     "match": "/match/"}
+    can_subset = True
 
     @property
     def wifi_mac_address(self):
@@ -763,6 +790,7 @@ class MobileDevice(JSSDeviceObject):
 
 class MobileDeviceApplication(JSSContainerObject):
     _url = "/mobiledeviceapplications"
+    can_subset = True
 
 
 class MobileDeviceCommand(JSSContainerObject):
@@ -778,11 +806,13 @@ class MobileDeviceCommand(JSSContainerObject):
 
 class MobileDeviceConfigurationProfile(JSSContainerObject):
     _url = "/mobiledeviceconfigurationprofiles"
+    can_subset = True
 
 
 class MobileDeviceEnrollmentProfile(JSSContainerObject):
     _url = "/mobiledeviceenrollmentprofiles"
     search_types = {"name": "/name/", "invitation": "/invitation/"}
+    can_subset = True
 
 
 class MobileDeviceExtensionAttribute(JSSContainerObject):
@@ -820,6 +850,7 @@ class MobileDeviceInvitation(JSSContainerObject):
 class MobileDeviceProvisioningProfile(JSSContainerObject):
     _url = "/mobiledeviceprovisioningprofiles"
     search_types = {"name": "/name/", "uuid": "/uuid/"}
+    can_subset = True
 
 
 class NetbootServer(JSSContainerObject):
@@ -832,6 +863,7 @@ class NetworkSegment(JSSContainerObject):
 
 class OSXConfigurationProfile(JSSContainerObject):
     _url = "/osxconfigurationprofiles"
+    can_subset = True
 
 
 class Package(JSSContainerObject):
@@ -903,6 +935,7 @@ class Patch(JSSContainerObject):
     _url = "/patches"
     list_type = "software_title"
     can_post = False
+    can_subset = True
     # The /patches/id/{id}/version/{version} variant is not currently
     # implemented.
 
@@ -910,6 +943,7 @@ class Patch(JSSContainerObject):
 class Peripheral(JSSContainerObject):
     _url = "/peripherals"
     search_types = {}
+    can_subset = True
 
 
 class PeripheralType(JSSContainerObject):
@@ -923,6 +957,7 @@ class Policy(JSSContainerObject):
     _url = "/policies"
     list_type = "policy"
     search_types = {"name": "/name/", "category": "/category/"}
+    can_subset = True
     _name_path = "general/name"
     data_keys = {
         "general": {

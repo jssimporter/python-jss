@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Added
 - Added `CurlAdapter`, `ResponseAdapter`, and `RequestsAdapter` to wrap curl in requests' API. This is primarily to deal with the fact that Apple's shipped OpenSSL is extremely out of date (requests uses pyopenssl, which uses the out-of-date OpenSSL). Since current recommendations from Jamf are to run the Casper server using only TLS1.2, this puts us in a bind. So, by default, python-jss will now use curl for networking. Developers seeking the advantages of using requests can replace the networking adapter they want to use (see `jss.jamf_software_server.JSS`).
+- @mosen really stepped up and provided Sphinx documentation! This is a great motivator for getting some improved documentation going for this project.
 
 ### Changed
 - Moved the `suppress_warnings` preference out of `JSS` and into the requests adapter. The `JSS` initialization will accept that keyword argument to ease the (sudden) deprecation, but it just won't do anything. Use the `RequestsAdapter.suppress_warnings()` method if you need it.
@@ -15,9 +16,12 @@ All notable changes to this project will be documented in this file. This projec
   `RequestsAdapter` and gain things like sessions.
 - The requests library is now not a required dependency. You only need it if
   you want to import/use the `RequestsAdapter`.
+- Through some metaprogramming shenanigans, jss.JSS is now about 500 lines shorter, from dynamically creating all of the object search methods. This makes maintenance of this code significantly easier.
+- As a result of above, all object search methods _accept_ a `subset` keyword argument. Whether the JSS is considered to work with subsetting is recorded as a new attribute on the class (`jss.Computer.can_subset = True` for example). This, again, makes it easier to maintain as JAMF adds or removes subsetting features. The search methods docstrings all reflect the level of (considered) support.
 
 ### Fixed
 - Made `JSS.user` and `JSS.password` proper properties, that will set the attached network adapter appropriately.
+- Unicode and bytes usage throughout has been audited and fixed. For the most part, developers can pass either to classes or methods and when they need to get converted, python-jss will do the right thing.
 
 ## [2.0.0] - 2017-03-19 - Start Choppin'
 
