@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file. This projec
 ### Added
 - Added `CurlAdapter`, `ResponseAdapter`, and `RequestsAdapter` to wrap curl in requests' API. This is primarily to deal with the fact that Apple's shipped OpenSSL is extremely out of date (requests uses pyopenssl, which uses the out-of-date OpenSSL). Since current recommendations from Jamf are to run the Casper server using only TLS1.2, this puts us in a bind. So, by default, python-jss will now use curl for networking. Developers seeking the advantages of using requests can replace the networking adapter they want to use (see `jss.jamf_software_server.JSS`).
 - @mosen really stepped up and provided Sphinx documentation! This is a great motivator for getting some improved documentation going for this project.
+- `JSSObject` and all of its subclasses can now be used as a context manager (the python `with` statement). All this does is automatically tries to save the object automatically on the way out of the with context.
 
 ### Changed
 - Moved the `suppress_warnings` preference out of `JSS` and into the requests adapter. The `JSS` initialization will accept that keyword argument to ease the (sudden) deprecation, but it just won't do anything. Use the `RequestsAdapter.suppress_warnings()` method if you need it.
