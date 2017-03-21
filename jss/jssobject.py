@@ -96,6 +96,8 @@ class JSSObject(ElementTree.Element):
             Key: Search type name. At least one must match the
                 default_search.
             Val: URL component to use to request via this search_type.
+        can_subset (bool): Whether class allows subset arguments to GET
+            queries.
         list_type: String singular form of object type found in
             containers (e.g. ComputerGroup has a container with tag:
             "computers" holding "computer" elements. The list_type is
@@ -128,6 +130,7 @@ class JSSObject(ElementTree.Element):
     container = ""
     default_search = "name"
     search_types = {"name": "/name/"}
+    can_subset = False
     list_type = "JSSObject"
     data_keys = {}
 

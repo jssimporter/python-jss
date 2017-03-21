@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+    #!/usr/bin/env python
 # Copyright (C) 2014-2017 Shea G Craig
 #
 # This program is free software: you can redistribute it and/or modify
@@ -344,46 +344,6 @@ class JSS(object):
         elif response.status_code >= 400:
             error_handler(JSSDeleteError, response)
 
-    # Convenience methods for all JSSObject types ######################
-
-    # Define a docstring to add with a decorator. Why? To avoid having
-    # the identical docstring repeat for each object type!
-
-    def _docstring_parameter(obj_type, subset=False):   # pylint: disable=no-self-argument
-        """Decorator for adding _docstring to repetitive methods."""
-        docstring = (
-            "Flexibly search the JSS for objects of type {}.\n\n\tArgs:\n\t\t"
-            "Data: Allows different types to conduct different types of "
-            "searches. Argument of type:\n\t\t\tNone (or Provide no argument) "
-            "to search for all objects.\n\t\t\tInt to search for an object by "
-            "ID.\n\t\t\tString to search for an object by name.\n\t\t\t"
-            "xml.etree.ElementTree.Element to create a new object from the "
-            "Element's data.{}\n\n\tReturns:\n\t\tJSSObjectList for empty "
-            "data arguments.\n\t\tReturns an object of type {} for searches "
-            "and new objects.\n\t\t(FUTURE) Will return None if nothing is "
-            "found that match the search criteria.\n\n\tRaises:\n\t\t"
-            "JSSGetError for nonexistent objects.")
-
-        if subset:
-            subset_string = (
-                "\n\t\tsubset: A list of XML subelement tags to request\n"
-                "\t\t\t(e.g. ['general', 'purchasing']), OR an '&' \n\t\t\t"
-                "delimited string (e.g. 'general&purchasing').")
-        else:
-            subset_string = ""
-
-        def dec(obj):
-            """Dynamically decorate a docstring."""
-            class_name = str(obj_type)[:-2].rsplit(".")[-1]
-            updated_docstring = docstring.format(class_name, subset_string,
-                                                 class_name)
-            obj.__doc__ = obj.__doc__.format(
-                dynamic_docstring=updated_docstring)
-            return obj
-        return dec
-
-    #pylint: disable=invalid-name
-
     def pickle_all(self, path):
         """Back up entire JSS to a Python Pickle.
 
@@ -514,329 +474,62 @@ class JSS(object):
 
         return all_objects
 
-    @_docstring_parameter(jssobjects.Account)
-    def Account(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Account, data)
 
-    @_docstring_parameter(jssobjects.AccountGroup)
-    def AccountGroup(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.AccountGroup, data)
+# There's a lot of repetition involved in creating the object query
+# methods on JSS, so we create them dynamically at import time.
+def add_search_method(cls, name):
+    """Add a class-specific search method to a class (JSS)"""
+    # Get the actual class to search for, from str `name`
+    obj_type = getattr(jssobjects, name)
 
-    @_docstring_parameter(jssobjects.AdvancedComputerSearch)
-    def AdvancedComputerSearch(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.AdvancedComputerSearch, data)
+    # Create a closure over the retrieved class to do our search.
+    def api_method(self, data=None, subset=None):
+        """Flexibly search the JSS for objects of type {0}.
 
-    @_docstring_parameter(jssobjects.AdvancedMobileDeviceSearch)
-    def AdvancedMobileDeviceSearch(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.AdvancedMobileDeviceSearch,
-                                       data)
+            Args:
+                data (None, int, str, xml.etree.ElementTree.Element):
+                    Argument to query for. Different queries are
+                    performed depending on the type of this arg:
+                        None (or provide no argument / default):
+                            Search for all objects.
+                        int: Search for an object by ID.
+                        str: Search for an object by name.
+                        xml.etree.ElementTree.Element: create a new
+                            object from the Element's data.
+                subset (list of str or str): Some JSS types allow you to
+                    request a subset of data be returned. See the JSS API
+                    documentation for a complete list. This argument is
+                    {1} for this type.
 
-    @_docstring_parameter(jssobjects.AdvancedUserSearch)
-    def AdvancedUserSearch(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.AdvancedUserSearch, data)
+                    This argument should be either A list of XML
+                    subelement tags to request or an '&' delimited str.
+                    (e.g. ['general', 'purchasing'] or
+                    'general&purchasing')
 
-    @_docstring_parameter(jssobjects.ActivationCode)
-    def ActivationCode(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ActivationCode, data)
+            Returns:
+                JSSObjectList: If data=None, return all objects of this
+                    type.
+                {0}: If searching or creating new objects, return an
+                    instance of that object.
+                None: (FUTURE) Will return None if nothing is found that
+                    matches the search criteria.
 
-    @_docstring_parameter(jssobjects.Building)
-    def Building(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Building, data)
+            Raises:
+                JSSGetError for nonexistent objects.
+        """
+        return self.factory.get_object(obj_type, data, subset)
 
-    @_docstring_parameter(jssobjects.BYOProfile)
-    def BYOProfile(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.BYOProfile, data)
-
-    @_docstring_parameter(jssobjects.Category)
-    def Category(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Category, data)
-
-    @_docstring_parameter(jssobjects.Class)
-    def Class(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Class, data)
-
-    @_docstring_parameter(jssobjects.Computer, subset=True)
-    def Computer(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Computer, data, subset)
-
-    @_docstring_parameter(jssobjects.ComputerCheckIn)
-    def ComputerCheckIn(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerCheckIn, data)
-
-    @_docstring_parameter(jssobjects.ComputerCommand)
-    def ComputerCommand(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerCommand, data)
-
-    @_docstring_parameter(jssobjects.ComputerConfiguration)
-    def ComputerConfiguration(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerConfiguration, data)
-
-    @_docstring_parameter(jssobjects.ComputerExtensionAttribute)
-    def ComputerExtensionAttribute(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerExtensionAttribute,
-                                       data)
-
-    @_docstring_parameter(jssobjects.ComputerGroup)
-    def ComputerGroup(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerGroup, data)
-
-    @_docstring_parameter(jssobjects.ComputerInventoryCollection)
-    def ComputerInventoryCollection(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerInventoryCollection,
-                                       data)
-
-    @_docstring_parameter(jssobjects.ComputerInvitation)
-    def ComputerInvitation(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerInvitation, data)
-
-    @_docstring_parameter(jssobjects.ComputerReport)
-    def ComputerReport(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerReport, data)
-
-    @_docstring_parameter(jssobjects.Department)
-    def Department(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Department, data)
-
-    @_docstring_parameter(jssobjects.DirectoryBinding)
-    def DirectoryBinding(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.DirectoryBinding, data)
-
-    @_docstring_parameter(jssobjects.DiskEncryptionConfiguration)
-    def DiskEncryptionConfiguration(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.DiskEncryptionConfiguration,
-                                       data)
-
-    @_docstring_parameter(jssobjects.DistributionPoint)
-    def DistributionPoint(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.DistributionPoint, data)
-
-    @_docstring_parameter(jssobjects.DockItem)
-    def DockItem(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.DockItem, data)
-
-    @_docstring_parameter(jssobjects.EBook, subset=True)
-    def EBook(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.EBook, data, subset)
-
-    # FileUploads' only function is to upload, so a method here is not
-    # provided.
-
-    @_docstring_parameter(jssobjects.GSXConnection)
-    def GSXConnection(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.GSXConnection, data)
-
-    @_docstring_parameter(jssobjects.IBeacon)
-    def IBeacon(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.IBeacon, data)
-
-    @_docstring_parameter(jssobjects.JSSUser)
-    def JSSUser(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.JSSUser, data)
-
-    @_docstring_parameter(jssobjects.LDAPServer)
-    def LDAPServer(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.LDAPServer, data)
-
-    @_docstring_parameter(jssobjects.LicensedSoftware)
-    def LicensedSoftware(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.LicensedSoftware, data)
-
-    @_docstring_parameter(jssobjects.MacApplication, subset=True)
-    def MacApplication(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.MacApplication, data, subset)
-
-    @_docstring_parameter(jssobjects.ManagedPreferenceProfile, subset=True)
-    def ManagedPreferenceProfile(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ManagedPreferenceProfile,
-                                       data, subset)
-
-    @_docstring_parameter(jssobjects.MobileDevice, subset=True)
-    def MobileDevice(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.MobileDevice, data, subset)
-
-    @_docstring_parameter(jssobjects.MobileDeviceApplication, subset=True)
-    def MobileDeviceApplication(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.MobileDeviceApplication,
-                                       data, subset)
-
-    @_docstring_parameter(jssobjects.MobileDeviceCommand)
-    def MobileDeviceCommand(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.MobileDeviceCommand, data)
-
-    @_docstring_parameter(jssobjects.MobileDeviceConfigurationProfile,
-                          subset=True)
-    def MobileDeviceConfigurationProfile(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(
-            jssobjects.MobileDeviceConfigurationProfile, data, subset)
-
-    @_docstring_parameter(jssobjects.MobileDeviceEnrollmentProfile,
-                          subset=True)
-    def MobileDeviceEnrollmentProfile(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(
-            jssobjects.MobileDeviceEnrollmentProfile, data, subset)
-
-    @_docstring_parameter(jssobjects.MobileDeviceExtensionAttribute)
-    def MobileDeviceExtensionAttribute(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(
-            jssobjects.MobileDeviceExtensionAttribute, data)
-
-    @_docstring_parameter(jssobjects.MobileDeviceInvitation)
-    def MobileDeviceInvitation(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.MobileDeviceInvitation, data)
-
-    @_docstring_parameter(jssobjects.MobileDeviceGroup)
-    def MobileDeviceGroup(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.MobileDeviceGroup, data)
-
-    @_docstring_parameter(jssobjects.MobileDeviceProvisioningProfile,
-                          subset=True)
-    def MobileDeviceProvisioningProfile(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(
-            jssobjects.MobileDeviceProvisioningProfile, data, subset)
-
-    @_docstring_parameter(jssobjects.NetbootServer)
-    def NetbootServer(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.NetbootServer, data)
-
-    @_docstring_parameter(jssobjects.NetworkSegment)
-    def NetworkSegment(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.NetworkSegment, data)
-
-    @_docstring_parameter(jssobjects.OSXConfigurationProfile, subset=True)
-    def OSXConfigurationProfile(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.OSXConfigurationProfile,
-                                       data, subset)
-
-    @_docstring_parameter(jssobjects.Package)
-    def Package(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Package, data)
-
-    @_docstring_parameter(jssobjects.Patch)
-    def Patch(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Patch, data)
-    @_docstring_parameter(jssobjects.Peripheral, subset=True)
-    def Peripheral(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Peripheral, data, subset)
-
-    @_docstring_parameter(jssobjects.PeripheralType)
-    def PeripheralType(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.PeripheralType, data)
-
-    @_docstring_parameter(jssobjects.Policy, subset=True)
-    def Policy(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Policy, data, subset)
-
-    @_docstring_parameter(jssobjects.Printer)
-    def Printer(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Printer, data)
-
-    @_docstring_parameter(jssobjects.RestrictedSoftware)
-    def RestrictedSoftware(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.RestrictedSoftware, data)
-
-    @_docstring_parameter(jssobjects.RemovableMACAddress)
-    def RemovableMACAddress(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.RemovableMACAddress, data)
-
-    @_docstring_parameter(jssobjects.SavedSearch)
-    def SavedSearch(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.SavedSearch, data)
-
-    @_docstring_parameter(jssobjects.Script)
-    def Script(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Script, data)
-
-    @_docstring_parameter(jssobjects.Site)
-    def Site(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Site, data)
-
-    @_docstring_parameter(jssobjects.SoftwareUpdateServer)
-    def SoftwareUpdateServer(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.SoftwareUpdateServer, data)
-
-    @_docstring_parameter(jssobjects.SMTPServer)
-    def SMTPServer(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.SMTPServer, data)
-
-    @_docstring_parameter(jssobjects.UserExtensionAttribute)
-    def UserExtensionAttribute(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.UserExtensionAttribute, data)
-
-    @_docstring_parameter(jssobjects.User)
-    def User(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.User, data)
-
-    @_docstring_parameter(jssobjects.UserGroup)
-    def UserGroup(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.UserGroup, data)
-
-    @_docstring_parameter(jssobjects.VPPAccount)
-    def VPPAccount(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.VPPAccount, data)
+    # Add in the missing variables to the docstring and set name.
+    subset_support = 'supported' if obj_type.can_subset else 'unsupported'
+    api_method.__doc__ = api_method.__doc__.format(name, subset_support)
+    api_method.__name__ = name
+    # Add the method to the class with the correct name.
+    setattr(cls, name, api_method)
 
 
-    # pylint: enable=invalid-name
+# Run `add_search_method` against everything that jss.jssobjects exports.
+for jss_class in jssobjects.__all__:
+    add_search_method(JSS, jss_class)
 
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
