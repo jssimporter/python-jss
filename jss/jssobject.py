@@ -231,6 +231,13 @@ class JSSObject(ElementTree.Element):
 
         target_key.text = kwargs.get(key, val)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Try to save on the way out of the with statement."""
+        self.save()
+
     def makeelement(self, tag, attrib):
         """Return an Element."""
         # We use ElementTree.SubElement() a lot. Unfortunately, it
