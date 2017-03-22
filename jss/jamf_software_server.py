@@ -716,7 +716,8 @@ class JSSObjectFactory(object):
                             if item is not None and
                             item.tag != "size"]
         objects = [
-            JSSListData(obj_class, {i.tag: i.text for i in response_object},
-                        self) for response_object in response_objects]
+            JSSListData(
+                obj_class, {i.tag: i.text for i in response_object}, self)
+            for response_object in response_objects]
 
         return JSSObjectList(self, obj_class, objects)
