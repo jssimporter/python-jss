@@ -65,7 +65,6 @@ from .exceptions import (
     JSSFileUploadParameterError, JSSUnsupportedFileType, JSSError)
 from .jamf_software_server import JSS
 from .jssobject import JSSObject
-from .jssobjectlist import JSSObjectList
 from .jssobjects import (
     Account, AccountGroup, ActivationCode, AdvancedComputerSearch,
     AdvancedMobileDeviceSearch, AdvancedUserSearch, Building, BYOProfile,
@@ -85,6 +84,7 @@ from .jssobjects import (
     SMTPServer, UserExtensionAttribute, User, UserGroup, VPPAccount,
     VPPAssignment, VPPInvitation)
 from .jss_prefs import JSSPrefs
+from queryset import QuerySet
 
 # If a system doesn't have the required dependencies for requests, do
 # nothing.
@@ -95,5 +95,7 @@ except ImportError:
 
 from .tools import is_osx, is_linux
 
+# Deprecated
+from .jssobjectlist import JSSObjectList
 
 __version__ = "2.0.0"
