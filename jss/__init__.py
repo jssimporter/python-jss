@@ -91,7 +91,7 @@ from .jss_prefs import JSSPrefs
 try:
     from .requests_adapter import RequestsAdapter
 except ImportError:
-    pass
+    RequestsAdapter = None
 
 from .tools import is_osx, is_linux
 
