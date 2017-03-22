@@ -716,7 +716,7 @@ class JSSObjectFactory(object):
                             if item is not None and
                             item.tag != "size"]
         identities =  (
-            Identity(obj.findtext('name'), obj.findtext('id'))
+            Identity(name=obj.findtext('name'), id=obj.findtext('id'))
             for obj in response_objects)
 
         objects = [obj_class(self.jss, data=i) for i in identities]

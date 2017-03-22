@@ -90,6 +90,7 @@ class SearchCriteria(ElementTree.Element):
 
 Identity = collections.namedtuple('Identity', ['id', 'name'])
 
+
 class JSSObject(ElementTree.Element):
     """Base class for all JSS API objects.
 
@@ -384,7 +385,8 @@ class JSSObject(ElementTree.Element):
     @property
     def name(self):
         """Return object name or None."""
-        return self.findtext("name") or self.findtext("general/name")
+        name = self.findtext("name") or self.findtext("general/name")
+        return name if name else self._name
 
     @property
     def id(self):   # pylint: disable=invalid-name
@@ -394,7 +396,8 @@ class JSSObject(ElementTree.Element):
         # can't assign ID's, so there's no need to perform arithmetic on
         # them, and having to convert to str all over the place is
         # gross. str equivalency still works.
-        return self.findtext("id") or self.findtext("general/id")
+        id_ = self.findtext("id") or self.findtext("general/id")
+        return id_ if id_ else self._id
 
     def _handle_location(self, location):
         """Return an element located at location with flexible args.
