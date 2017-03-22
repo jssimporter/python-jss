@@ -61,8 +61,8 @@ class QuerySet(object):
     def __str__(self):
         """Make data human readable."""
         #Note: Large lists/objects may take a long time to indent!
-        name_max= max(len(item[0].name) for item in self._objects)
-        id_max = max(len(str(item[0].id)) for item in self._objects)
+        name_max= max(len(item.name) for item in self._objects)
+        id_max = max(len(str(item.id)) for item in self._objects)
         results = ["QueryResults for JSS object type: '{}':".format(
             self.contained_class)]
         results.append((name_max + id_max + 11) * '-')
