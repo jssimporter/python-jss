@@ -19,6 +19,7 @@ Base Classes representing JSS database objects and their API endpoints
 """
 
 
+import collections
 import cPickle
 import os
 from xml.etree import ElementTree
@@ -28,6 +29,7 @@ from .exceptions import (JSSUnsupportedSearchMethodError,
 from .tools import element_repr
 
 
+# TODO: Nope!
 # python-jss is intended to allow easy, pythonic access to the JSS. As
 # such, a heavy emphasis is placed its use for interactive discovery
 # and exploration. Because JSSObjects are subclassed from Element, the
@@ -35,6 +37,15 @@ from .tools import element_repr
 # allows things like Element.find("general") to return something more
 # useful than just the tag name when not assigned.
 ElementTree.Element.__repr__ = element_repr
+# results = []
+# for item, cached in self._objects:
+#     line = "<instance of '{}' name: {} id: {} cached: {}>".format(
+#         item.__class__.__name__, item.name, item.id,
+#         bool(cached is not None))
+
+#     results.append(line)
+
+# return ", ".join(results)
 
 
 class SearchCriteria(ElementTree.Element):
@@ -76,6 +87,8 @@ class SearchCriteria(ElementTree.Element):
         # This handles that issue.
         return ElementTree.Element(tag, attrib)
 
+
+Identity = collections.namedtuple('Identity', ['id', 'name'])
 
 class JSSObject(ElementTree.Element):
     """Base class for all JSS API objects.
@@ -152,6 +165,12 @@ class JSSObject(ElementTree.Element):
             super(JSSObject, self).__init__(tag=data.tag)
             for child in data.getchildren():
                 self.append(child)
+        elif isinstance(data, Identity):
+            # This is basic identity information, probably from a
+            # listing operation.
+            self._id = data.id
+            self._name = data.name
+            super(JSSObject, self).__init__(tag=self.list_type)
         else:
             raise TypeError("JSSObjects data argument must be of type "
                             "xml.etree.ElemenTree.Element, or a string for the"
