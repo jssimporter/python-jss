@@ -25,7 +25,7 @@ import cPickle
 import os
 
 
-class QuerySet(object):
+class QuerySet(list):
     old_docstring = """A list style collection of JSSObjects.
 
     List operations retrieve minimal or overview information for most
@@ -46,27 +46,20 @@ class QuerySet(object):
 
     def __init__(self, factory, obj_class, objects=None):
         """"""
-        self.contained_class = obj_class
         if not isinstance(objects, (list, tuple, set)):
             raise TypeError
-
-        self._objects = list(objects) if objects else []
-
-    def __len__(self):
-        return len(self._objects)
-
-    def __iter__(self):
-        return iter(self._objects)
+        super(QuerySet, self).__init__(objects)
+        self.contained_class = obj_class
 
     def __str__(self):
         """Make data human readable."""
         #Note: Large lists/objects may take a long time to indent!
-        name_max= max(len(item.name) for item in self._objects)
-        id_max = max(len(str(item.id)) for item in self._objects)
+        name_max= max(len(item.name) for item in self)
+        id_max = max(len(str(item.id)) for item in self)
         results = ["QueryResults for JSS object type: '{}':".format(
             self.contained_class)]
         results.append((name_max + id_max + 11) * '-')
-        for item in self._objects:
+        for item in self:
             line = "Name: {0:>{2}} ID: {1:>{3}}".format(
                 item.name, item.id, name_max, id_max)
             results.append(line)
@@ -74,9 +67,15 @@ class QuerySet(object):
 
     def __repr__(self):
         """Make data human readable."""
-        return "<{}> {}".format(self.__class__.__name__, repr(self._objects))
+        return "QuerySet({})".format(super(QuerySet, self).__repr__())
 
+    def sort(self):
+        """Sort list elements by ID."""
+        super(QuerySet, self).sort(key=lambda k: int(k.id))
 
+    def sort_by_name(self):
+        """Sort list elements by name."""
+        super(QuerySet, self).sort(key=lambda k: k.name.upper())
 
     def old__init__(self, factory, obj_class, objects):
         """Construct a list of JSSObjects.
@@ -123,19 +122,6 @@ class QuerySet(object):
             for item in self:
                 output.append(item.__repr__())
             return "[\n%s]" % ",\n".join(output)
-
-
-    # def __getitem__(self, index):
-    #     item = super(JSSObjectList, self).__getitem__(index)
-    #     return item.retrieve()
-
-    def sort(self):
-        """Sort list elements by ID."""
-        super(JSSObjectList, self).sort(key=lambda k: k.id)
-
-    def sort_by_name(self):
-        """Sort list elements by name."""
-        super(JSSObjectList, self).sort(key=lambda k: k.name)
 
     def retrieve(self, index):
         """Return a JSSObject for the JSSListData element at index."""
