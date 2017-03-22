@@ -31,7 +31,7 @@ from .exceptions import (JSSGetError, JSSPutError, JSSPostError,
                          JSSDeleteError, JSSMethodNotAllowedError)
 from .jssobject import JSSFlatObject, Identity
 from . import jssobjects
-from .jssobjectlist import JSSObjectList
+from .queryset import QuerySet
 from .tools import error_handler, quote_and_encode
 
 
@@ -386,7 +386,7 @@ class JSS(object):
 
         The dict returned will have keys named the same as the
         JSSObject classes contained, and the values will be
-        JSSObjectLists of all full objects of that class (for example,
+        QuerySets of all full objects of that class (for example,
         the equivalent of my_jss.Computer().retrieve_all()).
 
         This method can potentially take a very long time!
@@ -452,7 +452,7 @@ class JSS(object):
 
         The dict returned will have keys named the same as the
         JSSObject classes contained, and the values will be
-        JSSObjectLists of all full objects of that class (for example,
+        QuerySets of all full objects of that class (for example,
         the equivalent of my_jss.Computer().retrieve_all()).
 
         This method can potentially take a very long time!
@@ -470,7 +470,7 @@ class JSS(object):
         for child in root:
             obj_type = self.__getattribute__(child.tag)
             objects = [obj_type(obj) for obj in child]
-            all_objects[child.tag] = JSSObjectList(self.factory, None, objects)
+            all_objects[child.tag] = QuerySet(self.factory, None, objects)
 
         return all_objects
 
@@ -507,7 +507,7 @@ def add_search_method(cls, name):
                     'general&purchasing')
 
             Returns:
-                JSSObjectList: If data=None, return all objects of this
+                QuerySet: If data=None, return all objects of this
                     type.
                 {0}: If searching or creating new objects, return an
                     instance of that object.
@@ -576,7 +576,7 @@ class JSSObjectFactory(object):
                 all JSSObjects.
 
         Returns:
-            JSSObjectList: for empty or None arguments to data.
+            QuerySet: for empty or None arguments to data.
             JSSObject: Returns an object of type obj_class for searches
                 and new objects.
             (FUTURE) Will return None if nothing is found that match
@@ -606,7 +606,7 @@ class JSSObjectFactory(object):
             raise ValueError
 
     def get_list(self, obj_class, data, subset):
-        """Get a list of objects as JSSObjectList.
+        """Get a list of objects as QuerySet.
 
         Args:
             obj_class: The JSSObject subclass type to search for.
@@ -615,7 +615,7 @@ class JSSObjectFactory(object):
                 Computer, with subset="basic".
 
         Returns:
-            JSSObjectList
+            QuerySet
         """
         url = obj_class.get_url(data)
         if obj_class.can_list and obj_class.can_get:
@@ -715,8 +715,10 @@ class JSSObjectFactory(object):
         response_objects = [item for item in response
                             if item is not None and
                             item.tag != "size"]
-        objects = [
-            obj_class(self.jss, data=Identity(obj.findtext('name'), obj.findtext('id')))
-            for obj in response_objects]
+        identities =  (
+            Identity(obj.findtext('name'), obj.findtext('id'))
+            for obj in response_objects)
 
-        return JSSObjectList(self, obj_class, objects)
+        objects = [obj_class(self.jss, data=i) for i in identities]
+
+        return QuerySet(self, obj_class, objects)
