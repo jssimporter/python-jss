@@ -25,56 +25,6 @@ import cPickle
 import os
 
 
-class JSSListData(MutableMapping):
-    """Holds overview information returned from a listing GET."""
-
-    def __init__(self, obj_class, data, factory):
-        """Configure a JSSListData item."""
-        self.obj_class = obj_class
-        self.factory = factory
-        self.store = dict(data)
-
-    def __getitem__(self, key):
-        return self.store[key]
-
-    def __setitem__(self, key, value):
-        self.store[key] = value
-
-    def __delitem__(self, key):
-        del self.store[key]
-
-    def __iter__(self):
-        return iter(self.store)
-
-    def __len__(self):
-        return len(self.store)
-
-    def __repr__(self):
-        """Make data human readable."""
-        # Note: Large lists/objects may take a long time to indent!
-        max_key_width = max([len(key) for key in self.store])
-        max_val_width = max([len(unicode(val)) for val in self.store.values()])
-        output = []
-        for key, val in self.store.items():
-            output.append(u"{:>{max_key}}: {:>{max_val}}".format(
-                key, val, max_key=max_key_width, max_val=max_val_width))
-        return "\n".join(output).encode("utf-8")
-
-    @property
-    def id(self):   # pylint: disable=invalid-name
-        """Return the object's ID property."""
-        return int(self["id"])
-
-    @property
-    def name(self):
-        """Return the object's name property."""
-        return self["name"]
-
-    def retrieve(self):
-        """Retrieve the full object XML for this item."""
-        return self.factory.get_object(self.obj_class, self.id)
-
-
 class JSSObjectList(object):
     old_docstring = """A list style collection of JSSObjects.
 
@@ -95,73 +45,36 @@ class JSSObjectList(object):
     """
 
     def __init__(self, factory, obj_class, objects=None):
+        """"""
+        self.contained_class = obj_class
         if not isinstance(objects, (list, tuple, set)):
             raise TypeError
 
-        self._objects = []
-        if objects:
-            for obj in objects:
-                if isinstance(obj, JSSListData):
-                    item = (obj, None)
-                else:
-                    item = (None, obj)
-                self._objects.append(item)
+        self._objects = list(objects) if objects else []
 
     def __len__(self):
         return len(self._objects)
 
     def __iter__(self):
-        def whoa():
-            for index, item in enumerate(self._objects):
-                if item[1] is None:
-                    if item[0]:
-                        result = item[0].retrieve()
-                        self._objects[index] = (item[0], result)
-                yield self._objects[index][1]
-        return whoa()
-
-    def simple_iter(self):
-        def whoa():
-            for item in self._objects:
-                yield item[0]
-        return whoa()
-
-    def __getitem__(self, index):
-        item = self._objects[index]
-        if item[1] is None:
-            if item[0]:
-                result = self._objects[index][0].retrieve()
-                self._objects[index] = (item[0], result)
-        return self._objects[index][1]
+        return iter(self._objects)
 
     def __str__(self):
         """Make data human readable."""
         #Note: Large lists/objects may take a long time to indent!
-        if self._objects:
-            item = self._objects[0]
-            obj_class = item[0].obj_class.__name__
-
         name_max= max(len(item[0].name) for item in self._objects)
         id_max = max(len(str(item[0].id)) for item in self._objects)
-        results = ["QueryResults for JSS object type: '{}':".format(obj_class)]
+        results = ["QueryResults for JSS object type: '{}':".format(
+            self.contained_class)]
         results.append((name_max + id_max + 11) * '-')
-        for simple, _ in self._objects:
+        for item in self._objects:
             line = "Name: {0:>{2}} ID: {1:>{3}}".format(
-                simple.name, simple.id, name_max, id_max)
+                item.name, item.id, name_max, id_max)
             results.append(line)
         return "\n".join(results)
 
     def __repr__(self):
         """Make data human readable."""
-        results = []
-        for item, cached in self._objects:
-            line = "<instance of '{}' name: {} id: {} cached: {}>".format(
-                item.__class__.__name__, item.name, item.id,
-                bool(cached is not None))
-
-            results.append(line)
-
-        return ", ".join(results)
+        return "<{}> {}".format(self.__class__.__name__, repr(self._objects))
 
 
 

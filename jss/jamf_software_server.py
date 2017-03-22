@@ -29,9 +29,9 @@ from . import distribution_points
 from .curl_adapter import CurlAdapter
 from .exceptions import (JSSGetError, JSSPutError, JSSPostError,
                          JSSDeleteError, JSSMethodNotAllowedError)
-from .jssobject import JSSFlatObject
+from .jssobject import JSSFlatObject, Identity
 from . import jssobjects
-from .jssobjectlist import (JSSObjectList, JSSListData)
+from .jssobjectlist import JSSObjectList
 from .tools import error_handler, quote_and_encode
 
 
@@ -711,13 +711,12 @@ class JSSObjectFactory(object):
         #     raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
 
     def _build_jss_object_list(self, response, obj_class):
-        """Build a JSSListData object from response."""
+        """Build a JSSObject from response."""
         response_objects = [item for item in response
                             if item is not None and
                             item.tag != "size"]
         objects = [
-            JSSListData(
-                obj_class, {i.tag: i.text for i in response_object}, self)
-            for response_object in response_objects]
+            obj_class(self.jss, data=Identity(obj.findtext('name'), obj.findtext('id')))
+            for obj in response_objects]
 
         return JSSObjectList(self, obj_class, objects)
