@@ -75,8 +75,8 @@ class JSSListData(MutableMapping):
         return self.factory.get_object(self.obj_class, self.id)
 
 
-class JSSObjectList(list):
-    """A list style collection of JSSObjects.
+class JSSObjectList(object):
+    old_docstring = """A list style collection of JSSObjects.
 
     List operations retrieve minimal or overview information for most
     object types. For example, we may want to see all the Computers on
@@ -94,7 +94,78 @@ class JSSObjectList(list):
             contains.
     """
 
-    def __init__(self, factory, obj_class, objects):
+    def __init__(self, factory, obj_class, objects=None):
+        if not isinstance(objects, (list, tuple, set)):
+            raise TypeError
+
+        self._objects = []
+        if objects:
+            for obj in objects:
+                if isinstance(obj, JSSListData):
+                    item = (obj, None)
+                else:
+                    item = (None, obj)
+                self._objects.append(item)
+
+    def __len__(self):
+        return len(self._objects)
+
+    def __iter__(self):
+        def whoa():
+            for index, item in enumerate(self._objects):
+                if item[1] is None:
+                    if item[0]:
+                        result = item[0].retrieve()
+                        self._objects[index] = (item[0], result)
+                yield self._objects[index][1]
+        return whoa()
+
+    def simple_iter(self):
+        def whoa():
+            for item in self._objects:
+                yield item[0]
+        return whoa()
+
+    def __getitem__(self, index):
+        item = self._objects[index]
+        if item[1] is None:
+            if item[0]:
+                result = self._objects[index][0].retrieve()
+                self._objects[index] = (item[0], result)
+        return self._objects[index][1]
+
+    def __str__(self):
+        """Make data human readable."""
+        #Note: Large lists/objects may take a long time to indent!
+        if self._objects:
+            item = self._objects[0]
+            obj_class = item[0].obj_class.__name__
+
+        name_max= max(len(item[0].name) for item in self._objects)
+        id_max = max(len(str(item[0].id)) for item in self._objects)
+        results = ["QueryResults for JSS object type: '{}':".format(obj_class)]
+        results.append((name_max + id_max + 11) * '-')
+        for simple, _ in self._objects:
+            line = "Name: {0:>{2}} ID: {1:>{3}}".format(
+                simple.name, simple.id, name_max, id_max)
+            results.append(line)
+        return "\n".join(results)
+
+    def __repr__(self):
+        """Make data human readable."""
+        results = []
+        for item, cached in self._objects:
+            line = "<instance of '{}' name: {} id: {} cached: {}>".format(
+                item.__class__.__name__, item.name, item.id,
+                bool(cached is not None))
+
+            results.append(line)
+
+        return ", ".join(results)
+
+
+
+    def old__init__(self, factory, obj_class, objects):
         """Construct a list of JSSObjects.
 
         Args:
@@ -111,7 +182,7 @@ class JSSObjectList(list):
         self.obj_class = obj_class
         super(JSSObjectList, self).__init__(objects)
 
-    def __repr__(self):
+    def old__repr__(self):
         """Make data human readable."""
         # Note: Large lists/objects may take a long time to indent!
         if self and all([isinstance(item, JSSListData) for item in self]):
@@ -139,6 +210,11 @@ class JSSObjectList(list):
             for item in self:
                 output.append(item.__repr__())
             return "[\n%s]" % ",\n".join(output)
+
+
+    # def __getitem__(self, index):
+    #     item = super(JSSObjectList, self).__getitem__(index)
+    #     return item.retrieve()
 
     def sort(self):
         """Sort list elements by ID."""
@@ -216,3 +292,4 @@ class JSSObjectList(list):
         """
         with open(os.path.expanduser(path), "rb") as pickle:
             return cPickle.Unpickler(pickle).load()
+
