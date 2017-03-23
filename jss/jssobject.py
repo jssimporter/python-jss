@@ -26,29 +26,10 @@ from xml.etree import ElementTree
 
 from .exceptions import (JSSUnsupportedSearchMethodError,
                          JSSMethodNotAllowedError, JSSPutError, JSSPostError)
-from .tools import element_repr
+from .pretty_element import PrettyElement
 
 
-# TODO: Nope!
-# python-jss is intended to allow easy, pythonic access to the JSS. As
-# such, a heavy emphasis is placed its use for interactive discovery
-# and exploration. Because JSSObjects are subclassed from Element, the
-# __repr__ method is changed to our custom, pretty-printing one. This
-# allows things like Element.find("general") to return something more
-# useful than just the tag name when not assigned.
-ElementTree.Element.__repr__ = element_repr
-# results = []
-# for item, cached in self._objects:
-#     line = "<instance of '{}' name: {} id: {} cached: {}>".format(
-#         item.__class__.__name__, item.name, item.id,
-#         bool(cached is not None))
-
-#     results.append(line)
-
-# return ", ".join(results)
-
-
-class SearchCriteria(ElementTree.Element):
+class SearchCriteria(PrettyElement):
     """Object for encapsulating a smart group search criteria."""
     list_type = "criterion"
 
@@ -77,21 +58,11 @@ class SearchCriteria(ElementTree.Element):
         crit_value = ElementTree.SubElement(self, "value")
         crit_value.text = value
 
-    def makeelement(self, tag, attrib):
-        """Return an Element."""
-        # We use ElementTree.SubElement() a lot. Unfortunately, it
-        # relies on a super() call to its __class__.makeelement(), which
-        # will fail due to the method resolution order / multiple
-        # inheritance of our objects (they have an editor AND a template
-        # or JSSObject parent class).
-        # This handles that issue.
-        return ElementTree.Element(tag, attrib)
-
 
 Identity = collections.namedtuple('Identity', ['id', 'name'])
 
 
-class JSSObject(ElementTree.Element):
+class JSSObject(PrettyElement):
     """Base class for all JSS API objects.
 
     Class Attributes:
@@ -257,14 +228,6 @@ class JSSObject(ElementTree.Element):
     def __exit__(self, exc_type, exc_value, traceback):
         """Try to save on the way out of the with statement."""
         self.save()
-
-    def makeelement(self, tag, attrib):
-        """Return an Element."""
-        # We use ElementTree.SubElement() a lot. Unfortunately, it
-        # relies on a super() call to its __class__.makeelement(), which
-        # will fail due to the class NOT being Element.
-        # This handles that issue.
-        return ElementTree.Element(tag, attrib)
 
     @classmethod
     def get_url(cls, data):
@@ -536,11 +499,11 @@ class JSSObject(ElementTree.Element):
                 Path will have ~ expanded prior to opening.
         """
         with open(os.path.expanduser(path), "w") as ofile:
-            ofile.write(self.__repr__())
+            ofile.write(str(self))
 
     def to_string(self):
         """Return indented object XML as bytes."""
-        return self.__repr__()
+        return self.__str__()
 
     def pickle(self, path):
         """Write object to python pickle.
