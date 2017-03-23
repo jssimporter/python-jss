@@ -25,19 +25,10 @@ removed. Do not rely on its continued existence!
 import urllib
 from xml.etree import ElementTree
 
-from .tools import element_repr
+from .pretty_element import PrettyElement
 
 
-# python-jss is intended to allow easy, pythonic access to the JSS. As
-# such, a heavy emphasis is placed its use for interactive discovery
-# and exploration. Because JSSObjects are subclassed from Element, the
-# __repr__ method is changed to our custom, pretty-printing one. This
-# allows things like Element.find("general") to return something more
-# useful than just the tag name when not assigned.
-ElementTree.Element.__repr__ = element_repr
-
-
-class Casper(ElementTree.Element):
+class Casper(PrettyElement):
     """Interact with the JSS through its private casper endpoint.
 
     The API user must have the Casper Admin privileges "Use Casper
@@ -67,14 +58,6 @@ class Casper(ElementTree.Element):
             {"username": user, "password": password})
         super(Casper, self).__init__(tag="Casper")
         self.update()
-
-    def makeelement(self, tag, attrib):
-        """Return an Element."""
-        # We use ElementTree.SubElement() a lot. Unfortunately, it
-        # relies on a super() call to its __class__.makeelement(), which
-        # will fail due to the class NOT being Element. This handles
-        # that issue.
-        return ElementTree.Element(tag, attrib)
 
     def update(self):
         """Request an updated set of data from casper.jxml."""
