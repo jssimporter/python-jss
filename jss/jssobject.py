@@ -21,10 +21,12 @@ Base Classes representing JSS database objects and their API endpoints
 
 import collections
 import cPickle
+import datetime
 import os
+from tools import decorate_class_with_caching
 from xml.etree import ElementTree
 
-from .exceptions import (JSSUnsupportedSearchMethodError,
+from .exceptions import (JSSError, JSSUnsupportedSearchMethodError,
                          JSSMethodNotAllowedError, JSSPutError, JSSPostError)
 from .pretty_element import PrettyElement
 
@@ -66,6 +68,9 @@ class JSSObject(PrettyElement):
     """Base class for all JSS API objects.
 
     Class Attributes:
+        cached: False, "Unsaved" for newly created objects that have
+            not been POSTed to the JSS, or datetime.datetime since last
+            retrieval.
         can_list: Bool whether object allows a list GET request.
         can_get: Bool whether object allows a GET request.
         can_put: Bool whether object allows a PUT request.
@@ -130,23 +135,31 @@ class JSSObject(PrettyElement):
                 method.
         """
         self.jss = jss
+        self.cached = None
+        self._basic_id = self._basic_name = ""
+
         if isinstance(data, basestring):
             super(JSSObject, self).__init__(tag=self.list_type)
             self._new(data, **kwargs)
+
         elif isinstance(data, ElementTree.Element):
+            # Create a new object from passed XML.
             super(JSSObject, self).__init__(tag=data.tag)
             for child in data.getchildren():
                 self.append(child)
+            self.cached = "Unsaved"
+
         elif isinstance(data, Identity):
             # This is basic identity information, probably from a
             # listing operation.
-            self._id = data.id
-            self._name = data.name
+            self._basic_id = data.id
+            self._basic_name = data.name
             super(JSSObject, self).__init__(tag=self.list_type)
+
         else:
-            raise TypeError("JSSObjects data argument must be of type "
-                            "xml.etree.ElemenTree.Element, or a string for the"
-                            " name.")
+            raise TypeError(
+                "JSSObjects data argument must be of type "
+                "xml.etree.ElemenTree.Element, Identity, or str")
 
     def _new(self, name, **kwargs):
         """Create a new JSSObject with name and "keys".
@@ -222,12 +235,27 @@ class JSSObject(PrettyElement):
 
         target_key.text = kwargs.get(key, val)
 
+    def __repr__(self):
+        return "<{} cached: {} at 0x{:0x}>".format(
+            self.__class__.__name__, bool(self.cached), id(self))
+
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         """Try to save on the way out of the with statement."""
         self.save()
+
+    def retrieve(self):
+        """Replace this object's data with JSS data, reset cache-age."""
+        if self.jss.verbose:
+            print "Retrieving data from JSS..."
+
+        xmldata = self.jss.get(self.get_url(self.id))
+        self.clear()
+        for child in xmldata.getchildren():
+            self.append(child)
+        self.cached = datetime.datetime.now()
 
     @classmethod
     def get_url(cls, data):
@@ -344,23 +372,6 @@ class JSSObject(PrettyElement):
         self.clear()
         for child in updated_data.getchildren():
             self._children.append(child)
-
-    @property
-    def name(self):
-        """Return object name or None."""
-        name = self.findtext("name") or self.findtext("general/name")
-        return name if name else self._name
-
-    @property
-    def id(self):   # pylint: disable=invalid-name
-        """Return object ID or None."""
-        # Most objects have ID nested in general. Groups don't.
-        # After much consideration, I will treat id's as strings. We
-        # can't assign ID's, so there's no need to perform arithmetic on
-        # them, and having to convert to str all over the place is
-        # gross. str equivalency still works.
-        id_ = self.findtext("id") or self.findtext("general/id")
-        return id_ if id_ else self._id
 
     def _handle_location(self, location):
         """Return an element located at location with flexible args.
@@ -537,12 +548,65 @@ class JSSObject(PrettyElement):
             return cPickle.Unpickler(pickle).load()
 
 
+# Decorate all public API methods that should trigger a retrival of the
+# object's full data from the JSS.
+cache_triggers = (
+    '__getitem__', '__len__', '__setitem__', '__str__', 'copy',
+    'extend', 'find', 'findall', 'findtext', 'get', 'getchildren',
+    'getiterator', 'insert', 'items', 'iter', 'iterfind', 'itertext', 'keys',
+    'remove', 'set')
+
+# Ones that block us:
+# - Are not methods: 'tail', 'text', 'attrib','tag'
+# - Used in setup: 'append',,'__setattr__', 'append',
+decorate_class_with_caching(JSSObject, cache_triggers)
+
+
 class JSSContainerObject(JSSObject):
     """Subclass for types which can contain lists of other objects.
 
     e.g. Computers, Policies.
     """
     list_type = "JSSContainerObject"
+
+    def __repr__(self):
+        return "<{} with id: {} name: {} cached: {} at 0x{:0x}>".format(
+            self.__class__.__name__, self.id, self.name, bool(self.cached),
+            id(self))
+
+    @property
+    def name(self):
+        """Return object name or None."""
+        if not self.cached:
+            name = self._basic_name
+        else:
+            name = self.findtext("name") or self.findtext("general/name")
+        return name
+
+    @name.setter
+    def name(self, name):
+        if self.findtext("name"):
+            path = "name"
+        elif self.findtext("general/name"):
+            path = "general/name"
+        else:
+            raise JSSError("Name property couldn't be found!")
+        self._basic_name = self.find('name').text = name
+
+    @property
+    def id(self):   # pylint: disable=invalid-name
+        """Return object ID or None."""
+        # Most objects have ID nested in general. Groups don't.
+
+        # After much consideration, I will treat id's as strings. We
+        # can't assign ID's, so there's no need to perform arithmetic on
+        # them, and having to convert to str all over the place is
+        # gross. str equivalency still works.
+        if not self.cached:
+            id_ = self._basic_id
+        else:
+            id_ = self.findtext("id") or self.findtext("general/id")
+        return id_
 
     def as_list_data(self):
         """Return an Element to be used in a list.

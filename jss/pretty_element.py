@@ -30,7 +30,9 @@ class PrettyElement(ElementTree.Element):
     Element subclasses xml.etree.ElementTree.Element to pretty print.
     """
 
-    __str__ = tools.element_str
+    # Replace standard Element.__str__ with our cache-aware
+    # pretty-printing one.
+    __str__ = tools.triggers_cache(tools.element_str)
 
     def makeelement(self, tag, attrib):
         """Return a PrettyElement with tag and attrib."""
