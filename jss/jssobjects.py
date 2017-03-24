@@ -28,8 +28,8 @@ import requests
 from .exceptions import (JSSMethodNotAllowedError, JSSPostError,
                          JSSFileUploadParameterError, JSSGetError,
                          JSSDeleteError)
-from .jssobject import (JSSContainerObject, JSSFlatObject,
-                        JSSGroupObject, JSSDeviceObject, JSSObject)
+from .jssobject import (JSSContainerObject, JSSGroupObject, JSSDeviceObject,
+                        JSSObject)
 from .tools import error_handler
 
 
@@ -78,9 +78,9 @@ class AccountGroup(JSSContainerObject):
                     "name": "/groupname/"}
 
 
-class ActivationCode(JSSFlatObject):
+class ActivationCode(JSSObject):
     _url = "/activationcode"
-    list_type = "activation_code"
+    root_tag = "activation_code"
     can_delete = False
     can_post = False
     can_list = False
@@ -100,12 +100,12 @@ class AdvancedUserSearch(JSSContainerObject):
 
 class Building(JSSContainerObject):
     _url = "/buildings"
-    list_type = "building"
+    root_tag = "building"
 
 
 class BYOProfile(JSSContainerObject):
     _url = "/byoprofiles"
-    list_type = "byoprofiles"
+    root_tag = "byoprofiles"
     can_delete = False
     can_post = False
     search_types = {"sitename": "/site/name/", "siteid": "/site/id/",
@@ -114,14 +114,14 @@ class BYOProfile(JSSContainerObject):
 
 class Category(JSSContainerObject):
     _url = "/categories"
-    list_type = "category"
+    root_tag = "category"
 
 
 class Class(JSSContainerObject):
     _url = "/classes"
 
 
-class CommandFlush(JSSObject):
+class CommandFlush(object):
     _url = "/commandflush"
     can_list = False
     can_get = False
@@ -169,7 +169,7 @@ class CommandFlush(JSSObject):
         """
         if not isinstance(data, basestring):
             data = ElementTree.tostring(data, encoding='UTF-8')
-        response = self.delete(data)
+        self.jss.delete(self.url, data)
 
     def command_flush_for(self, id_type, command_id, status):
         """Flush commands for an individual device.
@@ -201,7 +201,7 @@ class CommandFlush(JSSObject):
 
 
 class Computer(JSSDeviceObject):
-    list_type = "computer"
+    root_tag = "computer"
     _url = "/computers"
     search_types = {"name": "/name/", "serial_number": "/serialnumber/",
                     "udid": "/udid/", "macaddress": "/macadress/",
@@ -226,7 +226,7 @@ class ComputerApplication(JSSContainerObject):
     can_delete = False
     can_put = False
     can_post = False
-    list_type = "computer_application"
+    root_tag = "computer_application"
 
     # Does not support ID lookups.
 
@@ -236,13 +236,13 @@ class ComputerApplicationUsage(JSSContainerObject):
     can_delete = False
     can_put = False
     can_post = False
-    list_type = "computer_application_usage"
+    root_tag = "computer_application_usage"
 
     def __init__(self, data):
         raise NotImplementedError
 
 
-class ComputerCheckIn(JSSFlatObject):
+class ComputerCheckIn(JSSObject):
     _url = "/computercheckin"
     can_delete = False
     can_list = False
@@ -260,7 +260,7 @@ class ComputerCommand(JSSContainerObject):
 
 class ComputerConfiguration(JSSContainerObject):
     _url = "/computerconfigurations"
-    list_type = "computer_configuration"
+    root_tag = "computer_configuration"
 
 
 class ComputerExtensionAttribute(JSSContainerObject):
@@ -269,7 +269,7 @@ class ComputerExtensionAttribute(JSSContainerObject):
 
 class ComputerGroup(JSSGroupObject):
     _url = "/computergroups"
-    list_type = "computer_group"
+    root_tag = "computer_group"
     data_keys = {
         "is_smart": False,
         "criteria": None,
@@ -331,7 +331,7 @@ class ComputerHistory(JSSContainerObject):
                     "udid": "/udid/", "macaddress": "/macadress/"}
 
 
-class ComputerInventoryCollection(JSSFlatObject):
+class ComputerInventoryCollection(JSSObject):
     _url = "/computerinventorycollection"
     can_list = False
     can_post = False
@@ -353,7 +353,7 @@ class ComputerReport(JSSContainerObject):
 
 class Department(JSSContainerObject):
     _url = "/departments"
-    list_type = "department"
+    root_tag = "department"
 
 
 class DirectoryBinding(JSSContainerObject):
@@ -480,7 +480,7 @@ class FileUpload(object):
 
 # pylint: enable=too-few-public-methods
 
-class GSXConnection(JSSFlatObject):
+class GSXConnection(JSSObject):
     _url = "/gsxconnection"
     can_list = False
     can_post = False
@@ -489,10 +489,10 @@ class GSXConnection(JSSFlatObject):
 
 class IBeacon(JSSContainerObject):
     _url = "/ibeacons"
-    list_type = "ibeacon"
+    root_tag = "ibeacon"
 
 
-class JSSUser(JSSFlatObject):
+class JSSUser(JSSObject):
     """JSSUser is deprecated."""
     _url = "/jssuser"
     can_list = False
@@ -606,12 +606,8 @@ class LicensedSoftware(JSSContainerObject):
     _url = "/licensedsoftware"
 
 
-class LogFlush(JSSObject):
+class LogFlush(object):
     _url = "/logflush"
-    can_list = False
-    can_get = False
-    can_put = False
-    can_post = False
 
     def __init__(self, jss):
         """Initialize a new LogFlush
@@ -677,7 +673,7 @@ class LogFlush(JSSObject):
         """
         if not isinstance(data, basestring):
             data = ElementTree.tostring(data, encoding='UTF-8')
-        response = self.delete(data)
+        self.jss.delete(self.url, data)
 
     def log_flush_for_interval(self, log_type, interval):
         """Flush logs for an interval of time.
@@ -755,7 +751,7 @@ class LogFlush(JSSObject):
 
 class MacApplication(JSSContainerObject):
     _url = "/macapplications"
-    list_type = "mac_application"
+    root_tag = "mac_application"
     can_subset = True
 
 
@@ -770,7 +766,7 @@ class MobileDevice(JSSDeviceObject):
     """
 
     _url = "/mobiledevices"
-    list_type = "mobile_device"
+    root_tag = "mobile_device"
     search_types = {"name": "/name/", "serial_number": "/serialnumber/",
                     "udid": "/udid/", "macaddress": "/macadress/",
                     "match": "/match/"}
@@ -821,7 +817,7 @@ class MobileDeviceExtensionAttribute(JSSContainerObject):
 
 class MobileDeviceGroup(JSSGroupObject):
     _url = "/mobiledevicegroups"
-    list_type = "mobile_device_group"
+    root_tag = "mobile_device_group"
 
     def add_mobile_device(self, device):
         """Add a mobile_device to the group.
@@ -868,7 +864,7 @@ class OSXConfigurationProfile(JSSContainerObject):
 
 class Package(JSSContainerObject):
     _url = "/packages"
-    list_type = "package"
+    root_tag = "package"
     data_keys = {
         "category": None,
         "info": None,
@@ -933,7 +929,7 @@ class Package(JSSContainerObject):
 
 class Patch(JSSContainerObject):
     _url = "/patches"
-    list_type = "software_title"
+    root_tag = "software_title"
     can_post = False
     can_subset = True
     # The /patches/id/{id}/version/{version} variant is not currently
@@ -955,7 +951,7 @@ class PeripheralType(JSSContainerObject):
 # This class has a lot of convenience attributes. Sorry pylint.
 class Policy(JSSContainerObject):
     _url = "/policies"
-    list_type = "policy"
+    root_tag = "policy"
     search_types = {"name": "/name/", "category": "/category/"}
     can_subset = True
     _name_path = "general/name"
@@ -982,58 +978,65 @@ class Policy(JSSContainerObject):
             "recon": "true"},
     }
 
-    def __init__(self, jss, name, **kwargs):
-        """Init a Policy from scratch.
+    @property
+    def general(self):
+        return self.find("general")
 
-        Adds convenience attributes to assist in configuring.
+    # TODO: The below experiment FAILED. It blows up with current
+    # architecture. The assignments are evaluated at instantiation time,
+    # not everytime they're looked up. Audit and fix.
+    # def __init__(self, jss, name, **kwargs):
+    #     """Init a Policy from scratch.
 
-        Args:
-            name: String name of the object to use as the
-                object's name property.
-            kwargs:
-                Accepted keyword args can be viewed by checking the
-                "data_keys" class attribute. Typically, they include all
-                top-level keys, and non-duplicated keys used elsewhere.
+    #     Adds convenience attributes to assist in configuring.
 
-                Values will be cast to string. (Int 10, bool False
-                become string values "10" and "false").
+    #     Args:
+    #         name: String name of the object to use as the
+    #             object's name property.
+    #         kwargs:
+    #             Accepted keyword args can be viewed by checking the
+    #             "data_keys" class attribute. Typically, they include all
+    #             top-level keys, and non-duplicated keys used elsewhere.
 
-                Ignores kwargs that aren't in object's keys attribute.
-        """
-        super(Policy, self).__init__(jss, name, **kwargs)
+    #             Values will be cast to string. (Int 10, bool False
+    #             become string values "10" and "false").
 
-        # Set convenience attributes.
-        # This is an experiment. If it prooves to be more cumbersome
-        # than it is worth, they may come out.
-        # General
-        self.general = self.find("general")
-        self.enabled = self.general.find("enabled")
-        self.frequency = self.general.find("frequency")
-        self.category = self.general.find("category")
+    #             Ignores kwargs that aren't in object's keys attribute.
+    #     """
+    #     super(Policy, self).__init__(jss, name, **kwargs)
 
-        # Scope
-        self.scope = self.find("scope")
-        self.computers = self.find("scope/computers")
-        self.computer_groups = self.find("scope/computer_groups")
-        self.buildings = self.find("scope/buildings")
-        self.departments = self.find("scope/departments")
-        self.exclusions = self.find("scope/exclusions")
-        self.excluded_computers = self.find("scope/exclusions/computers")
-        self.excluded_computer_groups = self.find(
-            "scope/exclusions/computer_groups")
-        self.excluded_buildings = self.find("scope/exclusions/buildings")
-        self.excluded_departments = self.find("scope/exclusions/departments")
+    #     # Set convenience attributes.
+    #     # This is an experiment. If it prooves to be more cumbersome
+    #     # than it is worth, they may come out.
+    #     # General
+    #     self.general = self.find("general")
+    #     self.enabled = self.general.find("enabled")
+    #     self.frequency = self.general.find("frequency")
+    #     self.category = self.general.find("category")
 
-        # Self Service
-        self.self_service = self.find("self_service")
-        self.use_for_self_service = self.find("self_service/"
-                                              "use_for_self_service")
-        # Package Configuration
-        self.pkg_config = self.find("package_configuration")
-        self.pkgs = self.find("package_configuration/packages")
-        # Maintenance
-        self.maintenance = self.find("maintenance")
-        self.recon = self.find("maintenance/recon")
+    #     # Scope
+    #     self.scope = self.find("scope")
+    #     self.computers = self.find("scope/computers")
+    #     self.computer_groups = self.find("scope/computer_groups")
+    #     self.buildings = self.find("scope/buildings")
+    #     self.departments = self.find("scope/departments")
+    #     self.exclusions = self.find("scope/exclusions")
+    #     self.excluded_computers = self.find("scope/exclusions/computers")
+    #     self.excluded_computer_groups = self.find(
+    #         "scope/exclusions/computer_groups")
+    #     self.excluded_buildings = self.find("scope/exclusions/buildings")
+    #     self.excluded_departments = self.find("scope/exclusions/departments")
+
+    #     # Self Service
+    #     self.self_service = self.find("self_service")
+    #     self.use_for_self_service = self.find("self_service/"
+    #                                           "use_for_self_service")
+    #     # Package Configuration
+    #     self.pkg_config = self.find("package_configuration")
+    #     self.pkgs = self.find("package_configuration/packages")
+    #     # Maintenance
+    #     self.maintenance = self.find("maintenance")
+    #     self.recon = self.find("maintenance/recon")
 
 
     def add_object_to_scope(self, obj):
@@ -1195,19 +1198,20 @@ class SavedSearch(JSSContainerObject):
 
 class Script(JSSContainerObject):
     _url = "/scripts"
-    list_type = "script"
+    root_tag = "script"
 
 
 class Site(JSSContainerObject):
     _url = "/sites"
-    list_type = "site"
+    root_tag = "site"
 
 
-class SMTPServer(JSSFlatObject):
+class SMTPServer(JSSObject):
     _url = "/smtpserver"
     id_url = ""
     can_list = False
     can_post = False
+    can_delete = False
     search_types = {}
 
 
@@ -1229,7 +1233,7 @@ class UserGroup(JSSContainerObject):
 
 class VPPAccount(JSSContainerObject):
     _url = "/vppaccounts"
-    list_type = "vpp_account"
+    root_tag = "vpp_account"
 
 
 class VPPAssignment(JSSContainerObject):

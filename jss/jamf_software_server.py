@@ -29,7 +29,7 @@ from . import distribution_points
 from .curl_adapter import CurlAdapter
 from .exceptions import (JSSGetError, JSSPutError, JSSPostError,
                          JSSDeleteError, JSSMethodNotAllowedError)
-from .jssobject import JSSFlatObject, Identity
+from .jssobject import JSSObject, Identity
 from . import jssobjects
 from .queryset import QuerySet
 from .tools import error_handler, quote_and_encode
@@ -366,7 +366,7 @@ class JSS(object):
         all_objects = {}
         for method in all_search_methods:
             result = method[1]()
-            if isinstance(result, JSSFlatObject):
+            if isinstance(result, JSSObject):
                 all_objects[method[0]] = result
             else:
                 try:
@@ -425,7 +425,7 @@ class JSS(object):
         all_objects = {}
         for method in all_search_methods:
             result = method[1]()
-            if isinstance(result, JSSFlatObject):
+            if isinstance(result, JSSObject):
                 all_objects[method[0]] = result
             else:
                 try:
@@ -520,7 +520,8 @@ def add_search_method(cls, name):
         return self.factory.get_object(obj_type, data, subset)
 
     # Add in the missing variables to the docstring and set name.
-    subset_support = 'supported' if obj_type.can_subset else 'unsupported'
+    subset_support = ('supported' if hasattr(obj_type, 'can_subset') and
+                      obj_type.can_subset else 'unsupported')
     api_method.__doc__ = api_method.__doc__.format(name, subset_support)
     api_method.__name__ = name
     # Add the method to the class with the correct name.
@@ -619,6 +620,7 @@ class JSSObjectFactory(object):
         """
         url = obj_class.get_url(data)
         if obj_class.can_list and obj_class.can_get:
+            # TODO: There's a can_subset attribute
             if (subset and len(subset) == 1 and subset[0].upper() ==
                     "BASIC") and obj_class is jssobjects.Computer:
                 url += "/subset/basic"
