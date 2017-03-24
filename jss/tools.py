@@ -20,6 +20,7 @@ Helper functions for python-jss.
 
 
 import copy
+from functools import wraps
 import os
 import re
 from urllib import quote
@@ -156,3 +157,20 @@ def element_str(elem):
 
 def quote_and_encode(string):
     return quote(string.encode('UTF_8'))
+
+
+def triggers_cache(func):
+    """Decorator for enabling methods to trigger cache filling."""
+
+    @wraps(func)
+    def trigger_cache(self, *args, **kwargs):
+        if not self.cached:
+            self.retrieve()
+        return func(self, *args, **kwargs)
+
+    return trigger_cache
+
+def decorate_class_with_caching(cls, methods):
+    for method_name in methods:
+        decorated_method = triggers_cache(getattr(cls, method_name))
+        setattr(cls, method_name, decorated_method)
