@@ -31,41 +31,191 @@ from .exceptions import (JSSError, JSSUnsupportedSearchMethodError,
 from .pretty_element import PrettyElement
 
 
-class SearchCriteria(PrettyElement):
-    """Object for encapsulating a smart group search criteria."""
-    list_type = "criterion"
-
-    def __init__(self, name, priority, and_or, search_type, value):   # pylint: disable=too-many-arguments
-        """Init a SearchCriteria.
-
-        Args:
-            name: String Criteria type name (e.g. "Application Title")
-            priority: Int or Str number priority of criterion.
-            and_or: Str, either "and" or "or".
-            search_type: String Criteria search type. (e.g. "is", "is
-                not", "member of", etc). Construct a SmartGroup with the
-                criteria of interest in the web interface to determine
-                what range of values are available.
-            value: String value to search for/against.
-        """
-        super(SearchCriteria, self).__init__(tag=self.list_type)
-        crit_name = ElementTree.SubElement(self, "name")
-        crit_name.text = name
-        crit_priority = ElementTree.SubElement(self, "priority")
-        crit_priority.text = str(priority)
-        crit_and_or = ElementTree.SubElement(self, "and_or")
-        crit_and_or.text = and_or
-        crit_search_type = ElementTree.SubElement(self, "search_type")
-        crit_search_type.text = search_type
-        crit_value = ElementTree.SubElement(self, "value")
-        crit_value.text = value
-
-
 Identity = collections.namedtuple('Identity', ['id', 'name'])
 
 
 class JSSObject(PrettyElement):
-    """Base class for all JSS API objects.
+    """Subclass for JSS objects which do not return a list of objects.
+
+    These objects have in common that they cannot be created. They can,
+    however, be updated.
+
+    Class Attributes:
+        cached: False, or datetime.datetime since last retrieval.
+        can_list: Bool whether object allows a list GET request.
+        can_get: Bool whether object allows a GET request.
+        can_put: Bool whether object allows a PUT request.
+        can_post: Bool whether object allows a POST request.
+        can_delete: Bool whether object allows a DEL request.
+        root_tag: String singular form of object type found in
+            containers (e.g. ComputerGroup has a container with tag:
+            "computers" holding "computer" elements. The root_tag is
+            "computer").
+    """
+    _url = None
+    can_list = False
+    can_get = True
+    can_put = True
+    can_post = False
+    can_delete = False
+
+    # TODO: This should be removed, but make sure they're in JSSContainerObject
+    # and the methods usage are removed/moved.
+    # search_types = {}
+    # container = ""
+    # _name_path = ""
+    # default_search = "name"
+    # search_types = {"name": "/name/"}
+    # can_subset = False
+    # Waiting to see what a flat object's response looks like.
+    # root_tag = "JSSObject"
+
+    def __init__(self, jss, data, **kwargs):
+        """Initialize a new JSSObject
+
+        Args:
+            jss: JSS object.
+            data: xml.etree.ElementTree.Element data for the object
+        """
+        self.jss = jss
+        self.cached = False
+        super(JSSObject, self).__init__(tag=self.root_tag)
+
+        if isinstance(data, ElementTree.Element):
+            # Create a new object from passed XML.
+            # TODO: Waiting to see what a flat response looks like.
+            #super(JSSObject, self).__init__(tag=data.tag)
+            for child in data.getchildren():
+                self.append(child)
+
+        else:
+            raise TypeError(
+                "JSSObjects data argument must be of type "
+                "xml.etree.ElemenTree.Element.")
+
+    @classmethod
+    def get_url(cls, data):
+        """Return the URL to this object.
+
+        Args:
+            data: Must be None. This is in-place to mimic other, more
+                featured object types.
+        """
+        # TODO: Do we need to test for data?
+        if data is not None:
+            raise JSSUnsupportedSearchMethodError(
+                "This object cannot be queried by %s." % data)
+        else:
+            return cls._url
+
+    @property
+    def url(self):
+        """Return the path subcomponent of the url to this object.
+
+        For example: "/activationcode"
+        """
+        # Flat objects have no ID property, so there is only one URL.
+        return self._url(None)
+
+    def __repr__(self):
+        return "<{} cached: {} at 0x{:0x}>".format(
+            self.__class__.__name__, bool(self.cached), id(self))
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Try to save on the way out of the with statement."""
+        self.save()
+
+    def _reset_data(self, updated_data):
+        """Clear all children of base element and replace with update"""
+        self.clear()
+        for child in updated_data.getchildren():
+            self._children.append(child)
+
+    def retrieve(self):
+        """Replace this object's data with JSS data, reset cache-age."""
+        if self.jss.verbose:
+            print "Retrieving data from JSS..."
+
+        xmldata = self.jss.get(self.url)
+        self._reset_data(xmldata)
+        self.cached = datetime.datetime.now()
+
+    def save(self):
+        """Update or create a new object on the JSS.
+
+        If this object is not yet on the JSS, this method will create
+        a new object with POST, otherwise, it will try to update the
+        existing object with PUT.
+
+        Data validation is up to the client; The JSS in most cases will
+        at least give you some hints as to what is invalid.
+        """
+        try:
+            self.jss.put(self.url, data=self)
+        except JSSPutError as put_error:
+            # Something when wrong.
+            raise JSSPutError(put_error)
+
+        # Replace current instance's data with new, JSS-validated data.
+        self.retrieve()
+
+    def to_file(self, path):
+        """Write object XML to path.
+
+        Args:
+            path: String file path to the file you wish to (over)write.
+                Path will have ~ expanded prior to opening.
+        """
+        with open(os.path.expanduser(path), "w") as ofile:
+            ofile.write(str(self))
+
+    def to_string(self):
+        """Return indented object XML as bytes."""
+        return self.__str__()
+
+    def pickle(self, path):
+        """Write object to python pickle.
+
+        Pickling is Python's method for serializing/deserializing
+        Python objects. This allows you to save a fully functional
+        JSSObject to disk, and then load it later, without having to
+        retrieve it from the JSS.
+
+        Args:
+            path: String file path to the file you wish to (over)write.
+                Path will have ~ expanded prior to opening.
+        """
+        with open(os.path.expanduser(path), "wb") as pickle:
+            cPickle.Pickler(pickle, cPickle.HIGHEST_PROTOCOL).dump(self)
+
+
+# Decorate all public API methods that should trigger a retrival of the
+# object's full data from the JSS.
+cache_triggers = (
+    '__getitem__', '__len__', '__setitem__', '__str__', 'copy',
+    'extend', 'find', 'findall', 'findtext', 'get', 'getchildren',
+    'getiterator', 'insert', 'items', 'iter', 'iterfind', 'itertext', 'keys',
+    'remove', 'set')
+# cache_triggers = (
+#     '__getitem__', '__len__', '__setitem__', '__str__', 'copy',
+#     'extend', 'find', 'findall', 'findtext', 'get', 'getchildren',
+#     'getiterator', 'insert', 'iterfind', 'itertext', 'keys',
+#     'remove', 'set')
+
+# Ones that block us:
+# - Are not methods: 'tail', 'text', 'attrib','tag'
+# - Used in setup: 'append',,'__setattr__', 'append',
+decorate_class_with_caching(JSSObject, cache_triggers)
+
+
+class JSSContainerObject(JSSObject):
+    """Subclass for members of a type of object.
+
+    This includes the majority of objects in the JSS, for example
+    Computers and Policies.
 
     Class Attributes:
         cached: False, "Unsaved" for newly created objects that have
@@ -76,11 +226,6 @@ class JSSObject(PrettyElement):
         can_put: Bool whether object allows a PUT request.
         can_post: Bool whether object allows a POST request.
         can_delete: Bool whether object allows a DEL request.
-        id_url: String URL piece to append to use the ID property for
-            requests. (Usually "/id/")
-        container: String pluralized object name. This is used in one
-            place-Account and AccountGroup use the same API call.
-            container is used to differentiate the results.
         default_search: String default search type to utilize for GET.
         search_types: Dict of search types available to object:
             Key: Search type name. At least one must match the
@@ -88,9 +233,9 @@ class JSSObject(PrettyElement):
             Val: URL component to use to request via this search_type.
         can_subset (bool): Whether class allows subset arguments to GET
             queries.
-        list_type: String singular form of object type found in
+        root_tag: String singular form of object type found in
             containers (e.g. ComputerGroup has a container with tag:
-            "computers" holding "computer" elements. The list_type is
+            "computers" holding "computer" elements. The root_tag is
             "computer").
         data_keys: Dictionary of keys to create if instantiating a
             blank object using the _new method.
@@ -108,22 +253,28 @@ class JSSObject(PrettyElement):
             impelemented, make sure to set this if it differs from the
             default/inherited value.
     """
-
-    _url = None
+    root_tag = "JSSContainerObject"
     can_list = True
     can_get = True
     can_put = True
     can_post = True
     can_delete = True
-    id_url = "/id/"
-    _name_path = ""
-    container = ""
     default_search = "name"
     search_types = {"name": "/name/"}
     can_subset = False
-    list_type = "JSSObject"
     data_keys = {}
 
+    # TODO: Get rid of this stuff:
+    # id_url: String URL piece to append to use the ID property for
+    #     requests. (Usually "/id/")
+    # container: String pluralized object name. This is used in one
+    #     place-Account and AccountGroup use the same API call.
+    #     container is used to differentiate the results.
+    id_url = "/id/"
+    container = ""
+    _name_path = ""
+
+    # Overrides ###############################################################
     def __init__(self, jss, data, **kwargs):
         """Initialize a new JSSObject
 
@@ -135,32 +286,128 @@ class JSSObject(PrettyElement):
                 method.
         """
         self.jss = jss
-        self.cached = None
+        #self.cached = None
         self._basic_id = self._basic_name = ""
 
         if isinstance(data, basestring):
-            super(JSSObject, self).__init__(tag=self.list_type)
             self._new(data, **kwargs)
+            self.cached = "Unsaved"
 
         elif isinstance(data, ElementTree.Element):
             # Create a new object from passed XML.
-            super(JSSObject, self).__init__(tag=data.tag)
-            for child in data.getchildren():
-                self.append(child)
+            super(JSSContainerObject, self).__init__(jss, data)
             self.cached = "Unsaved"
 
         elif isinstance(data, Identity):
             # This is basic identity information, probably from a
             # listing operation.
+            new_xml = PrettyElement(tag=self.root_tag)
+            super(JSSContainerObject, self).__init__(jss, new_xml)
             self._basic_id = data.id
             self._basic_name = data.name
-            super(JSSObject, self).__init__(tag=self.list_type)
 
         else:
             raise TypeError(
                 "JSSObjects data argument must be of type "
                 "xml.etree.ElemenTree.Element, Identity, or str")
 
+    def __repr__(self):
+        return "<{} with id: {} name: {} cached: {} at 0x{:0x}>".format(
+            self.__class__.__name__, self.id, self.name, bool(self.cached),
+            id(self))
+
+    @classmethod
+    def get_url(cls, data):
+        """Return the URL for a get request based on data type.
+
+        Args:
+            data: Accepts multiple types.
+                Int: Generate URL to object with data ID.
+                None: Get basic object GET URL (list).
+                String/Unicode: Search for <data> with default_search,
+                    usually "name".
+                String/Unicode with "=": Other searches, for example
+                    Computers can be search by uuid with:
+                    "udid=E79E84CB-3227-5C69-A32C-6C45C2E77DF5"
+                    See the class "search_types" attribute for options.
+        """
+        try:
+            data = int(data)
+        except (ValueError, TypeError):
+            pass
+        if isinstance(data, int):
+            return "%s%s%s" % (cls._url, cls.id_url, data)
+        elif data is None:
+            return cls._url
+        elif isinstance(data, basestring):
+            if "=" in data:
+                key, value = data.split("=")   # pylint: disable=no-member
+                if key in cls.search_types:
+                    return "%s%s%s" % (cls._url, cls.search_types[key], value)
+                else:
+                    raise JSSUnsupportedSearchMethodError(
+                        "This object cannot be queried by %s." % key)
+            else:
+                return "%s%s%s" % (cls._url,
+                                   cls.search_types[cls.default_search], data)
+        else:
+            raise ValueError
+
+    @property
+    def url(self):
+        """Return the path subcomponent of the url to this object.
+
+        For example: "/computers/id/451"
+        """
+        if self.id:
+            url = "%s%s%s" % (self._url, self.id_url, self.id)
+        else:
+            url = None
+        return url
+
+    def save(self):
+        """Update or create a new object on the JSS.
+
+        If this object is not yet on the JSS, this method will create
+        a new object with POST, otherwise, it will try to update the
+        existing object with PUT.
+
+        Data validation is up to the client; The JSS in most cases will
+        at least give you some hints as to what is invalid.
+        """
+        # Object probably exists if it has an ID (user can't assign
+        # one).
+        if self.can_put and self.id:
+            # The JSS will reject PUT requests for objects that do not have
+            # a category. The JSS assigns a name of "No category assigned",
+            # which it will reject. Therefore, if that is the category
+            # name, changed it to "", which is accepted.
+            categories = [elem for elem in self.findall("category")]
+            categories.extend([elem for elem in self.findall("category/name")])
+            for cat_tag in categories:
+                if cat_tag.text == "No category assigned":
+                    cat_tag.text = ""
+
+            super(JSSContainerObject, self).save()
+
+        elif self.can_post:
+            url = self.get_post_url()
+            try:
+                import pdb; pdb.set_trace()
+                updated_data = self.jss.post(self.__class__, url, data=self)
+            except JSSPostError as err:
+                raise JSSPostError(err)
+
+            # Replace current instance's data with new, JSS-validated data.
+            # and update cached time.
+            self._reset_data(updated_data)
+            self.cached = datetime.datetime.now()
+
+        else:
+            raise JSSMethodNotAllowedError(self.__class__.__name__)
+
+
+    # Methods #################################################################
     def _new(self, name, **kwargs):
         """Create a new JSSObject with name and "keys".
 
@@ -180,6 +427,8 @@ class JSSObject(PrettyElement):
 
                 Ignores kwargs that aren't in object's keys attribute.
         """
+        new_xml = PrettyElement(tag=self.root_tag)
+        super(JSSContainerObject, self).__init__(self.jss, new_xml)
         # Name is required, so set it outside of the helper func.
         if self._name_path:
             parent = self
@@ -235,90 +484,60 @@ class JSSObject(PrettyElement):
 
         target_key.text = kwargs.get(key, val)
 
-    def __repr__(self):
-        return "<{} cached: {} at 0x{:0x}>".format(
-            self.__class__.__name__, bool(self.cached), id(self))
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """Try to save on the way out of the with statement."""
-        self.save()
-
-    def retrieve(self):
-        """Replace this object's data with JSS data, reset cache-age."""
-        if self.jss.verbose:
-            print "Retrieving data from JSS..."
-
-        xmldata = self.jss.get(self.get_url(self.id))
-        self.clear()
-        for child in xmldata.getchildren():
-            self.append(child)
-        self.cached = datetime.datetime.now()
-
-    @classmethod
-    def get_url(cls, data):
-        """Return the URL for a get request based on data type.
-
-        Args:
-            data: Accepts multiple types.
-                Int: Generate URL to object with data ID.
-                None: Get basic object GET URL (list).
-                String/Unicode: Search for <data> with default_search,
-                    usually "name".
-                String/Unicode with "=": Other searches, for example
-                    Computers can be search by uuid with:
-                    "udid=E79E84CB-3227-5C69-A32C-6C45C2E77DF5"
-                    See the class "search_types" attribute for options.
-        """
-        try:
-            data = int(data)
-        except (ValueError, TypeError):
-            pass
-        if isinstance(data, int):
-            return "%s%s%s" % (cls._url, cls.id_url, data)
-        elif data is None:
-            return cls._url
-        elif isinstance(data, basestring):
-            if "=" in data:
-                key, value = data.split("=")   # pylint: disable=no-member
-                if key in cls.search_types:
-                    return "%s%s%s" % (cls._url, cls.search_types[key], value)
-                else:
-                    raise JSSUnsupportedSearchMethodError(
-                        "This object cannot be queried by %s." % key)
-            else:
-                return "%s%s%s" % (cls._url,
-                                   cls.search_types[cls.default_search], data)
-        else:
-            raise ValueError
-
     @classmethod
     def get_post_url(cls):
         """Return the post URL for this object class."""
         return "%s%s%s" % (cls._url, cls.id_url, "0")
 
     @property
-    def url(self):
-        """Return the path subcomponent of the url to this object.
-
-        For example: "/computers/id/451"
-        """
-        if self.id:
-            url = "%s%s%s" % (self._url, self.id_url, self.id)
+    def name(self):
+        """Return object name or None."""
+        if not self.cached:
+            name = self._basic_name
         else:
-            url = None
-        return url
+            name = self.findtext("name") or self.findtext("general/name")
+        return name
 
-    def get_object_url(self):
-        """Return the path subcomponent of the url to this object.
+    @name.setter
+    def name(self, name):
+        if self.findtext("name"):
+            path = "name"
+        elif self.findtext("general/name"):
+            path = "general/name"
+        else:
+            raise JSSError("Name property couldn't be found!")
+        self._basic_name = self.find('name').text = name
 
-        For example: "/computers/id/451"
+    @property
+    def id(self):   # pylint: disable=invalid-name
+        """Return object ID or None."""
+        # Most objects have ID nested in general. Groups don't.
 
-        Deprecated for url property. Will remove in a future release!
+        # After much consideration, I will treat id's as strings. We
+        # can't assign ID's, so there's no need to perform arithmetic on
+        # them, and having to convert to str all over the place is
+        # gross. str equivalency still works.
+        if not self.cached:
+            id_ = self._basic_id
+        else:
+            id_ = self.findtext("id") or self.findtext("general/id")
+        return id_
+
+    def as_list_data(self):
+        """Return an Element to be used in a list.
+
+        Most lists want an element with tag of root_tag, and
+        subelements of id and name.
+
+        Returns:
+            Element: list representation of object.
         """
-        return self.url
+        element = PrettyElement(self.root_tag)
+        id_ = ElementTree.SubElement(element, "id")
+        id_.text = self.id
+        name = ElementTree.SubElement(element, "name")
+        name.text = self.name
+        return element
 
     def delete(self, data=None):
         """Delete this object from the JSS."""
@@ -328,50 +547,6 @@ class JSSObject(PrettyElement):
             self.jss.delete(self.url, data=data)
         else:
             self.jss.delete(self.url)
-
-    def save(self):
-        """Update or create a new object on the JSS.
-
-        If this object is not yet on the JSS, this method will create
-        a new object with POST, otherwise, it will try to update the
-        existing object with PUT.
-
-        Data validation is up to the client; The JSS in most cases will
-        at least give you some hints as to what is invalid.
-        """
-        # Object probably exists if it has an ID (user can't assign
-        # one).  The only objects that don't have an ID are those that
-        # cannot list.
-        if self.can_put and (not self.can_list or self.id):
-            # The JSS will reject PUT requests for objects that do not have
-            # a category. The JSS assigns a name of "No category assigned",
-            # which it will reject. Therefore, if that is the category
-            # name, changed it to "", which is accepted.
-            categories = [elem for elem in self.findall("category")]
-            categories.extend([elem for elem in self.findall("category/name")])
-            for cat_tag in categories:
-                if cat_tag.text == "No category assigned":
-                    cat_tag.text = ""
-
-            try:
-                self.jss.put(self.url, data=self)
-                updated_data = self.jss.get(self.url)
-            except JSSPutError as put_error:
-                # Something when wrong.
-                raise JSSPutError(put_error)
-        elif self.can_post:
-            url = self.get_post_url()
-            try:
-                updated_data = self.jss.post(self.__class__, url, data=self)
-            except JSSPostError as err:
-                raise JSSPostError(err)
-        else:
-            raise JSSMethodNotAllowedError(self.__class__.__name__)
-
-        # Replace current instance's data with new, JSS-validated data.
-        self.clear()
-        for child in updated_data.getchildren():
-            self._children.append(child)
 
     def _handle_location(self, location):
         """Return an element located at location with flexible args.
@@ -448,7 +623,7 @@ class JSSObject(PrettyElement):
         """
         list_element = self._handle_location(list_element)
 
-        if isinstance(obj, JSSObject):
+        if isinstance(obj, JSSContainerObject):
             results = [item for item in list_element.getchildren() if
                        item.findtext("id") == obj.id]
         elif isinstance(obj, (int, basestring)):
@@ -502,35 +677,6 @@ class JSSObject(PrettyElement):
         root = ElementTree.fromstring(xml_string)
         return cls(jss, root)
 
-    def to_file(self, path):
-        """Write object XML to path.
-
-        Args:
-            path: String file path to the file you wish to (over)write.
-                Path will have ~ expanded prior to opening.
-        """
-        with open(os.path.expanduser(path), "w") as ofile:
-            ofile.write(str(self))
-
-    def to_string(self):
-        """Return indented object XML as bytes."""
-        return self.__str__()
-
-    def pickle(self, path):
-        """Write object to python pickle.
-
-        Pickling is Python's method for serializing/deserializing
-        Python objects. This allows you to save a fully functional
-        JSSObject to disk, and then load it later, without having to
-        retrieve it from the JSS.
-
-        Args:
-            path: String file path to the file you wish to (over)write.
-                Path will have ~ expanded prior to opening.
-        """
-        with open(os.path.expanduser(path), "wb") as pickle:
-            cPickle.Pickler(pickle, cPickle.HIGHEST_PROTOCOL).dump(self)
-
     @classmethod
     def from_pickle(cls, path):
         """Load object from pickle file.
@@ -546,83 +692,6 @@ class JSSObject(PrettyElement):
         """
         with open(os.path.expanduser(path), "rb") as pickle:
             return cPickle.Unpickler(pickle).load()
-
-
-# Decorate all public API methods that should trigger a retrival of the
-# object's full data from the JSS.
-cache_triggers = (
-    '__getitem__', '__len__', '__setitem__', '__str__', 'copy',
-    'extend', 'find', 'findall', 'findtext', 'get', 'getchildren',
-    'getiterator', 'insert', 'items', 'iter', 'iterfind', 'itertext', 'keys',
-    'remove', 'set')
-
-# Ones that block us:
-# - Are not methods: 'tail', 'text', 'attrib','tag'
-# - Used in setup: 'append',,'__setattr__', 'append',
-decorate_class_with_caching(JSSObject, cache_triggers)
-
-
-class JSSContainerObject(JSSObject):
-    """Subclass for types which can contain lists of other objects.
-
-    e.g. Computers, Policies.
-    """
-    list_type = "JSSContainerObject"
-
-    def __repr__(self):
-        return "<{} with id: {} name: {} cached: {} at 0x{:0x}>".format(
-            self.__class__.__name__, self.id, self.name, bool(self.cached),
-            id(self))
-
-    @property
-    def name(self):
-        """Return object name or None."""
-        if not self.cached:
-            name = self._basic_name
-        else:
-            name = self.findtext("name") or self.findtext("general/name")
-        return name
-
-    @name.setter
-    def name(self, name):
-        if self.findtext("name"):
-            path = "name"
-        elif self.findtext("general/name"):
-            path = "general/name"
-        else:
-            raise JSSError("Name property couldn't be found!")
-        self._basic_name = self.find('name').text = name
-
-    @property
-    def id(self):   # pylint: disable=invalid-name
-        """Return object ID or None."""
-        # Most objects have ID nested in general. Groups don't.
-
-        # After much consideration, I will treat id's as strings. We
-        # can't assign ID's, so there's no need to perform arithmetic on
-        # them, and having to convert to str all over the place is
-        # gross. str equivalency still works.
-        if not self.cached:
-            id_ = self._basic_id
-        else:
-            id_ = self.findtext("id") or self.findtext("general/id")
-        return id_
-
-    def as_list_data(self):
-        """Return an Element to be used in a list.
-
-        Most lists want an element with tag of list_type, and
-        subelements of id and name.
-
-        Returns:
-            Element: list representation of object.
-        """
-        element = ElementTree.Element(self.list_type)
-        id_ = ElementTree.SubElement(element, "id")
-        id_.text = self.id
-        name = ElementTree.SubElement(element, "name")
-        name.text = self.name
-        return element
 
 
 class JSSGroupObject(JSSContainerObject):
@@ -714,46 +783,33 @@ class JSSDeviceObject(JSSContainerObject):
         return self.findtext("general/serial_number")
 
 
-class JSSFlatObject(JSSObject):
-    """Subclass for JSS objects which do not return a list of objects.
+class SearchCriteria(PrettyElement):
+    """Object for encapsulating a smart group search criteria."""
+    root_tag = "criterion"
 
-    These objects have in common that they cannot be created. They can,
-    however, be updated.
-    """
-    search_types = {}
-
-    def _new(self, name, **kwargs):
-        """Do nothing. This object cannot be created."""
-        raise JSSPostError("This object type cannot be created.")
-
-    @classmethod
-    def get_url(cls, data):
-        """Return the URL to this object.
+    def __init__(self, name, priority, and_or, search_type, value):   # pylint: disable=too-many-arguments
+        """Init a SearchCriteria.
 
         Args:
-            data: Must be None. This is in-place to mimic other, more
-                featured object types.
+            name: String Criteria type name (e.g. "Application Title")
+            priority: Int or Str number priority of criterion.
+            and_or: Str, either "and" or "or".
+            search_type: String Criteria search type. (e.g. "is", "is
+                not", "member of", etc). Construct a SmartGroup with the
+                criteria of interest in the web interface to determine
+                what range of values are available.
+            value: String value to search for/against.
         """
-        if data is not None:
-            raise JSSUnsupportedSearchMethodError(
-                "This object cannot be queried by %s." % data)
-        else:
-            return cls._url
-
-    def get_object_url(self):
-        """Return the url to this object. Deprecated.
-
-        Use url instead.
-        """
-        return self.url
-
-    @property
-    def url(self):
-        """Return the path subcomponent of the url to this object.
-
-        For example: "/activationcode"
-        """
-        # Flat objects have no ID property, so there is only one URL.
-        return self.get_url(None)
+        super(SearchCriteria, self).__init__(tag=self.root_tag)
+        crit_name = ElementTree.SubElement(self, "name")
+        crit_name.text = name
+        crit_priority = ElementTree.SubElement(self, "priority")
+        crit_priority.text = str(priority)
+        crit_and_or = ElementTree.SubElement(self, "and_or")
+        crit_and_or.text = and_or
+        crit_search_type = ElementTree.SubElement(self, "search_type")
+        crit_search_type.text = search_type
+        crit_value = ElementTree.SubElement(self, "value")
+        crit_value.text = value
 
 
