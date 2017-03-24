@@ -27,7 +27,7 @@ from urllib import quote
 from xml.etree import ElementTree
 
 
-PKG_TYPES = [".PKG", ".DMG", ".ZIP"]
+PKG_TYPES = {".PKG", ".DMG", ".ZIP"}
 
 
 def is_osx():
@@ -156,6 +156,7 @@ def element_str(elem):
 
 
 def quote_and_encode(string):
+    """Encode a bytes string to UTF-8 and then urllib.quote"""
     return quote(string.encode('UTF_8'))
 
 
