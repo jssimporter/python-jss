@@ -77,7 +77,7 @@ class DistributionPoints(object):
         # If no distribution points are configured, there's nothing to
         # do here.
         if self.jss.repo_prefs:
-            self.dp_info = self.jss.DistributionPoint().retrieve_all()
+            self.dp_info = self.jss.DistributionPoint()
 
             for repo in self.jss.repo_prefs:
                 # Handle AFP/SMB shares, as they can be auto-configured.
