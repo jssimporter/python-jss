@@ -84,10 +84,16 @@ from .tools import is_osx, is_linux, element_str
 # the Object.__repr__ method is not very helpful, so we override __str__
 # at the class level. This means _all_ instances of Element will have
 # the indenting __str__ method, including ones created before importing
-# this package. Extensive attempts were made to patch Elements if and
-# when they were added as children of a PrettyElement in python-jss,
-# but it didn't work. Ultimately, JSSObject will not be a subclass of
-# ElementTree, so this is not going to be a problem forever.
+# this package.
+
+# It would be nice to patch Elements as they get added to the children of
+# any PrettyElement, but special method lookup skips the object's
+# instance dictionary when doing an implicit invocation; e.g. str(e) does
+# not call the instance's e.__str__ when added dynamically.
+# https://docs.python.org/2.7/reference/datamodel.html#special-method-lookup-for-new-style-classes
+
+# Ultimately, JSSObject will not be a subclass of ElementTree, so this is
+# not going to be a problem forever.
 
 # Consider this guerilla warfare against ElementTree.
 import xml.etree.ElementTree
