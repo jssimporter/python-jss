@@ -57,6 +57,14 @@ class JSS(object):
             is genuine.
         factory: JSSObjectFactory object for building JSSObjects.
         distribution_points: DistributionPoints
+        max_age (int): Number of seconds cached object information
+            should be kept before re-retrieving. Defaults to '-1'.
+
+            Possible values:
+                -1: Keep cached data forever, or until manually
+                    retrieved with the `JSSObject.retrieve()` method.
+                0: Retrieve data from data for every access.
+                positive number: Number of seconds to keep.
     """
 
     # pylint: disable=too-many-arguments
@@ -126,6 +134,8 @@ class JSS(object):
 
         self.factory = JSSObjectFactory(self)
         self.distribution_points = distribution_points.DistributionPoints(self)
+
+        self.max_age = -1
 
     # pylint: disable=too-many-arguments
 

@@ -21,7 +21,7 @@ Base Classes representing JSS database objects and their API endpoints
 
 import collections
 import cPickle
-import datetime
+import datetime as dt
 import os
 from tools import decorate_class_with_caching
 from xml.etree import ElementTree
@@ -29,6 +29,10 @@ from xml.etree import ElementTree
 from .exceptions import (JSSError, JSSUnsupportedSearchMethodError,
                          JSSMethodNotAllowedError, JSSPutError, JSSPostError)
 from .pretty_element import PrettyElement
+
+
+
+DATE_FMT = "%Y/%m/%d-%H:%M:%S.%f"
 
 
 Identity = collections.namedtuple('Identity', ['id', 'name'])
@@ -93,6 +97,23 @@ class JSSObject(PrettyElement):
                 "JSSObjects data argument must be of type "
                 "xml.etree.ElemenTree.Element.")
 
+    @property
+    def cached(self):
+        # Check to see whether cache should be invalidated due to age.
+        # If jss.max_age is 0, never cache.
+        # If jss.max_age is negative, cache lasts forever.
+        if isinstance(self._cached, dt.datetime) and self.jss.max_age > -1:
+            max_age = dt.timedelta(seconds=self.jss.max_age)
+            now = dt.datetime.now()
+            if now - self._cached > max_age:
+                self._cached = False
+
+        return self._cached
+
+    @cached.setter
+    def cached(self, val):
+        self._cached = val
+
     @classmethod
     def get_url(cls, data):
         """Return the URL to this object.
@@ -118,8 +139,12 @@ class JSSObject(PrettyElement):
         return self._url(None)
 
     def __repr__(self):
+        if isinstance(self.cached, dt.datetime):
+            cached = self.cached.strftime(DATE_FMT)
+        else:
+            cached = bool(self.cached)
         return "<{} cached: {} at 0x{:0x}>".format(
-            self.__class__.__name__, bool(self.cached), id(self))
+            self.__class__.__name__, cached, id(self))
 
     def __enter__(self):
         return self
@@ -141,7 +166,7 @@ class JSSObject(PrettyElement):
 
         xmldata = self.jss.get(self.url)
         self._reset_data(xmldata)
-        self.cached = datetime.datetime.now()
+        self.cached = dt.datetime.now()
 
     def save(self):
         """Update or create a new object on the JSS.
@@ -313,7 +338,7 @@ class JSSContainerObject(JSSObject):
 
     def __repr__(self):
         return "<{} with id: {} name: {} cached: {} at 0x{:0x}>".format(
-            self.__class__.__name__, self.id, self.name, bool(self.cached),
+            self.__class__.__name__, self.id, self.name, self.cached,
             id(self))
 
     @classmethod
@@ -393,7 +418,6 @@ class JSSContainerObject(JSSObject):
         elif self.can_post:
             url = self.get_post_url()
             try:
-                import pdb; pdb.set_trace()
                 updated_data = self.jss.post(self.__class__, url, data=self)
             except JSSPostError as err:
                 raise JSSPostError(err)
@@ -401,7 +425,7 @@ class JSSContainerObject(JSSObject):
             # Replace current instance's data with new, JSS-validated data.
             # and update cached time.
             self._reset_data(updated_data)
-            self.cached = datetime.datetime.now()
+            self.cached = dt.datetime.now()
 
         else:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
