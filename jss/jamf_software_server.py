@@ -470,7 +470,7 @@ class JSS(object):
         for child in root:
             obj_type = self.__getattribute__(child.tag)
             objects = [obj_type(obj) for obj in child]
-            all_objects[child.tag] = QuerySet(self.factory, None, objects)
+            all_objects[child.tag] = QuerySet(objects)
 
         return all_objects
 
@@ -723,4 +723,4 @@ class JSSObjectFactory(object):
 
         objects = [obj_class(self.jss, data=i) for i in identities]
 
-        return QuerySet(self, obj_class, objects)
+        return QuerySet(objects)
