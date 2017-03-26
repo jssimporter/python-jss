@@ -92,10 +92,11 @@ class QuerySet(list):
         and depending on the size of each object.
 
         Returns:
-            Itself (QuerySet) to maintain compatibility with old code.
+            self (QuerySet) to allow method chaining.
         """
         for obj in self:
-            obj.retrieve()
+            if not obj.cached:
+                obj.retrieve()
 
         return self
 
