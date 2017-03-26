@@ -107,3 +107,10 @@ class QuerySet(list):
         """
         for i in self: i.cached = None
 
+    def names(self):
+        """Return a generator of contents names"""
+        return (item.name for item in self)
+
+    def ids(self):
+        """Return a generator of contents ids"""
+        return (item.id for item in self)
