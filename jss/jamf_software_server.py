@@ -239,7 +239,7 @@ class JSS(object):
             This behavior will change in the future for 404/Not Found
             to returning None.
         """
-        request_url = "%s%s" % (self._url, quote_and_encode(url_path))
+        request_url = os.path.join(self._url, quote_and_encode(url_path))
         response = self.session.get(request_url)
 
         if response.status_code == 200 and self.verbose:
@@ -290,7 +290,7 @@ class JSS(object):
         """
         # The JSS expects a post to ID 0 to create an object
 
-        request_url = "%s%s" % (self._url, quote_and_encode(url_path))
+        request_url = os.path.join(self._url, quote_and_encode(url_path))
         data = ElementTree.tostring(data, encoding='UTF-8')
         response = self.session.post(request_url, data=data)
 
@@ -318,7 +318,7 @@ class JSS(object):
         Raises:
             JSSPutError if provided url_path has a >= 400 response.
         """
-        request_url = "%s%s" % (self._url, quote_and_encode(url_path))
+        request_url = os.path.join(self._url, quote_and_encode(url_path))
         data = ElementTree.tostring(data, encoding='UTF-8')
         response = self.session.put(request_url, data=data)
 
@@ -342,7 +342,7 @@ class JSS(object):
         Raises:
             JSSDeleteError if provided url_path has a >= 400 response.
         """
-        request_url = "%s%s" % (self._url, quote_and_encode(url_path))
+        request_url = os.path.join(self._url, quote_and_encode(url_path))
         if data:
             data = ElementTree.tostring(data, encoding='UTF-8')
             response = self.session.delete(request_url, data=data)
@@ -637,7 +637,8 @@ class JSSObjectFactory(object):
 
             result = self.jss.get(url)
 
-            if obj_class.container:
+            # TODO: This is pending removal
+            if hasattr(obj_class, "container"):
                 result = result.find(obj_class.container)
 
             return self._build_jss_object_list(result, obj_class)

@@ -54,10 +54,12 @@ __all__ = (
     'SoftwareUpdateServer', 'SMTPServer', 'UserExtensionAttribute', 'User',
     'UserGroup', 'VPPAccount', 'VPPAssignment', 'VPPInvitation')
 
+
 # pylint: disable=missing-docstring
 class Account(JSSContainerObject):
     """JSS account."""
     _endpoint_path = "accounts"
+    # TODO: This is pending removal.
     container = "users"
     id_url = "/userid/"
     search_types = {"userid": "/userid/", "username": "/username/",
@@ -72,6 +74,7 @@ class AccountGroup(JSSContainerObject):
     """
 
     _endpoint_path = "accounts"
+    # TODO: This is pending removal.
     container = "groups"
     id_url = "/groupid/"
     search_types = {"groupid": "/groupid/", "groupname": "/groupname/",
@@ -80,7 +83,6 @@ class AccountGroup(JSSContainerObject):
 
 class ActivationCode(JSSObject):
     _endpoint_path = "activationcode"
-    root_tag = "activation_code"
     can_delete = False
     can_post = False
     can_list = False
@@ -499,7 +501,6 @@ class JSSUser(JSSObject):
     can_post = False
     can_put = False
     can_delete = False
-    search_types = {}
 
 
 class LDAPServer(JSSContainerObject):
@@ -954,7 +955,7 @@ class Policy(JSSContainerObject):
     root_tag = "policy"
     search_types = {"name": "/name/", "category": "/category/"}
     can_subset = True
-    _name_path = "general/name"
+    _name_element = "general/name"
     data_keys = {
         "general": {
             "enabled": "true",
@@ -1211,7 +1212,6 @@ class SMTPServer(JSSObject):
     can_list = False
     can_post = False
     can_delete = False
-    search_types = {}
 
 
 class SoftwareUpdateServer(JSSContainerObject):
