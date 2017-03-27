@@ -100,6 +100,20 @@ class QuerySet(list):
 
         return self
 
+    def save_all(self):
+        """Tell each contained object to save its data to the JSS
+
+        This can take a long time given a large number of objects,
+        and depending on the size of each object.
+
+        Returns:
+            self (QuerySet) to allow method chaining.
+        """
+        for obj in self:
+            obj.save()
+
+        return self
+
     def invalidate(self):
         """Clear the cache datetime for all contents.
 
