@@ -98,12 +98,15 @@ class JSSObject(PrettyElement):
         self._cached = val
 
     @classmethod
-    def get_url(cls, data):
-        """Return the URL to this object.
+    def build_query(cls, data):
+        """Return the path for query based on data type and contents.
 
         Args:
-            data: Must be None. This is in-place to mimic other, more
-                featured object types.
+            data (None): Must be None. This is in-place to mimic other,
+                more featured object types.
+
+        Returns:
+            str path construction for this class to query.
         """
         # TODO: Do we need to test for data?
         if data is not None:
@@ -321,11 +324,12 @@ class JSSContainerObject(JSSObject):
             id(self))
 
     @classmethod
-    def get_url(cls, data):
-        """Return the URL for a get request based on data type.
+    def build_query(cls, data, subset=None):
+        """Return the path for query based on data type and contents.
 
         Args:
-            data: Accepts multiple types.
+            data (int, str, unicode, None): Accepts multiple types.
+
                 Int: Generate URL to object with data ID.
                 None: Get basic object GET URL (list).
                 String/Unicode: Search for <data> with default_search,
@@ -334,30 +338,50 @@ class JSSContainerObject(JSSObject):
                     Computers can be search by uuid with:
                     "udid=E79E84CB-3227-5C69-A32C-6C45C2E77DF5"
                     See the class "search_types" attribute for options.
+            subset (list of str or str):
+                XML subelement tags to request (e.g.  ['general',
+                'purchasing']), OR an '&' delimited string (e.g.
+                'general&purchasing'). Defaults to None. This is not
+                supported for all JSSObjects.
+
+        Returns:
+            str path construction for this class to query.
         """
+        if data is None:
+            return cls._endpoint_path
+
         try:
             data = int(data)
         except (ValueError, TypeError):
             pass
         if isinstance(data, int):
-            return os.path.join(cls._endpoint_path, cls._id_path, data)
-        elif data is None:
-            return cls._endpoint_path
+            url = os.path.join(cls._endpoint_path, cls._id_path, data)
+
         elif isinstance(data, basestring):
             if "=" in data:
                 key, value = data.split("=")   # pylint: disable=no-member
                 if key in cls.search_types:
-                    return os.path.join(
+                    url = os.path.join(
                         cls._endpoint_path, cls.search_types[key], value)
                 else:
                     raise JSSUnsupportedSearchMethodError(
                         "This object cannot be queried by %s." % key)
+
             else:
-                return os.path.join(
+                url = os.path.join(
                     cls._endpoint_path, cls.search_types[cls.default_search],
                     data)
-        else:
-            raise ValueError
+
+        if subset and cls.can_subset:
+            if not isinstance(subset, list):
+                subset = subset.split("&")
+
+            if not "general" in subset:
+                subset.append("general")
+
+            url = os.path.join(url, "subset", "&".join(subset))
+
+        return url
 
     @property
     def url(self):
