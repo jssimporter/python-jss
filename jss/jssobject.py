@@ -51,10 +51,6 @@ class JSSObject(PrettyElement):
         can_put: Bool whether object allows a PUT request.
         can_post: Bool whether object allows a POST request.
         can_delete: Bool whether object allows a DEL request.
-        root_tag: String singular form of object type found in
-            containers (e.g. ComputerGroup has a container with tag:
-            "computers" holding "computer" elements. The root_tag is
-            "computer").
     """
     _endpoint_path = None
     can_list = False
@@ -62,17 +58,6 @@ class JSSObject(PrettyElement):
     can_put = True
     can_post = False
     can_delete = False
-
-    # TODO: This should be removed, but make sure they're in JSSContainerObject
-    # and the methods usage are removed/moved.
-    # search_types = {}
-    # container = ""
-    # _name_path = ""
-    # default_search = "name"
-    # search_types = {"name": "/name/"}
-    # can_subset = False
-    # Waiting to see what a flat object's response looks like.
-    # root_tag = "JSSObject"
 
     def __init__(self, jss, data, **kwargs):
         """Initialize a new JSSObject
@@ -83,12 +68,10 @@ class JSSObject(PrettyElement):
         """
         self.jss = jss
         self.cached = False
-        super(JSSObject, self).__init__(tag=self.root_tag)
 
         if isinstance(data, ElementTree.Element):
             # Create a new object from passed XML.
-            # TODO: Waiting to see what a flat response looks like.
-            #super(JSSObject, self).__init__(tag=data.tag)
+            super(JSSObject, self).__init__(tag=data.tag)
             for child in data.getchildren():
                 self.append(child)
 
@@ -224,11 +207,6 @@ cache_triggers = (
     'extend', 'find', 'findall', 'findtext', 'get', 'getchildren',
     'getiterator', 'insert', 'items', 'iter', 'iterfind', 'itertext', 'keys',
     'remove', 'set')
-# cache_triggers = (
-#     '__getitem__', '__len__', '__setitem__', '__str__', 'copy',
-#     'extend', 'find', 'findall', 'findtext', 'get', 'getchildren',
-#     'getiterator', 'insert', 'iterfind', 'itertext', 'keys',
-#     'remove', 'set')
 
 # Ones that block us:
 # - Are not methods: 'tail', 'text', 'attrib','tag'
@@ -269,15 +247,16 @@ class JSSContainerObject(JSSObject):
                 Int and bool values get converted to string.
                 Dicts are recursively added (so their keys are added to
                     parent key, etc).
-        id_url: String URL piece to append to use the ID property for
-            requests. The only place this differs from `/id/` is for
-            the `Account` endpoint.
 
     Private Class Attributes:
-        _name_path: String XML path to where the name of the object
-            is stored. Most objects use a name tag at the root, so this
-            is not used. Some, however, put it into general/game. If
-            you are implementing data_keys for an object type not yet
+        _id_path (str): URL Path subcomponent used to reference an
+            object by ID when querying or posting.
+        _name_element(str): XML path to element which contains
+            the name of the object, used for creating new objects only.
+
+            Most objects use a name tag at the root, (e.g. "name")
+            Some, however, put it into "general/name". If you are
+            implementing `data_keys` for an object type not yet
             impelemented, make sure to set this if it differs from the
             default/inherited value.
     """
@@ -292,13 +271,8 @@ class JSSContainerObject(JSSObject):
     can_subset = False
     data_keys = {}
     _id_path = "id"
-
-    # TODO: Get rid of this stuff:
-    # container: String pluralized object name. This is used in one
-    #     place-Account and AccountGroup use the same API call.
-    #     container is used to differentiate the results.
-    container = ""
-    _name_path = ""
+    # TODO: Determine correct values for all endpoints.
+    _name_element = "name"
 
     # Overrides ###############################################################
     def __init__(self, jss, data, **kwargs):
@@ -362,20 +336,20 @@ class JSSContainerObject(JSSObject):
         except (ValueError, TypeError):
             pass
         if isinstance(data, int):
-            return os.path.join(cls._endpoint, cls._id_path, data)
+            return os.path.join(cls._endpoint_path, cls._id_path, data)
         elif data is None:
-            return cls._endpoint
+            return cls._endpoint_path
         elif isinstance(data, basestring):
             if "=" in data:
                 key, value = data.split("=")   # pylint: disable=no-member
                 if key in cls.search_types:
-                    return "%s%s%s" % (cls._endpoint, cls.search_types[key], value)
+                    return os.path.join(cls._endpoint_path, cls.search_types[key], value)
                 else:
                     raise JSSUnsupportedSearchMethodError(
                         "This object cannot be queried by %s." % key)
             else:
-                return "%s%s%s" % (cls._endpoint_path,
-                                   cls.search_types[cls.default_search], data)
+                return os.path.join(cls._endpoint_path,
+                                    cls.search_types[cls.default_search], data)
         else:
             raise ValueError
 
@@ -386,7 +360,7 @@ class JSSContainerObject(JSSObject):
         For example: "/computers/id/451"
         """
         if self.id:
-            url = "%s%s%s" % (self._endpoint_path, self.id_url, self.id)
+            url = os.path.join(self._endpoint_path, self._id_path, self.id)
         else:
             url = None
         return url
@@ -454,16 +428,15 @@ class JSSContainerObject(JSSObject):
         """
         new_xml = PrettyElement(tag=self.root_tag)
         super(JSSContainerObject, self).__init__(self.jss, new_xml)
-        # Name is required, so set it outside of the helper func.
-        if self._name_path:
-            parent = self
-            for path_element in self._name_path.split("/"):
-                self._set_xml_from_keys(parent, (path_element, None))
-                parent = parent.find(path_element)
+        self.cached = "Unsaved"
 
-            parent.text = name
-        else:
-            ElementTree.SubElement(self, "name").text = name
+        # Name is required, so set it outside of the helper func.
+        current_tag = self
+        for path_element in self._name_element.split("/"):
+            ElementTree.SubElement(current_tag, path_element)
+            current_tag = current_tag.find(path_element)
+
+        current_tag.text = name
 
         for item in self.data_keys.items():
             self._set_xml_from_keys(self, item, **kwargs)
@@ -512,7 +485,7 @@ class JSSContainerObject(JSSObject):
     @classmethod
     def get_post_url(cls):
         """Return the post URL for this object class."""
-        return "%s%s%s" % (cls._endpoint_path, cls.id_url, "0")
+        return "%s%s%s" % (cls._endpoint_path, cls._id_path, "0")
 
     @property
     def name(self):
