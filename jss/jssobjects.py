@@ -57,7 +57,7 @@ __all__ = (
 # pylint: disable=missing-docstring
 class Account(JSSContainerObject):
     """JSS account."""
-    _url = "/accounts"
+    _endpoint_path = "accounts"
     container = "users"
     id_url = "/userid/"
     search_types = {"userid": "/userid/", "username": "/username/",
@@ -71,7 +71,7 @@ class AccountGroup(JSSContainerObject):
     seperated them.
     """
 
-    _url = "/accounts"
+    _endpoint_path = "accounts"
     container = "groups"
     id_url = "/groupid/"
     search_types = {"groupid": "/groupid/", "groupname": "/groupname/",
@@ -79,7 +79,7 @@ class AccountGroup(JSSContainerObject):
 
 
 class ActivationCode(JSSObject):
-    _url = "/activationcode"
+    _endpoint_path = "activationcode"
     root_tag = "activation_code"
     can_delete = False
     can_post = False
@@ -87,24 +87,24 @@ class ActivationCode(JSSObject):
 
 
 class AdvancedComputerSearch(JSSContainerObject):
-    _url = "/advancedcomputersearches"
+    _endpoint_path = "advancedcomputersearches"
 
 
 class AdvancedMobileDeviceSearch(JSSContainerObject):
-    _url = "/advancedmobiledevicesearches"
+    _endpoint_path = "advancedmobiledevicesearches"
 
 
 class AdvancedUserSearch(JSSContainerObject):
-    _url = "/advancedusersearches"
+    _endpoint_path = "advancedusersearches"
 
 
 class Building(JSSContainerObject):
-    _url = "/buildings"
+    _endpoint_path = "buildings"
     root_tag = "building"
 
 
 class BYOProfile(JSSContainerObject):
-    _url = "/byoprofiles"
+    _endpoint_path = "byoprofiles"
     root_tag = "byoprofiles"
     can_delete = False
     can_post = False
@@ -113,16 +113,16 @@ class BYOProfile(JSSContainerObject):
 
 
 class Category(JSSContainerObject):
-    _url = "/categories"
+    _endpoint_path = "categories"
     root_tag = "category"
 
 
 class Class(JSSContainerObject):
-    _url = "/classes"
+    _endpoint_path = "classes"
 
 
 class CommandFlush(object):
-    _url = "/commandflush"
+    _endpoint_path = "commandflush"
     can_list = False
     can_get = False
     can_put = False
@@ -202,7 +202,7 @@ class CommandFlush(object):
 
 class Computer(JSSDeviceObject):
     root_tag = "computer"
-    _url = "/computers"
+    _endpoint_path = "computers"
     search_types = {"name": "/name/", "serial_number": "/serialnumber/",
                     "udid": "/udid/", "macaddress": "/macadress/",
                     "match": "/match/"}
@@ -222,7 +222,7 @@ class Computer(JSSDeviceObject):
 
 class ComputerApplication(JSSContainerObject):
     """Unimplemented at this time."""
-    _url = "/computerapplications/application"
+    _endpoint_path = "computerapplications/application"
     can_delete = False
     can_put = False
     can_post = False
@@ -232,7 +232,7 @@ class ComputerApplication(JSSContainerObject):
 
 
 class ComputerApplicationUsage(JSSContainerObject):
-    _url = "/computerapplicationusage"
+    _endpoint_path = "computerapplicationusage"
     can_delete = False
     can_put = False
     can_post = False
@@ -243,14 +243,14 @@ class ComputerApplicationUsage(JSSContainerObject):
 
 
 class ComputerCheckIn(JSSObject):
-    _url = "/computercheckin"
+    _endpoint_path = "computercheckin"
     can_delete = False
     can_list = False
     can_post = False
 
 
 class ComputerCommand(JSSContainerObject):
-    _url = "/computercommands"
+    _endpoint_path = "computercommands"
     can_delete = False
     can_put = False
     # TODO: You _can_ POST computer commands, but it is not yet
@@ -259,16 +259,16 @@ class ComputerCommand(JSSContainerObject):
 
 
 class ComputerConfiguration(JSSContainerObject):
-    _url = "/computerconfigurations"
+    _endpoint_path = "computerconfigurations"
     root_tag = "computer_configuration"
 
 
 class ComputerExtensionAttribute(JSSContainerObject):
-    _url = "/computerextensionattributes"
+    _endpoint_path = "computerextensionattributes"
 
 
 class ComputerGroup(JSSGroupObject):
-    _url = "/computergroups"
+    _endpoint_path = "computergroups"
     root_tag = "computer_group"
     data_keys = {
         "is_smart": False,
@@ -316,14 +316,14 @@ class ComputerGroup(JSSGroupObject):
 
 class ComputerHardwareSoftwareReport(JSSContainerObject):
     """Unimplemented at this time."""
-    _url = "/computerhardwaresoftwarereports"
+    _endpoint_path = "computerhardwaresoftwarereports"
     can_delete = False
     can_put = False
     can_post = False
 
 
 class ComputerHistory(JSSContainerObject):
-    _url = "/computerhistory"
+    _endpoint_path = "computerhistory"
     can_delete = False
     can_put = False
     can_post = False
@@ -332,48 +332,48 @@ class ComputerHistory(JSSContainerObject):
 
 
 class ComputerInventoryCollection(JSSObject):
-    _url = "/computerinventorycollection"
+    _endpoint_path = "computerinventorycollection"
     can_list = False
     can_post = False
     can_delete = False
 
 
 class ComputerInvitation(JSSContainerObject):
-    _url = "/computerinvitations"
+    _endpoint_path = "computerinvitations"
     can_put = False
     search_types = {"name": "/name/", "invitation": "/invitation/"}
 
 
 class ComputerReport(JSSContainerObject):
-    _url = "/computerreports"
+    _endpoint_path = "computerreports"
     can_put = False
     can_post = False
     can_delete = False
 
 
 class Department(JSSContainerObject):
-    _url = "/departments"
+    _endpoint_path = "departments"
     root_tag = "department"
 
 
 class DirectoryBinding(JSSContainerObject):
-    _url = "/directorybindings"
+    _endpoint_path = "directorybindings"
 
 
 class DiskEncryptionConfiguration(JSSContainerObject):
-    _url = "/diskencryptionconfigurations"
+    _endpoint_path = "diskencryptionconfigurations"
 
 
 class DistributionPoint(JSSContainerObject):
-    _url = "/distributionpoints"
+    _endpoint_path = "distributionpoints"
 
 
 class DockItem(JSSContainerObject):
-    _url = "/dockitems"
+    _endpoint_path = "dockitems"
 
 
 class EBook(JSSContainerObject):
-    _url = "/ebooks"
+    _endpoint_path = "ebooks"
     can_subset = True
 
 
@@ -392,7 +392,7 @@ class FileUpload(object):
     However, you can reuse the FileUpload object if you wish, by
     changing the parameters, and issuing another save().
     """
-    _url = "fileuploads"
+    _endpoint_path = "fileuploads"
     can_subset = False
 
     def __init__(self, j, resource_type, id_type, _id, resource):
@@ -481,20 +481,20 @@ class FileUpload(object):
 # pylint: enable=too-few-public-methods
 
 class GSXConnection(JSSObject):
-    _url = "/gsxconnection"
+    _endpoint_path = "gsxconnection"
     can_list = False
     can_post = False
     can_delete = False
 
 
 class IBeacon(JSSContainerObject):
-    _url = "/ibeacons"
+    _endpoint_path = "ibeacons"
     root_tag = "ibeacon"
 
 
 class JSSUser(JSSObject):
     """JSSUser is deprecated."""
-    _url = "/jssuser"
+    _endpoint_path = "jssuser"
     can_list = False
     can_post = False
     can_put = False
@@ -503,7 +503,7 @@ class JSSUser(JSSObject):
 
 
 class LDAPServer(JSSContainerObject):
-    _url = "/ldapservers"
+    _endpoint_path = "ldapservers"
 
     def search_users(self, user):
         """Search for LDAP users.
@@ -603,11 +603,11 @@ class LDAPGroupsResults(JSSContainerObject):
 
 
 class LicensedSoftware(JSSContainerObject):
-    _url = "/licensedsoftware"
+    _endpoint_path = "licensedsoftware"
 
 
 class LogFlush(object):
-    _url = "/logflush"
+    _endpoint_path = "logflush"
 
     def __init__(self, jss):
         """Initialize a new LogFlush
@@ -750,13 +750,13 @@ class LogFlush(object):
 
 
 class MacApplication(JSSContainerObject):
-    _url = "/macapplications"
+    _endpoint_path = "macapplications"
     root_tag = "mac_application"
     can_subset = True
 
 
 class ManagedPreferenceProfile(JSSContainerObject):
-    _url = "/managedpreferenceprofiles"
+    _endpoint_path = "managedpreferenceprofiles"
     can_subset = True
 
 
@@ -765,7 +765,7 @@ class MobileDevice(JSSDeviceObject):
     across multiple properties.
     """
 
-    _url = "/mobiledevices"
+    _endpoint_path = "mobiledevices"
     root_tag = "mobile_device"
     search_types = {"name": "/name/", "serial_number": "/serialnumber/",
                     "udid": "/udid/", "macaddress": "/macadress/",
@@ -785,12 +785,12 @@ class MobileDevice(JSSDeviceObject):
 
 
 class MobileDeviceApplication(JSSContainerObject):
-    _url = "/mobiledeviceapplications"
+    _endpoint_path = "mobiledeviceapplications"
     can_subset = True
 
 
 class MobileDeviceCommand(JSSContainerObject):
-    _url = "/mobiledevicecommands"
+    _endpoint_path = "mobiledevicecommands"
     can_put = False
     can_delete = False
     search_types = {"name": "/name/", "uuid": "/uuid/",
@@ -801,22 +801,22 @@ class MobileDeviceCommand(JSSContainerObject):
 
 
 class MobileDeviceConfigurationProfile(JSSContainerObject):
-    _url = "/mobiledeviceconfigurationprofiles"
+    _endpoint_path = "mobiledeviceconfigurationprofiles"
     can_subset = True
 
 
 class MobileDeviceEnrollmentProfile(JSSContainerObject):
-    _url = "/mobiledeviceenrollmentprofiles"
+    _endpoint_path = "mobiledeviceenrollmentprofiles"
     search_types = {"name": "/name/", "invitation": "/invitation/"}
     can_subset = True
 
 
 class MobileDeviceExtensionAttribute(JSSContainerObject):
-    _url = "/mobiledeviceextensionattributes"
+    _endpoint_path = "mobiledeviceextensionattributes"
 
 
 class MobileDeviceGroup(JSSGroupObject):
-    _url = "/mobiledevicegroups"
+    _endpoint_path = "mobiledevicegroups"
     root_tag = "mobile_device_group"
 
     def add_mobile_device(self, device):
@@ -838,32 +838,32 @@ class MobileDeviceGroup(JSSGroupObject):
 
 
 class MobileDeviceInvitation(JSSContainerObject):
-    _url = "/mobiledeviceinvitations"
+    _endpoint_path = "mobiledeviceinvitations"
     can_put = False
     search_types = {"invitation": "/invitation/"}
 
 
 class MobileDeviceProvisioningProfile(JSSContainerObject):
-    _url = "/mobiledeviceprovisioningprofiles"
+    _endpoint_path = "mobiledeviceprovisioningprofiles"
     search_types = {"name": "/name/", "uuid": "/uuid/"}
     can_subset = True
 
 
 class NetbootServer(JSSContainerObject):
-    _url = "/netbootservers"
+    _endpoint_path = "netbootservers"
 
 
 class NetworkSegment(JSSContainerObject):
-    _url = "/networksegments"
+    _endpoint_path = "networksegments"
 
 
 class OSXConfigurationProfile(JSSContainerObject):
-    _url = "/osxconfigurationprofiles"
+    _endpoint_path = "osxconfigurationprofiles"
     can_subset = True
 
 
 class Package(JSSContainerObject):
-    _url = "/packages"
+    _endpoint_path = "packages"
     root_tag = "package"
     data_keys = {
         "category": None,
@@ -928,7 +928,7 @@ class Package(JSSContainerObject):
 
 
 class Patch(JSSContainerObject):
-    _url = "/patches"
+    _endpoint_path = "patches"
     root_tag = "software_title"
     can_post = False
     can_subset = True
@@ -937,20 +937,20 @@ class Patch(JSSContainerObject):
 
 
 class Peripheral(JSSContainerObject):
-    _url = "/peripherals"
+    _endpoint_path = "peripherals"
     search_types = {}
     can_subset = True
 
 
 class PeripheralType(JSSContainerObject):
-    _url = "/peripheraltypes"
+    _endpoint_path = "peripheraltypes"
     search_types = {}
 
 
 # pylint: disable=too-many-instance-attributes
 # This class has a lot of convenience attributes. Sorry pylint.
 class Policy(JSSContainerObject):
-    _url = "/policies"
+    _endpoint_path = "policies"
     root_tag = "policy"
     search_types = {"name": "/name/", "category": "/category/"}
     can_subset = True
@@ -1178,36 +1178,36 @@ class Policy(JSSContainerObject):
 
 
 class Printer(JSSContainerObject):
-    _url = "/printers"
+    _endpoint_path = "printers"
 
 
 class RemovableMACAddress(JSSContainerObject):
-    _url = "/removablemacaddresses"
+    _endpoint_path = "removablemacaddresses"
 
 
 class RestrictedSoftware(JSSContainerObject):
-    _url = "/restrictedsoftware"
+    _endpoint_path = "restrictedsoftware"
 
 
 class SavedSearch(JSSContainerObject):
-    _url = "/savedsearches"
+    _endpoint_path = "savedsearches"
     can_put = False
     can_post = False
     can_delete = False
 
 
 class Script(JSSContainerObject):
-    _url = "/scripts"
+    _endpoint_path = "scripts"
     root_tag = "script"
 
 
 class Site(JSSContainerObject):
-    _url = "/sites"
+    _endpoint_path = "sites"
     root_tag = "site"
 
 
 class SMTPServer(JSSObject):
-    _url = "/smtpserver"
+    _endpoint_path = "smtpserver"
     can_list = False
     can_post = False
     can_delete = False
@@ -1215,30 +1215,30 @@ class SMTPServer(JSSObject):
 
 
 class SoftwareUpdateServer(JSSContainerObject):
-    _url = "/softwareupdateservers"
+    _endpoint_path = "softwareupdateservers"
 
 
 class UserExtensionAttribute(JSSContainerObject):
-    _url = "/userextensionattributes"
+    _endpoint_path = "userextensionattributes"
 
 
 class User(JSSContainerObject):
-    _url = "/users"
+    _endpoint_path = "users"
 
 
 class UserGroup(JSSContainerObject):
-    _url = "/usergroups"
+    _endpoint_path = "usergroups"
 
 
 class VPPAccount(JSSContainerObject):
-    _url = "/vppaccounts"
+    _endpoint_path = "vppaccounts"
     root_tag = "vpp_account"
 
 
 class VPPAssignment(JSSContainerObject):
-    _url = "/vppassignments"
+    _endpoint_path = "vppassignments"
 
 
 class VPPInvitation(JSSContainerObject):
-    _url = "/vppinvitations"
+    _endpoint_path = "vppinvitations"
 # pylint: enable=missing-docstring

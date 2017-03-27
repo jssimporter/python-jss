@@ -56,7 +56,7 @@ class JSSObject(PrettyElement):
             "computers" holding "computer" elements. The root_tag is
             "computer").
     """
-    _url = None
+    _endpoint_path = None
     can_list = False
     can_get = True
     can_put = True
@@ -127,7 +127,7 @@ class JSSObject(PrettyElement):
             raise JSSUnsupportedSearchMethodError(
                 "This object cannot be queried by %s." % data)
         else:
-            return cls._url
+            return cls._endpoint_path
 
     @property
     def url(self):
@@ -136,7 +136,7 @@ class JSSObject(PrettyElement):
         For example: "/activationcode"
         """
         # Flat objects have no ID property, so there is only one URL.
-        return self._url(None)
+        return self._endpoint_path(None)
 
     def __repr__(self):
         if isinstance(self.cached, dt.datetime):
@@ -291,7 +291,7 @@ class JSSContainerObject(JSSObject):
     search_types = {"name": "/name/"}
     can_subset = False
     data_keys = {}
-    id_url = "/id/"
+    _id_path = "id"
 
     # TODO: Get rid of this stuff:
     # container: String pluralized object name. This is used in one
@@ -362,19 +362,19 @@ class JSSContainerObject(JSSObject):
         except (ValueError, TypeError):
             pass
         if isinstance(data, int):
-            return "%s%s%s" % (cls._url, cls.id_url, data)
+            return os.path.join(cls._endpoint, cls._id_path, data)
         elif data is None:
-            return cls._url
+            return cls._endpoint
         elif isinstance(data, basestring):
             if "=" in data:
                 key, value = data.split("=")   # pylint: disable=no-member
                 if key in cls.search_types:
-                    return "%s%s%s" % (cls._url, cls.search_types[key], value)
+                    return "%s%s%s" % (cls._endpoint, cls.search_types[key], value)
                 else:
                     raise JSSUnsupportedSearchMethodError(
                         "This object cannot be queried by %s." % key)
             else:
-                return "%s%s%s" % (cls._url,
+                return "%s%s%s" % (cls._endpoint_path,
                                    cls.search_types[cls.default_search], data)
         else:
             raise ValueError
@@ -386,7 +386,7 @@ class JSSContainerObject(JSSObject):
         For example: "/computers/id/451"
         """
         if self.id:
-            url = "%s%s%s" % (self._url, self.id_url, self.id)
+            url = "%s%s%s" % (self._endpoint_path, self.id_url, self.id)
         else:
             url = None
         return url
@@ -512,7 +512,7 @@ class JSSContainerObject(JSSObject):
     @classmethod
     def get_post_url(cls):
         """Return the post URL for this object class."""
-        return "%s%s%s" % (cls._url, cls.id_url, "0")
+        return "%s%s%s" % (cls._endpoint_path, cls.id_url, "0")
 
     @property
     def name(self):
