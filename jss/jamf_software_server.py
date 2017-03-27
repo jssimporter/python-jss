@@ -226,7 +226,7 @@ class JSS(object):
         JSSObjects themselves.
 
         Args:
-            url_path: String API endpoint path to GET (e.g. "/packages")
+            url_path: String API endpoint path to GET (e.g. "packages")
 
         Returns:
             ElementTree.Element for the XML returned from the JSS.
@@ -255,35 +255,19 @@ class JSS(object):
 
         return xmldata
 
-    def post(self, obj_class, url_path, data):
+    def post(self, url_path, data):
         """POST an object to the JSS. For creating new objects only.
 
-        The data argument is POSTed to the JSS, which, upon success,
-        returns the complete XML for the new object. This data is used
-        to get the ID of the new object, and, via the
-        JSSObjectFactory, GET that ID to instantiate a new JSSObject of
-        class obj_class.
-
-        This allows incomplete (but valid) XML for an object to be used
-        to create a new object, with the JSS filling in the remaining
-        data. Also, only the JSS may specify things like ID, so this
-        method retrieves those pieces of data.
-
-        In general, it is better to use a higher level interface for
-        creating new objects, namely, creating a JSSObject subclass and
-        then using its save method.
+        The JSS responds with the new object's ID number if successful.
 
         Args:
-            obj_class: JSSObject subclass to create from POST.
             url_path: String API endpoint path to POST (e.g.
-                "/packages/id/0")
+                "packages/id/0")
             data: xml.etree.ElementTree.Element with valid XML for the
                 desired obj_class.
 
         Returns:
-            An object of class obj_class, representing a newly created
-            object on the JSS. The data is what has been returned after
-            it has been parsed by the JSS and added to the database.
+            str ID number of the newly created object.
 
         Raises:
             JSSPostError if provided url_path has a >= 400 response.
@@ -299,9 +283,9 @@ class JSS(object):
         elif response.status_code >= 400:
             error_handler(JSSPostError, response)
 
-        id_ = int(re.search(r"<id>([0-9]+)</id>", response.text).group(1))
+        id_ = re.search(r"<id>([0-9]+)</id>", response.content).group(1)
 
-        return self.factory.get_object(obj_class, id_)
+        return id_
 
     def put(self, url_path, data):
         """Update an existing object on the JSS.
@@ -312,9 +296,10 @@ class JSS(object):
 
         Args:
             url_path: String API endpoint path to PUT, with ID (e.g.
-                "/packages/id/<object ID>")
+                "packages/id/<object ID>")
             data: xml.etree.ElementTree.Element with valid XML for the
                 desired obj_class.
+
         Raises:
             JSSPutError if provided url_path has a >= 400 response.
         """
@@ -335,7 +320,7 @@ class JSS(object):
 
         Args:
             url_path: String API endpoint path to DEL, with ID (e.g.
-                "/packages/id/<object ID>")
+                "packages/id/<object ID>")
             data: xml.etree.ElementTree.Element with valid XML for the
                 desired obj_class. Most classes don't need this.
 
@@ -612,7 +597,7 @@ class JSSObjectFactory(object):
         elif isinstance(data, (basestring, int)):
             return self.get_individual_object(obj_class, data, subset)
         elif isinstance(data, ElementTree.Element):
-            return self.get_new_object(obj_class, data)
+            return obj_class(self.jss, data)
         else:
             raise ValueError
 
@@ -699,29 +684,6 @@ class JSSObjectFactory(object):
                 return obj_class(self.jss, xmldata)
         else:
             raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
-
-    def get_new_object(self, obj_class, data):
-        """Create a new object.
-
-        Args:
-            obj_class: The JSSObject subclass type to create.
-            data: xml.etree.ElementTree.Element; Create a new object
-                from xml.
-
-        Returns:
-            JSSObject: Returns an object of type obj_class.
-
-        Raises:
-            JSSMethodNotAllowedError: if you try to perform an operation
-                not supported by that object type.
-            JSSPostError: If attempted object creation fails.
-        """
-        # if obj_class.can_post:
-        #     url = obj_class.get_post_url()
-        #     return self.jss.post(obj_class, url, data)
-        return obj_class(self.jss, data)
-        # else:
-        #     raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
 
     def _build_jss_object_list(self, response, obj_class):
         """Build a JSSObject from response."""
