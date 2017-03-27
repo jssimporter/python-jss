@@ -46,14 +46,12 @@ class JSSObject(PrettyElement):
 
     Class Attributes:
         cached: False, or datetime.datetime since last retrieval.
-        can_list: Bool whether object allows a list GET request.
         can_get: Bool whether object allows a GET request.
         can_put: Bool whether object allows a PUT request.
         can_post: Bool whether object allows a POST request.
         can_delete: Bool whether object allows a DEL request.
     """
     _endpoint_path = None
-    can_list = False
     can_get = True
     can_put = True
     can_post = False
@@ -227,7 +225,6 @@ class JSSContainerObject(JSSObject):
         cached: False, "Unsaved" for newly created objects that have
             not been POSTed to the JSS, or datetime.datetime since last
             retrieval.
-        can_list: Bool whether object allows a list GET request.
         can_get: Bool whether object allows a GET request.
         can_put: Bool whether object allows a PUT request.
         can_post: Bool whether object allows a POST request.
@@ -264,7 +261,6 @@ class JSSContainerObject(JSSObject):
             default/inherited value.
     """
     root_tag = "JSSContainerObject"
-    can_list = True
     can_get = True
     can_put = True
     can_post = True
