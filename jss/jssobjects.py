@@ -1208,7 +1208,6 @@ class Site(JSSContainerObject):
 
 class SMTPServer(JSSObject):
     _url = "/smtpserver"
-    id_url = ""
     can_list = False
     can_post = False
     can_delete = False

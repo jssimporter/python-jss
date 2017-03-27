@@ -269,6 +269,9 @@ class JSSContainerObject(JSSObject):
                 Int and bool values get converted to string.
                 Dicts are recursively added (so their keys are added to
                     parent key, etc).
+        id_url: String URL piece to append to use the ID property for
+            requests. The only place this differs from `/id/` is for
+            the `Account` endpoint.
 
     Private Class Attributes:
         _name_path: String XML path to where the name of the object
@@ -288,14 +291,12 @@ class JSSContainerObject(JSSObject):
     search_types = {"name": "/name/"}
     can_subset = False
     data_keys = {}
+    id_url = "/id/"
 
     # TODO: Get rid of this stuff:
-    # id_url: String URL piece to append to use the ID property for
-    #     requests. (Usually "/id/")
     # container: String pluralized object name. This is used in one
     #     place-Account and AccountGroup use the same API call.
     #     container is used to differentiate the results.
-    id_url = "/id/"
     container = ""
     _name_path = ""
 
