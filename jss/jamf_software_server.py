@@ -535,7 +535,7 @@ class JSSObjectFactory(object):
 
     Attributes:
         jss: Copy of a JSS object to which API requests are
-        delegated.
+            delegated.
     """
 
     def __init__(self, jss):
@@ -548,8 +548,9 @@ class JSSObjectFactory(object):
         self.jss = jss
 
     def get_object(self, obj_class, data=None, subset=None):
-        """Return a subclassed JSSObject instance by querying for
-        existing objects or posting a new object.
+        """Build an JSSObject instance.
+
+        Can query, or create new objects depending on data type.
 
         Args:
             obj_class: The JSSObject subclass type to search for or
@@ -583,114 +584,26 @@ class JSSObjectFactory(object):
             JSSMethodNotAllowedError: if you try to perform an operation
                 not supported by that object type.
             JSSGetError: If object searched for is not found.
-            JSSPostError: If attempted object creation fails.
         """
-        if subset:
-            if not isinstance(subset, list):
-                if isinstance(subset, basestring):
-                    subset = subset.split("&")
-                else:
-                    raise TypeError
+        if not isinstance(data, ElementTree.Element):
+            url = obj_class.build_query(data, subset)
+            data = self.jss.get(url)
 
-        if data is None:
-            return self.get_list(obj_class, data, subset)
-        elif isinstance(data, (basestring, int)):
-            return self.get_individual_object(obj_class, data, subset)
-        elif isinstance(data, ElementTree.Element):
+        # TODO: Deprecated and pending removal
+        if obj_class.container:
+            data = data.find(obj_class.container)
+
+        if data.find("size") is not None:
+            return self._build_jss_object_list(data, obj_class)
+        else:
             return obj_class(self.jss, data)
-        else:
-            raise ValueError
-
-    def get_list(self, obj_class, data, subset):
-        """Get a list of objects as QuerySet.
-
-        Args:
-            obj_class: The JSSObject subclass type to search for.
-            data: None
-            subset: Some objects support a subset for listing; namely
-                Computer, with subset="basic".
-
-        Returns:
-            QuerySet
-        """
-        url = obj_class.get_url(data)
-        if obj_class.can_list and obj_class.can_get:
-            # TODO: There's a can_subset attribute
-            if (subset and len(subset) == 1 and subset[0].upper() ==
-                    "BASIC") and obj_class is jssobjects.Computer:
-                url += "/subset/basic"
-
-            result = self.jss.get(url)
-
-            # TODO: This is pending removal
-            if hasattr(obj_class, "container"):
-                result = result.find(obj_class.container)
-
-            return self._build_jss_object_list(result, obj_class)
-
-        # Single object
-
-        elif obj_class.can_get:
-            xmldata = self.jss.get(url)
-            return obj_class(self.jss, xmldata)
-        else:
-            raise JSSMethodNotAllowedError(
-                obj_class.__class__.__name__)
-
-    def get_individual_object(self, obj_class, data, subset):
-        """Return a JSSObject of type obj_class searched for by data.
-
-        Args:
-            obj_class: The JSSObject subclass type to search for.
-            data: The data parameter performs different operations
-                depending on the type passed.
-                int: Retrieve an object with ID of <data>.
-                str: Retrieve an object with name of <str>. For some
-                    objects, this may be overridden to include searching
-                    by other criteria. See those objects for more info.
-            subset:
-                A list of XML subelement tags to request (e.g.
-                ['general', 'purchasing']), OR an '&' delimited string
-                (e.g. 'general&purchasing'). This is not supported for
-                all JSSObjects.
-
-        Returns:
-            JSSObject: Returns an object of type obj_class.
-            (FUTURE) Will return None if nothing is found that match
-                the search criteria.
-
-        Raises:
-            TypeError: if subset not formatted properly.
-            JSSMethodNotAllowedError: if you try to perform an operation
-                not supported by that object type.
-            JSSGetError: If object searched for is not found.
-        """
-        if obj_class.can_get:
-            url = obj_class.get_url(data)
-            if subset:
-                if not "general" in subset:
-                    subset.append("general")
-                url += "/subset/%s" % "&".join(subset)
-
-            xmldata = self.jss.get(url)
-
-            # Some name searches may result in multiple found
-            # objects. e.g. A computer search for "MacBook Pro" may
-            # return ALL computers which have not had their name
-            # changed.
-            if xmldata.find("size") is not None:
-                return self._build_jss_object_list(xmldata, obj_class)
-            else:
-                return obj_class(self.jss, xmldata)
-        else:
-            raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
 
     def _build_jss_object_list(self, response, obj_class):
-        """Build a JSSObject from response."""
-        response_objects = [item for item in response
-                            if item is not None and
-                            item.tag != "size"]
-        identities =  (
+        """Build a QuerySet from response."""
+        response_objects = (
+            i for i in response if i is not None and i.tag != "size")
+
+        identities = (
             Identity(name=obj.findtext('name'), id=obj.findtext('id'))
             for obj in response_objects)
 

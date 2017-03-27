@@ -221,6 +221,13 @@ class Computer(JSSDeviceObject):
             mac_addresses.append(self.findtext("general/alt_mac_address"))
             return mac_addresses
 
+    # TODO: Reimplement oddball computers/subset/basic endpoint
+    # Move to Computer
+    # if (subset and len(subset) == 1 and subset[0].upper() ==
+    #         "BASIC") and obj_class is jssobjects.Computer:
+    #     url += "/subset/basic"
+
+
 
 class ComputerApplication(JSSContainerObject):
     """Unimplemented at this time."""
