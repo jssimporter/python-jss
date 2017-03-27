@@ -61,9 +61,9 @@ class Account(JSSContainerObject):
     _endpoint_path = "accounts"
     # TODO: This is pending removal.
     container = "users"
-    id_url = "/userid/"
-    search_types = {"userid": "/userid/", "username": "/username/",
-                    "name": "/username/"}
+    id_url = "userid"
+    search_types = {"userid": "userid", "username": "username",
+                    "name": "username"}
 
 
 class AccountGroup(JSSContainerObject):
@@ -76,9 +76,9 @@ class AccountGroup(JSSContainerObject):
     _endpoint_path = "accounts"
     # TODO: This is pending removal.
     container = "groups"
-    id_url = "/groupid/"
-    search_types = {"groupid": "/groupid/", "groupname": "/groupname/",
-                    "name": "/groupname/"}
+    id_url = "groupid"
+    search_types = {"groupid": "groupid", "groupname": "groupname",
+                    "name": "groupname"}
 
 
 class ActivationCode(JSSObject):
@@ -110,8 +110,8 @@ class BYOProfile(JSSContainerObject):
     root_tag = "byoprofiles"
     can_delete = False
     can_post = False
-    search_types = {"sitename": "/site/name/", "siteid": "/site/id/",
-                    "name": "/name/"}
+    search_types = {"sitename": "site/name", "siteid": "site/id",
+                    "name": "name"}
 
 
 class Category(JSSContainerObject):
@@ -329,8 +329,8 @@ class ComputerHistory(JSSContainerObject):
     can_delete = False
     can_put = False
     can_post = False
-    search_types = {"name": "/name/", "serial_number": "/serialnumber/",
-                    "udid": "/udid/", "macaddress": "/macadress/"}
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macadress"}
 
 
 class ComputerInventoryCollection(JSSObject):
@@ -343,7 +343,7 @@ class ComputerInventoryCollection(JSSObject):
 class ComputerInvitation(JSSContainerObject):
     _endpoint_path = "computerinvitations"
     can_put = False
-    search_types = {"name": "/name/", "invitation": "/invitation/"}
+    search_types = {"name": "name", "invitation": "invitation"}
 
 
 class ComputerReport(JSSContainerObject):
@@ -768,9 +768,9 @@ class MobileDevice(JSSDeviceObject):
 
     _endpoint_path = "mobiledevices"
     root_tag = "mobile_device"
-    search_types = {"name": "/name/", "serial_number": "/serialnumber/",
-                    "udid": "/udid/", "macaddress": "/macadress/",
-                    "match": "/match/"}
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macadress",
+                    "match": "match"}
     can_subset = True
 
     @property
@@ -794,8 +794,8 @@ class MobileDeviceCommand(JSSContainerObject):
     _endpoint_path = "mobiledevicecommands"
     can_put = False
     can_delete = False
-    search_types = {"name": "/name/", "uuid": "/uuid/",
-                    "command": "/command/"}
+    search_types = {"name": "name", "uuid": "uuid",
+                    "command": "command"}
     # TODO: This object _can_ post, but it works a little differently
     # and is not yet implemented
     can_post = False
@@ -808,7 +808,7 @@ class MobileDeviceConfigurationProfile(JSSContainerObject):
 
 class MobileDeviceEnrollmentProfile(JSSContainerObject):
     _endpoint_path = "mobiledeviceenrollmentprofiles"
-    search_types = {"name": "/name/", "invitation": "/invitation/"}
+    search_types = {"name": "name", "invitation": "invitation"}
     can_subset = True
 
 
@@ -841,12 +841,12 @@ class MobileDeviceGroup(JSSGroupObject):
 class MobileDeviceInvitation(JSSContainerObject):
     _endpoint_path = "mobiledeviceinvitations"
     can_put = False
-    search_types = {"invitation": "/invitation/"}
+    search_types = {"invitation": "invitation"}
 
 
 class MobileDeviceProvisioningProfile(JSSContainerObject):
     _endpoint_path = "mobiledeviceprovisioningprofiles"
-    search_types = {"name": "/name/", "uuid": "/uuid/"}
+    search_types = {"name": "name", "uuid": "uuid"}
     can_subset = True
 
 
@@ -953,7 +953,7 @@ class PeripheralType(JSSContainerObject):
 class Policy(JSSContainerObject):
     _endpoint_path = "policies"
     root_tag = "policy"
-    search_types = {"name": "/name/", "category": "/category/"}
+    search_types = {"name": "name", "category": "category"}
     can_subset = True
     _name_element = "general/name"
     data_keys = {

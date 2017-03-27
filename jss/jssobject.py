@@ -267,7 +267,7 @@ class JSSContainerObject(JSSObject):
     can_post = True
     can_delete = True
     default_search = "name"
-    search_types = {"name": "/name/"}
+    search_types = {"name": "name"}
     can_subset = False
     data_keys = {}
     _id_path = "id"
@@ -286,7 +286,6 @@ class JSSContainerObject(JSSObject):
                 method.
         """
         self.jss = jss
-        #self.cached = None
         self._basic_id = self._basic_name = ""
 
         if isinstance(data, basestring):
@@ -296,7 +295,12 @@ class JSSContainerObject(JSSObject):
         elif isinstance(data, ElementTree.Element):
             # Create a new object from passed XML.
             super(JSSContainerObject, self).__init__(jss, data)
-            self.cached = "Unsaved"
+            # If this has an ID, assume it's from the JSS and set the
+            # cache time, otherwise set it to "Unsaved".
+            if data.findtext("id") or data.findtext("general/id"):
+                self.cached = dt.datetime.now()
+            else:
+                self.cached = "Unsaved"
 
         elif isinstance(data, Identity):
             # This is basic identity information, probably from a
@@ -343,13 +347,15 @@ class JSSContainerObject(JSSObject):
             if "=" in data:
                 key, value = data.split("=")   # pylint: disable=no-member
                 if key in cls.search_types:
-                    return os.path.join(cls._endpoint_path, cls.search_types[key], value)
+                    return os.path.join(
+                        cls._endpoint_path, cls.search_types[key], value)
                 else:
                     raise JSSUnsupportedSearchMethodError(
                         "This object cannot be queried by %s." % key)
             else:
-                return os.path.join(cls._endpoint_path,
-                                    cls.search_types[cls.default_search], data)
+                return os.path.join(
+                    cls._endpoint_path, cls.search_types[cls.default_search],
+                    data)
         else:
             raise ValueError
 
@@ -357,13 +363,9 @@ class JSSContainerObject(JSSObject):
     def url(self):
         """Return the path subcomponent of the url to this object.
 
-        For example: "/computers/id/451"
+        For example: "computers/id/451"
         """
-        if self.id:
-            url = os.path.join(self._endpoint_path, self._id_path, self.id)
-        else:
-            url = None
-        return url
+        return os.path.join(self._endpoint_path, self._id_path, self.id)
 
     def save(self):
         """Update or create a new object on the JSS.
@@ -377,7 +379,7 @@ class JSSContainerObject(JSSObject):
         """
         # Object probably exists if it has an ID (user can't assign
         # one).
-        if self.can_put and self.id:
+        if self.can_put and self.id != "0":
             # The JSS will reject PUT requests for objects that do not have
             # a category. The JSS assigns a name of "No category assigned",
             # which it will reject. Therefore, if that is the category
@@ -391,20 +393,18 @@ class JSSContainerObject(JSSObject):
             super(JSSContainerObject, self).save()
 
         elif self.can_post:
-            url = self.get_post_url()
             try:
-                updated_data = self.jss.post(self.__class__, url, data=self)
+                id_ = self.jss.post(self.url, data=self)
             except JSSPostError as err:
                 raise JSSPostError(err)
 
+            self._basic_id = id_
             # Replace current instance's data with new, JSS-validated data.
             # and update cached time.
-            self._reset_data(updated_data)
-            self.cached = dt.datetime.now()
+            self.retrieve()
 
         else:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
-
 
     # Methods #################################################################
     def _new(self, name, **kwargs):
@@ -482,11 +482,6 @@ class JSSContainerObject(JSSObject):
 
         target_key.text = kwargs.get(key, val)
 
-    @classmethod
-    def get_post_url(cls):
-        """Return the post URL for this object class."""
-        return "%s%s%s" % (cls._endpoint_path, cls._id_path, "0")
-
     @property
     def name(self):
         """Return object name or None."""
@@ -515,11 +510,13 @@ class JSSContainerObject(JSSObject):
         # can't assign ID's, so there's no need to perform arithmetic on
         # them, and having to convert to str all over the place is
         # gross. str equivalency still works.
-        if not self.cached:
+        if not self.cached or self.cached == "Unsaved":
             id_ = self._basic_id
         else:
             id_ = self.findtext("id") or self.findtext("general/id")
-        return id_
+        # If no ID has been found, this object hasn't been POSTed to the
+        # JSS. New objects use the ID "0".
+        return id_ or "0"
 
     def as_list_data(self):
         """Return an Element to be used in a list.
