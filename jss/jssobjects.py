@@ -85,7 +85,6 @@ class ActivationCode(JSSObject):
     _endpoint_path = "activationcode"
     can_delete = False
     can_post = False
-    can_list = False
 
 
 class AdvancedComputerSearch(JSSContainerObject):
@@ -125,7 +124,6 @@ class Class(JSSContainerObject):
 
 class CommandFlush(object):
     _endpoint_path = "commandflush"
-    can_list = False
     can_get = False
     can_put = False
     can_post = False
@@ -254,7 +252,6 @@ class ComputerApplicationUsage(JSSContainerObject):
 class ComputerCheckIn(JSSObject):
     _endpoint_path = "computercheckin"
     can_delete = False
-    can_list = False
     can_post = False
 
 
@@ -342,7 +339,6 @@ class ComputerHistory(JSSContainerObject):
 
 class ComputerInventoryCollection(JSSObject):
     _endpoint_path = "computerinventorycollection"
-    can_list = False
     can_post = False
     can_delete = False
 
@@ -491,7 +487,6 @@ class FileUpload(object):
 
 class GSXConnection(JSSObject):
     _endpoint_path = "gsxconnection"
-    can_list = False
     can_post = False
     can_delete = False
 
@@ -504,7 +499,6 @@ class IBeacon(JSSContainerObject):
 class JSSUser(JSSObject):
     """JSSUser is deprecated."""
     _endpoint_path = "jssuser"
-    can_list = False
     can_post = False
     can_put = False
     can_delete = False
@@ -1216,7 +1210,6 @@ class Site(JSSContainerObject):
 
 class SMTPServer(JSSObject):
     _endpoint_path = "smtpserver"
-    can_list = False
     can_post = False
     can_delete = False
 
