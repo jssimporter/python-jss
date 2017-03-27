@@ -107,7 +107,8 @@ class CurlAdapter(object):
 
         Args:
             url (str): Full URL to request.
-            headers (container): Header strings to use. Defaults to None.
+            headers (sequence of str): Header strings to use. Defaults to
+                None.
             kwargs (str: str): Extra commandline arguments and their
                 values to be added to the curl command.
 
