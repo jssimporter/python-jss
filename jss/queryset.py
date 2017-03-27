@@ -105,7 +105,7 @@ class QuerySet(list):
 
         This causes objects to retrieve their data again when accessed.
         """
-        for i in self: i.cached = None
+        for i in self: i.cached = False
 
     def names(self):
         """Return a generator of contents names"""
