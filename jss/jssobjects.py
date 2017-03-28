@@ -44,18 +44,19 @@ __all__ = (
     'ComputerInventoryCollection', 'ComputerInvitation', 'ComputerManagement',
     'ComputerReport', 'Department', 'DirectoryBinding',
     'DiskEncryptionConfiguration', 'DistributionPoint', 'DockItem', 'EBook',
-    'FileUpload', 'GSXConnection', 'HealthcareListener', 'IBeacon', 'JSSUser',
-    'LDAPServer', 'LicensedSoftware', 'LogFlush', 'MacApplication',
-    'ManagedPreferenceProfile', 'MobileDevice', 'MobileDeviceApplication',
-    'MobileDeviceCommand', 'MobileDeviceConfigurationProfile',
-    'MobileDeviceEnrollmentProfile', 'MobileDeviceExtensionAttribute',
-    'MobileDeviceInvitation', 'MobileDeviceGroup',
+    'FileUpload', 'GSXConnection', 'HealthcareListener', 'IBeacon',
+    'InfrastructureManager', 'JSSUser', 'LDAPServer', 'LicensedSoftware',
+    'LogFlush', 'MacApplication', 'ManagedPreferenceProfile', 'MobileDevice',
+    'MobileDeviceApplication', 'MobileDeviceCommand',
+    'MobileDeviceConfigurationProfile', 'MobileDeviceEnrollmentProfile',
+    'MobileDeviceExtensionAttribute', 'MobileDeviceGroup',
+    'MobileDeviceHistory', 'MobileDeviceInvitation',
     'MobileDeviceProvisioningProfile', 'NetbootServer', 'NetworkSegment',
     'OSXConfigurationProfile', 'Package', 'Patch', 'Peripheral',
     'PeripheralType', 'Policy', 'Printer', 'RestrictedSoftware',
     'RemovableMACAddress', 'SavedSearch', 'Script', 'Site',
     'SoftwareUpdateServer', 'SMTPServer', 'UserExtensionAttribute', 'User',
-    'UserGroup', 'VPPAccount', 'VPPAssignment', 'VPPInvitation')
+    'UserGroup', 'VPPAccount', 'VPPAssignment', 'VPPInvitation', 'Webhook')
 
 
 # pylint: disable=missing-docstring
@@ -362,6 +363,7 @@ class ComputerHistory(JSSContainerObject):
     can_delete = False
     can_put = False
     can_post = False
+    allowed_kwargs = ('subset',)
     search_types = {"name": "name", "serial_number": "serialnumber",
                     "udid": "udid", "macaddress": "macadress"}
 
@@ -541,6 +543,14 @@ class HealthcareListener(JSSContainerObject):
 class IBeacon(JSSContainerObject):
     _endpoint_path = "ibeacons"
     root_tag = "ibeacon"
+
+
+class InfrastructureManager(JSSContainerObject):
+    _endpoint_path = "infrastructuremanager"
+    can_post = False
+    can_delete = False
+    default_search = "id"
+    search_types = {"id": "id"}
 
 
 class JSSUser(JSSObject):
@@ -884,6 +894,16 @@ class MobileDeviceGroup(JSSGroupObject):
         """
         super(MobileDeviceGroup, self).remove_object_from_list(
             device, "mobile_devices")
+
+
+class MobileDeviceHistory(JSSContainerObject):
+    _endpoint_path = "mobiledevicehistory"
+    can_delete = False
+    can_put = False
+    can_post = False
+    allowed_kwargs = ('subset',)
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macadress"}
 
 
 class MobileDeviceInvitation(JSSContainerObject):
@@ -1288,4 +1308,10 @@ class VPPAssignment(JSSContainerObject):
 
 class VPPInvitation(JSSContainerObject):
     _endpoint_path = "vppinvitations"
+
+
+class Webhook(JSSContainerObject):
+    _endpoint_path = "webhooks"
+
+
 # pylint: enable=missing-docstring
