@@ -35,12 +35,13 @@ from .tools import error_handler
 
 __all__ = (
     'Account', 'AccountGroup', 'ActivationCode', 'AdvancedComputerSearch',
-    'AdvancedMobileDeviceSearch', 'AdvancedUserSearch', 'Building',
-    'BYOProfile', 'Category', 'Class', 'CommandFlush', 'Computer',
-    'ComputerApplication', 'ComputerApplicationUsage', 'ComputerCheckIn',
-    'ComputerCommand', 'ComputerConfiguration', 'ComputerExtensionAttribute',
-    'ComputerGroup', 'ComputerHistory', 'ComputerInventoryCollection',
-    'ComputerInvitation', 'ComputerReport', 'Department', 'DirectoryBinding',
+    'AdvancedMobileDeviceSearch', 'AdvancedUserSearch',
+    'AllowedFileExtension', 'Building', 'BYOProfile', 'Category', 'Class',
+    'CommandFlush', 'Computer', 'ComputerApplication',
+    'ComputerApplicationUsage', 'ComputerCheckIn', 'ComputerCommand',
+    'ComputerConfiguration', 'ComputerExtensionAttribute', 'ComputerGroup',
+    'ComputerHistory', 'ComputerInventoryCollection', 'ComputerInvitation',
+    'ComputerReport', 'Department', 'DirectoryBinding',
     'DiskEncryptionConfiguration', 'DistributionPoint', 'DockItem', 'EBook',
     'FileUpload', 'GSXConnection', 'IBeacon', 'JSSUser', 'LDAPServer',
     'LicensedSoftware', 'LogFlush', 'MacApplication',
@@ -98,6 +99,13 @@ class AdvancedMobileDeviceSearch(JSSContainerObject):
 
 class AdvancedUserSearch(JSSContainerObject):
     _endpoint_path = "advancedusersearches"
+
+
+class AllowedFileExtension(JSSContainerObject):
+    _endpoint_path = "allowedfileextensions"
+    can_put = False
+    default_search = "extension"
+    search_types = {"extension": "extension"}
 
 
 class Building(JSSContainerObject):
