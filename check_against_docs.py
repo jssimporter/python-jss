@@ -20,7 +20,6 @@ validate python-jss
 """
 
 
-import inflect
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 
@@ -28,21 +27,16 @@ import jss
 
 
 def main():
+    # The API page is a Swagger UI, mostly Javascript, and so we need
+    # to use selenium instead of just doing basic web requests.
     driver = webdriver.Chrome()
+    # The page almost never immediately loads, so wait before trying
+    # to access elements.
     driver.implicitly_wait(10)
     driver.get("https://casper.taomechworks.net:8443/api")
 
     # Find the endpoint name elements
     h2s = driver.find_elements_by_css_selector("h2")
-    # from selenium.webdriver.common.by import By
-    # from selenium.webdriver.support.ui import WebDriverWait
-    # from selenium.webdriver.support import expected_conditions as EC
-
-    # try:
-    #     element = WebDriverWait(driver, 10).until(
-    #         EC.presence_of_element_located((By.ID, 'accounts_endpoint_list')))
-    # finally:
-    #     driver.quit()
 
     # Convert API page names to a set of singular nouns.
     try:
@@ -51,20 +45,16 @@ def main():
     finally:
         driver.quit()
 
-    # p = inflect.engine()
-    # jssobjects = {p.plural_noun(i).lower() for i in jss.jssobjects.__all__}
     classes = (getattr(jss.jssobjects, cls) for cls in jss.jssobjects.__all__)
     jssobjects = {cls._endpoint_path for cls in classes}
-
-    # jssobjects = set(jss.jssobjects.__all__)
     # Since we cheat and split accounts into Account and AccountGroup
     jssobjects.add('accounts')
 
-    missing = h2_names.difference(jssobjects)
+    missing = sorted(h2_names.difference(jssobjects))
 
     print '\n'.join('{:>2}: {}'.format(i, n) for i, n in  enumerate(missing))
 
-    # TODO:
+    # TODO: Expand all operations so we can chew on the juicy data within.
     #expanders = [i for i in expands if i.text == "Expand Operations"]
 
     # actions = ActionChains(driver)
