@@ -41,17 +41,18 @@ __all__ = (
     'ComputerApplicationUsage', 'ComputerCheckIn', 'ComputerCommand',
     'ComputerConfiguration', 'ComputerExtensionAttribute', 'ComputerGroup',
     'ComputerHardwareSoftwareReport', 'ComputerHistory',
-    'ComputerInventoryCollection', 'ComputerInvitation', 'ComputerReport',
-    'Department', 'DirectoryBinding', 'DiskEncryptionConfiguration',
-    'DistributionPoint', 'DockItem', 'EBook', 'FileUpload', 'GSXConnection',
-    'IBeacon', 'JSSUser', 'LDAPServer', 'LicensedSoftware', 'LogFlush',
-    'MacApplication', 'ManagedPreferenceProfile', 'MobileDevice',
-    'MobileDeviceApplication', 'MobileDeviceCommand',
-    'MobileDeviceConfigurationProfile', 'MobileDeviceEnrollmentProfile',
-    'MobileDeviceExtensionAttribute', 'MobileDeviceInvitation',
-    'MobileDeviceGroup', 'MobileDeviceProvisioningProfile', 'NetbootServer',
-    'NetworkSegment', 'OSXConfigurationProfile', 'Package', 'Patch',
-    'Peripheral', 'PeripheralType', 'Policy', 'Printer', 'RestrictedSoftware',
+    'ComputerInventoryCollection', 'ComputerInvitation', 'ComputerManagement',
+    'ComputerReport', 'Department', 'DirectoryBinding',
+    'DiskEncryptionConfiguration', 'DistributionPoint', 'DockItem', 'EBook',
+    'FileUpload', 'GSXConnection', 'IBeacon', 'JSSUser', 'LDAPServer',
+    'LicensedSoftware', 'LogFlush', 'MacApplication',
+    'ManagedPreferenceProfile', 'MobileDevice', 'MobileDeviceApplication',
+    'MobileDeviceCommand', 'MobileDeviceConfigurationProfile',
+    'MobileDeviceEnrollmentProfile', 'MobileDeviceExtensionAttribute',
+    'MobileDeviceInvitation', 'MobileDeviceGroup',
+    'MobileDeviceProvisioningProfile', 'NetbootServer', 'NetworkSegment',
+    'OSXConfigurationProfile', 'Package', 'Patch', 'Peripheral',
+    'PeripheralType', 'Policy', 'Printer', 'RestrictedSoftware',
     'RemovableMACAddress', 'SavedSearch', 'Script', 'Site',
     'SoftwareUpdateServer', 'SMTPServer', 'UserExtensionAttribute', 'User',
     'UserGroup', 'VPPAccount', 'VPPAssignment', 'VPPInvitation')
@@ -382,7 +383,7 @@ class ComputerManagement(JSSContainerObject):
     can_put = False
     can_post = False
     can_delete = False
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ('patchfilter', 'username', 'subset')
     search_types = {"name": "name", "serial_number": "serialnumber",
                     "udid": "udid", "macaddress": "macadress"}
 
