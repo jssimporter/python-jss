@@ -38,7 +38,8 @@ setup(name = 'python-jss',
       # pyOpenSSL is required, but included in requests.
       extras_require={
           'reST': [
-              "Sphinx>=1.5.3", "docutils>=0.13.1", "sphinx-rtd-theme>=0.2.4"]
+              "Sphinx>=1.5.3", "docutils>=0.13.1", "sphinx-rtd-theme>=0.2.4"],
+          'dev': ['inflect', 'selenium'],
       },
       classifiers = [
           'Development Status :: 5 - Production/Stable',
