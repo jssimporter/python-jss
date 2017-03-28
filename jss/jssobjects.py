@@ -40,18 +40,18 @@ __all__ = (
     'CommandFlush', 'Computer', 'ComputerApplication',
     'ComputerApplicationUsage', 'ComputerCheckIn', 'ComputerCommand',
     'ComputerConfiguration', 'ComputerExtensionAttribute', 'ComputerGroup',
-    'ComputerHistory', 'ComputerInventoryCollection', 'ComputerInvitation',
-    'ComputerReport', 'Department', 'DirectoryBinding',
-    'DiskEncryptionConfiguration', 'DistributionPoint', 'DockItem', 'EBook',
-    'FileUpload', 'GSXConnection', 'IBeacon', 'JSSUser', 'LDAPServer',
-    'LicensedSoftware', 'LogFlush', 'MacApplication',
-    'ManagedPreferenceProfile', 'MobileDevice', 'MobileDeviceApplication',
-    'MobileDeviceCommand', 'MobileDeviceConfigurationProfile',
-    'MobileDeviceEnrollmentProfile', 'MobileDeviceExtensionAttribute',
-    'MobileDeviceInvitation', 'MobileDeviceGroup',
-    'MobileDeviceProvisioningProfile', 'NetbootServer', 'NetworkSegment',
-    'OSXConfigurationProfile', 'Package', 'Patch', 'Peripheral',
-    'PeripheralType', 'Policy', 'Printer', 'RestrictedSoftware',
+    'ComputerHardwareSoftwareReport', 'ComputerHistory',
+    'ComputerInventoryCollection', 'ComputerInvitation', 'ComputerReport',
+    'Department', 'DirectoryBinding', 'DiskEncryptionConfiguration',
+    'DistributionPoint', 'DockItem', 'EBook', 'FileUpload', 'GSXConnection',
+    'IBeacon', 'JSSUser', 'LDAPServer', 'LicensedSoftware', 'LogFlush',
+    'MacApplication', 'ManagedPreferenceProfile', 'MobileDevice',
+    'MobileDeviceApplication', 'MobileDeviceCommand',
+    'MobileDeviceConfigurationProfile', 'MobileDeviceEnrollmentProfile',
+    'MobileDeviceExtensionAttribute', 'MobileDeviceInvitation',
+    'MobileDeviceGroup', 'MobileDeviceProvisioningProfile', 'NetbootServer',
+    'NetworkSegment', 'OSXConfigurationProfile', 'Package', 'Patch',
+    'Peripheral', 'PeripheralType', 'Policy', 'Printer', 'RestrictedSoftware',
     'RemovableMACAddress', 'SavedSearch', 'Script', 'Site',
     'SoftwareUpdateServer', 'SMTPServer', 'UserExtensionAttribute', 'User',
     'UserGroup', 'VPPAccount', 'VPPAssignment', 'VPPInvitation')
@@ -335,6 +335,17 @@ class ComputerGroup(JSSGroupObject):
         """
         super(ComputerGroup, self).remove_object_from_list(
             computer, "computers")
+
+
+class ComputerHardwareSoftwareReport(JSSContainerObject):
+    _endpoint_path = "computers"
+    can_put = False
+    can_post = False
+    can_delete = False
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macadress",
+                    "match": "match"}
+    allowed_kwargs = ('start_date', 'end_date', 'subset')
 
 
 class ComputerHardwareSoftwareReport(JSSContainerObject):
