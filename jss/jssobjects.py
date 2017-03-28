@@ -37,10 +37,10 @@ __all__ = (
     'Account', 'AccountGroup', 'ActivationCode', 'AdvancedComputerSearch',
     'AdvancedMobileDeviceSearch', 'AdvancedUserSearch', 'Building',
     'BYOProfile', 'Category', 'Class', 'CommandFlush', 'Computer',
-    'ComputerApplicationUsage', 'ComputerCheckIn', 'ComputerCommand',
-    'ComputerConfiguration', 'ComputerExtensionAttribute', 'ComputerGroup',
-    'ComputerHistory', 'ComputerInventoryCollection', 'ComputerInvitation',
-    'ComputerReport', 'Department', 'DirectoryBinding',
+    'ComputerApplication', 'ComputerApplicationUsage', 'ComputerCheckIn',
+    'ComputerCommand', 'ComputerConfiguration', 'ComputerExtensionAttribute',
+    'ComputerGroup', 'ComputerHistory', 'ComputerInventoryCollection',
+    'ComputerInvitation', 'ComputerReport', 'Department', 'DirectoryBinding',
     'DiskEncryptionConfiguration', 'DistributionPoint', 'DockItem', 'EBook',
     'FileUpload', 'GSXConnection', 'IBeacon', 'JSSUser', 'LDAPServer',
     'LicensedSoftware', 'LogFlush', 'MacApplication',
@@ -225,13 +225,13 @@ class Computer(JSSDeviceObject):
 
 
 class ComputerApplication(JSSContainerObject):
-    """Unimplemented at this time."""
-    _endpoint_path = "computerapplications/application"
+    _endpoint_path = "computerapplications"
     can_delete = False
     can_put = False
     can_post = False
-
-    # Does not support ID lookups.
+    default_search = "application"
+    search_types = {"application": "application"}
+    allowed_kwargs = ("version", "inventory")
 
 
 class ComputerApplicationUsage(JSSContainerObject):
