@@ -478,7 +478,7 @@ def add_search_method(cls, name):
     obj_type = getattr(jssobjects, name)
 
     # Create a closure over the retrieved class to do our search.
-    def api_method(self, data=None, subset=None):
+    def api_method(self, data=None, **kwargs):
         """Flexibly search the JSS for objects of type {0}.
 
             Args:
@@ -491,15 +491,30 @@ def add_search_method(cls, name):
                         str: Search for an object by name.
                         xml.etree.ElementTree.Element: create a new
                             object from the Element's data.
-                subset (list of str or str): Some JSS types allow you to
-                    request a subset of data be returned. See the JSS API
-                    documentation for a complete list. This argument is
-                    {1} for this type.
+                kwargs:
+                    {1}
 
-                    This argument should be either A list of XML
-                    subelement tags to request or an '&' delimited str.
-                    (e.g. ['general', 'purchasing'] or
-                    'general&purchasing')
+                    Some classes allow additional filters, subsets, etc,
+                    in their queries. Check the object's `allowed_kwargs`
+                    attribute for a complete list of implemented keys.
+
+                    Not all classes offer all types of searches, nor are
+                    they all necessarily offered in a single query.
+                    Consult the Casper API documentation for usage.
+
+                    In general, the key name is applied to the end of the
+                    URL, followed by the val; e.g.
+                    '<url>/subset/general'.
+
+                    Some common types of extra arguments:
+
+                    subset (list of str or str): XML subelement tags to
+                        request (e.g.  ['general', 'purchasing']), OR an
+                        '&' delimited string (e.g.
+                        'general&purchasing').  Defaults to None.
+                    start_date/end_date (str or datetime): Either dates
+                        in the form 'YYYY-MM-DD' or a datetime.datetime
+                        object.
 
             Returns:
                 QuerySet: If data=None, return all objects of this
@@ -512,12 +527,16 @@ def add_search_method(cls, name):
             Raises:
                 JSSGetError for nonexistent objects.
         """
-        return self.factory.get_object(obj_type, data, subset)
+        return self.factory.get_object(obj_type, data, **kwargs)
 
     # Add in the missing variables to the docstring and set name.
-    subset_support = ('supported' if hasattr(obj_type, 'can_subset') and
-                      obj_type.can_subset else 'unsupported')
-    api_method.__doc__ = api_method.__doc__.format(name, subset_support)
+    if hasattr(obj_type, 'allowed_kwargs') and obj_type.allowed_kwargs:
+        allowed = ', '.join(obj_type.allowed_kwargs)
+        msg = 'Allowed keyword arguments for this class are:\n{}{}'
+        kwarg_doc = msg.format(6 * "    ", allowed) if allowed else ""
+    else:
+        kwarg_doc = "(None supported)"
+    api_method.__doc__ = api_method.__doc__.format(name, kwarg_doc)
     api_method.__name__ = name
     # Add the method to the class with the correct name.
     setattr(cls, name, api_method)
@@ -547,7 +566,7 @@ class JSSObjectFactory(object):
         """
         self.jss = jss
 
-    def get_object(self, obj_class, data=None, subset=None):
+    def get_object(self, obj_class, data=None, **kwargs):
         """Build an JSSObject instance.
 
         Can query, or create new objects depending on data type.
@@ -586,11 +605,11 @@ class JSSObjectFactory(object):
             JSSGetError: If object searched for is not found.
         """
         if not isinstance(data, ElementTree.Element):
-            url = obj_class.build_query(data, subset)
+            url = obj_class.build_query(data, **kwargs)
             data = self.jss.get(url)
 
         # TODO: Deprecated and pending removal
-        if obj_class.container:
+        if hasattr(obj_class, "container"):
             data = data.find(obj_class.container)
 
         if data.find("size") is not None:

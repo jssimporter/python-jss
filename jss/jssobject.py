@@ -234,8 +234,9 @@ class JSSContainerObject(JSSObject):
             Key: Search type name. At least one must match the
                 default_search.
             Val: URL component to use to request via this search_type.
-        can_subset (bool): Whether class allows subset arguments to GET
-            queries.
+        allowed_kwargs: Tuple of query extensions that are
+            available (or sometimes required). Please see the Casper
+            API documentation for the final word on how these work.
         root_tag: String singular form of object type found in
             containers (e.g. ComputerGroup has a container with tag:
             "computers" holding "computer" elements. The root_tag is
@@ -267,7 +268,7 @@ class JSSContainerObject(JSSObject):
     can_delete = True
     default_search = "name"
     search_types = {"name": "name"}
-    can_subset = False
+    allowed_kwargs = tuple()
     data_keys = {}
     _id_path = "id"
     # TODO: Determine correct values for all endpoints.
@@ -320,7 +321,7 @@ class JSSContainerObject(JSSObject):
             id(self))
 
     @classmethod
-    def build_query(cls, data, subset=None):
+    def build_query(cls, data, **kwargs):
         """Return the path for query based on data type and contents.
 
         Args:
@@ -334,11 +335,24 @@ class JSSContainerObject(JSSObject):
                     Computers can be searched by uuid with:
                     "udid=E79E84CB-3227-5C69-A32C-6C45C2E77DF5"
                     See the class "search_types" attribute for options.
-            subset (list of str or str):
-                XML subelement tags to request (e.g.  ['general',
-                'purchasing']), OR an '&' delimited string (e.g.
-                'general&purchasing'). Defaults to None. This is not
-                supported for all JSSObjects.
+            kwargs:
+                Some classes allow additional filters, subsets, etc,
+                in their queries. Check the object's `allowed_kwargs`
+                attribute for a complete list of implemented keys.
+
+                Not all classes offer all types of searches, nor are they
+                all necessarily offered in a single query. Consult the
+                Casper API documentation for usage.
+
+                In general, the key name is applied to the end of the
+                URL, followed by the val; e.g. '<url>/subset/general'.
+
+                subset (list of str or str): XML subelement tags to
+                    request (e.g.  ['general', 'purchasing']), OR an '&'
+                    delimited string (e.g.  'general&purchasing').
+                    Defaults to None.
+                start_date/end_date (str or datetime): Either dates in
+                    the form 'YYYY-MM-DD' or a datetime.datetime object.
 
         Returns:
             str path construction for this class to query.
@@ -368,16 +382,43 @@ class JSSContainerObject(JSSObject):
                     cls._endpoint_path, cls.search_types[cls.default_search],
                     data)
 
-        if subset and cls.can_subset:
-            if not isinstance(subset, list):
-                subset = subset.split("&")
+        if kwargs and all(key in cls.allowed_kwargs for key in kwargs):
+            kwargs = cls._handle_kwargs(kwargs)
+            extra_paths = []
+            for key, val in kwargs.items():
+                extra_paths.extend(cls._urlify_arg(key, val))
 
-            if not "general" in subset:
-                subset.append("general")
-
-            url = os.path.join(url, "subset", "&".join(subset))
+            url = os.path.join(url, *extra_paths)
 
         return url
+
+    @classmethod
+    def _handle_kwargs(csl, kwargs):
+        """Do nothing. Can be overriden by classes which need it."""
+        return kwargs
+
+    @classmethod
+    def _urlify_arg(cls, key, val):
+        """Convert keyword arguments' values to proper format for GET"""
+        if key == 'subset':
+            if not isinstance(val, list):
+                val = val.split("&")
+
+            if not "general" in val:
+                val.append("general")
+
+            return ['subset', "&".join(subset)]
+
+        elif key == 'date_range':
+            start, end = val
+            fmt = lambda s: s.strftime('%Y-%m-%d')
+            start = start if isinstance(start, basestring) else fmt(end)
+            end = end if isinstance(end, basestring) else fmt(end)
+            return ['{}_{}'.format(start, end)]
+
+        else:
+            return [key, val]
+
 
     @property
     def url(self):

@@ -204,10 +204,10 @@ class CommandFlush(object):
 class Computer(JSSDeviceObject):
     root_tag = "computer"
     _endpoint_path = "computers"
-    search_types = {"name": "/name/", "serial_number": "/serialnumber/",
-                    "udid": "/udid/", "macaddress": "/macaddress/",
-                    "match": "/match/"}
-    can_subset = True
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macaddress",
+                    "match": "match"}
+    allowed_kwargs = ('subset',)
 
     @property
     def mac_addresses(self):
@@ -221,11 +221,7 @@ class Computer(JSSDeviceObject):
             return mac_addresses
 
     # TODO: Reimplement oddball computers/subset/basic endpoint
-    # Move to Computer
-    # if (subset and len(subset) == 1 and subset[0].upper() ==
-    #         "BASIC") and obj_class is jssobjects.Computer:
-    #     url += "/subset/basic"
-
+    # Needs an extended identity or override of __init__?
 
 
 class ComputerApplication(JSSContainerObject):
@@ -234,7 +230,6 @@ class ComputerApplication(JSSContainerObject):
     can_delete = False
     can_put = False
     can_post = False
-    root_tag = "computer_application"
 
     # Does not support ID lookups.
 
@@ -244,54 +239,23 @@ class ComputerApplicationUsage(JSSContainerObject):
     can_delete = False
     can_put = False
     can_post = False
-    root_tag = "computer_application_usage"
+    allowed_kwargs = ('start_date', 'end_date')
     search_types = {"name": "name", "serial_number": "serialnumber",
                     "udid": "udid", "macaddress": "macadress"}
 
     @classmethod
-    def build_query(cls, data, **kwargs):
-        """Return the path for query based on data type and contents.
-
-        Args:
-            data (int, str, unicode, None): Accepts multiple types.
-
-                Int: Generate URL to object with data ID.
-                String/Unicode: Search for <data> with default_search,
-                    usually "name".
-                String/Unicode with "=": Other searches, for example
-                    Computers can be searched by uuid with:
-                    "udid=E79E84CB-3227-5C69-A32C-6C45C2E77DF5"
-                    See the class "search_types" attribute for options.
-            kwargs:
-                start_date (datetime.date, str): Start of date range in
-                    yyyy-mm-dd format or as a datetime.
-                end_date (datetime.date, str): End of date range in
-                    yyyy-mm-dd format or as a datetime.
-
-        Returns:
-            str path construction for this class to query.
-        """
-        if data is None:
-            raise JSSUnsupportedSearchMethodError(
-                "This object cannot be queried by %s." % data)
-
+    def _handle_kwargs(cls, kwargs):
+        """Do nothing. Can be overriden by classes which need it."""
         if not all(key in kwargs for key in ('start_date', 'end_date')):
             raise JSSUnsupportedSearchMethodError(
                 "This class requires a `start_date` and an `end_date` "
                 "parameter.")
 
-        else:
-            start = kwargs['start_date']
-            end = kwargs['end_date']
-            fmt = lambda s: s.strftime('%Y-%m-%d')
-            start = start if isinstance(start, basestring) else fmt(end)
-            end = end if isinstance(end, basestring) else fmt(end)
-            query_range = '{}_{}'.format(start, end)
-
-        url = super(
-            ComputerApplicationUsage, cls).build_query(data, subset=None)
-
-        return os.path.join(url, query_range)
+        # The current `build_query` implementation needs dates to be a
+        # single item in the keywords dict, so combine them.
+        start, end = kwargs.pop('start_date'), kwargs.pop('end_date')
+        kwargs['date_range'] = (start, end)
+        return kwargs
 
 
 class ComputerCheckIn(JSSObject):
@@ -394,6 +358,16 @@ class ComputerInvitation(JSSContainerObject):
     search_types = {"name": "name", "invitation": "invitation"}
 
 
+class ComputerManagement(JSSContainerObject):
+    _endpoint_path = "computermanagement"
+    can_put = False
+    can_post = False
+    can_delete = False
+    allowed_kwargs = ('subset',)
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macadress"}
+
+
 class ComputerReport(JSSContainerObject):
     _endpoint_path = "computerreports"
     can_put = False
@@ -424,7 +398,7 @@ class DockItem(JSSContainerObject):
 
 class EBook(JSSContainerObject):
     _endpoint_path = "ebooks"
-    can_subset = True
+    allowed_kwargs = ('subset',)
 
 
 # pylint: disable=too-few-public-methods
@@ -443,7 +417,7 @@ class FileUpload(object):
     changing the parameters, and issuing another save().
     """
     _endpoint_path = "fileuploads"
-    can_subset = False
+    allowed_kwargs = ('subset',)
 
     def __init__(self, j, resource_type, id_type, _id, resource):
         """Prepare a new FileUpload.
@@ -799,12 +773,12 @@ class LogFlush(object):
 class MacApplication(JSSContainerObject):
     _endpoint_path = "macapplications"
     root_tag = "mac_application"
-    can_subset = True
+    allowed_kwargs = ('subset',)
 
 
 class ManagedPreferenceProfile(JSSContainerObject):
     _endpoint_path = "managedpreferenceprofiles"
-    can_subset = True
+    allowed_kwargs = ('subset',)
 
 
 class MobileDevice(JSSDeviceObject):
@@ -817,7 +791,7 @@ class MobileDevice(JSSDeviceObject):
     search_types = {"name": "name", "serial_number": "serialnumber",
                     "udid": "udid", "macaddress": "macadress",
                     "match": "match"}
-    can_subset = True
+    allowed_kwargs = ('subset',)
 
     @property
     def wifi_mac_address(self):
@@ -833,7 +807,7 @@ class MobileDevice(JSSDeviceObject):
 
 class MobileDeviceApplication(JSSContainerObject):
     _endpoint_path = "mobiledeviceapplications"
-    can_subset = True
+    allowed_kwargs = ('subset',)
 
 
 class MobileDeviceCommand(JSSContainerObject):
@@ -849,13 +823,13 @@ class MobileDeviceCommand(JSSContainerObject):
 
 class MobileDeviceConfigurationProfile(JSSContainerObject):
     _endpoint_path = "mobiledeviceconfigurationprofiles"
-    can_subset = True
+    allowed_kwargs = ('subset',)
 
 
 class MobileDeviceEnrollmentProfile(JSSContainerObject):
     _endpoint_path = "mobiledeviceenrollmentprofiles"
     search_types = {"name": "name", "invitation": "invitation"}
-    can_subset = True
+    allowed_kwargs = ('subset',)
 
 
 class MobileDeviceExtensionAttribute(JSSContainerObject):
@@ -893,7 +867,7 @@ class MobileDeviceInvitation(JSSContainerObject):
 class MobileDeviceProvisioningProfile(JSSContainerObject):
     _endpoint_path = "mobiledeviceprovisioningprofiles"
     search_types = {"name": "name", "uuid": "uuid"}
-    can_subset = True
+    allowed_kwargs = ('subset',)
 
 
 class NetbootServer(JSSContainerObject):
@@ -906,7 +880,7 @@ class NetworkSegment(JSSContainerObject):
 
 class OSXConfigurationProfile(JSSContainerObject):
     _endpoint_path = "osxconfigurationprofiles"
-    can_subset = True
+    allowed_kwargs = ('subset',)
 
 
 class Package(JSSContainerObject):
@@ -978,7 +952,7 @@ class Patch(JSSContainerObject):
     _endpoint_path = "patches"
     root_tag = "software_title"
     can_post = False
-    can_subset = True
+    allowed_kwargs = ('subset',)
     # The /patches/id/{id}/version/{version} variant is not currently
     # implemented.
 
@@ -986,7 +960,7 @@ class Patch(JSSContainerObject):
 class Peripheral(JSSContainerObject):
     _endpoint_path = "peripherals"
     search_types = {}
-    can_subset = True
+    allowed_kwargs = ('subset',)
 
 
 class PeripheralType(JSSContainerObject):
@@ -1000,7 +974,7 @@ class Policy(JSSContainerObject):
     _endpoint_path = "policies"
     root_tag = "policy"
     search_types = {"name": "name", "category": "category"}
-    can_subset = True
+    allowed_kwargs = ('subset',)
     _name_element = "general/name"
     data_keys = {
         "general": {
