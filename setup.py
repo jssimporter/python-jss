@@ -36,7 +36,9 @@ setup(name = 'python-jss',
       url = 'https://github.com/sheagcraig/python-jss/',
       license = 'GPLv3',
       extras_require={
-          'reST': ["Sphinx>=1.5.3", "docutils>=0.13.1", "sphinx-rtd-theme>=0.2.4"]
+          'reST': [
+              "Sphinx>=1.5.3", "docutils>=0.13.1", "sphinx-rtd-theme>=0.2.4"],
+          'dev': ['inflect', 'selenium'],
       },
       classifiers = [
           'Development Status :: 5 - Production/Stable',
