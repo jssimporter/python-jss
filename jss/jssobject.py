@@ -331,7 +331,7 @@ class JSSContainerObject(JSSObject):
                 String/Unicode: Search for <data> with default_search,
                     usually "name".
                 String/Unicode with "=": Other searches, for example
-                    Computers can be search by uuid with:
+                    Computers can be searched by uuid with:
                     "udid=E79E84CB-3227-5C69-A32C-6C45C2E77DF5"
                     See the class "search_types" attribute for options.
             subset (list of str or str):
