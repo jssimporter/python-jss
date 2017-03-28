@@ -44,8 +44,8 @@ __all__ = (
     'ComputerInventoryCollection', 'ComputerInvitation', 'ComputerManagement',
     'ComputerReport', 'Department', 'DirectoryBinding',
     'DiskEncryptionConfiguration', 'DistributionPoint', 'DockItem', 'EBook',
-    'FileUpload', 'GSXConnection', 'IBeacon', 'JSSUser', 'LDAPServer',
-    'LicensedSoftware', 'LogFlush', 'MacApplication',
+    'FileUpload', 'GSXConnection', 'HealthcareListener', 'IBeacon', 'JSSUser',
+    'LDAPServer', 'LicensedSoftware', 'LogFlush', 'MacApplication',
     'ManagedPreferenceProfile', 'MobileDevice', 'MobileDeviceApplication',
     'MobileDeviceCommand', 'MobileDeviceConfigurationProfile',
     'MobileDeviceEnrollmentProfile', 'MobileDeviceExtensionAttribute',
@@ -528,6 +528,14 @@ class GSXConnection(JSSObject):
     _endpoint_path = "gsxconnection"
     can_post = False
     can_delete = False
+
+
+class HealthcareListener(JSSContainerObject):
+    _endpoint_path = "healthcarelistener"
+    can_post = False
+    can_delete = False
+    default_search = "id"
+    search_types = {"id": "id"}
 
 
 class IBeacon(JSSContainerObject):
