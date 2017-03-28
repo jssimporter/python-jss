@@ -365,7 +365,7 @@ class JSSContainerObject(JSSObject):
         except (ValueError, TypeError):
             pass
         if isinstance(data, int):
-            url = os.path.join(cls._endpoint_path, cls._id_path, data)
+            url = os.path.join(cls._endpoint_path, cls._id_path, str(data))
 
         elif isinstance(data, basestring):
             if "=" in data:
