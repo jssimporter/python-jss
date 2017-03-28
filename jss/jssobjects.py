@@ -27,7 +27,7 @@ import requests
 
 from .exceptions import (JSSMethodNotAllowedError, JSSPostError,
                          JSSFileUploadParameterError, JSSGetError,
-                         JSSDeleteError)
+                         JSSDeleteError, JSSUnsupportedSearchMethodError)
 from .jssobject import (JSSContainerObject, JSSGroupObject, JSSDeviceObject,
                         JSSObject)
 from .tools import error_handler
@@ -37,19 +37,20 @@ __all__ = (
     'Account', 'AccountGroup', 'ActivationCode', 'AdvancedComputerSearch',
     'AdvancedMobileDeviceSearch', 'AdvancedUserSearch', 'Building',
     'BYOProfile', 'Category', 'Class', 'CommandFlush', 'Computer',
-    'ComputerCheckIn', 'ComputerCommand', 'ComputerConfiguration',
-    'ComputerExtensionAttribute', 'ComputerGroup', 'ComputerHistory',
-    'ComputerInventoryCollection', 'ComputerInvitation', 'ComputerReport',
-    'Department', 'DirectoryBinding', 'DiskEncryptionConfiguration',
-    'DistributionPoint', 'DockItem', 'EBook', 'FileUpload', 'GSXConnection',
-    'IBeacon', 'JSSUser', 'LDAPServer', 'LicensedSoftware', 'LogFlush',
-    'MacApplication', 'ManagedPreferenceProfile', 'MobileDevice',
-    'MobileDeviceApplication', 'MobileDeviceCommand',
-    'MobileDeviceConfigurationProfile', 'MobileDeviceEnrollmentProfile',
-    'MobileDeviceExtensionAttribute', 'MobileDeviceInvitation',
-    'MobileDeviceGroup', 'MobileDeviceProvisioningProfile', 'NetbootServer',
-    'NetworkSegment', 'OSXConfigurationProfile', 'Package', 'Patch',
-    'Peripheral', 'PeripheralType', 'Policy', 'Printer', 'RestrictedSoftware',
+    'ComputerApplicationUsage', 'ComputerCheckIn', 'ComputerCommand',
+    'ComputerConfiguration', 'ComputerExtensionAttribute', 'ComputerGroup',
+    'ComputerHistory', 'ComputerInventoryCollection', 'ComputerInvitation',
+    'ComputerReport', 'Department', 'DirectoryBinding',
+    'DiskEncryptionConfiguration', 'DistributionPoint', 'DockItem', 'EBook',
+    'FileUpload', 'GSXConnection', 'IBeacon', 'JSSUser', 'LDAPServer',
+    'LicensedSoftware', 'LogFlush', 'MacApplication',
+    'ManagedPreferenceProfile', 'MobileDevice', 'MobileDeviceApplication',
+    'MobileDeviceCommand', 'MobileDeviceConfigurationProfile',
+    'MobileDeviceEnrollmentProfile', 'MobileDeviceExtensionAttribute',
+    'MobileDeviceInvitation', 'MobileDeviceGroup',
+    'MobileDeviceProvisioningProfile', 'NetbootServer', 'NetworkSegment',
+    'OSXConfigurationProfile', 'Package', 'Patch', 'Peripheral',
+    'PeripheralType', 'Policy', 'Printer', 'RestrictedSoftware',
     'RemovableMACAddress', 'SavedSearch', 'Script', 'Site',
     'SoftwareUpdateServer', 'SMTPServer', 'UserExtensionAttribute', 'User',
     'UserGroup', 'VPPAccount', 'VPPAssignment', 'VPPInvitation')
@@ -244,9 +245,53 @@ class ComputerApplicationUsage(JSSContainerObject):
     can_put = False
     can_post = False
     root_tag = "computer_application_usage"
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macadress"}
 
-    def __init__(self, data):
-        raise NotImplementedError
+    @classmethod
+    def build_query(cls, data, **kwargs):
+        """Return the path for query based on data type and contents.
+
+        Args:
+            data (int, str, unicode, None): Accepts multiple types.
+
+                Int: Generate URL to object with data ID.
+                String/Unicode: Search for <data> with default_search,
+                    usually "name".
+                String/Unicode with "=": Other searches, for example
+                    Computers can be searched by uuid with:
+                    "udid=E79E84CB-3227-5C69-A32C-6C45C2E77DF5"
+                    See the class "search_types" attribute for options.
+            kwargs:
+                start_date (datetime.date, str): Start of date range in
+                    yyyy-mm-dd format or as a datetime.
+                end_date (datetime.date, str): End of date range in
+                    yyyy-mm-dd format or as a datetime.
+
+        Returns:
+            str path construction for this class to query.
+        """
+        if data is None:
+            raise JSSUnsupportedSearchMethodError(
+                "This object cannot be queried by %s." % data)
+
+        if not all(key in kwargs for key in ('start_date', 'end_date')):
+            raise JSSUnsupportedSearchMethodError(
+                "This class requires a `start_date` and an `end_date` "
+                "parameter.")
+
+        else:
+            start = kwargs['start_date']
+            end = kwargs['end_date']
+            fmt = lambda s: s.strftime('%Y-%m-%d')
+            start = start if isinstance(start, basestring) else fmt(end)
+            end = end if isinstance(end, basestring) else fmt(end)
+            query_range = '{}_{}'.format(start, end)
+
+        url = super(
+            ComputerApplicationUsage, cls).build_query(data, subset=None)
+
+        return os.path.join(url, query_range)
 
 
 class ComputerCheckIn(JSSObject):
