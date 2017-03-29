@@ -330,6 +330,17 @@ class JSSContainerObject(JSSObject):
             self.__class__.__name__, self.id, self.name, self.cached,
             id(self))
 
+    def __contains__(self, obj):
+        if hasattr(obj, "as_list_data"):
+            list_data = obj.as_list_data()
+        else:
+            return False
+        other_id = list_data.findtext("id")
+        tags = self.iter(list_data.tag)
+        # Give findtext a default non-integer value so that it won't
+        # ever compare equal if not found.
+        return any(i.findtext("id", "Nay") == other_id for i in tags)
+
     @classmethod
     def build_query(cls, data, **kwargs):
         """Return the path for query based on data type and contents.
