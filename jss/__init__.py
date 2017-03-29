@@ -58,15 +58,12 @@ from .curl_adapter import CurlAdapter
 from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
                                  JDS, CDP, LocalRepository)
 from .distribution_points import DistributionPoints
-from .exceptions import (
-    JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
-    JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
-    JSSSSLVerifyError, JSSUnsupportedSearchMethodError,
-    JSSFileUploadParameterError, JSSUnsupportedFileType, JSSError)
+from .exceptions import *
 from .jamf_software_server import JSS
 from .jssobject import JSSObject
 from .jssobjects import *
 from .jss_prefs import JSSPrefs
+from .misc_endpoints import *
 from .queryset import QuerySet
 from .pretty_element import PrettyElement
 
