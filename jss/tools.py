@@ -165,7 +165,7 @@ def triggers_cache(func):
 
     @wraps(func)
     def trigger_cache(self, *args, **kwargs):
-        if not self.cached:
+        if hasattr(self, 'cached') and not self.cached:
             self.retrieve()
         return func(self, *args, **kwargs)
 
