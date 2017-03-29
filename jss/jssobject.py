@@ -120,7 +120,7 @@ class JSSObject(PrettyElement):
         For example: "/activationcode"
         """
         # Flat objects have no ID property, so there is only one URL.
-        return self._endpoint_path(None)
+        return self._endpoint_path
 
     def __repr__(self):
         if isinstance(self.cached, dt.datetime):
