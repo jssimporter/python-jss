@@ -130,6 +130,16 @@ class JSSObject(PrettyElement):
         return "<{} cached: {} at 0x{:0x}>".format(
             self.__class__.__name__, cached, id(self))
 
+    def __eq__(self, other):
+        # There is no way to really compare as equal without grabbing
+        # full data, so trigger a retrieval with `str()`
+        return other.__class__ == self.__class__ and str(self) == str(other)
+
+    def __hash__(self):
+        # There is no way to really compare as equal without grabbing
+        # full data, so trigger a retrieval with `str()`
+        return hash(str(self))
+
     def __enter__(self):
         return self
 
