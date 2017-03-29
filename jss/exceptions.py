@@ -34,22 +34,29 @@ class JSSPrefsMissingKeyError(JSSError):
     pass
 
 
-class JSSGetError(JSSError):
+class RequestError(JSSError):
+
+    def __init__(self, *args, **kwargs):
+        super(RequestError, self).__init__(*args, **kwargs)
+        self.status_code = None
+
+
+class JSSGetError(RequestError):
     """GET exception."""
     pass
 
 
-class JSSPutError(JSSError):
+class JSSPutError(RequestError):
     """PUT exception."""
     pass
 
 
-class JSSPostError(JSSError):
+class JSSPostError(RequestError):
     """POST exception."""
     pass
 
 
-class JSSDeleteError(JSSError):
+class JSSDeleteError(RequestError):
     """DEL exception."""
     pass
 
@@ -58,9 +65,11 @@ class JSSMethodNotAllowedError(JSSError):
     """Casper object not allowed to use that method."""
     pass
 
+
 class JSSSSLVerifyError(JSSError):
     """Server's certificate could not be verified."""
     pass
+
 
 class JSSUnsupportedSearchMethodError(JSSError):
     """Unrecognized or unsupported GET search argument."""
