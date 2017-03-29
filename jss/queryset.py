@@ -47,12 +47,14 @@ class QuerySet(list):
         """Construct a list of JSSObjects.
 
         Args:
-            objects (sequence of JSSObjects): Must be of a single class.
+            objects (sequence of JSSObjects):
+                Sequences must be of a single class.
         """
-        if not len({i.__class__ for i in objects}) == 1:
+        if objects and not len({i.__class__ for i in objects}) == 1:
             raise ValueError
         super(QuerySet, self).__init__(objects)
-        self.contained_class = self[0].__class__
+        self.contained_class = objects[0].__class__ if objects else None
+
 
     def __str__(self):
         """Make data human readable."""

@@ -21,6 +21,7 @@ as JSSObjects.
 
 
 import cPickle
+import gzip
 import os
 import re
 from xml.etree import ElementTree
@@ -339,7 +340,39 @@ class JSS(object):
         elif response.status_code >= 400:
             error_handler(JSSDeleteError, response)
 
-    def pickle_all(self, path):
+    def retrieve_all(self):
+        all_search_methods = [
+            getattr(self, name) for name in jssobjects.__all__]
+
+        all_objects = {}
+        for method in all_search_methods:
+            name = method.__name__
+            try:
+                result = method()
+            except JSSGetError as err:
+                msg = "Unable to retrieve '{}'"
+                if err.status_code == 401:
+                    msg += "; permission error"
+                print msg.format(name)
+                continue
+
+
+            # Flat objects can go straight in.
+            if isinstance(result, JSSObject):
+                all_objects[name] = result.retrieve()
+            # Container types need to be retrieved.
+            else:
+                try:
+                    all_objects[name] = result.retrieve_all()
+                except JSSGetError:
+                    # A failure to get means the object type has zero
+                    # results.
+                    print name, " has no results! (GETERRROR)"
+                    all_objects[name] = []
+
+        return all_objects
+
+    def pickle_all(self, path, compress=True):
         """Back up entire JSS to a Python Pickle.
 
         For each object type, retrieve all objects, and then pickle
@@ -353,29 +386,22 @@ class JSS(object):
 
         Args:
             path: String file path to the file you wish to (over)write.
-                Path will have ~ expanded prior to opening.
+                Path will have ~ expanded prior to opening, and `.gz`
+                appended if compress=True and it's missing.
+            compress (bool): Whether to gzip output. Default is True.
         """
-        all_search_methods = [(name, self.__getattribute__(name)) for name in
-                              dir(self) if name[0].isupper()]
-        # all_search_methods = [("Account", self.__getattribute__("Account")), ("Package", self.__getattribute__("Package"))]
-        all_objects = {}
-        for method in all_search_methods:
-            result = method[1]()
-            if isinstance(result, JSSObject):
-                all_objects[method[0]] = result
-            else:
-                try:
-                    all_objects[method[0]] = result.retrieve_all()
-                except JSSGetError:
-                    # A failure to get means the object type has zero
-                    # results.
-                    print method[0], " has no results! (GETERRROR)"
-                    all_objects[method[0]] = []
-        # all_objects = {method[0]: method[1]().retrieve_all()
-        #                for method in all_search_methods}
-        with open(os.path.expanduser(path), "wb") as pickle:
-            cPickle.Pickler(pickle, cPickle.HIGHEST_PROTOCOL).dump(all_objects)
+        all_objects = self.retrieve_all()
+        path = os.path.expanduser(path)
+        gz_ext = ".gz"
+        if compress and not path.endswith(gz_ext):
+            path = path + gz_ext
 
+        opener = gzip.open if compress else open
+        with opener(path, 'wb') as file_handle:
+            cPickle.Pickler(
+                file_handle, cPickle.HIGHEST_PROTOCOL).dump(all_objects)
+
+    @classmethod
     def from_pickle(cls, path):
         """Load all objects from pickle file and return as dict.
 
@@ -395,7 +421,16 @@ class JSS(object):
             path: String file path to the file you wish to load from.
                 Path will have ~ expanded prior to opening.
         """
+        gz_magic = "\x1f\x8b\x08"
+
+        # Determine if file is gzipped.
         with open(os.path.expanduser(path), "rb") as pickle:
+            pickle_magic = pickle.read(len(gz_magic))
+            compressed = True if pickle_magic == gz_magic else False
+
+        opener = gzip.open if compressed else open
+
+        with opener(os.path.expanduser(path), "rb") as pickle:
             return cPickle.Unpickler(pickle).load()
 
     def write_all(self, path):
@@ -414,28 +449,12 @@ class JSS(object):
             path: String file path to the file you wish to (over)write.
                 Path will have ~ expanded prior to opening.
         """
-        all_search_methods = [(name, self.__getattribute__(name)) for name in
-                              dir(self) if name[0].isupper()]
-        # all_search_methods = [("Account", self.__getattribute__("Account")), ("Package", self.__getattribute__("Package"))]
-        all_objects = {}
-        for method in all_search_methods:
-            result = method[1]()
-            if isinstance(result, JSSObject):
-                all_objects[method[0]] = result
-            else:
-                try:
-                    all_objects[method[0]] = result.retrieve_all()
-                except JSSGetError:
-                    # A failure to get means the object type has zero
-                    # results.
-                    print method[0], " has no results! (GETERRROR)"
-                    all_objects[method[0]] = []
-        # all_objects = {method[0]: method[1]().retrieve_all()
-        #                for method in all_search_methods}
+        all_objects = self.retrieve_all()
+
         with open(os.path.expanduser(path), "w") as ofile:
             root = ElementTree.Element("JSS")
             for obj_type, objects in all_objects.items():
-                if objects is not None:
+                if objects:
                     sub_element = ElementTree.SubElement(root, obj_type)
                     sub_element.extend(objects)
 
@@ -463,8 +482,8 @@ class JSS(object):
 
         all_objects = {}
         for child in root:
-            obj_type = self.__getattribute__(child.tag)
-            objects = [obj_type(obj) for obj in child]
+            obj_type = getattr(jssobjects, child.tag)
+            objects = [obj_type(self, obj) for obj in child]
             all_objects[child.tag] = QuerySet(objects)
 
         return all_objects
