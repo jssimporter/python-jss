@@ -300,26 +300,9 @@ class ComputerGroup(JSSGroupObject):
         "criteria": None,
         "computers": None,}
 
-    def __init__(self, jss, data, **kwargs):
-        """Init a ComputerGroup
-
-        Adds convenience attributes to assist in configuring.
-
-        Args:
-            name: String name of the object to use as the
-                object's name property.
-            kwargs:
-                Accepted keyword args can be viewed by checking the
-                "data_keys" class attribute. Typically, they include all
-                top-level keys, and non-duplicated keys used elsewhere.
-
-                Values will be cast to string. (Int 10, bool False
-                become string values "10" and "false").
-
-                Ignores kwargs that aren't in object's keys attribute.
-        """
-        super(ComputerGroup, self).__init__(jss, data, **kwargs)
-        self.criteria = self.find("criteria")
+    @property
+    def criteria(self):
+        return self.find("criteria")
 
     def add_computer(self, computer):
         """Add a computer to the group.
@@ -1047,66 +1030,98 @@ class Policy(JSSContainerObject):
             "recon": "true"},
     }
 
+    # These properties were originally an experiment, and have remained
+    # for compatibility reasons. In the future, we will use __getattr__
+    # to recursively find things.
+
+    # General
     @property
     def general(self):
         return self.find("general")
 
-    # TODO: The below experiment FAILED. It blows up with current
-    # architecture. The assignments are evaluated at instantiation time,
-    # not everytime they're looked up. Audit and fix.
-    # def __init__(self, jss, name, **kwargs):
-    #     """Init a Policy from scratch.
+    @property
+    def enabled(self):
+        return self.general.find("enabled")
 
-    #     Adds convenience attributes to assist in configuring.
+    @property
+    def frequency(self):
+        return self.general.find("frequency")
 
-    #     Args:
-    #         name: String name of the object to use as the
-    #             object's name property.
-    #         kwargs:
-    #             Accepted keyword args can be viewed by checking the
-    #             "data_keys" class attribute. Typically, they include all
-    #             top-level keys, and non-duplicated keys used elsewhere.
+    @property
+    def category(self):
+        return self.general.find("category")
 
-    #             Values will be cast to string. (Int 10, bool False
-    #             become string values "10" and "false").
+    # Scope
 
-    #             Ignores kwargs that aren't in object's keys attribute.
-    #     """
-    #     super(Policy, self).__init__(jss, name, **kwargs)
+    @property
+    def scope(self):
+        return self.find("scope")
 
-    #     # Set convenience attributes.
-    #     # This is an experiment. If it prooves to be more cumbersome
-    #     # than it is worth, they may come out.
-    #     # General
-    #     self.general = self.find("general")
-    #     self.enabled = self.general.find("enabled")
-    #     self.frequency = self.general.find("frequency")
-    #     self.category = self.general.find("category")
+    @property
+    def computers(self):
+        return self.find("scope/computers")
 
-    #     # Scope
-    #     self.scope = self.find("scope")
-    #     self.computers = self.find("scope/computers")
-    #     self.computer_groups = self.find("scope/computer_groups")
-    #     self.buildings = self.find("scope/buildings")
-    #     self.departments = self.find("scope/departments")
-    #     self.exclusions = self.find("scope/exclusions")
-    #     self.excluded_computers = self.find("scope/exclusions/computers")
-    #     self.excluded_computer_groups = self.find(
-    #         "scope/exclusions/computer_groups")
-    #     self.excluded_buildings = self.find("scope/exclusions/buildings")
-    #     self.excluded_departments = self.find("scope/exclusions/departments")
+    @property
+    def computer_groups(self):
+        return self.find("scope/computer_groups")
 
-    #     # Self Service
-    #     self.self_service = self.find("self_service")
-    #     self.use_for_self_service = self.find("self_service/"
-    #                                           "use_for_self_service")
-    #     # Package Configuration
-    #     self.pkg_config = self.find("package_configuration")
-    #     self.pkgs = self.find("package_configuration/packages")
-    #     # Maintenance
-    #     self.maintenance = self.find("maintenance")
-    #     self.recon = self.find("maintenance/recon")
+    @property
+    def buildings(self):
+        return self.find("scope/buildings")
 
+    @property
+    def departments(self):
+        return self.find("scope/departments")
+
+    @property
+    def exclusions(self):
+        return self.find("scope/exclusions")
+
+    @property
+    def excluded_computers(self):
+        return self.find("scope/exclusions/computers")
+
+    @property
+    def excluded_computer_groups(self):
+        return self.find("scope/exclusions/computer_groups")
+
+    @property
+    def excluded_buildings(self):
+        return self.find("scope/exclusions/buildings")
+
+    @property
+    def excluded_departments(self):
+        return self.find("scope/exclusions/departments")
+
+    # Self Service
+
+    @property
+    def self_service(self):
+        return self.find("self_service")
+
+    @property
+    def use_for_self_service(self):
+        return self.find("self_service/use_for_self_service")
+
+    # Package Configuration
+
+    @property
+    def pkg_config(self):
+        return self.find("package_configuration")
+
+    @property
+    def pkgs(self):
+        return self.find("package_configuration/packages")
+
+    # Maintenance
+
+    @property
+    def maintenance(self):
+        return self.find("maintenance")
+
+    @property
+    def recon(self):
+        return self.find("maintenance/recon")
 
     def add_object_to_scope(self, obj):
         """Add an object to the appropriate scope block.
