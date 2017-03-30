@@ -4,11 +4,17 @@ All notable changes to this project will be documented in this file. This projec
 
 
 ## [Unreleased][unreleased]
+## [2.0.0] - 2017-03-19 - Start Choppin'
 
 ### Added
 - Added `CurlAdapter`, `ResponseAdapter`, and `RequestsAdapter` to wrap curl in requests' API. This is primarily to deal with the fact that Apple's shipped OpenSSL is extremely out of date (requests uses pyopenssl, which uses the out-of-date OpenSSL). Since current recommendations from Jamf are to run the Casper server using only TLS1.2, this puts us in a bind. So, by default, python-jss will now use curl for networking. Developers seeking the advantages of using requests can replace the networking adapter they want to use (see `jss.jamf_software_server.JSS`).
 - @mosen really stepped up and provided Sphinx documentation! This is a great motivator for getting some improved documentation going for this project.
 - `JSSObject` and all of its subclasses can now be used as a context manager (the python `with` statement). All this does is automatically tries to save the object automatically on the way out of the with context.
+- Added `JSSContainerObject.__contains__` magic method, which allows you to do things like `if some_pkg in some_policy:`. Please note, this will find *any* reference to that object contained within. This may not be what you want, for example, if a computer is in a group's exclusions list but you want to know if it's in the inclusion list. Thankfully, there's a method for that (`JSSGroupObject.has_member()`).
+- Added `JSSObject` magic methods for equality and hash. This means you can test whether two `Computer` objects are the same, for example. You can also now use the objects as keys in a dictionary, or other mapping.
+- Implemented new endpoints and their corresponding objects: `AllowedFileExtension`, `ComputerApplicationUsage`, `ComputerApplication`, `ComputerHardwareSoftwareReport`, `ComputerManagement`, `HealthcareManager`, `InfrastructureManager`, `MobileDeviceHistory`, `Webhook`.
+- Added compression argument to `JSS.pickle_all()` (defaults to `True`) to compress pickle output. A lot.
+- Tag access through the `.` operator for `JSSObject`s. For example, you can now do `computer.configuration_profiles.size.text` to reach all the way down the tree to that value.
 
 ### Changed
 - Moved the `suppress_warnings` preference out of `JSS` and into the requests adapter. The `JSS` initialization will accept that keyword argument to ease the (sudden) deprecation, but it just won't do anything. Use the `RequestsAdapter.suppress_warnings()` method if you need it.
@@ -18,13 +24,23 @@ All notable changes to this project will be documented in this file. This projec
 - The requests library is now not a required dependency. You only need it if
   you want to import/use the `RequestsAdapter`.
 - Through some metaprogramming shenanigans, jss.JSS is now about 500 lines shorter, from dynamically creating all of the object search methods. This makes maintenance of this code significantly easier.
-- As a result of above, all object search methods _accept_ a `subset` keyword argument. Whether the JSS is considered to work with subsetting is recorded as a new attribute on the class (`jss.Computer.can_subset = True` for example). This, again, makes it easier to maintain as JAMF adds or removes subsetting features. The search methods docstrings all reflect the level of (considered) support.
+- All object search methods _accept_ keyword arguments (instead of a `subset` positional argument). Whether the JSS is considered to work with subsetting is recorded as a new attribute on the class (`jss.Computer.allowed_kwargs = True` for example). This, again, makes it easier to maintain as JAMF adds or removes query features. The search methods docstrings all reflect the level of (considered) support.
+- `JSSObjectList` is now called a `QuerySet`, inspired by Django. The old behavior was that the contents were just id/name for each contained object, until you used the "retrieve" method. Now all objects contained within are full JSSObjects.
+- python-jss was using `repr` and `str` too casually. Throughout, class' `repr` has been rewritten to provide a very basic marker of the type, and `str` has been written to provide the pretty-printing of XML functionality that it had previously. In practice, this means that in the interpreter, developers will have to `print x` instead of just entering `x` to see what they have. However, it also means that simply doing `x` gives easier to read information for QuerySets of items without dumping their entire contents to screen (e.g. `j.Computer()` results in thousands of lines vomited into your terminal).
+- JSSContainerObject and all of its subclasses (most types of data from the JSS) now use lazy-loading to defer sending a GET method until you actually need the data.
+- All `Element` objects added to a `JSSObject` will get converted to the `PrettyElement` type to enable dot access and pretty printing.
+
+### Deprecated
+- `JSSObjectList` has been renamed to QuerySet and now inherits from it. While it is unlikely that any client code directly references this class, it is worth checking for in your code. It will be remmoved entirely in a future release. Please update code to use the QuerySet API and signature.
+
+### Removed
+- `JSSObjectList.retrieve()` has been removed as it's no longer needed.
+- `JSSObjectList.pickle()` and `from_pickle()`. This code is just cruft; it's just about the same amount of work to pickle it on your own.
 
 ### Fixed
 - Made `JSS.user` and `JSS.password` proper properties, that will set the attached network adapter appropriately.
 - Unicode and bytes usage throughout has been audited and fixed. For the most part, developers can pass either to classes or methods and when they need to get converted, python-jss will do the right thing.
-
-## [2.0.0] - 2017-03-19 - Start Choppin'
+- Removed pretty-printing injection from `ElementTree`.
 
 ## [1.5.0] - 2016-09-12 - Brick House
 
