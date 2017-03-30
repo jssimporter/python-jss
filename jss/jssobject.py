@@ -23,12 +23,12 @@ import collections
 import cPickle
 import datetime as dt
 import os
-from tools import decorate_class_with_caching
 from xml.etree import ElementTree
 
 from .exceptions import (JSSError, JSSUnsupportedSearchMethodError,
                          JSSMethodNotAllowedError, JSSPutError, JSSPostError)
 from .pretty_element import PrettyElement
+import tools
 
 
 
@@ -57,6 +57,8 @@ class JSSObject(PrettyElement):
     can_post = False
     can_delete = False
 
+    __str__ = tools.triggers_cache(tools.element_str)
+
     def __init__(self, jss, data, **kwargs):
         """Initialize a new JSSObject
 
@@ -68,10 +70,9 @@ class JSSObject(PrettyElement):
         self.cached = False
 
         if isinstance(data, ElementTree.Element):
-            # Create a new object from passed XML.
-            super(JSSObject, self).__init__(tag=data.tag)
-            for child in data.getchildren():
-                self.append(child)
+            # Turn Elements into PrettyElements (adds pretty printing
+            # and fancy attribute finding).
+            super(JSSObject, self).__init__(data)
 
         else:
             raise TypeError(
@@ -150,7 +151,10 @@ class JSSObject(PrettyElement):
     def _reset_data(self, updated_data):
         """Clear all children of base element and replace with update"""
         self.clear()
+        # Convert all incoming data to PrettyElements.
         for child in updated_data.getchildren():
+            if not isinstance(child, PrettyElement):
+                child = PrettyElement(child)
             self._children.append(child)
 
     def retrieve(self):
@@ -222,7 +226,7 @@ cache_triggers = (
 # Ones that block us:
 # - Are not methods: 'tail', 'text', 'attrib','tag'
 # - Used in setup: 'append',,'__setattr__', 'append',
-decorate_class_with_caching(JSSObject, cache_triggers)
+tools.decorate_class_with_caching(JSSObject, cache_triggers)
 
 
 class JSSContainerObject(JSSObject):

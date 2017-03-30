@@ -76,26 +76,6 @@ except ImportError:
 
 from .tools import is_osx, is_linux, element_str
 
-# ElementTree doesn't give very helpful string representations. This
-# package is intended to be used interactively, and just defaulting to
-# the Object.__repr__ method is not very helpful, so we override __str__
-# at the class level. This means _all_ instances of Element will have
-# the indenting __str__ method, including ones created before importing
-# this package.
-
-# It would be nice to patch Elements as they get added to the children of
-# any PrettyElement, but special method lookup skips the object's
-# instance dictionary when doing an implicit invocation; e.g. str(e) does
-# not call the instance's e.__str__ when added dynamically.
-# https://docs.python.org/2.7/reference/datamodel.html#special-method-lookup-for-new-style-classes
-
-# Ultimately, JSSObject will not be a subclass of ElementTree, so this is
-# not going to be a problem forever.
-
-# Consider this guerilla warfare against ElementTree.
-import xml.etree.ElementTree
-xml.etree.ElementTree.Element.__str__ = element_str
-
 # Deprecated
 from .jssobjectlist import JSSObjectList
 

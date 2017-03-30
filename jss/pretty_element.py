@@ -19,9 +19,13 @@ Pretty-printing xml.etree.ElementTree.Element subclass
 
 
 import copy
+import re
 from xml.etree import ElementTree
 
 import tools
+
+
+_DUNDER_PATTERN = re.compile(r'__[a-zA-Z]+__')
 
 
 class PrettyElement(ElementTree.Element):
@@ -30,10 +34,25 @@ class PrettyElement(ElementTree.Element):
     Element subclasses xml.etree.ElementTree.Element to pretty print.
     """
 
+    def __init__(self, tag, attrib={}, **extra):
+        if isinstance(tag, ElementTree.Element):
+            super(PrettyElement, self).__init__(tag.tag, tag.attrib, **extra)
+            self.text = tag.text
+            self.tail = tag.tail
+            self._children = [PrettyElement(child) for child in tag]
+        else:
+            super(PrettyElement, self).__init__(tag, attrib, **extra)
+
     # Replace standard Element.__str__ with our cache-aware
     # pretty-printing one.
-    __str__ = tools.triggers_cache(tools.element_str)
+    __str__ = tools.element_str
 
+    def __getattr__(self, name):
+        if re.match(_DUNDER_PATTERN, name):
+            return super(PrettyElement, self).__getattr__(name)
+        return self.find(name)
+
+    # TODO: This can be removed once `JSSObject.__init__` signature is fixed.
     def makeelement(self, tag, attrib):
         """Return a PrettyElement with tag and attrib."""
         # We have to override Element's makeelement, which uses the
@@ -45,3 +64,11 @@ class PrettyElement(ElementTree.Element):
         # subclassing Element.
         return PrettyElement(tag, attrib)
 
+    def append(self, item):
+        self._children.append(PrettyElement(item))
+
+    def insert(self, index, item):
+        self._children.insert(index, PrettyElement(item))
+
+    def extend(self, items):
+        self._children.extend(PrettyElement(item) for item in items)
