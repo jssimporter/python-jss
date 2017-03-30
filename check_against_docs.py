@@ -63,6 +63,15 @@ def main():
     # click.perform()
     # driver.save_screenshot("output.png")
 
+    # TODO: Build tag list of reserved tags to look for collisions with
+    # the Element interface or our API.
+    # parser = ElementTree.iterparse("/Users/shcrai/Developer/CasperStuff/DA_Casper_Data/all-2.xml")
+    # tags = {e.tag for e in parser}
+    # tags.difference_update(set(jss.jssobjects.__all__))
+    # jssobject_api = set(i for i in dir(getattr(jss.jssobjects, cls)) for cls in jss.jssobjects.__all__)
+    # collisions = tags.intersection(jssobject_api)
+    # From DA file:
+    # set(['url', 'set', 'name', 'id'])
 
 if __name__ == "__main__":
     main()
