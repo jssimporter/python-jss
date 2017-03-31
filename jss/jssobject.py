@@ -22,6 +22,7 @@ Base Classes representing JSS database objects and their API endpoints
 import collections
 import cPickle
 import datetime as dt
+import gzip
 import os
 from xml.etree import ElementTree
 
@@ -444,7 +445,6 @@ class JSSContainerObject(JSSObject):
         else:
             return [key, val]
 
-
     @property
     def url(self):
         """Return the path subcomponent of the url to this object.
@@ -760,7 +760,7 @@ class JSSContainerObject(JSSObject):
 
     @classmethod
     def from_pickle(cls, path):
-        """Load object from pickle file.
+        """Load from pickle file.
 
         Pickling is Python's method for serializing/deserializing
         Python objects. This allows you to save a fully functional
@@ -771,8 +771,41 @@ class JSSContainerObject(JSSObject):
             path: String file path to the file you wish to load from.
                 Path will have ~ expanded prior to opening.
         """
+        gz_magic = "\x1f\x8b\x08"
+
+        # Determine if file is gzipped.
         with open(os.path.expanduser(path), "rb") as pickle:
+            pickle_magic = pickle.read(len(gz_magic))
+            compressed = True if pickle_magic == gz_magic else False
+
+        opener = gzip.open if compressed else open
+
+        with opener(os.path.expanduser(path), "rb") as pickle:
             return cPickle.Unpickler(pickle).load()
+
+    def to_pickle(self, path, compress=True):
+        """Write this object to a Python Pickle.
+
+        Pickling is Python's method for serializing/deserializing
+        Python objects. This allows you to save a fully functional
+        JSSObject to disk, and then load it later, without having to
+        retrieve it from the JSS.
+
+        Args:
+            path: String file path to the file you wish to (over)write.
+                Path will have ~ expanded prior to opening, and `.gz`
+                appended if compress=True and it's missing.
+            compress (bool): Whether to gzip output. Default is True.
+        """
+        path = os.path.expanduser(path)
+        gz_ext = ".gz"
+        if compress and not path.endswith(gz_ext):
+            path = path + gz_ext
+
+        opener = gzip.open if compress else open
+        with opener(path, 'wb') as file_handle:
+            cPickle.Pickler(
+                file_handle, cPickle.HIGHEST_PROTOCOL).dump(self)
 
 
 class JSSGroupObject(JSSContainerObject):
@@ -892,5 +925,3 @@ class SearchCriteria(PrettyElement):
         crit_search_type.text = search_type
         crit_value = ElementTree.SubElement(self, "value")
         crit_value.text = value
-
-
