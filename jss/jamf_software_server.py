@@ -133,7 +133,6 @@ class JSS(object):
         self.jss_migrated = jss_migrated
         self.ssl_verify = ssl_verify
 
-        self.factory = JSSObjectFactory(self)
         self.distribution_points = distribution_points.DistributionPoints(self)
 
         self.max_age = -1
@@ -546,7 +545,18 @@ def add_search_method(cls, name):
             Raises:
                 JSSGetError for nonexistent objects.
         """
-        return self.factory.get_object(obj_type, data, **kwargs)
+        if not isinstance(data, ElementTree.Element):
+            url = obj_type.build_query(data, **kwargs)
+            data = self.get(url)
+
+        # TODO: Deprecated and pending removal
+        if hasattr(obj_type, "container"):
+            data = data.find(obj_type.container)
+
+        if data.find("size") is not None:
+            return QuerySet.from_response(obj_type, data, self)
+        else:
+            return obj_type(self, data)
 
     # Add in the missing variables to the docstring and set name.
     if hasattr(obj_type, 'allowed_kwargs') and obj_type.allowed_kwargs:
@@ -569,82 +579,5 @@ for jss_class in jssobjects.__all__:
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
 
 class JSSObjectFactory(object):
-    """Create JSSObjects intelligently based on a single parameter.
-
-    Attributes:
-        jss: Copy of a JSS object to which API requests are
-            delegated.
-    """
-
-    def __init__(self, jss):
-        """Configure a JSSObjectFactory
-
-        Args:
-            jss: JSS object to which API requests should be
-                 delegated.
-        """
-        self.jss = jss
-
-    def get_object(self, obj_class, data=None, **kwargs):
-        """Build an JSSObject instance.
-
-        Can query, or create new objects depending on data type.
-
-        Args:
-            obj_class: The JSSObject subclass type to search for or
-                create.
-            data: The data parameter performs different operations
-                depending on the type passed.
-
-                - None: Perform a list operation, or for non-container
-                  objects, return all data.
-                - int: Retrieve an object with ID of <data>.
-                - str: Retrieve an object with name of <str>. For some
-                  objects, this may be overridden to include searching
-                  by other criteria. See those objects for more info.
-                - xml.etree.ElementTree.Element: Create a new object from
-                  xml.
-            subset:
-                A list of XML subelement tags to request (e.g.
-                ['general', 'purchasing']), OR an '&' delimited string
-                (e.g. 'general&purchasing'). This is not supported for
-                all JSSObjects.
-
-        Returns:
-            QuerySet: for empty or None arguments to data.
-            JSSObject: Returns an object of type obj_class for searches
-                and new objects.
-            (FUTURE) Will return None if nothing is found that match
-                the search criteria.
-
-        Raises:
-            TypeError: if subset not formatted properly.
-            JSSMethodNotAllowedError: if you try to perform an operation
-                not supported by that object type.
-            JSSGetError: If object searched for is not found.
-        """
-        if not isinstance(data, ElementTree.Element):
-            url = obj_class.build_query(data, **kwargs)
-            data = self.jss.get(url)
-
-        # TODO: Deprecated and pending removal
-        if hasattr(obj_class, "container"):
-            data = data.find(obj_class.container)
-
-        if data.find("size") is not None:
-            return self._build_jss_object_list(data, obj_class)
-        else:
-            return obj_class(self.jss, data)
-
-    def _build_jss_object_list(self, response, obj_class):
-        """Build a QuerySet from response."""
-        response_objects = (
-            i for i in response if i is not None and i.tag != "size")
-
-        identities = (
-            Identity(name=obj.findtext('name'), id=obj.findtext('id'))
-            for obj in response_objects)
-
-        objects = [obj_class(self.jss, data=i) for i in identities]
-
-        return QuerySet(objects)
+    """Deprecated"""
+    pass

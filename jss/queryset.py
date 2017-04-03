@@ -25,7 +25,7 @@ import cPickle
 import datetime
 import os
 
-from .jssobject import DATE_FMT
+from .jssobject import DATE_FMT, Identity
 
 
 STR_FMT = "{0:>{1}} | {2:>{3}} | {4:>{5}}"
@@ -130,3 +130,17 @@ class QuerySet(list):
     def ids(self):
         """Return a generator of contents ids"""
         return (item.id for item in self)
+
+    @classmethod
+    def from_response(cls, obj_class, response, jss=None):
+        """Build a QuerySet from a listing Response."""
+        response_objects = (
+            i for i in response if i is not None and i.tag != "size")
+
+        identities = (
+            Identity(name=obj.findtext('name'), id=obj.findtext('id'))
+            for obj in response_objects)
+
+        objects = [obj_class(jss, data=i) for i in identities]
+
+        return cls(objects)
