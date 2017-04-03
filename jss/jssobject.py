@@ -215,6 +215,37 @@ class JSSObject(PrettyElement):
         with open(os.path.expanduser(path), "wb") as pickle:
             cPickle.Pickler(pickle, cPickle.HIGHEST_PROTOCOL).dump(self)
 
+    def tree(self, depth=None):
+        """Return a formatted string representing object's tags
+
+        This method removes redundent entries, so you only see
+        unique keys.
+
+        Args:
+            depth (int): Depth of the tree to represent. Defaults to
+                showing the entire tree.
+
+        Returns:
+            str with proper indention and newlines embedded, ready for
+            printing.
+        """
+        results = self._get_tags(self, depth)
+        return '\n'.join(results)
+
+    def _get_tags(self, element, depth, level=0):
+        results = []
+        space = ' '
+        indent_size = 4
+        if depth is None or level < depth:
+            for child in element:
+                entry = space * indent_size * level + child.tag
+                if entry not in results:
+                    results.append(entry)
+                    if len(child):
+                        results.extend(self._get_tags(child, depth, level + 1))
+
+        return results
+
 
 # Decorate all public API methods that should trigger a retrival of the
 # object's full data from the JSS.
