@@ -53,8 +53,8 @@ class QuerySet(list):
         if objects and not len({i.__class__ for i in objects}) == 1:
             raise ValueError
         super(QuerySet, self).__init__(objects)
+        self.sort()
         self.contained_class = objects[0].__class__ if objects else None
-
 
     def __str__(self):
         """Make data human readable."""
