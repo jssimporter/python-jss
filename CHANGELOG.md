@@ -39,6 +39,8 @@ All notable changes to this project will be documented in this file. This projec
 - `JSSObjectList.retrieve()` has been removed as it's no longer needed.
 - `JSSObjectList.pickle()` and `from_pickle()`. This code is just cruft; it's just about the same amount of work to pickle it on your own.
 - `JSSObjectFactory` was removed as it is no longer needed. Client code should use `getattr` if it needs to dynamically choose which class to use.
+- `JSSDeviceObject` was removed as it was no longer needed. It only added a `udid` and `serial_number` method to two subclasses, `Computer` and `MobileDevice`. You can access these through `.` notation now: `computer.general.serial_number.text`
+- As a result of `.` access to subelements, all properties doing the same thing have been removed. The vast majority of these were in `Policy` (e.g. `a_policy.computers` is now accessed through `a_policy.scope.computers`).
 
 ### Fixed
 - Made `JSS.user` and `JSS.password` proper properties, that will set the attached network adapter appropriately.
