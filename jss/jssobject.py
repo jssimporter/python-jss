@@ -923,20 +923,6 @@ class JSSGroupObject(JSSContainerObject):
                     device.findtext("id") == device_object.id]) is not 0
 
 
-class JSSDeviceObject(JSSContainerObject):
-    """Abstact class for device types."""
-
-    @property
-    def udid(self):
-        """Return device's UDID or None."""
-        return self.findtext("general/udid")
-
-    @property
-    def serial_number(self):
-        """Return device's serial number or None."""
-        return self.findtext("general/serial_number")
-
-
 class SearchCriteria(PrettyElement):
     """Object for encapsulating a smart group search criteria."""
     root_tag = "criterion"

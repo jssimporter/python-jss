@@ -28,8 +28,7 @@ import requests
 from .exceptions import (JSSMethodNotAllowedError, JSSPostError,
                          JSSFileUploadParameterError, JSSGetError,
                          JSSDeleteError, JSSUnsupportedSearchMethodError)
-from .jssobject import (JSSContainerObject, JSSGroupObject, JSSDeviceObject,
-                        JSSObject)
+from .jssobject import JSSContainerObject, JSSGroupObject, JSSObject
 from .tools import error_handler
 
 
@@ -132,7 +131,7 @@ class Class(JSSContainerObject):
     _endpoint_path = "classes"
 
 
-class Computer(JSSDeviceObject):
+class Computer(JSSContainerObject):
     root_tag = "computer"
     _endpoint_path = "computers"
     search_types = {"name": "name", "serial_number": "serialnumber",
@@ -220,10 +219,6 @@ class ComputerGroup(JSSGroupObject):
         "is_smart": False,
         "criteria": None,
         "computers": None,}
-
-    @property
-    def criteria(self):
-        return self.find("criteria")
 
     def add_computer(self, computer):
         """Add a computer to the group.
@@ -477,7 +472,7 @@ class ManagedPreferenceProfile(JSSContainerObject):
     allowed_kwargs = ('subset',)
 
 
-class MobileDevice(JSSDeviceObject):
+class MobileDevice(JSSContainerObject):
     """Mobile Device objects include a "match" search type which queries
     across multiple properties.
     """
@@ -488,17 +483,6 @@ class MobileDevice(JSSDeviceObject):
                     "udid": "udid", "macaddress": "macadress",
                     "match": "match"}
     allowed_kwargs = ('subset',)
-
-    @property
-    def wifi_mac_address(self):
-        """Return device's WIFI MAC address or None."""
-        return self.findtext("general/wifi_mac_address")
-
-    @property
-    def bluetooth_mac_address(self):
-        """Return device's Bluetooth MAC address or None."""
-        return self.findtext("general/bluetooth_mac_address") or \
-            self.findtext("general/mac_address")
 
 
 class MobileDeviceApplication(JSSContainerObject):
@@ -704,99 +688,6 @@ class Policy(JSSContainerObject):
         "maintenance": {
             "recon": "true"},
     }
-
-    # These properties were originally an experiment, and have remained
-    # for compatibility reasons. In the future, we will use __getattr__
-    # to recursively find things.
-
-    # General
-    @property
-    def general(self):
-        return self.find("general")
-
-    @property
-    def enabled(self):
-        return self.general.find("enabled")
-
-    @property
-    def frequency(self):
-        return self.general.find("frequency")
-
-    @property
-    def category(self):
-        return self.general.find("category")
-
-    # Scope
-
-    @property
-    def scope(self):
-        return self.find("scope")
-
-    @property
-    def computers(self):
-        return self.find("scope/computers")
-
-    @property
-    def computer_groups(self):
-        return self.find("scope/computer_groups")
-
-    @property
-    def buildings(self):
-        return self.find("scope/buildings")
-
-    @property
-    def departments(self):
-        return self.find("scope/departments")
-
-    @property
-    def exclusions(self):
-        return self.find("scope/exclusions")
-
-    @property
-    def excluded_computers(self):
-        return self.find("scope/exclusions/computers")
-
-    @property
-    def excluded_computer_groups(self):
-        return self.find("scope/exclusions/computer_groups")
-
-    @property
-    def excluded_buildings(self):
-        return self.find("scope/exclusions/buildings")
-
-    @property
-    def excluded_departments(self):
-        return self.find("scope/exclusions/departments")
-
-    # Self Service
-
-    @property
-    def self_service(self):
-        return self.find("self_service")
-
-    @property
-    def use_for_self_service(self):
-        return self.find("self_service/use_for_self_service")
-
-    # Package Configuration
-
-    @property
-    def pkg_config(self):
-        return self.find("package_configuration")
-
-    @property
-    def pkgs(self):
-        return self.find("package_configuration/packages")
-
-    # Maintenance
-
-    @property
-    def maintenance(self):
-        return self.find("maintenance")
-
-    @property
-    def recon(self):
-        return self.find("maintenance/recon")
 
     def add_object_to_scope(self, obj):
         """Add an object to the appropriate scope block.
