@@ -506,7 +506,9 @@ def add_search_method(cls, name):
                         None (or provide no argument / default):
                             Search for all objects.
                         int: Search for an object by ID.
-                        str: Search for an object by name.
+                        str: Search for an object by name. Some objects
+                            allow 'match' searches, using '*' as the
+                            wildcard operator.
                         xml.etree.ElementTree.Element: create a new
                             object from the Element's data.
                 kwargs:

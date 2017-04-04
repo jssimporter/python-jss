@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file. This projec
 - Implemented new endpoints and their corresponding objects: `AllowedFileExtension`, `ComputerApplicationUsage`, `ComputerApplication`, `ComputerHardwareSoftwareReport`, `ComputerManagement`, `HealthcareManager`, `InfrastructureManager`, `MobileDeviceHistory`, `Webhook`.
 - Added compression argument to `JSS.pickle_all()` (defaults to `True`) to compress pickle output. A lot.
 - Tag access through the `.` operator for `JSSObject`s. For example, you can now do `computer.configuration_profiles.size.text` to reach all the way down the tree to that value.
+- All `JSSObject`s have a `tree()` method which will return a nicely indented representation of the tag structure of the object. Use it like this: `print a_computer_group.tree()`.
+- Automatic `match` search detection for object types that support it. Now you can do `j.Computer("MacBook*")` instead of `j.Computer("match=MacBook*")`. Match searches will _always_ return a QuerySet.
 
 ### Changed
 - Moved the `suppress_warnings` preference out of `JSS` and into the requests adapter. The `JSS` initialization will accept that keyword argument to ease the (sudden) deprecation, but it just won't do anything. Use the `RequestsAdapter.suppress_warnings()` method if you need it.
@@ -36,6 +38,7 @@ All notable changes to this project will be documented in this file. This projec
 ### Removed
 - `JSSObjectList.retrieve()` has been removed as it's no longer needed.
 - `JSSObjectList.pickle()` and `from_pickle()`. This code is just cruft; it's just about the same amount of work to pickle it on your own.
+- `JSSObjectFactory` was removed as it is no longer needed. Client code should use `getattr` if it needs to dynamically choose which class to use.
 
 ### Fixed
 - Made `JSS.user` and `JSS.password` proper properties, that will set the attached network adapter appropriately.

@@ -34,6 +34,7 @@ import tools
 
 
 DATE_FMT = "%Y/%m/%d-%H:%M:%S.%f"
+_MATCH = "match"
 
 
 Identity = collections.namedtuple('Identity', ['id', 'name'])
@@ -387,7 +388,10 @@ class JSSContainerObject(JSSObject):
                 Int: Generate URL to object with data ID.
                 None: Get basic object GET URL (list).
                 String/Unicode: Search for <data> with default_search,
-                    usually "name".
+                    usually "name". If the wildcard character, '*' is
+                    present, and the object can do 'match' searches,
+                    a match search will be performed rather than a
+                    normal one.
                 String/Unicode with "=": Other searches, for example
                     Computers can be searched by uuid with:
                     "udid=E79E84CB-3227-5C69-A32C-6C45C2E77DF5"
@@ -434,6 +438,11 @@ class JSSContainerObject(JSSObject):
                     raise JSSUnsupportedSearchMethodError(
                         "This object cannot be queried by %s." % key)
 
+            elif "*" in data and _MATCH in cls.search_types:
+                # If wildcard char present, make this a match search if
+                # possible
+                url = os.path.join(
+                    cls._endpoint_path, cls.search_types[_MATCH], data)
             else:
                 url = os.path.join(
                     cls._endpoint_path, cls.search_types[cls.default_search],
