@@ -25,8 +25,7 @@ from xml.etree import ElementTree
 
 import requests
 
-from .exceptions import (JSSMethodNotAllowedError, JSSPostError,
-                         JSSFileUploadParameterError, JSSGetError,
+from .exceptions import (JSSMethodNotAllowedError, JSSPostError, JSSGetError,
                          JSSDeleteError, JSSUnsupportedSearchMethodError)
 from .jssobject import Container, Group, JSSObject
 from .tools import error_handler

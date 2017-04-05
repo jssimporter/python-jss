@@ -26,8 +26,8 @@ import gzip
 import os
 from xml.etree import ElementTree
 
-from .exceptions import (JSSError, JSSUnsupportedSearchMethodError,
-                         JSSMethodNotAllowedError, JSSPutError, JSSPostError)
+from .exceptions import (JSSError, JSSMethodNotAllowedError, JSSPutError,
+                         JSSPostError)
 from .pretty_element import PrettyElement
 import tools
 
@@ -111,7 +111,7 @@ class JSSObject(PrettyElement):
         """
         # TODO: Do we need to test for data?
         if data is not None:
-            raise JSSUnsupportedSearchMethodError(
+            raise TypeError(
                 "This object cannot be queried by %s." % data)
         else:
             return cls._endpoint_path
@@ -435,7 +435,7 @@ class Container(JSSObject):
                     url = os.path.join(
                         cls._endpoint_path, cls.search_types[key], value)
                 else:
-                    raise JSSUnsupportedSearchMethodError(
+                    raise TypeError(
                         "This object cannot be queried by %s." % key)
 
             elif "*" in data and _MATCH in cls.search_types:
