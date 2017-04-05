@@ -73,6 +73,8 @@
 	- `JSSUnsupportedSearchMethodError`
 	- `JSSUnsupportedFileType`
 	- `JSSFileUploadParameterError`
+	- `JSSPrefsMissingKeyError`
+- `JSSPrefsMissingFileError` has been replaced with `IOError`:
 - `JSSMethodNotAllowedError` is now called `MethodNotAllowedError`.
 - Renamed all of the request-failure exceptions by dropping the `JSS`:
 	- `JSSGetError` -> `GetError`

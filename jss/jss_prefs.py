@@ -28,13 +28,12 @@ import subprocess
 from xml.etree import ElementTree
 from xml.parsers.expat import ExpatError
 
-from .exceptions import (JSSError, GetError, JSSPrefsMissingKeyError,
-                         JSSPrefsMissingFileError)
+from .exceptions import JSSError, GetError
 from .jamf_software_server import JSS
 from .tools import (is_osx, is_linux, loop_until_valid_response, indent_xml)
 try:
-    from .contrib import FoundationPlist
-except ImportError as err:
+    from .contrib import FoundationPlist as plistlib
+except ImportError:
     # If using OSX, FoundationPlist will need Foundation/PyObjC
     # available, or it won't import.
 
@@ -111,9 +110,6 @@ class JSSPrefs(object):
         Raises:
             JSSError if using an unsupported OS.
         """
-        if (preferences_file is not None and not
-                os.path.exists(os.path.expanduser(preferences_file))):
-            raise JSSPrefsMissingFileError("Preferences file not found!")
         if preferences_file is None:
             plist_name = "com.github.sheagcraig.python-jss.plist"
             if is_osx():
@@ -125,13 +121,14 @@ class JSSPrefs(object):
                 raise JSSError("Unsupported OS.")
 
         self.preferences_file = os.path.expanduser(preferences_file)
+
         if os.path.exists(self.preferences_file):
             self.parse_plist(self.preferences_file)
 
         else:
             self.configure()
             if not os.path.exists(self.preferences_file):
-                raise JSSPrefsMissingFileError("Preferences file not found!")
+                raise IOError("Preferences file not found!")
             else:
                 self.__init__()   # pylint: disable=non-parent-init-called
 
@@ -139,28 +136,24 @@ class JSSPrefs(object):
         """Try to reset preferences from preference_file."""
         preferences_file = os.path.expanduser(preferences_file)
 
-        # Try to open using FoundationPlist. If it's not available,
-        # fall back to plistlib and hope it's not binary encoded.
+        # If there's an ExpatError, it's probably because the plist is
+        # in binary plist format.
         try:
-            prefs = FoundationPlist.readPlist(preferences_file)
-        except NameError:
-            try:
-                prefs = plistlib.readPlist(preferences_file)
-            except ExpatError:
-                # If we're on OSX, try to convert using another
-                # tool.
-                if is_osx():
-                    subprocess.call(["plutil", "-convert", "xml1",
-                                     preferences_file])
-                    prefs = plistlib.readPlist(preferences_file)
+            prefs = plistlib.readPlist(preferences_file)
+        except ExpatError:
+            # If we're on OSX, try to convert using another tool.
+            if is_osx():
+                plist = subprocess.check_output(
+                    ["plutil", "-convert", "xml1", "-o", "-",
+                     preferences_file])
+                prefs = plistlib.readPlistFromString(preferences_file)
 
         self.preferences_file = preferences_file
         self.user = prefs.get("jss_user")
         self.password = prefs.get("jss_pass")
         self.url = prefs.get("jss_url")
         if not all([self.user, self.password, self.url]):
-            raise JSSPrefsMissingKeyError("Please provide all required "
-                                          "preferences!")
+            raise TypeError("Please provide all required preferences!")
 
         # Optional file repository array. Defaults to empty list.
         self.repos = []
