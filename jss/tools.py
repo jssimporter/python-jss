@@ -171,6 +171,7 @@ def triggers_cache(func):
 
     return trigger_cache
 
+
 def decorate_class_with_caching(cls, methods):
     for method_name in methods:
         decorated_method = triggers_cache(getattr(cls, method_name))
