@@ -64,8 +64,11 @@ class JSSObject(PrettyElement):
         """Initialize a new JSSObject
 
         Args:
-            jss: JSS object.
+            jss (JSS, None): JSS to get data from, or None if no JSS
+                communications need to be performed.
             data: xml.etree.ElementTree.Element data for the object
+            kwargs: Unused, but present to support a unified signature
+                for all subclasses (which need and use kwargs).
         """
         self.jss = jss
         self.cached = False
@@ -314,7 +317,8 @@ class Container(JSSObject):
         """Initialize a new JSSObject from scratch or from XML data.
 
         Args:
-            jss: JSS object.
+            jss (JSS, None): JSS object, or None if no communication
+                with the JSS is needed.
             data (xml.etree.ElementTree.Element, Identity, str): XML
                 data to use for creating the object, a name to use for
                 creating a new object, or an Identity object reprsenting
