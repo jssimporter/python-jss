@@ -50,7 +50,12 @@ class PrettyElement(ElementTree.Element):
     def __getattr__(self, name):
         if re.match(_DUNDER_PATTERN, name):
             return super(PrettyElement, self).__getattr__(name)
-        return self.find(name)
+        result = self.find(name)
+        if result is not None:
+            return result
+        else:
+            raise AttributeError(
+                'There is no element with the tag "{}"'.format(name))
 
     # TODO: This can be removed once `JSSObject.__init__` signature is fixed.
     def makeelement(self, tag, attrib):
