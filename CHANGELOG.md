@@ -103,6 +103,8 @@ All notable changes to this project will be documented in this file. This projec
 - As a result of `.` access to subelements, all properties doing the same thing
   have been removed. The vast majority of these were in `Policy` (e.g.
   `a_policy.computers` is now accessed through `a_policy.scope.computers`).
+- Removed a bunch of spurious internal-use-only exceptions and used the builtin
+  ones that make more sense.
 
 ### Fixed
 - Made `JSS.user` and `JSS.password` proper properties, that will set the

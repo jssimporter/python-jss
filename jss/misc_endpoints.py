@@ -23,7 +23,7 @@ import mimetypes
 import os
 from xml.etree import ElementTree
 
-from .exceptions import JSSMethodNotAllowedError, JSSPostError
+from .exceptions import MethodNotAllowedError, JSSPostError
 from .tools import error_handler
 
 
@@ -202,7 +202,7 @@ class FileUpload(object):
             if error.status_code == 409:
                 raise JSSPostError(error)
             else:
-                raise JSSMethodNotAllowedError(self.__class__.__name__)
+                raise MethodNotAllowedError(self.__class__.__name__)
 
         if response.status_code == 201:
             if self.jss.verbose:

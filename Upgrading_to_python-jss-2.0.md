@@ -69,3 +69,8 @@
 - `JSSObjectFactory` has been retired. Indirectly created objects using the
   `JSSObjectFactory` should be converted to use either the `JSS` constructor /
   search methods or the class itself.
+- The following exception classes have been replaced with `TypeError`:
+	- `JSSUnsupportedSearchMethodError`
+	- `JSSUnsupportedFileType`
+	- `JSSFileUploadParameterError`
+- `JSSMethodNotAllowedError` is now called `MethodNotAllowedError`.

@@ -28,8 +28,7 @@ from xml.etree import ElementTree
 
 from . import distribution_points
 from .curl_adapter import CurlAdapter
-from .exceptions import (JSSGetError, JSSPutError, JSSPostError,
-                         JSSDeleteError, JSSMethodNotAllowedError)
+from .exceptions import JSSGetError, JSSPutError, JSSPostError, JSSDeleteError
 from .jssobject import JSSObject, Identity
 from . import jssobjects
 from .queryset import QuerySet

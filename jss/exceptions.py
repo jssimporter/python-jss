@@ -61,12 +61,11 @@ class JSSDeleteError(RequestError):
     pass
 
 
-class JSSMethodNotAllowedError(JSSError):
-    """Casper object not allowed to use that method."""
+class MethodNotAllowedError(JSSError):
+    """JSSObject is not allowed to use HTTP method."""
     pass
 
 
-class JSSSSLVerifyError(JSSError):
+class SSLVerifyError(JSSError):
     """Server's certificate could not be verified."""
     pass
-
