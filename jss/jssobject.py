@@ -262,7 +262,7 @@ cache_triggers = (
 tools.decorate_class_with_caching(JSSObject, cache_triggers)
 
 
-class JSSContainerObject(JSSObject):
+class Container(JSSObject):
     """Subclass for members of a type of object.
 
     This includes the majority of objects in the JSS, for example
@@ -308,7 +308,7 @@ class JSSContainerObject(JSSObject):
             impelemented, make sure to set this if it differs from the
             default/inherited value.
     """
-    root_tag = "JSSContainerObject"
+    root_tag = "Container"
     can_get = True
     can_put = True
     can_post = True
@@ -341,7 +341,7 @@ class JSSContainerObject(JSSObject):
 
         elif isinstance(data, ElementTree.Element):
             # Create a new object from passed XML.
-            super(JSSContainerObject, self).__init__(jss, data)
+            super(Container, self).__init__(jss, data)
             # If this has an ID, assume it's from the JSS and set the
             # cache time, otherwise set it to "Unsaved".
             if data.findtext("id") or data.findtext("general/id"):
@@ -353,7 +353,7 @@ class JSSContainerObject(JSSObject):
             # This is basic identity information, probably from a
             # listing operation.
             new_xml = PrettyElement(tag=self.root_tag)
-            super(JSSContainerObject, self).__init__(jss, new_xml)
+            super(Container, self).__init__(jss, new_xml)
             self._basic_id = data.id
             self._basic_name = data.name
 
@@ -516,7 +516,7 @@ class JSSContainerObject(JSSObject):
                 if cat_tag.text == "No category assigned":
                     cat_tag.text = ""
 
-            super(JSSContainerObject, self).save()
+            super(Container, self).save()
 
         elif self.can_post:
             try:
@@ -553,7 +553,7 @@ class JSSContainerObject(JSSObject):
                 Ignores kwargs that aren't in object's keys attribute.
         """
         new_xml = PrettyElement(tag=self.root_tag)
-        super(JSSContainerObject, self).__init__(self.jss, new_xml)
+        super(Container, self).__init__(self.jss, new_xml)
         self.cached = "Unsaved"
 
         # Name is required, so set it outside of the helper func.
@@ -714,7 +714,7 @@ class JSSContainerObject(JSSObject):
             element.text = "false"
 
     def add_object_to_path(self, obj, location):
-        """Add an object of type JSSContainerObject to location.
+        """Add an object of type Container to location.
 
         This method determines the correct list representation of an
         object and adds it to "location". For example, add a Computer to
@@ -722,7 +722,7 @@ class JSSContainerObject(JSSObject):
         Computers/Computer tag with subelements "name" and "id".
 
         Args:
-            obj: A JSSContainerObject subclass.
+            obj: A Container subclass.
             location: Element or a string path argument to find()
 
         Returns:
@@ -744,7 +744,7 @@ class JSSContainerObject(JSSObject):
         """
         list_element = self._handle_location(list_element)
 
-        if isinstance(obj, JSSContainerObject):
+        if isinstance(obj, Container):
             results = [item for item in list_element.getchildren() if
                        item.findtext("id") == obj.id]
         elif isinstance(obj, (int, basestring)):
@@ -848,7 +848,7 @@ class JSSContainerObject(JSSObject):
                 file_handle, cPickle.HIGHEST_PROTOCOL).dump(self)
 
 
-class JSSGroupObject(JSSContainerObject):
+class Group(Container):
     """Abstract class for ComputerGroup and MobileDeviceGroup."""
 
     def add_criterion(self, name, priority, and_or, search_type, value):   # pylint: disable=too-many-arguments
