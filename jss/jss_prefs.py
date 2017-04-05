@@ -25,22 +25,20 @@ import getpass
 import os
 import readline   # pylint: disable=unused-import
 import subprocess
-from xml.etree import ElementTree
 from xml.parsers.expat import ExpatError
 
 from .exceptions import JSSError, GetError
 from .jamf_software_server import JSS
-from .tools import (is_osx, is_linux, loop_until_valid_response, indent_xml)
+from .tools import is_osx, is_linux, loop_until_valid_response
 try:
     from .contrib import FoundationPlist as plistlib
 except ImportError:
     # If using OSX, FoundationPlist will need Foundation/PyObjC
     # available, or it won't import.
-
-    if is_osx():
-        print "Warning: Import of FoundationPlist failed:", err
-        print "See README for information on this issue."
     import plistlib
+
+
+PREFS_DEFAULT = "com.github.sheagcraig.python-jss.plist"
 
 
 class JSSPrefs(object):
@@ -78,7 +76,7 @@ class JSSPrefs(object):
 
                 This form uses the distributionpoints API call to determine
                 the remaining information. There is also an explicit form;
-                See distribution_points package for more info
+                See the distribution_points module for more info
 
                 CDP and JDS types require one dict for the master, with
                 key:
@@ -103,43 +101,34 @@ class JSSPrefs(object):
 
         Args:
             preferences_file: String path to an alternate location to
-            look for preferences. Defaults base on OS:
+            look for preferences. Defaults based on OS are:
                 OS X: "~/Library/Preferences/com.github.sheagcraig.python-jss.plist"
                 Linux: "~/.com.github.sheagcraig.python-jss.plist"
 
         Raises:
             JSSError if using an unsupported OS.
-        """
-        if preferences_file is None:
-            plist_name = "com.github.sheagcraig.python-jss.plist"
+        """ if preferences_file is None:
             if is_osx():
-                preferences_file = os.path.join("~", "Library", "Preferences",
-                                                plist_name)
+                preferences_file = os.path.join(
+                    "~", "Library", "Preferences", PREFS_DEFAULT)
             elif is_linux():
-                preferences_file = os.path.join("~", "." + plist_name)
+                preferences_file = os.path.join("~", "." + PREFS_DEFAULT)
             else:
                 raise JSSError("Unsupported OS.")
 
         self.preferences_file = os.path.expanduser(preferences_file)
 
-        if os.path.exists(self.preferences_file):
-            self.parse_plist(self.preferences_file)
-
-        else:
+        if not os.path.exists(self.preferences_file):
             self.configure()
-            if not os.path.exists(self.preferences_file):
-                raise IOError("Preferences file not found!")
-            else:
-                self.__init__()   # pylint: disable=non-parent-init-called
 
-    def parse_plist(self, preferences_file):
+        self._parse_plist()
+
+    def _parse_plist(self):
         """Try to reset preferences from preference_file."""
-        preferences_file = os.path.expanduser(preferences_file)
-
         # If there's an ExpatError, it's probably because the plist is
         # in binary plist format.
         try:
-            prefs = plistlib.readPlist(preferences_file)
+            prefs = plistlib.readPlist(self.preferences_file)
         except ExpatError:
             # If we're on OSX, try to convert using another tool.
             if is_osx():
@@ -148,7 +137,6 @@ class JSSPrefs(object):
                      preferences_file])
                 prefs = plistlib.readPlistFromString(preferences_file)
 
-        self.preferences_file = preferences_file
         self.user = prefs.get("jss_user")
         self.password = prefs.get("jss_pass")
         self.url = prefs.get("jss_url")
@@ -169,46 +157,42 @@ class JSSPrefs(object):
         Uses preferences_file argument from JSSPrefs.__init__ as path
         to write.
         """
-        root = ElementTree.Element("dict")
+        prefs = {}
         print ("It seems like you do not have a preferences file configured. "
                "Please answer the following questions to generate a plist at "
                "%s for use with python-jss." % self.preferences_file)
 
-        self.url = _get_user_input(
+        prefs["jss_url"] = raw_input(
             "The complete URL to your JSS, with port (e.g. "
-            "'https://mycasperserver.org:8443')\nURL: ", "jss_url", root)
+            "'https://mycasperserver.org:8443')\nURL: ")
 
-        self.user = _get_user_input("API Username: ", "jss_user", root)
-
-        self.password = _get_user_input("API User's Password: ", "jss_pass",
-                                        root, getpass.getpass)
-
+        prefs["jss_user"] = raw_input("API Username: ")
+        prefs["jss_pass"] = getpass.getpass("API User's Password: ")
         verify_prompt = ("Do you want to verify that traffic is encrypted by "
                          "a certificate that you trust?: (Y|N) ")
-        self.verify = _get_user_input(verify_prompt, "verify", root,
-                                      loop_until_valid_response)
+        prefs["verify"] = loop_until_valid_response(verify_prompt)
+        prefs["repos"] = self._handle_repos(prefs)
 
-        self._handle_repos(root)
-
-        self._write_plist(root)
+        plistlib.writePlist(prefs, self.preferences_file)
         print "Preferences created.\n"
 
-    def _handle_repos(self, root):
+    def _handle_repos(self, prefs):
         """Handle repo configuration."""
-        ElementTree.SubElement(root, "key").text = "repos"
-        repos_array = ElementTree.SubElement(root, "array")
+        repos_array = []
 
         # Make a temporary jss object to try to pull repo information.
-        jss_server = JSS(url=self.url, user=self.user, password=self.password,
-                         ssl_verify=self.verify, suppress_warnings=True)
+        jss_server = JSS(
+            url=prefs["jss_url"], user=prefs["jss_user"],
+            password=prefs["jss_pass"], ssl_verify=prefs["verify"])
         print "Fetching distribution point info..."
         try:
             dpts = jss_server.DistributionPoint()
         except GetError:
-            print ("Fetching distribution point info failed. If you want to "
-                   "configure distribution points, ensure that your API user "
-                   "has read permissions for distribution points, and that "
-                   "the URL, username, and password are correct.")
+            print (
+                "Fetching distribution point info failed. If you want to "
+                "configure distribution points, ensure that your API user "
+                "has read permissions for distribution points, and that the "
+                "URL, username, and password are correct.")
             dpts = None
 
         if dpts:
@@ -218,52 +202,25 @@ class JSSPrefs(object):
                    "the password for the R/W user.\n")
 
             for dpt in dpts:
-                repo_dict = ElementTree.SubElement(repos_array, "dict")
-
-                repo_name_key = ElementTree.SubElement(repo_dict, "key")
-                repo_name_key.text = "name"
-                repo_name_string = ElementTree.SubElement(repo_dict, "string")
-                repo_name_string.text = dpt.get("name")
-
-                repo_pass_key = ElementTree.SubElement(repo_dict, "key")
-                repo_pass_key.text = "password"
-                repo_pass_string = ElementTree.SubElement(repo_dict, "string")
-                repo_pass_string.text = getpass.getpass(
+                repo_dict = {}
+                repo_dict["name"] = dpt.get("name")
+                repo_pass_string = getpass.getpass(
                     "Please enter the R/W user's password for distribution "
                     "point: %s: " % dpt.get("name", "<NO NAME CONFIGURED>"))
+                repo_dict["password"] = repo_pass_string
+                repos_array.append(repo_dict)
 
-        _handle_dist_server("JDS", repos_array)
-        _handle_dist_server("CDP", repos_array)
+        jds = _handle_dist_server("JDS")
+        if jds:
+            repos_array.append(jds)
+        cdp = _handle_dist_server("CDP")
+        if cdp:
+            repos_array.append(cdp)
 
-    def _write_plist(self, root):
-        """Write plist file based on our generated tree."""
-        # prettify the XML
-        indent_xml(root)
-
-        tree = ElementTree.ElementTree(root)
-        with open(self.preferences_file, "w") as prefs_file:
-            prefs_file.write(
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-                "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" "
-                "\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
-                "<plist version=\"1.0\">\n")
-            tree.write(prefs_file, xml_declaration=False, encoding="utf-8")
-            prefs_file.write("</plist>")
+        return repos_array
 
 
-def _get_user_input(prompt, key_name, parent, input_func=raw_input):
-    """Prompt the user for a value, and assign it to key_name."""
-    val = input_func(prompt)
-    ElementTree.SubElement(parent, "key").text = key_name
-    if isinstance(val, bool):
-        string_val = "true" if val else "false"
-        ElementTree.SubElement(parent, string_val)
-    else:
-        ElementTree.SubElement(parent, "string").text = val
-    return val
-
-
-def _handle_dist_server(ds_type, repos_array):
+def _handle_dist_server(ds_type):
     """Ask user for whether to use a type of dist server."""
     if ds_type not in ("JDS", "CDP"):
         raise ValueError("Must be JDS or CDP")
@@ -271,8 +228,4 @@ def _handle_dist_server(ds_type, repos_array):
     result = loop_until_valid_response(prompt)
 
     if result:
-        repo_dict = ElementTree.SubElement(repos_array, "dict")
-        repo_name_key = ElementTree.SubElement(repo_dict, "key")
-        repo_name_key.text = "type"
-        repo_name_string = ElementTree.SubElement(repo_dict, "string")
-        repo_name_string.text = ds_type
+        return {"type": ds_type}
