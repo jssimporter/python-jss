@@ -28,7 +28,7 @@ import subprocess
 import urllib
 
 from . import casper
-from .exceptions import JSSError, JSSUnsupportedFileType
+from .exceptions import JSSError
 try:
     from .contrib.mount_shares_better import mount_share
 except ImportError:
@@ -676,7 +676,7 @@ class DistributionServer(Repository):
         copying.
         """
         if os.path.isdir(filename):
-            raise JSSUnsupportedFileType(
+            raise TypeError(
                 "Distribution Server type repos do not permit directory "
                 "uploads. You are probably trying to upload a non-flat "
                 "package. Please zip or create a flat package.")

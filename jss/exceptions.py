@@ -70,12 +70,3 @@ class JSSSSLVerifyError(JSSError):
     """Server's certificate could not be verified."""
     pass
 
-
-class JSSUnsupportedSearchMethodError(JSSError):
-    """Unrecognized or unsupported GET search argument."""
-    pass
-
-
-class JSSUnsupportedFileType(JSSError):
-    """Unsupported file type exception."""
-    pass
