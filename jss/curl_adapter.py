@@ -35,7 +35,7 @@ JSS object beginning with python-jss 2.0.0.
 
 import subprocess
 
-from .exceptions import JSSError, JSSSSLVerifyError
+from .exceptions import JSSError, SSLVerifyError
 
 
 class CurlAdapter(object):
@@ -92,7 +92,7 @@ class CurlAdapter(object):
             response = subprocess.check_output(command)
         except subprocess.CalledProcessError as err:
             if err.returncode == 60:
-                raise JSSSSLVerifyError(
+                raise SSLVerifyError(
                     'The JSS\'s certificate cannot be verified.')
             else:
                 raise JSSError('Unknown curl error')

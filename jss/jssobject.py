@@ -26,7 +26,7 @@ import gzip
 import os
 from xml.etree import ElementTree
 
-from .exceptions import (JSSError, JSSMethodNotAllowedError, JSSPutError,
+from .exceptions import (JSSError, MethodNotAllowedError, JSSPutError,
                          JSSPostError)
 from .pretty_element import PrettyElement
 import tools
@@ -530,7 +530,7 @@ class Container(JSSObject):
             self.retrieve()
 
         else:
-            raise JSSMethodNotAllowedError(self.__class__.__name__)
+            raise MethodNotAllowedError(self.__class__.__name__)
 
     # Methods #################################################################
     def _new(self, name, **kwargs):
@@ -663,7 +663,7 @@ class Container(JSSObject):
     def delete(self, data=None):
         """Delete this object from the JSS."""
         if not self.can_delete:
-            raise JSSMethodNotAllowedError(self.__class__.__name__)
+            raise MethodNotAllowedError(self.__class__.__name__)
         if data:
             self.jss.delete(self.url, data=data)
         else:

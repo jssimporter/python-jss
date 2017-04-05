@@ -25,8 +25,7 @@ from xml.etree import ElementTree
 
 import requests
 
-from .exceptions import (JSSMethodNotAllowedError, JSSPostError, JSSGetError,
-                         JSSDeleteError, JSSUnsupportedSearchMethodError)
+from .exceptions import JSSPostError, JSSGetError, JSSDeleteError
 from .jssobject import Container, Group, JSSObject
 from .tools import error_handler
 
@@ -176,7 +175,7 @@ class ComputerApplicationUsage(Container):
     def _handle_kwargs(cls, kwargs):
         """Do nothing. Can be overriden by classes which need it."""
         if not all(key in kwargs for key in ('start_date', 'end_date')):
-            raise JSSUnsupportedSearchMethodError(
+            raise TypeError(
                 "This class requires a `start_date` and an `end_date` "
                 "parameter.")
 
