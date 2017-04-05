@@ -24,16 +24,6 @@ class JSSError(Exception):
     pass
 
 
-class JSSPrefsMissingFileError(JSSError):
-    """Missing preference file exception."""
-    pass
-
-
-class JSSPrefsMissingKeyError(JSSError):
-    """Incomplete preferences file exception."""
-    pass
-
-
 class RequestError(JSSError):
 
     def __init__(self, *args, **kwargs):
