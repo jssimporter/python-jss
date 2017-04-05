@@ -23,7 +23,7 @@ import mimetypes
 import os
 from xml.etree import ElementTree
 
-from .exceptions import MethodNotAllowedError, JSSPostError
+from .exceptions import MethodNotAllowedError, PostError
 from .tools import error_handler
 
 
@@ -76,7 +76,7 @@ class CommandFlush(object):
                 an ElementTree/Element.
 
         Raises:
-            JSSDeleteError if provided url_path has a >= 400 response.
+            DeleteError if provided url_path has a >= 400 response.
         """
         if not isinstance(data, basestring):
             data = ElementTree.tostring(data, encoding='UTF-8')
@@ -94,7 +94,7 @@ class CommandFlush(object):
             status (str): One of 'Pending', 'Failed', 'Pending+Failed'.
 
         Raises:
-            JSSDeleteError if provided url_path has a >= 400 response.
+            DeleteError if provided url_path has a >= 400 response.
         """
         id_types = ('computers', 'computergroups', 'mobiledevices',
                     'mobiledevicegroups')
@@ -198,9 +198,9 @@ class FileUpload(object):
         try:
             response = self.jss.session.post(
                 self._upload_url, files=self.resource)
-        except JSSPostError as error:
+        except PostError as error:
             if error.status_code == 409:
-                raise JSSPostError(error)
+                raise PostError(error)
             else:
                 raise MethodNotAllowedError(self.__class__.__name__)
 
@@ -209,7 +209,7 @@ class FileUpload(object):
                 print "POST: Success"
                 print response.content
         elif response.status_code >= 400:
-            error_handler(JSSPostError, response)
+            error_handler(PostError, response)
 
 
 class LogFlush(object):
@@ -275,7 +275,7 @@ class LogFlush(object):
                         "computergroups" and "mobiledevicegroups" work.
 
         Raises:
-            JSSDeleteError if provided url_path has a >= 400 response.
+            DeleteError if provided url_path has a >= 400 response.
         """
         if not isinstance(data, basestring):
             data = ElementTree.tostring(data, encoding='UTF-8')
@@ -301,7 +301,7 @@ class LogFlush(object):
                 being made.
 
         Raises:
-            JSSDeleteError if provided url_path has a >= 400 response.
+            DeleteError if provided url_path has a >= 400 response.
         """
         if not log_type:
             log_type = "policies"
@@ -340,7 +340,7 @@ class LogFlush(object):
                 being made.
 
         Raises:
-            JSSDeleteError if provided url_path has a >= 400 response.
+            DeleteError if provided url_path has a >= 400 response.
         """
         if not log_type:
             log_type = "policies"

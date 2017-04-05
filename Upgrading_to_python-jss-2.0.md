@@ -74,3 +74,8 @@
 	- `JSSUnsupportedFileType`
 	- `JSSFileUploadParameterError`
 - `JSSMethodNotAllowedError` is now called `MethodNotAllowedError`.
+- Renamed all of the request-failure exceptions by dropping the `JSS`:
+	- `JSSGetError` -> `GetError`
+	- `JSSPutError` -> `PutError`
+	- `JSSPostError` -> `PostError`
+	- `JSStDeleteError` -> `DeleteError`

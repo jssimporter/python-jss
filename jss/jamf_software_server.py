@@ -28,7 +28,7 @@ from xml.etree import ElementTree
 
 from . import distribution_points
 from .curl_adapter import CurlAdapter
-from .exceptions import JSSGetError, JSSPutError, JSSPostError, JSSDeleteError
+from .exceptions import GetError, PutError, PostError, DeleteError
 from .jssobject import JSSObject, Identity
 from . import jssobjects
 from .queryset import QuerySet
@@ -231,9 +231,9 @@ class JSS(object):
             ElementTree.Element for the XML returned from the JSS.
 
         Raises:
-            JSSGetError if provided url_path has a >= 400 response, for
+            GetError if provided url_path has a >= 400 response, for
             example, if an object queried for does not exist (404). Will
-            also raise JSSGetError for bad XML.
+            also raise GetError for bad XML.
 
             This behavior will change in the future for 404/Not Found
             to returning None.
@@ -244,13 +244,13 @@ class JSS(object):
         if response.status_code == 200 and self.verbose:
             print "GET %s: Success." % request_url
         elif response.status_code >= 400:
-            error_handler(JSSGetError, response)
+            error_handler(GetError, response)
 
         # ElementTree in python2 only accepts bytes.
         try:
             xmldata = ElementTree.fromstring(response.content)
         except ElementTree.ParseError:
-            raise JSSGetError("Error Parsing XML:\n%s" % response.content)
+            raise GetError("Error Parsing XML:\n%s" % response.content)
 
         return xmldata
 
@@ -269,7 +269,7 @@ class JSS(object):
             str ID number of the newly created object.
 
         Raises:
-            JSSPostError if provided url_path has a >= 400 response.
+            PostError if provided url_path has a >= 400 response.
         """
         # The JSS expects a post to ID 0 to create an object
 
@@ -280,7 +280,7 @@ class JSS(object):
         if response.status_code == 201 and self.verbose:
             print "POST %s: Success" % request_url
         elif response.status_code >= 400:
-            error_handler(JSSPostError, response)
+            error_handler(PostError, response)
 
         id_ = re.search(r"<id>([0-9]+)</id>", response.content).group(1)
 
@@ -300,7 +300,7 @@ class JSS(object):
                 desired obj_class.
 
         Raises:
-            JSSPutError if provided url_path has a >= 400 response.
+            PutError if provided url_path has a >= 400 response.
         """
         request_url = os.path.join(self._url, quote_and_encode(url_path))
         data = ElementTree.tostring(data, encoding='UTF-8')
@@ -309,7 +309,7 @@ class JSS(object):
         if response.status_code == 201 and self.verbose:
             print "PUT %s: Success." % request_url
         elif response.status_code >= 400:
-            error_handler(JSSPutError, response)
+            error_handler(PutError, response)
 
     def delete(self, url_path, data=None):
         """Delete an object from the JSS.
@@ -324,7 +324,7 @@ class JSS(object):
                 desired obj_class. Most classes don't need this.
 
         Raises:
-            JSSDeleteError if provided url_path has a >= 400 response.
+            DeleteError if provided url_path has a >= 400 response.
         """
         request_url = os.path.join(self._url, quote_and_encode(url_path))
         if data:
@@ -336,7 +336,7 @@ class JSS(object):
         if response.status_code == 200 and self.verbose:
             print "DEL %s: Success." % request_url
         elif response.status_code >= 400:
-            error_handler(JSSDeleteError, response)
+            error_handler(DeleteError, response)
 
     def retrieve_all(self):
         all_search_methods = [
@@ -347,7 +347,7 @@ class JSS(object):
             name = method.__name__
             try:
                 result = method()
-            except JSSGetError as err:
+            except GetError as err:
                 msg = "Unable to retrieve '{}'"
                 if err.status_code == 401:
                     msg += "; permission error"
@@ -362,7 +362,7 @@ class JSS(object):
             else:
                 try:
                     all_objects[name] = result.retrieve_all()
-                except JSSGetError:
+                except GetError:
                     # A failure to get means the object type has zero
                     # results.
                     print name, " has no results! (GETERRROR)"
@@ -544,7 +544,7 @@ def add_search_method(cls, name):
                     matches the search criteria.
 
             Raises:
-                JSSGetError for nonexistent objects.
+                GetError for nonexistent objects.
         """
         if not isinstance(data, ElementTree.Element):
             url = obj_type.build_query(data, **kwargs)

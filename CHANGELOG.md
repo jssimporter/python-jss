@@ -83,6 +83,11 @@ All notable changes to this project will be documented in this file. This projec
   data.
 - All `Element` objects added to a `JSSObject` will get converted to the
   `PrettyElement` type to enable dot access and pretty printing.
+- Renamed all of the request-failure exceptions by dropping the `JSS`:
+	- `JSSGetError` -> `GetError`
+	- `JSSPutError` -> `PutError`
+	- `JSSPostError` -> `PostError`
+	- `JSStDeleteError` -> `DeleteError`
 
 ### Deprecated
 - `JSSObjectList` has been renamed to QuerySet and now inherits from it. While

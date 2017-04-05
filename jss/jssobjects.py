@@ -25,7 +25,7 @@ from xml.etree import ElementTree
 
 import requests
 
-from .exceptions import JSSPostError, JSSGetError, JSSDeleteError
+from .exceptions import GetError
 from .jssobject import Container, Group, JSSObject
 from .tools import error_handler
 
@@ -370,7 +370,7 @@ class LDAPServer(Container):
             LDAPUsersResult object.
 
         Raises:
-            Will raise a JSSGetError if no results are found.
+            Will raise a GetError if no results are found.
         """
         user_url = "%s/%s/%s" % (self.url, "user", user)
         response = self.jss.get(user_url)
@@ -388,7 +388,7 @@ class LDAPServer(Container):
             LDAPGroupsResult object.
 
         Raises:
-            JSSGetError if no results are found.
+            GetError if no results are found.
         """
         group_url = "%s/%s/%s" % (self.url, "group", group)
         response = self.jss.get(group_url)
@@ -421,7 +421,7 @@ class LDAPServer(Container):
                 if response.findtext("ldap_user/is_member") == "Yes":
                     result = True
         elif len(response) >= 2:
-            raise JSSGetError("Unexpected response.")
+            raise GetError("Unexpected response.")
         return result
 
     @property

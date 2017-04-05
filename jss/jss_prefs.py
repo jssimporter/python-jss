@@ -28,7 +28,7 @@ import subprocess
 from xml.etree import ElementTree
 from xml.parsers.expat import ExpatError
 
-from .exceptions import (JSSError, JSSGetError, JSSPrefsMissingKeyError,
+from .exceptions import (JSSError, GetError, JSSPrefsMissingKeyError,
                          JSSPrefsMissingFileError)
 from .jamf_software_server import JSS
 from .tools import (is_osx, is_linux, loop_until_valid_response, indent_xml)
@@ -57,7 +57,7 @@ class JSSPrefs(object):
     function will try to help configure python-jss.
 
     The preference file should include the following keys:
-    
+
         - **jss_url**: String, full path, including port, to JSS, e.g.
           "https://mycasper.donkey.com:8443".
         - **jss_user**: String, API username to use.
@@ -211,7 +211,7 @@ class JSSPrefs(object):
         print "Fetching distribution point info..."
         try:
             dpts = jss_server.DistributionPoint()
-        except JSSGetError:
+        except GetError:
             print ("Fetching distribution point info failed. If you want to "
                    "configure distribution points, ensure that your API user "
                    "has read permissions for distribution points, and that "
