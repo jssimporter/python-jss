@@ -76,11 +76,6 @@ class JSSUnsupportedSearchMethodError(JSSError):
     pass
 
 
-class JSSFileUploadParameterError(JSSError):
-    """FileUpload parameter poorfly formed exception."""
-    pass
-
-
 class JSSUnsupportedFileType(JSSError):
     """Unsupported file type exception."""
     pass

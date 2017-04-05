@@ -23,8 +23,7 @@ import mimetypes
 import os
 from xml.etree import ElementTree
 
-from .exceptions import (JSSMethodNotAllowedError, JSSPostError,
-                         JSSFileUploadParameterError)
+from .exceptions import JSSMethodNotAllowedError, JSSPostError
 from .tools import error_handler
 
 
@@ -172,13 +171,12 @@ class FileUpload(object):
         if resource_type in resource_types:
             self.resource_type = resource_type
         else:
-            raise JSSFileUploadParameterError("resource_type must be one of: "
-                                              "%s" % resource_types)
+            raise TypeError(
+                "resource_type must be one of: %s" % ', '.join(resource_types))
         if id_type in id_types:
             self.id_type = id_type
         else:
-            raise JSSFileUploadParameterError("id_type must be one of: "
-                                              "%s" % id_types)
+            raise TypeError("id_type must be one of: %s" % ', '.join(id_types))
         self._id = str(_id)
 
         basename = os.path.basename(resource)
