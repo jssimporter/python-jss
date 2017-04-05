@@ -26,8 +26,7 @@ import gzip
 import os
 from xml.etree import ElementTree
 
-from .exceptions import (JSSError, MethodNotAllowedError, JSSPutError,
-                         JSSPostError)
+from .exceptions import JSSError, MethodNotAllowedError, PutError, PostError
 from .pretty_element import PrettyElement
 import tools
 
@@ -180,9 +179,9 @@ class JSSObject(PrettyElement):
         """
         try:
             self.jss.put(self.url, data=self)
-        except JSSPutError as put_error:
+        except PutError as put_error:
             # Something when wrong.
-            raise JSSPutError(put_error)
+            raise PutError(put_error)
 
         # Replace current instance's data with new, JSS-validated data.
         self.retrieve()
@@ -521,8 +520,8 @@ class Container(JSSObject):
         elif self.can_post:
             try:
                 id_ = self.jss.post(self.url, data=self)
-            except JSSPostError as err:
-                raise JSSPostError(err)
+            except PostError as err:
+                raise PostError(err)
 
             self._basic_id = id_
             # Replace current instance's data with new, JSS-validated data.

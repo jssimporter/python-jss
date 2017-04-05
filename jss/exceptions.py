@@ -41,22 +41,22 @@ class RequestError(JSSError):
         self.status_code = None
 
 
-class JSSGetError(RequestError):
+class GetError(RequestError):
     """GET exception."""
     pass
 
 
-class JSSPutError(RequestError):
+class PutError(RequestError):
     """PUT exception."""
     pass
 
 
-class JSSPostError(RequestError):
+class PostError(RequestError):
     """POST exception."""
     pass
 
 
-class JSSDeleteError(RequestError):
+class DeleteError(RequestError):
     """DEL exception."""
     pass
 
