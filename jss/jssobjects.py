@@ -28,7 +28,7 @@ import requests
 from .exceptions import (JSSMethodNotAllowedError, JSSPostError,
                          JSSFileUploadParameterError, JSSGetError,
                          JSSDeleteError, JSSUnsupportedSearchMethodError)
-from .jssobject import JSSContainerObject, JSSGroupObject, JSSObject
+from .jssobject import Container, Group, JSSObject
 from .tools import error_handler
 
 
@@ -58,7 +58,7 @@ __all__ = (
 
 
 # pylint: disable=missing-docstring
-class Account(JSSContainerObject):
+class Account(Container):
     """JSS account."""
     _endpoint_path = "accounts"
     # TODO: This is pending removal.
@@ -68,7 +68,7 @@ class Account(JSSContainerObject):
                     "name": "username"}
 
 
-class AccountGroup(JSSContainerObject):
+class AccountGroup(Container):
     """Account groups are groups of users on the JSS.
 
     Within the API hierarchy they are actually part of accounts, but I
@@ -89,31 +89,31 @@ class ActivationCode(JSSObject):
     can_post = False
 
 
-class AdvancedComputerSearch(JSSContainerObject):
+class AdvancedComputerSearch(Container):
     _endpoint_path = "advancedcomputersearches"
 
 
-class AdvancedMobileDeviceSearch(JSSContainerObject):
+class AdvancedMobileDeviceSearch(Container):
     _endpoint_path = "advancedmobiledevicesearches"
 
 
-class AdvancedUserSearch(JSSContainerObject):
+class AdvancedUserSearch(Container):
     _endpoint_path = "advancedusersearches"
 
 
-class AllowedFileExtension(JSSContainerObject):
+class AllowedFileExtension(Container):
     _endpoint_path = "allowedfileextensions"
     can_put = False
     default_search = "extension"
     search_types = {"extension": "extension"}
 
 
-class Building(JSSContainerObject):
+class Building(Container):
     _endpoint_path = "buildings"
     root_tag = "building"
 
 
-class BYOProfile(JSSContainerObject):
+class BYOProfile(Container):
     _endpoint_path = "byoprofiles"
     root_tag = "byoprofiles"
     can_delete = False
@@ -122,16 +122,16 @@ class BYOProfile(JSSContainerObject):
                     "name": "name"}
 
 
-class Category(JSSContainerObject):
+class Category(Container):
     _endpoint_path = "categories"
     root_tag = "category"
 
 
-class Class(JSSContainerObject):
+class Class(Container):
     _endpoint_path = "classes"
 
 
-class Computer(JSSContainerObject):
+class Computer(Container):
     root_tag = "computer"
     _endpoint_path = "computers"
     search_types = {"name": "name", "serial_number": "serialnumber",
@@ -154,7 +154,7 @@ class Computer(JSSContainerObject):
     # Needs an extended identity or override of __init__?
 
 
-class ComputerApplication(JSSContainerObject):
+class ComputerApplication(Container):
     _endpoint_path = "computerapplications"
     can_delete = False
     can_put = False
@@ -164,7 +164,7 @@ class ComputerApplication(JSSContainerObject):
     allowed_kwargs = ("version", "inventory")
 
 
-class ComputerApplicationUsage(JSSContainerObject):
+class ComputerApplicationUsage(Container):
     _endpoint_path = "computerapplicationusage"
     can_delete = False
     can_put = False
@@ -194,7 +194,7 @@ class ComputerCheckIn(JSSObject):
     can_post = False
 
 
-class ComputerCommand(JSSContainerObject):
+class ComputerCommand(Container):
     _endpoint_path = "computercommands"
     can_delete = False
     can_put = False
@@ -203,16 +203,16 @@ class ComputerCommand(JSSContainerObject):
     can_post = False
 
 
-class ComputerConfiguration(JSSContainerObject):
+class ComputerConfiguration(Container):
     _endpoint_path = "computerconfigurations"
     root_tag = "computer_configuration"
 
 
-class ComputerExtensionAttribute(JSSContainerObject):
+class ComputerExtensionAttribute(Container):
     _endpoint_path = "computerextensionattributes"
 
 
-class ComputerGroup(JSSGroupObject):
+class ComputerGroup(Group):
     _endpoint_path = "computergroups"
     root_tag = "computer_group"
     data_keys = {
@@ -238,7 +238,7 @@ class ComputerGroup(JSSGroupObject):
             computer, "computers")
 
 
-class ComputerHardwareSoftwareReport(JSSContainerObject):
+class ComputerHardwareSoftwareReport(Container):
     _endpoint_path = "computers"
     can_put = False
     can_post = False
@@ -249,7 +249,7 @@ class ComputerHardwareSoftwareReport(JSSContainerObject):
     allowed_kwargs = ('start_date', 'end_date', 'subset')
 
 
-class ComputerHardwareSoftwareReport(JSSContainerObject):
+class ComputerHardwareSoftwareReport(Container):
     """Unimplemented at this time."""
     _endpoint_path = "computerhardwaresoftwarereports"
     can_delete = False
@@ -257,7 +257,7 @@ class ComputerHardwareSoftwareReport(JSSContainerObject):
     can_post = False
 
 
-class ComputerHistory(JSSContainerObject):
+class ComputerHistory(Container):
     _endpoint_path = "computerhistory"
     can_delete = False
     can_put = False
@@ -273,13 +273,13 @@ class ComputerInventoryCollection(JSSObject):
     can_delete = False
 
 
-class ComputerInvitation(JSSContainerObject):
+class ComputerInvitation(Container):
     _endpoint_path = "computerinvitations"
     can_put = False
     search_types = {"name": "name", "invitation": "invitation"}
 
 
-class ComputerManagement(JSSContainerObject):
+class ComputerManagement(Container):
     _endpoint_path = "computermanagement"
     can_put = False
     can_post = False
@@ -289,35 +289,35 @@ class ComputerManagement(JSSContainerObject):
                     "udid": "udid", "macaddress": "macadress"}
 
 
-class ComputerReport(JSSContainerObject):
+class ComputerReport(Container):
     _endpoint_path = "computerreports"
     can_put = False
     can_post = False
     can_delete = False
 
 
-class Department(JSSContainerObject):
+class Department(Container):
     _endpoint_path = "departments"
     root_tag = "department"
 
 
-class DirectoryBinding(JSSContainerObject):
+class DirectoryBinding(Container):
     _endpoint_path = "directorybindings"
 
 
-class DiskEncryptionConfiguration(JSSContainerObject):
+class DiskEncryptionConfiguration(Container):
     _endpoint_path = "diskencryptionconfigurations"
 
 
-class DistributionPoint(JSSContainerObject):
+class DistributionPoint(Container):
     _endpoint_path = "distributionpoints"
 
 
-class DockItem(JSSContainerObject):
+class DockItem(Container):
     _endpoint_path = "dockitems"
 
 
-class EBook(JSSContainerObject):
+class EBook(Container):
     _endpoint_path = "ebooks"
     allowed_kwargs = ('subset',)
 
@@ -328,7 +328,7 @@ class GSXConnection(JSSObject):
     can_delete = False
 
 
-class HealthcareListener(JSSContainerObject):
+class HealthcareListener(Container):
     _endpoint_path = "healthcarelistener"
     can_post = False
     can_delete = False
@@ -336,12 +336,12 @@ class HealthcareListener(JSSContainerObject):
     search_types = {"id": "id"}
 
 
-class IBeacon(JSSContainerObject):
+class IBeacon(Container):
     _endpoint_path = "ibeacons"
     root_tag = "ibeacon"
 
 
-class InfrastructureManager(JSSContainerObject):
+class InfrastructureManager(Container):
     _endpoint_path = "infrastructuremanager"
     can_post = False
     can_delete = False
@@ -357,7 +357,7 @@ class JSSUser(JSSObject):
     can_delete = False
 
 
-class LDAPServer(JSSContainerObject):
+class LDAPServer(Container):
     _endpoint_path = "ldapservers"
 
     def search_users(self, user):
@@ -441,7 +441,7 @@ class LDAPServer(JSSContainerObject):
         return result
 
 
-class LDAPUsersResults(JSSContainerObject):
+class LDAPUsersResults(Container):
     """Helper class for results of LDAPServer queries for users."""
     can_get = False
     can_post = False
@@ -449,7 +449,7 @@ class LDAPUsersResults(JSSContainerObject):
     can_delete = False
 
 
-class LDAPGroupsResults(JSSContainerObject):
+class LDAPGroupsResults(Container):
     """Helper class for results of LDAPServer queries for groups."""
     can_get = False
     can_post = False
@@ -457,22 +457,22 @@ class LDAPGroupsResults(JSSContainerObject):
     can_delete = False
 
 
-class LicensedSoftware(JSSContainerObject):
+class LicensedSoftware(Container):
     _endpoint_path = "licensedsoftware"
 
 
-class MacApplication(JSSContainerObject):
+class MacApplication(Container):
     _endpoint_path = "macapplications"
     root_tag = "mac_application"
     allowed_kwargs = ('subset',)
 
 
-class ManagedPreferenceProfile(JSSContainerObject):
+class ManagedPreferenceProfile(Container):
     _endpoint_path = "managedpreferenceprofiles"
     allowed_kwargs = ('subset',)
 
 
-class MobileDevice(JSSContainerObject):
+class MobileDevice(Container):
     """Mobile Device objects include a "match" search type which queries
     across multiple properties.
     """
@@ -485,12 +485,12 @@ class MobileDevice(JSSContainerObject):
     allowed_kwargs = ('subset',)
 
 
-class MobileDeviceApplication(JSSContainerObject):
+class MobileDeviceApplication(Container):
     _endpoint_path = "mobiledeviceapplications"
     allowed_kwargs = ('subset',)
 
 
-class MobileDeviceCommand(JSSContainerObject):
+class MobileDeviceCommand(Container):
     _endpoint_path = "mobiledevicecommands"
     can_put = False
     can_delete = False
@@ -501,22 +501,22 @@ class MobileDeviceCommand(JSSContainerObject):
     can_post = False
 
 
-class MobileDeviceConfigurationProfile(JSSContainerObject):
+class MobileDeviceConfigurationProfile(Container):
     _endpoint_path = "mobiledeviceconfigurationprofiles"
     allowed_kwargs = ('subset',)
 
 
-class MobileDeviceEnrollmentProfile(JSSContainerObject):
+class MobileDeviceEnrollmentProfile(Container):
     _endpoint_path = "mobiledeviceenrollmentprofiles"
     search_types = {"name": "name", "invitation": "invitation"}
     allowed_kwargs = ('subset',)
 
 
-class MobileDeviceExtensionAttribute(JSSContainerObject):
+class MobileDeviceExtensionAttribute(Container):
     _endpoint_path = "mobiledeviceextensionattributes"
 
 
-class MobileDeviceGroup(JSSGroupObject):
+class MobileDeviceGroup(Group):
     _endpoint_path = "mobiledevicegroups"
     root_tag = "mobile_device_group"
 
@@ -538,7 +538,7 @@ class MobileDeviceGroup(JSSGroupObject):
             device, "mobile_devices")
 
 
-class MobileDeviceHistory(JSSContainerObject):
+class MobileDeviceHistory(Container):
     _endpoint_path = "mobiledevicehistory"
     can_delete = False
     can_put = False
@@ -548,32 +548,32 @@ class MobileDeviceHistory(JSSContainerObject):
                     "udid": "udid", "macaddress": "macadress"}
 
 
-class MobileDeviceInvitation(JSSContainerObject):
+class MobileDeviceInvitation(Container):
     _endpoint_path = "mobiledeviceinvitations"
     can_put = False
     search_types = {"invitation": "invitation"}
 
 
-class MobileDeviceProvisioningProfile(JSSContainerObject):
+class MobileDeviceProvisioningProfile(Container):
     _endpoint_path = "mobiledeviceprovisioningprofiles"
     search_types = {"name": "name", "uuid": "uuid"}
     allowed_kwargs = ('subset',)
 
 
-class NetbootServer(JSSContainerObject):
+class NetbootServer(Container):
     _endpoint_path = "netbootservers"
 
 
-class NetworkSegment(JSSContainerObject):
+class NetworkSegment(Container):
     _endpoint_path = "networksegments"
 
 
-class OSXConfigurationProfile(JSSContainerObject):
+class OSXConfigurationProfile(Container):
     _endpoint_path = "osxconfigurationprofiles"
     allowed_kwargs = ('subset',)
 
 
-class Package(JSSContainerObject):
+class Package(Container):
     _endpoint_path = "packages"
     root_tag = "package"
     data_keys = {
@@ -638,7 +638,7 @@ class Package(JSSContainerObject):
         self.find("category").text = name
 
 
-class Patch(JSSContainerObject):
+class Patch(Container):
     _endpoint_path = "patches"
     root_tag = "software_title"
     can_post = False
@@ -647,20 +647,20 @@ class Patch(JSSContainerObject):
     # implemented.
 
 
-class Peripheral(JSSContainerObject):
+class Peripheral(Container):
     _endpoint_path = "peripherals"
     search_types = {}
     allowed_kwargs = ('subset',)
 
 
-class PeripheralType(JSSContainerObject):
+class PeripheralType(Container):
     _endpoint_path = "peripheraltypes"
     search_types = {}
 
 
 # pylint: disable=too-many-instance-attributes
 # This class has a lot of convenience attributes. Sorry pylint.
-class Policy(JSSContainerObject):
+class Policy(Container):
     _endpoint_path = "policies"
     root_tag = "policy"
     search_types = {"name": "name", "category": "category"}
@@ -827,31 +827,31 @@ class Policy(JSSContainerObject):
 # pylint: enable=too-many-instance-attributes, too-many-locals
 
 
-class Printer(JSSContainerObject):
+class Printer(Container):
     _endpoint_path = "printers"
 
 
-class RemovableMACAddress(JSSContainerObject):
+class RemovableMACAddress(Container):
     _endpoint_path = "removablemacaddresses"
 
 
-class RestrictedSoftware(JSSContainerObject):
+class RestrictedSoftware(Container):
     _endpoint_path = "restrictedsoftware"
 
 
-class SavedSearch(JSSContainerObject):
+class SavedSearch(Container):
     _endpoint_path = "savedsearches"
     can_put = False
     can_post = False
     can_delete = False
 
 
-class Script(JSSContainerObject):
+class Script(Container):
     _endpoint_path = "scripts"
     root_tag = "script"
 
 
-class Site(JSSContainerObject):
+class Site(Container):
     _endpoint_path = "sites"
     root_tag = "site"
 
@@ -862,36 +862,36 @@ class SMTPServer(JSSObject):
     can_delete = False
 
 
-class SoftwareUpdateServer(JSSContainerObject):
+class SoftwareUpdateServer(Container):
     _endpoint_path = "softwareupdateservers"
 
 
-class UserExtensionAttribute(JSSContainerObject):
+class UserExtensionAttribute(Container):
     _endpoint_path = "userextensionattributes"
 
 
-class User(JSSContainerObject):
+class User(Container):
     _endpoint_path = "users"
 
 
-class UserGroup(JSSContainerObject):
+class UserGroup(Container):
     _endpoint_path = "usergroups"
 
 
-class VPPAccount(JSSContainerObject):
+class VPPAccount(Container):
     _endpoint_path = "vppaccounts"
     root_tag = "vpp_account"
 
 
-class VPPAssignment(JSSContainerObject):
+class VPPAssignment(Container):
     _endpoint_path = "vppassignments"
 
 
-class VPPInvitation(JSSContainerObject):
+class VPPInvitation(Container):
     _endpoint_path = "vppinvitations"
 
 
-class Webhook(JSSContainerObject):
+class Webhook(Container):
     _endpoint_path = "webhooks"
 
 
