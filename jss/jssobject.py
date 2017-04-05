@@ -70,15 +70,9 @@ class JSSObject(PrettyElement):
         self.jss = jss
         self.cached = False
 
-        if isinstance(data, ElementTree.Element):
-            # Turn Elements into PrettyElements (adds pretty printing
-            # and fancy attribute finding).
-            super(JSSObject, self).__init__(data)
-
-        else:
-            raise TypeError(
-                "JSSObjects data argument must be of type "
-                "xml.etree.ElemenTree.Element.")
+        # Turn Elements into PrettyElements (adds pretty printing
+        # and fancy attribute finding).
+        super(JSSObject, self).__init__(data)
 
     @property
     def cached(self):
@@ -98,22 +92,17 @@ class JSSObject(PrettyElement):
         self._cached = val
 
     @classmethod
-    def build_query(cls, data):
+    def build_query(cls, *args, **kwargs):
         """Return the path for query based on data type and contents.
 
         Args:
-            data (None): Must be None. This is in-place to mimic other,
-                more featured object types.
+            *args, **kwargs: Left for compatibility with more
+            full-featured subclasses' overrides.
 
         Returns:
             str path construction for this class to query.
         """
-        # TODO: Do we need to test for data?
-        if data is not None:
-            raise TypeError(
-                "This object cannot be queried by %s." % data)
-        else:
-            return cls._endpoint_path
+        return cls._endpoint_path
 
     @property
     def url(self):
@@ -322,14 +311,16 @@ class Container(JSSObject):
 
     # Overrides ###############################################################
     def __init__(self, jss, data, **kwargs):
-        """Initialize a new JSSObject
+        """Initialize a new JSSObject from scratch or from XML data.
 
         Args:
             jss: JSS object.
-            data: xml.etree.ElementTree.Element data to use for
-                creating the object OR a string name to use for creating
-                a new object (provided it has an implemented _new()
-                method.
+            data (xml.etree.ElementTree.Element, Identity, str): XML
+                data to use for creating the object, a name to use for
+                creating a new object, or an Identity object reprsenting
+                basic object info.
+            kwargs (str): Key/value pairs to be added to the object when
+                building one from scratch.
         """
         self.jss = jss
         self._basic_id = self._basic_name = ""

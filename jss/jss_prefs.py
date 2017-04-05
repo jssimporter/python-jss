@@ -107,7 +107,8 @@ class JSSPrefs(object):
 
         Raises:
             JSSError if using an unsupported OS.
-        """ if preferences_file is None:
+        """
+        if preferences_file is None:
             if is_osx():
                 preferences_file = os.path.join(
                     "~", "Library", "Preferences", PREFS_DEFAULT)
