@@ -36,7 +36,9 @@ DATE_FMT = "%Y/%m/%d-%H:%M:%S.%f"
 _MATCH = "match"
 
 
-Identity = collections.namedtuple('Identity', ['id', 'name'])
+class Identity(dict):
+    """Subclass of dict used simply for type-checking."""
+    pass
 
 
 class JSSObject(PrettyElement):
@@ -327,7 +329,7 @@ class Container(JSSObject):
                 building one from scratch.
         """
         self.jss = jss
-        self._basic_id = self._basic_name = ""
+        self._basic_identity = {"name": "", "id": ""}
 
         if isinstance(data, basestring):
             self._new(data, **kwargs)
@@ -348,8 +350,7 @@ class Container(JSSObject):
             # listing operation.
             new_xml = PrettyElement(tag=self.root_tag)
             super(Container, self).__init__(jss, new_xml)
-            self._basic_id = data.id
-            self._basic_name = data.name
+            self._basic_identity = Identity(data)
 
         else:
             raise TypeError(
@@ -412,22 +413,21 @@ class Container(JSSObject):
         Returns:
             str path construction for this class to query.
         """
-        if data is None:
-            return cls._endpoint_path
+        url_components = [cls._endpoint_path]
 
         try:
             data = int(data)
         except (ValueError, TypeError):
             pass
         if isinstance(data, int):
-            url = os.path.join(cls._endpoint_path, cls._id_path, str(data))
+            url_components.extend([cls._id_path, str(data)])
 
         elif isinstance(data, basestring):
             if "=" in data:
                 key, value = data.split("=")   # pylint: disable=no-member
                 if key in cls.search_types:
-                    url = os.path.join(
-                        cls._endpoint_path, cls.search_types[key], value)
+                    url_components.extend([cls.search_types[key], value])
+
                 else:
                     raise TypeError(
                         "This object cannot be queried by %s." % key)
@@ -435,20 +435,17 @@ class Container(JSSObject):
             elif "*" in data and _MATCH in cls.search_types:
                 # If wildcard char present, make this a match search if
                 # possible
-                url = os.path.join(
-                    cls._endpoint_path, cls.search_types[_MATCH], data)
+                url_components.extend([cls.search_types[_MATCH], data])
             else:
-                url = os.path.join(
-                    cls._endpoint_path, cls.search_types[cls.default_search],
-                    data)
+                url_components.extend(
+                    [cls.search_types[cls.default_search], data])
 
         if kwargs and all(key in cls.allowed_kwargs for key in kwargs):
             kwargs = cls._handle_kwargs(kwargs)
-            extra_paths = []
             for key, val in kwargs.items():
-                extra_paths.extend(cls._urlify_arg(key, val))
+                url_components.extend(cls._urlify_arg(key, val))
 
-            url = os.path.join(url, *extra_paths)
+        url = os.path.join(*url_components)
 
         return url
 
@@ -464,10 +461,12 @@ class Container(JSSObject):
             if not isinstance(val, list):
                 val = val.split("&")
 
-            if not "general" in val:
+            # If this is not a "basic" subset, and it's missing
+            # "general", add it in, because we need the ID.
+            if all(k not in val for k in ("general", "basic")):
                 val.append("general")
 
-            return ['subset', "&".join(subset)]
+            return ['subset', "&".join(val)]
 
         elif key == 'date_range':
             start, end = val
@@ -518,7 +517,7 @@ class Container(JSSObject):
             except PostError as err:
                 raise PostError(err)
 
-            self._basic_id = id_
+            self._basic_identity["id"] = id_
             # Replace current instance's data with new, JSS-validated data.
             # and update cached time.
             self.retrieve()
@@ -606,7 +605,8 @@ class Container(JSSObject):
     def name(self):
         """Return object name or None."""
         if not self.cached:
-            name = self._basic_name
+            # name = self._basic_name
+            name = self._basic_identity["name"]
         else:
             name = self.findtext("name") or self.findtext("general/name")
         return name
@@ -619,7 +619,8 @@ class Container(JSSObject):
             path = "general/name"
         else:
             raise JSSError("Name property couldn't be found!")
-        self._basic_name = self.find('name').text = name
+        # self._basic_name = self.find('name').text = name
+        self._basic_identity["name"] = self.find('name').text = name
 
     @property
     def id(self):   # pylint: disable=invalid-name
@@ -631,7 +632,8 @@ class Container(JSSObject):
         # them, and having to convert to str all over the place is
         # gross. str equivalency still works.
         if not self.cached or self.cached == "Unsaved":
-            id_ = self._basic_id
+            # id_ = self._basic_id
+            id_ = self._basic_identity["id"]
         else:
             id_ = self.findtext("id") or self.findtext("general/id")
         # If no ID has been found, this object hasn't been POSTed to the
