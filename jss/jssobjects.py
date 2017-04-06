@@ -135,7 +135,9 @@ class Computer(Container):
     search_types = {"name": "name", "serial_number": "serialnumber",
                     "udid": "udid", "macaddress": "macadress",
                     "match": "match"}
-    allowed_kwargs = ('subset',)
+    # The '/computers/match/name/{matchname}' variant is not supported
+    # here because in testing, it didn't actually do anything.
+    allowed_kwargs = ('subset', 'match')
 
     @property
     def mac_addresses(self):
@@ -147,9 +149,6 @@ class Computer(Container):
         if self.findtext("general/alt_mac_address"):
             mac_addresses.append(self.findtext("general/alt_mac_address"))
             return mac_addresses
-
-    # TODO: Reimplement oddball computers/subset/basic endpoint
-    # Needs an extended identity or override of __init__?
 
 
 class ComputerApplication(Container):

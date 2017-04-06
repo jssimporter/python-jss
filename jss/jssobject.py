@@ -437,7 +437,7 @@ class Container(JSSObject):
                 # If wildcard char present, make this a match search if
                 # possible
                 url_components.extend([cls.search_types[_MATCH], data])
-            else:
+            elif data:
                 url_components.extend(
                     [cls.search_types[cls.default_search], data])
 
