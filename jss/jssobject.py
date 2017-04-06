@@ -266,6 +266,10 @@ class Container(JSSObject):
         cached: False, "Unsaved" for newly created objects that have
             not been POSTed to the JSS, or datetime.datetime since last
             retrieval.
+        kwargs (dict): Keyword argument dictionary used in the original
+            GET request to retrieve this object. By default, kwargs are
+            applied to subsequent `retrieve()` operations unless
+            cleared.
         can_get: Bool whether object allows a GET request.
         can_put: Bool whether object allows a PUT request.
         can_post: Bool whether object allows a POST request.
@@ -331,6 +335,7 @@ class Container(JSSObject):
         """
         self.jss = jss
         self._basic_identity = Identity(name="", id="")
+        self.kwargs = {}
 
         if isinstance(data, basestring):
             self._new(data, **kwargs)
@@ -352,6 +357,8 @@ class Container(JSSObject):
             new_xml = PrettyElement(tag=self.root_tag)
             super(Container, self).__init__(jss, new_xml)
             self._basic_identity = Identity(data)
+            # Store any kwargs used in retrieving this object.
+            self.kwargs = kwargs
 
         else:
             raise TypeError(
@@ -373,6 +380,17 @@ class Container(JSSObject):
         # Give findtext a default non-integer value so that it won't
         # ever compare equal if not found.
         return any(i.findtext("id", "Nay") == other_id for i in tags)
+
+    def retrieve(self, clear_kwargs=False):
+        """Replace this object's data with JSS data, reset cache-age.
+
+        Args:
+            clear_kwargs (bool): If True, clear the stored request
+                kwargs prior to retrieving the full record.
+        """
+        if clear_kwargs:
+            self.kwargs = {}
+        super(Container, self).retrieve()
 
     @classmethod
     def build_query(cls, data, **kwargs):
@@ -441,17 +459,23 @@ class Container(JSSObject):
                 url_components.extend(
                     [cls.search_types[cls.default_search], data])
 
-        if kwargs and all(key in cls.allowed_kwargs for key in kwargs):
-            kwargs = cls._handle_kwargs(kwargs)
-            for key, val in kwargs.items():
-                url_components.extend(cls._urlify_arg(key, val))
+        url_components.extend(cls._process_kwargs(kwargs))
 
         url = os.path.join(*url_components)
 
         return url
 
     @classmethod
-    def _handle_kwargs(csl, kwargs):
+    def _process_kwargs(cls, kwargs):
+        kwarg_urls = []
+        if kwargs and all(key in cls.allowed_kwargs for key in kwargs):
+            kwargs = cls._handle_kwargs(kwargs)
+            for key, val in kwargs.items():
+                kwarg_urls.extend(cls._urlify_arg(key, val))
+        return kwarg_urls
+
+    @classmethod
+    def _handle_kwargs(cls, kwargs):
         """Do nothing. Can be overriden by classes which need it."""
         return kwargs
 
@@ -485,7 +509,9 @@ class Container(JSSObject):
 
         For example: "computers/id/451"
         """
-        return os.path.join(self._endpoint_path, self._id_path, self.id)
+        url_components = [self._endpoint_path, self._id_path, self.id]
+        url_components.extend(self._process_kwargs(self.kwargs))
+        return os.path.join(*url_components)
 
     def save(self):
         """Update or create a new object on the JSS.

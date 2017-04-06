@@ -555,7 +555,7 @@ def add_search_method(cls, name):
             data = data.find(obj_type.container)
 
         if data.find("size") is not None:
-            return QuerySet.from_response(obj_type, data, self)
+            return QuerySet.from_response(obj_type, data, self, **kwargs)
         else:
             return obj_type(self, data)
 

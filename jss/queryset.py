@@ -160,7 +160,7 @@ class QuerySet(list):
         return (item.id for item in self)
 
     @classmethod
-    def from_response(cls, obj_class, response, jss=None):
+    def from_response(cls, obj_class, response, jss=None, **kwargs):
         """Build a QuerySet from a listing Response."""
         response_objects = (
             i for i in response if i is not None and i.tag != "size")
@@ -170,6 +170,6 @@ class QuerySet(list):
             response_objects)
         identities = (Identity(d) for d in dicts)
 
-        objects = [obj_class(jss, data=i) for i in identities]
+        objects = [obj_class(jss, data=i, **kwargs) for i in identities]
 
         return cls(objects)
