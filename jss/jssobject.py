@@ -20,6 +20,7 @@ Base Classes representing JSS database objects and their API endpoints
 
 
 import collections
+import copy
 import cPickle
 import datetime as dt
 import gzip
@@ -329,7 +330,7 @@ class Container(JSSObject):
                 building one from scratch.
         """
         self.jss = jss
-        self._basic_identity = {"name": "", "id": ""}
+        self._basic_identity = Identity(name="", id="")
 
         if isinstance(data, basestring):
             self._new(data, **kwargs)
@@ -600,6 +601,17 @@ class Container(JSSObject):
                 kwargs[key] = kwargs[key].name
 
         target_key.text = kwargs.get(key, val)
+
+    @property
+    def basic(self):
+        """Returns a copy of the basic identity information
+
+        For most objects, this is just ID and name. Computers have a
+        'basic' subset that includes some other data as well.
+
+        The returned data is a copy to enforce being read-only.
+        """
+        return copy.copy(self._basic_identity)
 
     @property
     def name(self):
