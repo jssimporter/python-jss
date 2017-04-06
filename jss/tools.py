@@ -77,7 +77,7 @@ def convert_response_to_text(response):
         if content_line:
             error.append(content_line.group(1))
 
-    return ". ".join(error)
+    return ". ".join(error) + " {}.".format(response.url)
 
 
 def error_handler(exception_cls, response):

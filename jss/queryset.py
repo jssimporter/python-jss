@@ -20,7 +20,7 @@ result of all queries in python-jss.
 """
 
 
-from collections import MutableMapping
+from collections import defaultdict
 import cPickle
 import datetime
 import os
@@ -58,21 +58,49 @@ class QuerySet(list):
 
     def __str__(self):
         """Make data human readable."""
-        name_max = max(len(item.name) for item in self)
-        id_max = max(len(str(item.id)) for item in self)
-        cache_max = len('Cached')
-        results = ["{} QuerySet".format(
-            self.contained_class.__name__)]
+        # Make ID, Name first, no matter what.
+        sort_keys = ["id", "name"]
+        if self:
+            sort_keys.extend([
+                key for key in self[0]._basic_identity.keys() if
+                key not in sort_keys])
 
-        lbl = STR_FMT.format(
-            "ID", id_max, "Name", name_max, "Cached", cache_max)
-        bar = len(lbl) * '-'
-        results.extend([bar, lbl, bar])
+        # Build a dict of max lengths per column for table output.
+        lengths = defaultdict(int)
         for item in self:
-            cached = str(
-                item.cached if isinstance(item.cached, bool) else 'True')
-            results.append(STR_FMT.format(
-                item.id, id_max, item.name, name_max, cached, cache_max))
+            for key in sort_keys:
+                val = item._basic_identity[key] or ""
+                length = max(len(key), len(val))
+                if length > lengths[key]:
+                    lengths[key] = length
+
+        # Build a format string for row output.
+        format_strings = []
+        for key in sort_keys:
+            length = lengths[key]
+            format_strings.append("{{data[{}]:>{}}}".format(key, length))
+
+        cached = 'cached'
+        cached_format = '| {{cached:>{}}} |'.format(len(cached))
+
+        fmt = "| " + " | ".join(format_strings) + cached_format
+
+        # Begin building output with header lines.
+        results = ["{} QuerySet".format(self.contained_class.__name__)]
+        headers = {key: key for key in lengths}
+        header_line = fmt.format(data=headers, cached="cached")
+        bar = len(header_line) * '-'
+        results.extend([bar, header_line, bar])
+
+        str_cached = (
+            lambda i: str(i.cached) if isinstance(i.cached, bool) else 'True')
+
+        table = [
+            fmt.format(data=item._basic_identity, cached=str_cached(item)) for
+            item in self]
+        results.extend(table)
+
+        results.append(bar)
         return "\n".join(results)
 
     def __repr__(self):
@@ -137,9 +165,10 @@ class QuerySet(list):
         response_objects = (
             i for i in response if i is not None and i.tag != "size")
 
-        identities = (
-            Identity(name=obj.findtext('name'), id=obj.findtext('id'))
-            for obj in response_objects)
+        dicts = (
+            {child.tag: child.text for child in item} for item in
+            response_objects)
+        identities = (Identity(d) for d in dicts)
 
         objects = [obj_class(jss, data=i) for i in identities]
 

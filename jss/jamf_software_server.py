@@ -29,7 +29,7 @@ from xml.etree import ElementTree
 from . import distribution_points
 from .curl_adapter import CurlAdapter
 from .exceptions import GetError, PutError, PostError, DeleteError
-from .jssobject import JSSObject, Identity
+from .jssobject import JSSObject
 from . import jssobjects
 from .queryset import QuerySet
 from .tools import error_handler, quote_and_encode
