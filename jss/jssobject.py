@@ -752,7 +752,7 @@ class Container(JSSObject):
 
         This method determines the correct list representation of an
         object and adds it to "location". For example, add a Computer to
-        a ComputerGroup. The ComputerGroup will not have a child
+        a ComputerGroup. The ComputerGroup will now have a child
         Computers/Computer tag with subelements "name" and "id".
 
         Args:
