@@ -97,7 +97,7 @@ class CurlAdapter(object):
             else:
                 raise JSSError('Unknown curl error')
 
-        return CurlResponseAdapter(response)
+        return CurlResponseAdapter(response, url)
 
     def _build_command(
         self, url, headers=None, data=None, files=None, **kwargs):
@@ -161,8 +161,9 @@ class CurlAdapter(object):
 class CurlResponseAdapter(object):
     """Wrapper for Curl responses"""
 
-    def __init__(self, response):
+    def __init__(self, response, url):
         self.response = response
+        self.url = url
         content, _, status_code = response.rpartition("|")
         try:
             self.status_code = int(status_code)
