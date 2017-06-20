@@ -70,10 +70,15 @@ class PrettyElement(ElementTree.Element):
         return PrettyElement(tag, attrib)
 
     def append(self, item):
-        self._children.append(PrettyElement(item))
+        self._children.append(self._convert(item))
 
     def insert(self, index, item):
-        self._children.insert(index, PrettyElement(item))
+        self._children.insert(index, self._convert(item))
 
     def extend(self, items):
-        self._children.extend(PrettyElement(item) for item in items)
+        self._children.extend(self._convert(item) for item in items)
+
+    def _convert(self, item):
+        """If item is not a PrettyElement, make it one"""
+        return item if isinstance(item, PrettyElement) else PrettyElement(item)
+
