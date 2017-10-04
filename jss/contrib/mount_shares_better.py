@@ -3,10 +3,16 @@
 # https://gist.github.com/pudquick/1362a8908be01e23041d
 # https://michaellynn.github.io/2015/08/08/learn-you-a-better-pyobjc-bridgesupport-signature/
 
+# This version has been modified by Shea Craig to handle High Sierra.
+
 """mount_shares_better.py
 
 Mount file shares on OS X.
 """
+
+
+from distutils.version import StrictVersion
+import subprocess
 
 # PyLint cannot properly find names inside Cocoa libraries, so issues bogus
 # No name 'Foo' in module 'Bar' warnings. Disable them.
@@ -50,13 +56,21 @@ def mount_share(share_path):
         The mount point or raises an error.
     """
     sh_url = CFURLCreateWithString(None, share_path, None)
+
     # Set UI to reduced interaction
-    open_options = {NetFS.kNAUIOptionKey: NetFS.kNAUIOptionNoUI}
+    if is_high_sierra():
+        open_options = None
+    else:
+        open_options = {NetFS.kNAUIOptionKey: NetFS.kNAUIOptionNoUI}
     # Allow mounting sub-directories of root shares
-    mount_options = {NetFS.kNetFSAllowSubMountsKey: True}
+    if is_high_sierra():
+        mount_options = None
+    else:
+        mount_options = {NetFS.kNetFSAllowSubMountsKey: True}
     # Build our connected pointers for our results
-    result, output = NetFS.NetFSMountURLSync(sh_url, None, None, None,
-                                             open_options, mount_options, None)
+    result, output = NetFS.NetFSMountURLSync(
+        sh_url, None, None, None, open_options, mount_options, None)
+
     # Check if it worked
     if result != 0:
         raise Exception('Error mounting url "%s": %s' % (share_path, output))
@@ -64,31 +78,7 @@ def mount_share(share_path):
     return str(output[0])
 
 
-def mount_share_at_path(share_path, mount_path):
-    """Mounts a share at the specified path
-
-    Args:
-        share_path: String URL with all auth info to connect to file share.
-        mount_path: Path to mount share on.
-
-    Returns:
-        The mount point or raises an error
-    """
-    sh_url = CFURLCreateWithString(None, share_path, None)
-    mo_url = CFURLCreateWithString(None, mount_path, None)
-    # Set UI to reduced interaction
-    open_options = {NetFS.kNAUIOptionKey: NetFS.kNAUIOptionNoUI}
-    # Allow mounting sub-directories of root shares
-    # Also specify the share should be mounted directly at (not under)
-    # mount_path
-    mount_options = {NetFS.kNetFSAllowSubMountsKey: True,
-                     NetFS.kNetFSMountAtMountDirKey: True}
-    # Mount!
-    result, output = NetFS.NetFSMountURLSync(sh_url, mo_url, None, None,
-                                             open_options, mount_options, None)
-    # Check if it worked
-    if result != 0:
-        raise Exception('Error mounting url "%s" at path "%s": %s' %
-                        (share_path, mount_path, output))
-    # Return the mountpath
-    return str(output[0])
+def is_high_sierra():
+    version = StrictVersion(
+        subprocess.check_output(['sw_vers', '-productVersion']).strip())
+    return version >= StrictVersion('10.13')
