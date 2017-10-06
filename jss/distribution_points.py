@@ -111,8 +111,9 @@ class DistributionPoints(object):
 
     def _get_auto_configured_dp(self, repo):
         "Return a file share DP from auto-configured data."""
+        dpt = None
         for dp_object in self.dp_info:
-            if repo["name"] == dp_object.findtext("name"):
+            if repo["name"] == dp_object.name:
                 url = dp_object.findtext("ip_address")
                 connection_type = dp_object.findtext("connection_type")
                 share_name = dp_object.findtext("share_name")
@@ -143,7 +144,12 @@ class DistributionPoints(object):
                         username=username, password=password,
                         jss=self.jss)
 
-                return dpt
+        if not dpt:
+            raise ValueError(
+                "Error auto-configuring distribution point '{}'!".format(
+                    repo["name"]))
+
+        return dpt
 
     def _get_explicitly_configured_dp(self, repo):
         "Return a file share DP from auto-configured data."""
