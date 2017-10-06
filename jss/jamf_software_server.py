@@ -48,9 +48,6 @@ class JSS(object):
         password: String API password for user.
         repo_prefs: List of dicts of repository configuration data.
         verbose: Boolean whether to include extra output.
-        jss_migrated: Boolean whether JSS has had scripts "migrated".
-            Used to determine whether to upload scripts in Script
-            object XML or as files to the distribution points.
         session: "Session" used to make all HTTP requests through
             whichever network adapter is in use (default is CurlAdapter).
         ssl_verify: Boolean whether to verify SSL traffic from the JSS
@@ -70,8 +67,7 @@ class JSS(object):
     # pylint: disable=too-many-arguments
     def __init__(
         self, jss_prefs=None, url=None, user=None, password=None,
-        repo_prefs=None, ssl_verify=True, verbose=False, jss_migrated=False,
-        **kwargs):
+        repo_prefs=None, ssl_verify=True, verbose=False, **kwargs):
         """Setup a JSS for making API requests.
 
         Provide either a JSSPrefs object OR specify url, user, and
@@ -106,10 +102,6 @@ class JSS(object):
             ssl_verify: Boolean whether to verify SSL traffic from the
                 JSS is genuine.
             verbose: Boolean whether to include extra output.
-            jss_migrated: Boolean whether JSS has had scripts
-                "migrated". Used to determine whether to upload scripts
-                in Script object XML or as files to the distribution
-                points.
         """
         if jss_prefs is not None:
             url = jss_prefs.url
@@ -129,7 +121,6 @@ class JSS(object):
         self.password = password
         self.repo_prefs = repo_prefs if repo_prefs else []
         self.verbose = verbose
-        self.jss_migrated = jss_migrated
         self.ssl_verify = ssl_verify
 
         self.distribution_points = distribution_points.DistributionPoints(self)

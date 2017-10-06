@@ -104,6 +104,8 @@ All notable changes to this project will be documented in this file. This projec
   release. Please update code to use the QuerySet API and signature.
 
 ### Removed
+- All references to the `jss_migrated` preference has been removed. This is no
+  longer an issue with current and future JSS versions.
 - Scripts stopped being stored on distribution points with the conclusion
   of version 8, so all distribution point code that did script copying,
   deletion, existence testing, etc, has been removed.

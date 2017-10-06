@@ -165,10 +165,6 @@ class LocalRepository(FileRepository):
     def __init__(self, **connection_args):
         """Set up Local file share.
 
-        If you have migrated your JSS, you need to pass a JSS object as
-        a keyword argument during repository setup, and the JSS object
-        needs the jss_migrated=True preference set.
-
         Args:
             connection_args: Dict with the following key/val pairs:
                 mount_point: Path to a valid mount point.
