@@ -42,7 +42,6 @@ from .tools import (is_osx, is_linux, is_package)
 PKG_FILE_TYPE = '0'
 EBOOK_FILE_TYPE = '1'
 IN_HOUSE_APP_FILE_TYPE = '2'
-SCRIPT_FILE_TYPE = '3'
 
 
 def auto_mounter(original):
@@ -115,49 +114,6 @@ class FileRepository(Repository):
         self._copy(filename, os.path.join(self.connection["mount_point"],
                                           "Packages", basename))
 
-    def copy_script(self, filename, id_=-1):
-        """Copy a script to the repo's Script subdirectory.
-
-        Scripts are copied as files to a path, or, on a "migrated" JSS,
-        are POSTed to the JSS (pass an id if you wish to associate
-        the script with an existing Script object).
-
-        Args:
-            filename: Path for file to copy.
-            id_: Int ID, used _only_ for migrated repos. Default is -1,
-                which creates a new Script.
-        """
-        if ("jss" in self.connection.keys() and
-                self.connection["jss"].jss_migrated):
-            self._copy_script_migrated(filename, id_, SCRIPT_FILE_TYPE)
-        else:
-            basename = os.path.basename(filename)
-            self._copy(filename, os.path.join(self.connection["mount_point"],
-                                              "Scripts", basename))
-
-    def _copy_script_migrated(self, filename, id_=-1,
-                              file_type=SCRIPT_FILE_TYPE):
-        """Upload a script to a migrated JSS's database.
-
-        On a "migrated" JSS, scripts are POSTed to the JSS. Pass an id
-        if you wish to associate the script with an existing Script
-        object, otherwise, it will create a new Script object.
-
-        Args:
-            filename: Path to script file.
-            id_: Int ID of Script object to associate this file with.
-                Default is -1, which creates a new Script.
-        """
-        basefname = os.path.basename(filename)
-
-        resource = open(filename, "rb")
-        headers = {"DESTINATION": "1", "OBJECT_ID": str(id_), "FILE_TYPE":
-                   file_type, "FILE_NAME": basefname}
-        response = self.connection["jss"].session.post(
-            url="%s/%s" % (self.connection["jss"].base_url, "dbfileupload"),
-            data=resource, headers=headers)
-        return response
-
     def _copy(self, filename, destination):   # pylint: disable=no-self-use
         """Copy a file or folder to the repository.
 
@@ -177,15 +133,11 @@ class FileRepository(Repository):
     def delete(self, filename):
         """Delete a file from the repository.
 
-        This method will not delete a script from a migrated JSS.
-        Please remove migrated scripts with jss.Script.delete.
-
         Args:
             filename: String filename only (i.e. no path) of file to
-                delete. Will handle deleting scripts vs. packages
-                automatically.
+                delete.
         """
-        folder = "Packages" if is_package(filename) else "Scripts"
+        folder = "Packages"
         path = os.path.join(self.connection["mount_point"], folder, filename)
         if os.path.isdir(path):
             shutil.rmtree(path)
@@ -201,12 +153,8 @@ class FileRepository(Repository):
             filename: Filename you wish to check. (No path! e.g.:
                 "AdobeFlashPlayer-14.0.0.176.pkg")
         """
-        if is_package(filename):
-            filepath = os.path.join(self.connection["mount_point"],
-                                    "Packages", filename)
-        else:
-            filepath = os.path.join(self.connection["mount_point"],
-                                    "Scripts", filename)
+        filepath = os.path.join(
+            self.connection["mount_point"], "Packages", filename)
         return os.path.exists(filepath)
 
 
@@ -225,11 +173,8 @@ class LocalRepository(FileRepository):
             connection_args: Dict with the following key/val pairs:
                 mount_point: Path to a valid mount point.
                 share_name: The fileshare's name.
-
-                Optional connection arguments (Migrated script support):
-                    jss: A JSS Object. NOTE: jss_migrated must be True
-                        for this to do anything.
         """
+
         super(LocalRepository, self).__init__(**connection_args)
         self.connection["url"] = "local://%s" % self.connection["mount_point"]
 
@@ -413,8 +358,7 @@ class MountedRepository(FileRepository):
 
         Args:
             filename: String filename only (i.e. no path) of file to
-                delete. Will handle deleting scripts vs. packages
-                automatically.
+                delete.
         """
         super(MountedRepository, self).delete(filename)
 
@@ -445,10 +389,7 @@ class MountedRepository(FileRepository):
 
 
 class AFPDistributionPoint(MountedRepository):
-    """Represents an AFP repository.
-
-    For a migrated JSS, please see __init__ and copy_script docs.
-    """
+    """Represents an AFP repository."""
     protocol = "afp"
     fs_type = "afpfs"
     required_attrs = {"url", "mount_point", "username", "password",
@@ -456,10 +397,6 @@ class AFPDistributionPoint(MountedRepository):
 
     def __init__(self, **connection_args):
         """Set up an AFP connection.
-
-        If you have migrated your JSS, you need to pass a JSS object as
-        a keyword argument during repository setup, and the JSS object
-        needs the jss_migrated=True preference set.
 
         Args:
             connection_args: Dict with the following key/val pairs:
@@ -470,10 +407,6 @@ class AFPDistributionPoint(MountedRepository):
                 share_name: The fileshare's name.
                 username: Share R/W username.
                 password: Share R/W password.
-
-                Optional connection arguments (Migrated script support):
-                    jss: A JSS Object. NOTE: jss_migrated must be True
-                        for this to do anything.
         """
         super(AFPDistributionPoint, self).__init__(**connection_args)
         # Check to see if share is mounted, and update mount point
@@ -524,20 +457,13 @@ class AFPDistributionPoint(MountedRepository):
 
 
 class SMBDistributionPoint(MountedRepository):
-    """Represents a SMB distribution point.
-
-    For a migrated JSS, please see __init__ and copy_script docs.
-    """
+    """Represents a SMB distribution point."""
     protocol = "smbfs"
     required_attrs = {"url", "share_name", "mount_point", "domain", "username",
                       "password"}
 
     def __init__(self, **connection_args):
         """Set up a SMB connection.
-
-        If you have migrated your JSS, you need to pass a JSS object as
-        a keyword argument during repository setup, and the JSS object
-        needs the jss_migrated=True preference set.
 
         Args:
             connection_args: Dict with the following key/val pairs:
@@ -549,10 +475,6 @@ class SMBDistributionPoint(MountedRepository):
                 domain: Specify the domain.
                 username: Share R/W username.
                 password: Share R/W password.
-
-                Optional connection arguments (Migrated script support):
-                    jss: A JSS Object. NOTE: jss_migrated must be True
-                        for this to do anything.
         """
         super(SMBDistributionPoint, self).__init__(**connection_args)
         if is_osx():
@@ -659,16 +581,6 @@ class DistributionServer(Repository):
         """
         self._copy(filename, id_=id_, file_type=PKG_FILE_TYPE)
 
-    def copy_script(self, filename, id_=-1):
-        """Copy a script to the distribution server.
-
-        Args:
-            filename: Full path to file to upload.
-            id_: ID of Script object to associate with, or -1 for new
-                Script (default).
-        """
-        self._copy(filename, id_=id_, file_type=SCRIPT_FILE_TYPE)
-
     def _copy(self, filename, id_=-1, file_type=0):
         """Upload a file to the distribution server.
 
@@ -714,11 +626,11 @@ class DistributionServer(Repository):
         # There's no response if it works.
 
     def delete(self, filename):
-        """Delete a package or script from the distribution server.
+        """Delete a package distribution server.
 
-        This method simply finds the Package or Script object from the
-        database with the API GET call and then deletes it. This will
-        remove the file from the database blob.
+        This method simply finds the Package object from the database
+        with the API GET call and then deletes it. This will remove the
+        file from the database blob.
 
         For setups which have file share distribution points, you will
         need to delete the files on the shares also.
@@ -728,17 +640,15 @@ class DistributionServer(Repository):
         """
         if is_package(filename):
             self.connection["jss"].Package(filename).delete()
-        else:
-            self.connection["jss"].Script(filename).delete()
 
     def exists(self, filename):
-        """Check for the existence of a package or script.
+        """Check for the existence of a package.
 
         Unlike other DistributionPoint types, JDS and CDP types have no
         documented interface for checking whether the server and its
         children have a complete copy of a file. The best we can do is
         check for an object using the API /packages URL--JSS.Package()
-        or /scripts and look for matches on the filename.
+        and look for matches on the filename.
 
         If this is not enough, please use the alternate
         exists_with_casper method.  For example, it's possible to create
@@ -758,12 +668,6 @@ class DistributionServer(Repository):
                 if package.findtext("filename") == filename:
                     result = True
                     break
-        else:
-            scripts = self.connection["jss"].Script().retrieve_all()
-            for script in scripts:
-                if script.findtext("filename") == filename:
-                    result = True
-                    break
 
         return result
 
@@ -774,14 +678,12 @@ class DistributionServer(Repository):
         documented interface for checking whether the server and its
         children have a complete copy of a file. The best we can do is
         check for an object using the API /packages URL--JSS.Package()
-        or /scripts and look for matches on the filename.
+        and look for matches on the filename.
 
         If this is not enough, this method uses the results of the
         casper.jxml page to determine if a package exists. This is an
         undocumented feature and as such should probably not be relied
-        upon. Please note, scripts are not listed per-distributionserver
-        like packages. For scripts, the best you can do is use the
-        regular exists method.
+        upon.
 
         It will test for whether the file exists on ALL configured
         distribution servers. This may register False if the JDS is busy
