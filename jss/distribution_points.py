@@ -105,6 +105,10 @@ class DistributionPoints(object):
                 # Add the DP to the list.
                 self._children.append(dpt)
 
+    def __iter__(self):
+        for dp in self._children:
+            yield dp
+
     def _get_auto_configured_dp(self, repo):
         "Return a file share DP from auto-configured data."""
         for dp_object in self.dp_info:
