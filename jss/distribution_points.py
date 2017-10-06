@@ -89,7 +89,7 @@ class DistributionPoints(object):
                     dpt = self._get_auto_configured_dp(repo)
                 # Handle Explictly declared DP's.
                 elif repo.get("type") in ["AFP", "SMB"]:
-                    dpt = self._get_explictly_configured_dp(repo)
+                    dpt = self._get_explicitly_configured_dp(repo)
                 elif repo.get("type") == "JDS":
                     dpt = JDS(jss=self.jss)
                 elif repo.get("type") == "CDP":
@@ -145,7 +145,7 @@ class DistributionPoints(object):
 
                 return dpt
 
-    def _get_explictly_configured_dp(self, repo):
+    def _get_explicitly_configured_dp(self, repo):
         "Return a file share DP from auto-configured data."""
         url = repo["URL"]
 
