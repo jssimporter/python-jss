@@ -486,6 +486,8 @@ class JSS(object):
 
         return all_objects
 
+    def version(self):
+        return self.JSSUser().version.text
 
 # There's a lot of repetition involved in creating the object query
 # methods on JSS, so we create them dynamically at import time.

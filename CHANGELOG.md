@@ -44,6 +44,8 @@ All notable changes to this project will be documented in this file. This projec
 - Automatic `match` search detection for object types that support it. Now you
   can do `j.Computer("MacBook*")` instead of `j.Computer("match=MacBook*")`.
   Match searches will _always_ return a QuerySet.
+- `JSS.version()` method now returns the server's version (using the jssuser
+  endpoint.
 
 ### Changed
 - Moved the `suppress_warnings` preference out of `JSS` and into the requests
