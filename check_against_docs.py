@@ -33,7 +33,9 @@ def main():
     # The page almost never immediately loads, so wait before trying
     # to access elements.
     driver.implicitly_wait(10)
-    driver.get("https://casper.taomechworks.net:8443/api")
+    with open('.test_api_url') as handle:
+        url = handle.read()
+    driver.get(url)
 
     # Find the endpoint name elements
     h2s = driver.find_elements_by_css_selector("h2")
@@ -45,8 +47,12 @@ def main():
     finally:
         driver.quit()
 
+    # Get JSSObject names
     classes = (getattr(jss.jssobjects, cls) for cls in jss.jssobjects.__all__)
     jssobjects = {cls._endpoint_path for cls in classes}
+    # Get "misc" names
+    classes = (getattr(jss.misc_endpoints, cls) for cls in jss.misc_endpoints.__all__)
+    jssobjects.update({cls._endpoint_path for cls in classes})
     # Since we cheat and split accounts into Account and AccountGroup
     jssobjects.add('accounts')
 
