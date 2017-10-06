@@ -242,7 +242,7 @@ class JSSObject(PrettyElement):
         return results
 
 
-# Decorate all public API methods that should trigger a retrival of the
+# Decorate all public API methods that should trigger a retrieval of the
 # object's full data from the JSS.
 cache_triggers = (
     '__getitem__', '__len__', '__setitem__', '__str__', 'copy',
