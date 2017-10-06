@@ -57,7 +57,8 @@ class CurlAdapter(object):
         return self._request(url, headers)
 
     def post(self, url, data=None, headers=None, files=None):
-        header = ['Content-Type: text/xml']
+        content_type = 'text/xml' if not files else 'multipart/form-data'
+        header = ['Content-Type: {}'.format(content_type)]
         if headers:
             header += headers
 
@@ -65,7 +66,8 @@ class CurlAdapter(object):
         return self._request(url, header, data, files, **post_kwargs)
 
     def put(self, url, data=None, headers=None, files=None):
-        header = ['Content-Type: text/xml']
+        content_type = 'text/xml' if not files else 'multipart/form-data'
+        header = ['Content-Type: {}'.format(content_type)]
         if headers:
             header += headers
         put_args = {"--request": "PUT"}
