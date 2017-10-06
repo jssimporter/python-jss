@@ -46,6 +46,9 @@ All notable changes to this project will be documented in this file. This projec
   Match searches will _always_ return a QuerySet.
 - `JSS.version()` method now returns the server's version (using the jssuser
   endpoint.
+- Made the `DistributionPoints` collection class iterable, so if you do need to
+  operate on individual DPs within, you don't need to fool around with the
+  private collection. (See JSSImporter for an example).
 
 ### Changed
 - Moved the `suppress_warnings` preference out of `JSS` and into the requests
