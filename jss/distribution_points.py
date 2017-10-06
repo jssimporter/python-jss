@@ -109,6 +109,9 @@ class DistributionPoints(object):
         for dp in self._children:
             yield dp
 
+    def __len__(self):
+        return len(self._children)
+
     def _get_auto_configured_dp(self, repo):
         "Return a file share DP from auto-configured data."""
         dpt = None
