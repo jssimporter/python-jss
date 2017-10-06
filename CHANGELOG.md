@@ -31,7 +31,8 @@ All notable changes to this project will be documented in this file. This projec
   now use the objects as keys in a dictionary, or other mapping.
 - Implemented new endpoints and their corresponding objects:
   `AllowedFileExtension`, `ComputerApplicationUsage`, `ComputerApplication`,
-  `ComputerHardwareSoftwareReport`, `ComputerManagement`, `HealthcareManager`,
+  `ComputerHardwareSoftwareReport`, `ComputerManagement`, `HealthcareListener`,
+  `HealthcareListerRule`, `JSONWebTokenConfigurations`,
   `InfrastructureManager`, `MobileDeviceHistory`, `Webhook`.
 - Added compression argument to `JSS.pickle_all()` (defaults to `True`) to
   compress pickle output. A lot.

@@ -41,8 +41,9 @@ __all__ = (
     'ComputerInventoryCollection', 'ComputerInvitation', 'ComputerManagement',
     'ComputerReport', 'Department', 'DirectoryBinding',
     'DiskEncryptionConfiguration', 'DistributionPoint', 'DockItem', 'EBook',
-    'GSXConnection', 'HealthcareListener', 'IBeacon', 'InfrastructureManager',
-    'JSSUser', 'LDAPServer', 'LicensedSoftware', 'MacApplication',
+    'GSXConnection', 'HealthcareListener', 'HealthcareListenerRule', 'IBeacon',
+    'InfrastructureManager', 'JSSUser', 'JSONWebTokenConfigurations',
+    'LDAPServer', 'LicensedSoftware', 'MacApplication',
     'ManagedPreferenceProfile', 'MobileDevice', 'MobileDeviceApplication',
     'MobileDeviceCommand', 'MobileDeviceConfigurationProfile',
     'MobileDeviceEnrollmentProfile', 'MobileDeviceExtensionAttribute',
@@ -333,6 +334,13 @@ class HealthcareListener(Container):
     search_types = {"id": "id"}
 
 
+class HealthcareListenerRule(Container):
+    _endpoint_path = "healthcarelistenerrule"
+    can_delete = False
+    default_search = "id"
+    search_types = {"id": "id"}
+
+
 class IBeacon(Container):
     _endpoint_path = "ibeacons"
     root_tag = "ibeacon"
@@ -352,6 +360,12 @@ class JSSUser(JSSObject):
     can_post = False
     can_put = False
     can_delete = False
+
+
+class JSONWebTokenConfigurations(JSSObject):
+    _endpoint_path = "jsonwebtokenconfigurations"
+    default_search = "id"
+    search_types = {"id": "id"}
 
 
 class LDAPServer(Container):
