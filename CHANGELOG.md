@@ -50,6 +50,8 @@ All notable changes to this project will be documented in this file. This projec
 - Made the `DistributionPoints` collection class iterable, so if you do need to
   operate on individual DPs within, you don't need to fool around with the
   private collection. (See JSSImporter for an example).
+- Added `Script.add_script()` to handle XML escaping and adding a script
+  payload to a `Script` object.
 
 ### Changed
 - Moved the `suppress_warnings` preference out of `JSS` and into the requests

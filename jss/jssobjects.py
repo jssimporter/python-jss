@@ -22,6 +22,7 @@ Classes representing JSS database objects and their API endpoints
 import mimetypes
 import os
 from xml.etree import ElementTree
+from xml.sax.saxutils import escape
 
 import requests
 
@@ -860,6 +861,23 @@ class SavedSearch(Container):
 class Script(Container):
     _endpoint_path = "scripts"
     root_tag = "script"
+
+    def add_script(self, script_contents):
+        """Add script code to the correct tag in the Script object.
+
+        The script content will be XML encoded prior to addition,
+        so there's no need to encode prior to addition with this
+        method.
+
+        Args:
+            script_contents (str, unicode): Script code.
+        """
+        escaped_script_contents = escape(script_contents)
+        script_contents_tag = self.find("script_contents")
+        if not script_contents_tag:
+            script_contents_tag = ElementTree.SubElement(
+                self, "script_contents")
+        script_contents_tag.text = escaped_script_contents
 
 
 class Site(Container):
