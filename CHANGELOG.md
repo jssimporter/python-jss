@@ -102,6 +102,9 @@ All notable changes to this project will be documented in this file. This projec
   release. Please update code to use the QuerySet API and signature.
 
 ### Removed
+- Scripts stopped being stored on distribution points with the conclusion
+  of version 8, so all distribution point code that did script copying,
+  deletion, existence testing, etc, has been removed.
 - `JSSObjectList.retrieve()` has been removed as it's no longer needed.
 - `JSSObjectList.pickle()` and `from_pickle()`. This code is just cruft; it's
   just about the same amount of work to pickle it on your own.

@@ -15,15 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """distribution_points.py
 
-Utility class for synchronizing packages and scripts to Jamf file
-repositories, CDPs, and JDSs.
+Utility class for synchronizing packages to Jamf file repositories,
+CDPs, and JDSs.
 """
 
 
 import os
 
-from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
-                                 JDS, CDP, LocalRepository)
+from .distribution_point import (
+    AFPDistributionPoint, SMBDistributionPoint, JDS, CDP, LocalRepository)
 from .exceptions import JSSError
 from .tools import (is_osx, is_linux, is_package)
 
@@ -200,16 +200,16 @@ class DistributionPoints(object):
         self._children.pop(index)
 
     def copy(self, filename, id_=-1, pre_callback=None, post_callback=None):
-        """Copy a package or script to all repos.
+        """Copy a package to all repos.
 
         Determines appropriate location (for file shares) and type based
         on file extension.
 
         Args:
             filename: String path to the local file to copy.
-            id_: Package or Script object ID to target. For use with JDS
-                and CDP DP's only. If uploading a package that does not
-                have a corresponding object, use id_ of -1, which is the
+            id_: Package object ID to target. For use with JDS and CDP
+                DP's only. If uploading a package that does not have a
+                corresponding object, use id_ of -1, which is the
                 default.
             pre_callback: Func to call before each distribution point
                 starts copying. Should accept a Repository connection
@@ -223,9 +223,6 @@ class DistributionPoints(object):
         for repo in self._children:
             if is_package(filename):
                 copy_method = repo.copy_pkg
-            else:
-                # All other file types can go to scripts.
-                copy_method = repo.copy_script
             if pre_callback:
                 pre_callback(repo.connection)
             copy_method(filename, id_)
@@ -243,21 +240,6 @@ class DistributionPoints(object):
         """
         for repo in self._children:
             repo.copy_pkg(filename, id_)
-
-    def copy_script(self, filename, id_=-1):
-        """Copy a script to all repositories.
-
-        Takes into account whether a JSS has been migrated. See the
-        individual DistributionPoint types for more information.
-
-        Args:
-            filename: String path to the local file to copy.
-            id_: Integer ID you wish to associate script with for a JDS
-                or CDP only. Default is -1, which is used for creating
-                a new script object in the database.
-        """
-        for repo in self._children:
-            repo.copy_script(filename, id_)
 
     def delete(self, filename):
         """Delete a file from all repositories which support it.
