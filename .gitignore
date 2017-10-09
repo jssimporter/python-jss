@@ -1,8 +1,11 @@
 *.pyc
 *.swp
+.*
 /test-scripts
 /dist
 /build
 MANIFEST
 /python_jss.egg-info
 .ropeproject
+venv
+dev
