@@ -26,6 +26,7 @@ import tools
 
 
 _DUNDER_PATTERN = re.compile(r'__[a-zA-Z]+__')
+_RESERVED_METHODS = ('cached',)
 
 
 class PrettyElement(ElementTree.Element):
@@ -48,9 +49,12 @@ class PrettyElement(ElementTree.Element):
     __str__ = tools.element_str
 
     def __getattr__(self, name):
-        if re.match(_DUNDER_PATTERN, name):
+        # Any dunder methods should be passed as is to the superclass.
+        # There are also some method names which need to be assumed to
+        # be from the superclass, lest we endlessly loop.
+        if re.match(_DUNDER_PATTERN, name) or name in _RESERVED_METHODS:
             return super(PrettyElement, self).__getattr__(name)
-        result = self.find(name)
+        result = super(PrettyElement, self).find(name)
         if result is not None:
             return result
         else:
