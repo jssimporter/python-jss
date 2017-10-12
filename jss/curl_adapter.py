@@ -33,6 +33,7 @@ JSS object beginning with python-jss 2.0.0.
 """
 
 
+import copy
 import subprocess
 
 from .exceptions import JSSError, SSLVerifyError
@@ -47,6 +48,7 @@ class CurlAdapter(object):
             True.
         use_tls: Whether to use TLS. Defaults to True.
     """
+    base_headers = ['Accept: application/xml']
 
     def __init__(self):
         self.auth = ('', '')
@@ -134,9 +136,11 @@ class CurlAdapter(object):
         if self.use_tls:
             command.append("--tlsv1")
 
+        compiled_headers = copy.copy(self.base_headers)
         if headers:
-            for header in headers:
-                command += ['--header', header]
+            compiled_headers += headers
+        for header in compiled_headers:
+            command += ['--header', header]
 
         if data:
             command += ["--data", data]
