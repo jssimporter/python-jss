@@ -89,7 +89,7 @@ class CurlAdapter(object):
         # point of contact, so just do it here and keep it Unicode
         # everywhere else.
         command = [
-            item.encode('UTF-8') if isinstance(item, unicode) else item
+            item.encode('UTF-8') if isinstance(item, unicode) else str(item)
             for item in command]
 
         try:
