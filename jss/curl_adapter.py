@@ -71,7 +71,8 @@ class CurlAdapter(object):
         content_type = 'text/xml' if not files else 'multipart/form-data'
         header = ['Content-Type: {}'.format(content_type)]
         if headers:
-            header += headers
+            [header.append('{}: {}'.format(k, v)) for k, v in headers.iteritems()]
+            
         put_args = {"--request": "PUT"}
         return self._request(url, header, data, files, **put_args)
 
@@ -89,7 +90,7 @@ class CurlAdapter(object):
         # point of contact, so just do it here and keep it Unicode
         # everywhere else.
         command = [
-            item.encode('UTF-8') if isinstance(item, unicode) else str(item)
+            item.encode('UTF-8') if isinstance(item, unicode) else item
             for item in command]
 
         try:
@@ -143,7 +144,10 @@ class CurlAdapter(object):
             command += ['--header', header]
 
         if data:
-            command += ["--data", data]
+            if isinstance(data, file):
+                command += ["--data", "@{}".format(data.name)]
+            else:
+                command += ["--data", data]
 
         if files:
             path = files['name'][1].name
