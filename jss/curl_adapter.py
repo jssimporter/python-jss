@@ -62,7 +62,7 @@ class CurlAdapter(object):
         content_type = 'text/xml' if not files else 'multipart/form-data'
         header = ['Content-Type: {}'.format(content_type)]
         if headers:
-            header += headers
+            [header.append('{}: {}'.format(k, v)) for k, v in headers.iteritems()]
 
         post_kwargs = {"--request": "POST"}
         return self._request(url, header, data, files, **post_kwargs)
