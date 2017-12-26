@@ -23,7 +23,6 @@ curl replacement using NSURLConnection and friends
 """
 
 import os
-import xattr
 from urlparse import urlparse
 
 # builtin super doesn't work with Cocoa classes in recent PyObjC releases.
@@ -289,36 +288,37 @@ class Gurl(NSObject):
     def get_stored_headers(self):
         '''Returns any stored headers for self.destination_path'''
         # try to read stored headers
-        try:
-            stored_plist_str = xattr.getxattr(
-                self.destination_path, self.GURL_XATTR)
-        except (KeyError, IOError):
-            return {}
-        data = buffer(stored_plist_str)
-        dataObject, plistFormat, error = (
-            NSPropertyListSerialization.
-            propertyListFromData_mutabilityOption_format_errorDescription_(
-                data, NSPropertyListMutableContainersAndLeaves, None, None))
-        if error:
-            return {}
-        else:
-            return dataObject
+        # try:
+        #     stored_plist_str = xattr.getxattr(
+        #         self.destination_path, self.GURL_XATTR)
+        # except (KeyError, IOError):
+        return {}
+        # data = buffer(stored_plist_str)
+        # dataObject, plistFormat, error = (
+        #     NSPropertyListSerialization.
+        #     propertyListFromData_mutabilityOption_format_errorDescription_(
+        #         data, NSPropertyListMutableContainersAndLeaves, None, None))
+        # if error:
+        #     return {}
+        # else:
+        #     return dataObject
 
     def store_headers(self, headers):
         '''Store dictionary data as an xattr for self.destination_path'''
-        plistData, error = (
-            NSPropertyListSerialization.
-            dataFromPropertyList_format_errorDescription_(
-                headers, NSPropertyListXMLFormat_v1_0, None))
-        if error:
-            string = ''
-        else:
-            string = str(plistData)
-        try:
-            xattr.setxattr(self.destination_path, self.GURL_XATTR, string)
-        except IOError, err:
-            self.log('Could not store metadata to %s: %s'
-                     % (self.destination_path, err))
+        pass
+        # plistData, error = (
+        #     NSPropertyListSerialization.
+        #     dataFromPropertyList_format_errorDescription_(
+        #         headers, NSPropertyListXMLFormat_v1_0, None))
+        # if error:
+        #     string = ''
+        # else:
+        #     string = str(plistData)
+        # try:
+        #     xattr.setxattr(self.destination_path, self.GURL_XATTR, string)
+        # except IOError, err:
+        # self.log('Could not store metadata to %s: %s'
+        #          % (self.destination_path, err))
 
     def normalize_header_dict(self, a_dict):
         '''Since HTTP header names are not case-sensitive, we normalize a

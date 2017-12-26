@@ -116,7 +116,7 @@ class JSS(object):
 
         self.base_url = url
 
-        self.session = CurlAdapter()
+        self.session = kwargs.get('adapter', CurlAdapter())
         self.user = user
         self.password = password
         self.repo_prefs = repo_prefs if repo_prefs else []
