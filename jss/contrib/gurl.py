@@ -45,7 +45,7 @@ from Foundation import (NSBundle, NSRunLoop, NSDate,
                         NSPropertyListXMLFormat_v1_0)
 
 try:
-    from Foundation import NSURLSession, NSURLSessionConfiguration, NSUTF8StringEncoding, NSString
+    from Foundation import NSURLSession, NSURLSessionConfiguration, NSUTF8StringEncoding, NSString, NSMutableData
     from CFNetwork import (kCFNetworkProxiesHTTPSEnable,
                            kCFNetworkProxiesHTTPEnable)
     NSURLSESSION_AVAILABLE = True
@@ -231,7 +231,8 @@ class Gurl(NSObject):
                 request.setValue_forHTTPHeaderField_(value, header)
 
         if self.data is not None:  # assumed to be already encoded
-            request.setHTTPBody_(self.data)
+            data_bytes = self.data.encode('utf-8')
+            request.setHTTPBody_(data_bytes)
         
         # does the file already exist? See if we can resume a partial download
         if self.download_path is not None and os.path.isfile(self.download_path):
@@ -268,7 +269,11 @@ class Gurl(NSObject):
             self.session = \
                 NSURLSession.sessionWithConfiguration_delegate_delegateQueue_(
                     configuration, self, None)
-            self.task = self.session.dataTaskWithRequest_(request)
+            if self.data is not None:
+                # The cast to buffer is necessary to be treated as NSData
+                self.task = self.session.uploadTaskWithRequest_fromData_(request, buffer(self.data))
+            else:
+                self.task = self.session.dataTaskWithRequest_(request)
             self.task.resume()
         else:
             self.connection = NSURLConnection.alloc().initWithRequest_delegate_(

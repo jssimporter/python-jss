@@ -49,14 +49,14 @@ class TestGurlAdapter(object):
         response = gurl_adapter.post(
             '{}/JSSResource/buildings/id/0'.format(jss_prefs_dict['jss_url']),
             auth=(jss_prefs_dict['jss_user'], jss_prefs_dict['jss_password']),
-            headers={'Content-Type': 'application/xml', 'Accept': 'application/xml'},
+            headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'},
             verify=False,
             data=ElementTree.tostring(etree_building, encoding='utf8'),
         )
         assert response is not None
         assert response.status_code == 200
 
-    def test_post_jss(self, gurl_jss, etree_building):
+    def test_post_jss(self, gurl_jss):
         b = Building(gurl_jss, 'Test Building')
-        result = b.save()
-        assert result is not None
+        b.save()
+        assert b.id is not None

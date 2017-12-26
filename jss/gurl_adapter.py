@@ -62,15 +62,20 @@ class GurlAdapter(object):
         # type: (...) -> GurlResponseAdapter
         out = BytesIO()
         if headers is None:
-            headers = {}
+            headers = {
+                'Content-Type': 'application/xml',
+                'Accept': 'application/xml',
+            }
 
         opts = {
             'url': url,
             'additional_headers': headers,
             'output': out,
-            'data': data,
             'method': method,
         }
+
+        if (method == 'POST' or method == 'PUT') and data is not None:
+            opts['data'] = data
 
         use_auth = auth if auth is not None else self.auth
         

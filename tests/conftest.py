@@ -16,25 +16,25 @@ JSS_PREFS = {
 
 
 @pytest.fixture
-def jss_prefs_dict():  # () -> dict
+def jss_prefs_dict():  # type: () -> dict
     return JSS_PREFS
 
 
 @pytest.fixture
-def jss_prefs_file(tmpdir):  # () -> str
+def jss_prefs_file(tmpdir):  # type: () -> str
     prefs_path = tmpdir.join('com.github.sheagcraig.python-jss.plist')
     plistlib.writePlist(JSS_PREFS, prefs_path)
     return prefs_path
 
 
 @pytest.fixture
-def jss_prefs(jss_prefs_file):  # (str) -> JSSPrefs
+def jss_prefs(jss_prefs_file):  # type: (str) -> JSSPrefs
     prefs = JSSPrefs(preferences_file=jss_prefs_file)
     return prefs
 
 
 @pytest.fixture
-def j(jss_prefs_dict):  # (dict) -> JSS
+def j(jss_prefs_dict):  # type: (dict) -> JSS
     o = JSS(
         url=jss_prefs_dict['jss_url'],
         user=jss_prefs_dict['jss_user'],
@@ -45,7 +45,7 @@ def j(jss_prefs_dict):  # (dict) -> JSS
 
 
 @pytest.fixture
-def jrequests(jss_prefs_dict):  # (dict) -> JSS
+def jrequests(jss_prefs_dict):  # type: (dict) -> JSS
     o = JSS(
         url=jss_prefs_dict['jss_url'],
         user=jss_prefs_dict['jss_user'],
@@ -57,19 +57,19 @@ def jrequests(jss_prefs_dict):  # (dict) -> JSS
 
 
 @pytest.fixture
-def gurl_adapter():  # () -> GurlAdapter
+def gurl_adapter():  # type: () -> GurlAdapter
     adapter = GurlAdapter()
     return adapter
 
 
 @pytest.fixture
-def requests_adapter(jss_prefs_dict):  # () -> RequestsAdapter
+def requests_adapter(jss_prefs_dict):  # type: () -> RequestsAdapter
     adapter = RequestsAdapter(jss_prefs_dict['jss_url'])
     return adapter
 
 
 @pytest.fixture
-def etree_building():  # () -> ElementTree.Element
+def etree_building():  # type: () -> ElementTree.Element
     building = ElementTree.Element('building')
     name = ElementTree.SubElement(building, 'name')
     name.text = 'Fixture Building'
