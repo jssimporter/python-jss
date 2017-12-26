@@ -72,6 +72,8 @@ def requests_adapter(jss_prefs_dict):  # () -> RequestsAdapter
 def etree_building():  # () -> ElementTree.Element
     building = ElementTree.Element('building')
     name = ElementTree.SubElement(building, 'name')
-    name.text = 'Fixture'
+    name.text = 'Fixture Building'
+    id = ElementTree.SubElement(building, 'id')
+    id.text = '0'
     
     return building

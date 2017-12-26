@@ -45,7 +45,7 @@ from Foundation import (NSBundle, NSRunLoop, NSDate,
                         NSPropertyListXMLFormat_v1_0)
 
 try:
-    from Foundation import NSURLSession, NSURLSessionConfiguration
+    from Foundation import NSURLSession, NSURLSessionConfiguration, NSUTF8StringEncoding, NSString
     from CFNetwork import (kCFNetworkProxiesHTTPSEnable,
                            kCFNetworkProxiesHTTPEnable)
     NSURLSESSION_AVAILABLE = True

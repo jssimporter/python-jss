@@ -3,6 +3,8 @@ from jss.gurl_adapter import GurlAdapter
 from jss import JSS, Building
 from xml.etree import ElementTree
 
+XML_DOC = '<?xml version="1.0" encoding="UTF-8"?>'
+
 
 @pytest.fixture
 def gurl_jss(gurl_adapter, jss_prefs_dict):  # type: (GurlAdapter, dict) -> JSS
@@ -18,7 +20,7 @@ def gurl_jss(gurl_adapter, jss_prefs_dict):  # type: (GurlAdapter, dict) -> JSS
 
 class TestGurlAdapter(object):
 
-    def test_get(self, gurl_adapter, jss_prefs_dict):
+    def test_get_json(self, gurl_adapter, jss_prefs_dict):
         # type: (GurlAdapter, dict) -> None
 
         response = gurl_adapter.get(
@@ -28,7 +30,7 @@ class TestGurlAdapter(object):
         assert response is not None
         assert response.status_code == 401
 
-    def test_post(self, gurl_adapter, jss_prefs_dict):
+    def test_post_json(self, gurl_adapter, jss_prefs_dict):
         # type: (GurlAdapter, dict) -> None
 
         response = gurl_adapter.post(
@@ -43,17 +45,18 @@ class TestGurlAdapter(object):
 
     def test_post_xml(self, gurl_adapter, jss_prefs_dict, etree_building):
         # type: (GurlAdapter, dict, ElementTree.Element) -> None
-        
+
         response = gurl_adapter.post(
             '{}/JSSResource/buildings/id/0'.format(jss_prefs_dict['jss_url']),
             auth=(jss_prefs_dict['jss_user'], jss_prefs_dict['jss_password']),
-            headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'},
+            headers={'Content-Type': 'application/xml', 'Accept': 'application/xml'},
             verify=False,
-            data=ElementTree.tostring(etree_building),
+            data=ElementTree.tostring(etree_building, encoding='utf8'),
         )
         assert response is not None
         assert response.status_code == 200
 
     def test_post_jss(self, gurl_jss, etree_building):
-        b = Building(jss=gurl_jss, data=etree_building)
-        b.save()
+        b = Building(gurl_jss, 'Test Building')
+        result = b.save()
+        assert result is not None

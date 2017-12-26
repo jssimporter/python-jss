@@ -35,41 +35,41 @@ class GurlAdapter(object):
     def __init__(self, auth=None):
         self.auth = auth
         
-    def get(self, url, headers=None, verify=True):  # type: (str, Optional[dict], bool) -> GurlResponseAdapter
-        out = BytesIO()
-        request = Gurl.alloc().initWithOptions_({
-            'url': url,
-            'additional_headers': headers,
-            'output': out,
-        })
-        request.start()
-        while not request.isDone():
-            pass
+    def get(self, url, **kwargs):
+        return self._request(url, method='GET', **kwargs)
 
-        response = GurlResponseAdapter(url, request.status, out.getvalue())
-        out.close()
-        return response
+    def post(self, url, **kwargs):
+        return self._request(url, method='POST', **kwargs)
 
-    def post(self,
-             url,                       # type: str
-             data=None,                 # type: Optional[bytes]
-             headers=None,              # type: dict
-             files=None,                # type: Any
-             verify=True,               # type: bool
-             auth=None,                 # type: Optional[Tuple[str, str]]
-             force_basic_auth=False,    # type: bool
-             ):
+    def put(self, url, **kwargs):
+        return self._request(url, method='PUT', **kwargs)
+
+    def delete(self, url, **kwargs):
+        return self._request(url, method='DELETE', **kwargs)
+
+    def _request(
+            self,
+            url,                     # type: str
+            method='GET',            # type: str
+            headers=None,            # type: Optional[dict]
+            data=None,               # type: Optional[bytes]
+            files=None,              # type: Any
+            verify=False,            # type: bool
+            auth=None,               # type: Optional[Tuple[str, str]]
+            force_basic_auth=False,  # type: bool
+            **kwargs
+        ):
         # type: (...) -> GurlResponseAdapter
         out = BytesIO()
         if headers is None:
             headers = {}
-            
+
         opts = {
             'url': url,
             'additional_headers': headers,
             'output': out,
             'data': data,
-            'method': 'POST',
+            'method': method,
         }
 
         use_auth = auth if auth is not None else self.auth
@@ -83,7 +83,7 @@ class GurlAdapter(object):
 
             # But if it does
             opts['username'], opts['password'] = use_auth
-            
+
         request = Gurl.alloc().initWithOptions_(opts)
         request.start()
         while not request.isDone():
