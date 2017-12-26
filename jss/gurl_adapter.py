@@ -35,12 +35,15 @@ class GurlAdapter(object):
         pass
 
     def get(self, url, headers=None):
-        request = Gurl().initWithOptions_({
+        out = BytesIO()
+        request = Gurl.alloc().initWithOptions_({
             'url': url,
             'additional_headers': headers,
+            'output': out,
         })
         request.start()
         while not request.isDone():
             pass
 
+        # return out.getvalue()
         

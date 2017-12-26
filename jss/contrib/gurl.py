@@ -178,7 +178,8 @@ class Gurl(NSObject):
 
         self.follow_redirects = options.get('follow_redirects', False)
         self.ignore_system_proxy = options.get('ignore_system_proxy', False)
-        self.destination_path = options.get('file')
+        self.output = options.get('output', None)
+        self.download_path = options.get('file', None)
         self.can_resume = options.get('can_resume', False)
         self.url = options.get('url')
         self.additional_headers = options.get('additional_headers', {})
@@ -202,7 +203,6 @@ class Gurl(NSObject):
         self.SSLerror = None
         self.done = False
         self.redirection = []
-        self.destination = None
         self.bytesReceived = 0
         self.expectedLength = -1
         self.percentComplete = 0
@@ -213,8 +213,8 @@ class Gurl(NSObject):
 
     def start(self):
         '''Start the connection'''
-        if not self.destination_path:
-            self.log('No output file specified.')
+        if not self.output:
+            self.log('No output specified.')
             self.done = True
             return
         url = NSURL.URLWithString_(self.url)
@@ -226,7 +226,7 @@ class Gurl(NSObject):
             for header, value in self.additional_headers.items():
                 request.setValue_forHTTPHeaderField_(value, header)
         # does the file already exist? See if we can resume a partial download
-        if os.path.isfile(self.destination_path):
+        if self.download_path is not None and os.path.isfile(self.download_path):
             stored_data = self.get_stored_headers()
             if (self.can_resume and 'expected-length' in stored_data and
                     ('last-modified' in stored_data or 'etag' in stored_data)):
@@ -358,9 +358,9 @@ class Gurl(NSObject):
         '''NSURLSessionTaskDelegate method.'''
         # we don't actually use the session or task arguments, so
         # pylint: disable=W0613
-        if self.destination and self.destination_path:
-            self.destination.close()
+        if self.output:
             self.removeExpectedSizeFromStoredHeaders()
+            self.output.close()
         if error:
             self.recordError_(error)
         self.done = True
@@ -372,8 +372,8 @@ class Gurl(NSObject):
         # pylint: disable=W0613
         self.recordError_(error)
         self.done = True
-        if self.destination and self.destination_path:
-            self.destination.close()
+        if self.output:
+            self.output.close()
 
     def connectionDidFinishLoading_(self, connection):
         '''NSURLConnectionDataDelegate method
@@ -383,8 +383,8 @@ class Gurl(NSObject):
         # pylint: disable=W0613
 
         self.done = True
-        if self.destination and self.destination_path:
-            self.destination.close()
+        if self.output:
+            self.output.close()
             self.removeExpectedSizeFromStoredHeaders()
 
     def handleResponse_withCompletionHandler_(
@@ -411,7 +411,7 @@ class Gurl(NSObject):
         # self.destination is defined in initWithOptions_
         # pylint: disable=E0203
 
-        if not self.destination and self.destination_path:
+        if not self.output:
             if self.status == 206 and self.resume:
                 # 206 is Partial Content response
                 stored_data = self.get_stored_headers()
@@ -429,26 +429,26 @@ class Gurl(NSObject):
                     else:
                         # cancel the connection
                         self.connection.cancel()
-                    self.log('Removing %s' % self.destination_path)
-                    os.unlink(self.destination_path)
+                    self.log('Removing %s' % self.download_path)
+                    os.unlink(self.download_path)
                     # restart and attempt to download the entire file
                     self.log(
-                        'Restarting download of %s' % self.destination_path)
-                    os.unlink(self.destination_path)
+                        'Restarting download of %s' % self.download_path)
+                    os.unlink(self.download_path)
                     self.start()
                     return
                 # try to resume
-                self.log('Resuming download for %s' % self.destination_path)
+                self.log('Resuming download for %s' % self.download_path)
                 # add existing file size to bytesReceived so far
-                local_filesize = os.path.getsize(self.destination_path)
+                local_filesize = os.path.getsize(self.download_path)
                 self.bytesReceived = local_filesize
                 self.expectedLength += local_filesize
                 # open file for append
-                self.destination = open(self.destination_path, 'a')
+                self.output = open(self.download_path, 'a')
 
             elif str(self.status).startswith('2'):
                 # not resuming, just open the file for writing
-                self.destination = open(self.destination_path, 'w')
+                self.output = open(self.download_path, 'w')
                 # store some headers with the file for use if we need to resume
                 # the downloadand for future checking if the file on the server
                 # has changed
@@ -673,8 +673,8 @@ class Gurl(NSObject):
 
     def handleReceivedData_(self, data):
         '''Handle received data'''
-        if self.destination:
-            self.destination.write(str(data))
+        if self.output:
+            self.output.write(str(data))
         else:
             self.log(str(data).decode('UTF-8'))
         self.bytesReceived += len(data)

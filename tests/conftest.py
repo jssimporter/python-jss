@@ -3,6 +3,7 @@ import plistlib
 from jss import JSSPrefs, JSS
 from xml.etree import ElementTree
 from jss.requests_adapter import RequestsAdapter
+from jss.gurl_adapter import GurlAdapter
 
 JSS_PREFS = {
     'jss_url': 'https://localhost:8444',
@@ -55,10 +56,10 @@ def jrequests(jss_prefs_dict):  # (dict) -> JSS
     return o
 
 
-# @pytest.fixture
-# def gurl_adapter():  # () -> GurlAdapter
-#     adapter = GurlAdapter()
-#     return adapter
+@pytest.fixture
+def gurl_adapter():  # () -> GurlAdapter
+    adapter = GurlAdapter()
+    return adapter
 
 
 @pytest.fixture
