@@ -67,6 +67,7 @@ def requests_adapter(jss_prefs_dict):  # () -> RequestsAdapter
     adapter = RequestsAdapter(jss_prefs_dict['jss_url'])
     return adapter
 
+
 @pytest.fixture
 def etree_building():  # () -> ElementTree.Element
     building = ElementTree.Element('building')

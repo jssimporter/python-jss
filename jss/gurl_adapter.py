@@ -32,13 +32,10 @@ from .contrib.gurl import Gurl
 
 class GurlAdapter(object):
 
-    def __init__(self):
-        pass
-
-    def _build_manual_authorization(self, username, password):
-        return base64.encodestring('%s:%s' % (username, password))
+    def __init__(self, auth=None):
+        self.auth = auth
         
-    def get(self, url, headers=None, verify=True):
+    def get(self, url, headers=None, verify=True):  # type: (str, Optional[dict], bool) -> GurlResponseAdapter
         out = BytesIO()
         request = Gurl.alloc().initWithOptions_({
             'url': url,
@@ -53,7 +50,16 @@ class GurlAdapter(object):
         out.close()
         return response
 
-    def post(self, url, data=None, headers=None, files=None, verify=True, auth=None):
+    def post(self,
+             url,                       # type: str
+             data=None,                 # type: Optional[bytes]
+             headers=None,              # type: dict
+             files=None,                # type: Any
+             verify=True,               # type: bool
+             auth=None,                 # type: Optional[Tuple[str, str]]
+             force_basic_auth=False,    # type: bool
+             ):
+        # type: (...) -> GurlResponseAdapter
         out = BytesIO()
         if headers is None:
             headers = {}
@@ -63,13 +69,20 @@ class GurlAdapter(object):
             'additional_headers': headers,
             'output': out,
             'data': data,
+            'method': 'POST',
         }
-        if auth is not None and len(auth) == 2:
-            opts['username'] = auth[0]
-            opts['password'] = auth[1]
-            # NSURLSession wont even supply the credentials if the server doesnt challenge us.
-            # which the JSS doesn't.
-            opts['additional_headers']['Authorization'] = 'Basic %s' % self._build_manual_authorization(opts['username'], opts['password'])
+
+        use_auth = auth if auth is not None else self.auth
+        
+        if use_auth is not None:
+            # NSURLSession won't even supply the credentials if the server doesnt challenge us.
+            # which the JSS doesn't in the case of UAPI tokens.
+            if force_basic_auth:
+                auth_value = 'Basic {}'.format(base64.encodestring('%s:%s' % auth)[:-1])
+                opts['additional_headers']['Authorization'] = auth_value
+
+            # But if it does
+            opts['username'], opts['password'] = use_auth
             
         request = Gurl.alloc().initWithOptions_(opts)
         request.start()
