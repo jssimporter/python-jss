@@ -1,12 +1,13 @@
 import pytest
 import plistlib
 from jss import JSSPrefs, JSS
+from xml.etree import ElementTree
 # from jss.gurl_adapter import GurlAdapter
 
 JSS_PREFS = {
-    'jss_url': 'https://localhost:8443',
+    'jss_url': 'https://localhost:8444',
     'jss_user': 'admin',
-    'jss_password': 'password',
+    'jss_password': 'passw0rd',
     'verify': False,
     'suppress_warnings': False,
     'repos': [],
@@ -33,7 +34,12 @@ def jss_prefs(jss_prefs_file):  # (str) -> JSSPrefs
 
 @pytest.fixture
 def j(jss_prefs_dict):  # (dict) -> JSS
-    o = JSS(url=jss_prefs_dict['jss_url'], user=jss_prefs_dict['jss_user'], password=jss_prefs_dict['jss_password'])
+    o = JSS(
+        url=jss_prefs_dict['jss_url'],
+        user=jss_prefs_dict['jss_user'],
+        password=jss_prefs_dict['jss_password'],
+        ssl_verify=jss_prefs_dict['verify'],
+    )
     return o
 
 
@@ -41,3 +47,12 @@ def j(jss_prefs_dict):  # (dict) -> JSS
 # def gurl_adapter():  # () -> GurlAdapter
 #     adapter = GurlAdapter()
 #     return adapter
+
+
+@pytest.fixture
+def etree_building():  # () -> ElementTree.Element
+    building = ElementTree.Element('building')
+    name = ElementTree.SubElement(building, 'name')
+    name.text = 'Fixture'
+    
+    return building
