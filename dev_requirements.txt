@@ -1,2 +1,6 @@
 inflect
 selenium
+pytest
+coverage
+pyobjc-core==2.5.1
+

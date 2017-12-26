@@ -38,7 +38,7 @@ setup(name = 'python-jss',
       extras_require={
           'reST': [
               "Sphinx>=1.5.3", "docutils>=0.13.1", "sphinx-rtd-theme>=0.2.4"],
-          'dev': ['inflect', 'selenium'],
+          'dev': ['inflect', 'selenium', 'pytest', 'coverage'],
       },
       classifiers = [
           'Development Status :: 5 - Production/Stable',

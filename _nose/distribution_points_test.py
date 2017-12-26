@@ -13,12 +13,12 @@ import os
 import jss
 
 
-global j_global
-jp = jss.JSSPrefs()
-j_global = jss.JSS(jss_prefs=jp)
+# global j_global
+# jp = jss.JSSPrefs()
+# j_global = jss.JSS(jss_prefs=jp)
 
 
-class TestJSSPrefs(object):
+class XestJSSPrefs(object):
 
     def test_jssprefs_no_repos(self):
         # Make sure that if you don't specify any repository information in
@@ -35,7 +35,7 @@ class TestJSSPrefs(object):
         assert_is_instance(jssPrefs, jss.JSSPrefs)
 
 
-class TestDistributionPoints(object):
+class XestDistributionPoints(object):
 
     def test_creation(self):
         # There's a distribution point included in the JSS object.
@@ -60,7 +60,7 @@ class TestDistributionPoints(object):
         j_global.distribution_points.umount()
 
 
-class TestMountedRepository(object):
+class XestMountedRepository(object):
 
     def test_mounting(self):
         # Of course this only tests the distribution points I have configured.
