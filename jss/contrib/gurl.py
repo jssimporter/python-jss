@@ -182,11 +182,13 @@ class Gurl(NSObject):
         self.download_path = options.get('file', None)
         self.can_resume = options.get('can_resume', False)
         self.url = options.get('url')
+        self.method = options.get('method', 'GET')
         self.additional_headers = options.get('additional_headers', {})
         self.username = options.get('username')
         self.password = options.get('password')
         self.download_only_if_changed = options.get(
             'download_only_if_changed', False)
+        self.data = options.get('data', None)
         self.cache_data = options.get('cache_data')
         self.connection_timeout = options.get('connection_timeout', 60)
         if NSURLSESSION_AVAILABLE:
@@ -222,9 +224,15 @@ class Gurl(NSObject):
             NSMutableURLRequest.requestWithURL_cachePolicy_timeoutInterval_(
                 url, NSURLRequestReloadIgnoringLocalCacheData,
                 self.connection_timeout))
+        request.setHTTPMethod_(self.method)
+
         if self.additional_headers:
             for header, value in self.additional_headers.items():
                 request.setValue_forHTTPHeaderField_(value, header)
+
+        if self.data is not None:  # assumed to be already encoded
+            request.setHTTPBody_(self.data)
+        
         # does the file already exist? See if we can resume a partial download
         if self.download_path is not None and os.path.isfile(self.download_path):
             stored_data = self.get_stored_headers()
@@ -360,7 +368,6 @@ class Gurl(NSObject):
         # pylint: disable=W0613
         if self.output:
             self.removeExpectedSizeFromStoredHeaders()
-            self.output.close()
         if error:
             self.recordError_(error)
         self.done = True
@@ -372,8 +379,6 @@ class Gurl(NSObject):
         # pylint: disable=W0613
         self.recordError_(error)
         self.done = True
-        if self.output:
-            self.output.close()
 
     def connectionDidFinishLoading_(self, connection):
         '''NSURLConnectionDataDelegate method
@@ -384,7 +389,6 @@ class Gurl(NSObject):
 
         self.done = True
         if self.output:
-            self.output.close()
             self.removeExpectedSizeFromStoredHeaders()
 
     def handleResponse_withCompletionHandler_(

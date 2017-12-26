@@ -34,7 +34,7 @@ class GurlAdapter(object):
     def __init__(self):
         pass
 
-    def get(self, url, headers=None):
+    def get(self, url, headers=None, verify=True):
         out = BytesIO()
         request = Gurl.alloc().initWithOptions_({
             'url': url,
@@ -45,5 +45,42 @@ class GurlAdapter(object):
         while not request.isDone():
             pass
 
-        # return out.getvalue()
-        
+        response = GurlResponseAdapter(url, request.status, out.getvalue())
+        out.close()
+        return response
+
+    def post(self, url, data=None, headers=None, files=None, verify=True, auth=None):
+        out = BytesIO()
+        opts = {
+            'url': url,
+            'additional_headers': headers,
+            'output': out,
+            'data': data,
+        }
+        if auth is not None and len(auth) == 2:
+            opts['username'] = auth[0]
+            opts['password'] = auth[1]
+            
+        request = Gurl.alloc().initWithOptions_(opts)
+        request.start()
+        while not request.isDone():
+            pass
+
+        response = GurlResponseAdapter(url, request.status, out.getvalue())
+        out.close()
+        return response
+
+
+class GurlResponseAdapter(object):
+    """Wrapper for Gurl responses"""
+
+    def __init__(self, url, status_code, content):
+        self.url = url
+
+        try:
+            self.status_code = int(status_code)
+        except ValueError:
+            self.status_code = 0
+            
+        self.content = content
+        self.text = content.decode('UTF-8')
