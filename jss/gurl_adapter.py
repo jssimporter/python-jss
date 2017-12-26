@@ -25,6 +25,7 @@ This adapter uses Gurl, which uses PyObjC to implement NSURLConnection and NSURL
 """
 
 from io import BytesIO
+import base64
 from .exceptions import JSSError, SSLVerifyError
 from .contrib.gurl import Gurl
 
@@ -34,6 +35,9 @@ class GurlAdapter(object):
     def __init__(self):
         pass
 
+    def _build_manual_authorization(self, username, password):
+        return base64.encodestring('%s:%s' % (username, password))
+        
     def get(self, url, headers=None, verify=True):
         out = BytesIO()
         request = Gurl.alloc().initWithOptions_({
@@ -51,6 +55,9 @@ class GurlAdapter(object):
 
     def post(self, url, data=None, headers=None, files=None, verify=True, auth=None):
         out = BytesIO()
+        if headers is None:
+            headers = {}
+            
         opts = {
             'url': url,
             'additional_headers': headers,
@@ -60,6 +67,9 @@ class GurlAdapter(object):
         if auth is not None and len(auth) == 2:
             opts['username'] = auth[0]
             opts['password'] = auth[1]
+            # NSURLSession wont even supply the credentials if the server doesnt challenge us.
+            # which the JSS doesn't.
+            opts['additional_headers']['Authorization'] = 'Basic %s' % self._build_manual_authorization(opts['username'], opts['password'])
             
         request = Gurl.alloc().initWithOptions_(opts)
         request.start()
