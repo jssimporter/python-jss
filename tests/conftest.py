@@ -2,7 +2,7 @@ import pytest
 import plistlib
 from jss import JSSPrefs, JSS
 from xml.etree import ElementTree
-# from jss.gurl_adapter import GurlAdapter
+from jss.requests_adapter import RequestsAdapter
 
 JSS_PREFS = {
     'jss_url': 'https://localhost:8444',
@@ -43,11 +43,28 @@ def j(jss_prefs_dict):  # (dict) -> JSS
     return o
 
 
+@pytest.fixture
+def jrequests(jss_prefs_dict):  # (dict) -> JSS
+    o = JSS(
+        url=jss_prefs_dict['jss_url'],
+        user=jss_prefs_dict['jss_user'],
+        password=jss_prefs_dict['jss_password'],
+        ssl_verify=jss_prefs_dict['verify'],
+        adapter=RequestsAdapter(jss_prefs_dict['jss_url']),
+    )
+    return o
+
+
 # @pytest.fixture
 # def gurl_adapter():  # () -> GurlAdapter
 #     adapter = GurlAdapter()
 #     return adapter
 
+
+@pytest.fixture
+def requests_adapter(jss_prefs_dict):  # () -> RequestsAdapter
+    adapter = RequestsAdapter(jss_prefs_dict['jss_url'])
+    return adapter
 
 @pytest.fixture
 def etree_building():  # () -> ElementTree.Element
