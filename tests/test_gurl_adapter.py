@@ -56,7 +56,28 @@ class TestGurlAdapter(object):
         assert response is not None
         assert response.status_code == 200
 
+    def test_get_jss(self, gurl_jss):
+        # type: (JSS) -> None
+        accounts = gurl_jss.Account()
+        assert accounts is not None
+        
     def test_post_jss(self, gurl_jss):
+        # type: (JSS) -> None
+        
         b = Building(gurl_jss, 'Test Building')
         b.save()
         assert b.id is not None
+        b.delete()
+
+    def test_put_jss(self, gurl_jss):
+        # type: (JSS) -> None
+
+        cc = gurl_jss.ComputerCheckIn()
+        assert cc is not None
+        cc.find('log_startup_event').text = "true"
+        cc.save()
+        assert cc.findtext('log_startup_event') == "true"
+
+    def test_delete_jss(self, gurl_jss):
+        # type: (JSS) -> None
+        pass
