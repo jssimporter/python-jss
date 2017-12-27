@@ -1,0 +1,30 @@
+version: '3'
+services:
+  samba:
+    image: dperson/samba:latest
+    ports:
+      - "139"
+      - "445"
+    volumes:
+      - "distribution_point:/distribution_point"
+    command:
+      - "-u"
+      - "jss;jss"
+      - "-s"
+      - "distribution_point;/distribution_point;yes;no;yes;all;jss"
+      - "-p"
+    environment:
+      - TZ=UTC
+  afp:
+    image: cptactionhank/netatalk:latest
+    ports:
+      - 548
+    volumes:
+      - "distribution_point:/media/share"
+    environment:
+      - AFP_USER=jss
+      - AFP_PASSWORD=jss
+
+
+volumes:
+  distribution_point:

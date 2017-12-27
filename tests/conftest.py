@@ -4,6 +4,7 @@ from jss import JSSPrefs, JSS
 from xml.etree import ElementTree
 from jss.requests_adapter import RequestsAdapter
 from jss.gurl_adapter import GurlAdapter
+from subprocess import call
 
 JSS_PREFS = {
     'jss_url': 'https://localhost:8444',
@@ -77,3 +78,36 @@ def etree_building():  # type: () -> ElementTree.Element
     id.text = '0'
     
     return building
+
+
+# def is_afp_responsive(afpurl):
+#     """Check if something responds to ``url``."""
+#     pass
+
+
+def is_smb_responsive(smburl):
+    """Check if something responds to ``url``."""
+    status = call(['/usr/bin/smbutil', 'view', smburl])
+    return status == 0
+
+
+@pytest.fixture
+def dp_smb_ip_port(docker_ip, docker_services):
+    docker_services.wait_until_responsive(
+        timeout=30.0, pause=0.1,
+        check=lambda: is_smb_responsive("//jss:jss@%s:%s" % (docker_ip, docker_services.port_for('samba', 139)))
+    )
+    return docker_ip, docker_services.port_for('samba', 139)
+
+
+# @pytest.fixture
+# def dp_afp_url(docker_ip, docker_services):
+#     afp_url = 'afp://%s:%s/distribution_point' % (
+#         docker_ip,
+#         docker_services.port_for('afp', 549),
+#     )
+#     docker_services.wait_until_responsive(
+#         timeout=30.0, pause=0.1,
+#         check=lambda: is_afp_responsive(afp_url)
+#     )
+#     return afp_url
