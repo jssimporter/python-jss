@@ -56,7 +56,7 @@ Private package contents include:
 from .casper import Casper
 from .curl_adapter import CurlAdapter
 from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
-                                 JDS, CDP, LocalRepository)
+                                 JDS, CDP, LocalRepository, JCDS)
 from .distribution_points import DistributionPoints
 from .exceptions import *
 from .jamf_software_server import JSS
