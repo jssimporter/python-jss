@@ -8,7 +8,7 @@ class TestAFPDistributionPoint(object):
 
 class TestSMBDistributionPoint(object):
 
-    @pytest.mark.dockertest
+    @pytest.mark.docker
     def test_mount(self, dp_smb_ip_port, tmpdir, j):
         smb_ip, smb_port = dp_smb_ip_port
         
@@ -27,7 +27,7 @@ class TestSMBDistributionPoint(object):
 
         dp.umount()
 
-    @pytest.mark.dockertest
+    @pytest.mark.docker
     def test_copy_pkg(self, dp_smb_ip_port, tmpdir, j):
         smb_ip, smb_port = dp_smb_ip_port
 
