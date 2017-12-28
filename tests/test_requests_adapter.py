@@ -1,4 +1,5 @@
 import pytest
+requests = pytest.importorskip('requests')
 
 
 class TestRequestsAdapter(object):

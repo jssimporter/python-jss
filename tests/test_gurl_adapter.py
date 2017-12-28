@@ -1,9 +1,8 @@
 import pytest
+import sys
 from jss.gurl_adapter import GurlAdapter
 from jss import JSS, Building
 from xml.etree import ElementTree
-
-XML_DOC = '<?xml version="1.0" encoding="UTF-8"?>'
 
 
 @pytest.fixture
@@ -18,6 +17,7 @@ def gurl_jss(gurl_adapter, jss_prefs_dict):  # type: (GurlAdapter, dict) -> JSS
     return j
 
 
+@pytest.mark.skipif(sys.platform.startswith('linux'), reason='PyObjC not present on linux')
 class TestGurlAdapter(object):
 
     def test_get_json(self, gurl_adapter, jss_prefs_dict):
@@ -45,6 +45,9 @@ class TestGurlAdapter(object):
 
     def test_post_xml(self, gurl_adapter, jss_prefs_dict, etree_building):
         # type: (GurlAdapter, dict, ElementTree.Element) -> None
+        
+        xml_body = ElementTree.tostring(etree_building, encoding='utf8')
+        print 'POSTing new building XML: %s' % xml_body
 
         response = gurl_adapter.post(
             '{}/JSSResource/buildings/id/0'.format(jss_prefs_dict['jss_url']),
@@ -75,6 +78,7 @@ class TestGurlAdapter(object):
         cc = gurl_jss.ComputerCheckIn()
         assert cc is not None
         cc.find('log_startup_event').text = "true"
+        print 'Updated computer checkin: %s' % str(cc)
         cc.save()
         assert cc.findtext('log_startup_event') == "true"
 
