@@ -71,9 +71,9 @@ class CurlAdapter(object):
     """
     base_headers = ['Accept: application/xml']
 
-    def __init__(self):
+    def __init__(self, verify=True):
         self.auth = ('', '')
-        self.verify = True
+        self.verify = verify
         self.use_tls = True
 
     def get(self, url, headers=None):
