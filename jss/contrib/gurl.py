@@ -24,6 +24,7 @@ curl replacement using NSURLConnection and friends
 
 import os
 from urlparse import urlparse
+from urllib import urlencode
 
 # builtin super doesn't work with Cocoa classes in recent PyObjC releases.
 from objc import super
@@ -231,7 +232,10 @@ class Gurl(NSObject):
                 request.setValue_forHTTPHeaderField_(value, header)
 
         if self.data is not None:  # assumed to be already encoded
-            data_bytes = self.data.encode('utf-8')
+            if isinstance(self.data, dict):  # needs to be form encoded
+                data_bytes = urlencode(self.data).encode('utf-8')
+            else:
+                data_bytes = self.data.encode('utf-8')
             request.setHTTPBody_(data_bytes)
         
         # does the file already exist? See if we can resume a partial download
@@ -271,7 +275,7 @@ class Gurl(NSObject):
                     configuration, self, None)
             if self.data is not None:
                 # The cast to buffer is necessary to be treated as NSData
-                self.task = self.session.uploadTaskWithRequest_fromData_(request, buffer(self.data))
+                self.task = self.session.uploadTaskWithRequest_fromData_(request, buffer(data_bytes))
             else:
                 self.task = self.session.dataTaskWithRequest_(request)
             self.task.resume()

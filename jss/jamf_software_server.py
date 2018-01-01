@@ -477,6 +477,11 @@ class JSS(object):
 
         return all_objects
 
+    def scrape(self, url_path, session_id=None):
+        if session_id is None:
+            response = self.session.post(self.base_url, data={'username': self.user, 'password': self.password})
+            print response
+
     def version(self):
         return self.JSSUser().version.text
 

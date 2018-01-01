@@ -53,3 +53,7 @@ class TestJSS(object):
         with pytest.raises(GetError):
             result = j.get('buildings/name/UpdatedFixture')
             assert result is None
+
+    def test_scrape(self, gurl_jss):
+        r = gurl_jss.scrape('legacy/cloudDistributionPoint.html?id=0&o=r')
+        assert r is not None

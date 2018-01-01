@@ -35,6 +35,11 @@ JSS object beginning with python-jss 2.0.0.
 
 import copy
 import subprocess
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 
 from .exceptions import JSSError, SSLVerifyError
 
@@ -114,6 +119,8 @@ class CurlAdapter(object):
             item.encode('UTF-8') if isinstance(item, unicode) else item
             for item in command]
 
+        logger.debug(' '.join(command))
+
         try:
             response = subprocess.check_output(command)
         except subprocess.CalledProcessError as err:
@@ -166,6 +173,8 @@ class CurlAdapter(object):
         if data:
             if isinstance(data, file):
                 command += ["--data", "@{}".format(data.name)]
+            elif isinstance(data, dict):
+                [command.extend(["-F", "{}={}".format(k, v)]) for k, v in data.iteritems()]
             else:
                 command += ["--data", data]
 
