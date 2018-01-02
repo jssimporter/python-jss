@@ -6,6 +6,7 @@ from jss.nsurlsession_adapter import NSURLSessionAdapter
 @pytest.fixture
 def nsurlsession_adapter():  # type: () -> NSURLSessionAdapter
     adapter = NSURLSessionAdapter()
+    adapter.verify = False
     return adapter
 
 

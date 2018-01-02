@@ -4,15 +4,18 @@ Requests API transport that uses NSURLSession and friends via PyObjC 2.1 that sh
 """
 import logging
 import os
-from io import BytesIO
+import io
 from requests.adapters import BaseAdapter
 from requests.models import Response, PreparedRequest
+from requests.structures import CaseInsensitiveDict
+from requests.utils import get_encoding_from_headers
 
 import objc
 from Foundation import NSObject, NSMutableURLRequest, NSURL, NSURLRequestUseProtocolCachePolicy, \
     NSURLRequestReloadIgnoringLocalCacheData, NSURLRequestReturnCacheDataElseLoad, \
     NSURLSessionConfiguration, NSURLSession, NSOperationQueue, NSURLCredential, \
-    NSURLCredentialPersistenceNone, NSRunLoop, NSDate, NSURLResponseUnknownLength
+    NSURLCredentialPersistenceNone, NSRunLoop, NSDate, NSURLResponseUnknownLength, \
+    NSURLAuthenticationMethodServerTrust
 
 
 # These headers are reserved to the NSURLSession and should not be set by
@@ -153,14 +156,6 @@ def basic_credential(auth):
 
 class NSURLSessionAdapterDelegate(NSObject):
 
-    def init(self):
-        self = objc.super(NSURLSessionAdapterDelegate, self).init()
-
-        if self is None:
-            return None
-
-        return self
-
     def initWithAdapter_(self, adapter):
         self = objc.super(NSURLSessionAdapterDelegate, self).init()
 
@@ -174,7 +169,10 @@ class NSURLSessionAdapterDelegate(NSObject):
         self.done = False
         self.error = None
         self.SSLError = None
-        self.output = BytesIO()
+        self.output = io.BytesIO()
+        self.status = None
+        self.headers = {}
+        self.verify = True
 
         return self
 
@@ -216,11 +214,13 @@ class NSURLSessionAdapterDelegate(NSObject):
 
     def URLSession_dataTask_didReceiveData_(
             self,
-            session,
-            task,
-            data
-    ):
-        self.output.write(str(data))
+            session,  # type: NSURLSession
+            task,     # type: NSURLSessionDataTask
+            data      # type: NSData
+    ):  # type: (...) -> None
+        logger.debug('URLSession_dataTask_didReceiveData_ (%d bytes)', len(data))
+
+        # self.output += bytes(data)
         self.bytesReceived += len(data)
         if self.expectedLength != NSURLResponseUnknownLength:
             self.percentComplete = int(
@@ -242,7 +242,17 @@ class NSURLSessionAdapterDelegate(NSObject):
         host = protectionSpace.host()
         realm = protectionSpace.realm()
         authenticationMethod = protectionSpace.authenticationMethod()
-        if completionHandler:
+
+        logger.debug('NSURLProtectionSpace host: %s, realm: %s, method: %s', host,
+                     realm, authenticationMethod)
+
+        if authenticationMethod == 'NSURLAuthenticationMethodServerTrust' and not self.verify:
+            logger.debug('Trusting invalid SSL certificate because verify=False')
+            trust = protectionSpace.serverTrust()
+            credential = NSURLCredential.credentialForTrust_(trust)
+            completionHandler(
+                NSURLSessionAuthChallengePerformDefaultHandling, credential)
+        else:
             completionHandler(
                 NSURLSessionAuthChallengePerformDefaultHandling, None)
 
@@ -282,6 +292,36 @@ class NSURLSessionAdapter(BaseAdapter):
             None,
         )
 
+    def build_response(self, req, delegate):  # type: (PreparedRequest, NSURLSessionAdapterDelegate) -> Response
+        response = Response()
+
+        # Fallback to None if there's no status_code, for whatever reason.
+        response.status_code = getattr(delegate, 'status', None)
+
+        # Make headers case-insensitive.
+        response.headers = CaseInsensitiveDict(getattr(delegate, 'headers', {}))
+
+        # Set encoding.
+        response.encoding = get_encoding_from_headers(response.headers)
+        # response.raw = resp
+        # response.reason = response.raw.reason
+
+        if isinstance(req.url, bytes):
+            response.url = req.url.decode('utf-8')
+        else:
+            response.url = req.url
+
+        # Add new cookies from the server.
+        # extract_cookies_to_jar(response.cookies, req, resp)
+
+        # body = delegate.output.getvalue().encode('utf-8')
+
+        # Give the Response some context.
+        response.request = req
+        response.connection = self
+
+        return response
+
     def send(
             self,
             request,       # type: PreparedRequest
@@ -318,11 +358,4 @@ class NSURLSessionAdapter(BaseAdapter):
         if self.delegate.SSLError is not None:
             raise self.delegate.SSLError
 
-        assert self.delegate.output is not None
-
-        body = self.delegate.output.getvalue().encode('utf-8')
-
-        # return self.build_response(self.delegate.output)
-
-        return body
-        # return response
+        return self.build_response(request, self.delegate)
