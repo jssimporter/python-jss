@@ -15,7 +15,7 @@ from Foundation import NSObject, NSMutableURLRequest, NSURL, NSURLRequestUseProt
     NSURLRequestReloadIgnoringLocalCacheData, NSURLRequestReturnCacheDataElseLoad, \
     NSURLSessionConfiguration, NSURLSession, NSOperationQueue, NSURLCredential, \
     NSURLCredentialPersistenceNone, NSRunLoop, NSDate, NSURLResponseUnknownLength, \
-    NSURLAuthenticationMethodServerTrust
+    NSURLAuthenticationMethodServerTrust, NSMutableData
 
 
 # These headers are reserved to the NSURLSession and should not be set by
@@ -169,7 +169,7 @@ class NSURLSessionAdapterDelegate(NSObject):
         self.done = False
         self.error = None
         self.SSLError = None
-        self.output = io.BytesIO()
+        self.output = NSMutableData.dataWithCapacity_(1024)
         self.status = None
         self.headers = {}
         self.verify = True
@@ -206,7 +206,6 @@ class NSURLSessionAdapterDelegate(NSObject):
             self.status = response.statusCode()
             self.headers = dict(response.allHeaderFields())
 
-        self.output.close()
         self.done = True
 
         if completionHandler:  # tell the session task to continue
@@ -220,7 +219,7 @@ class NSURLSessionAdapterDelegate(NSObject):
     ):  # type: (...) -> None
         logger.debug('URLSession_dataTask_didReceiveData_ (%d bytes)', len(data))
 
-        # self.output += bytes(data)
+        self.output.appendData_(data)
         self.bytesReceived += len(data)
         if self.expectedLength != NSURLResponseUnknownLength:
             self.percentComplete = int(
@@ -273,7 +272,6 @@ class NSURLSessionAdapterDelegate(NSObject):
                 if ssl_code:
                     self.SSLerror = (ssl_code, ssl_error_codes.get(
                         ssl_code, 'Unknown SSL error'))
-        self.output.close()
         self.done = True
 
 
@@ -314,8 +312,8 @@ class NSURLSessionAdapter(BaseAdapter):
         # Add new cookies from the server.
         # extract_cookies_to_jar(response.cookies, req, resp)
 
-        # body = delegate.output.getvalue().encode('utf-8')
-
+        body = buffer(delegate.output)
+        
         # Give the Response some context.
         response.request = req
         response.connection = self
