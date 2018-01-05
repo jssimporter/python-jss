@@ -126,13 +126,9 @@ class TestNSURLSessionAdapter(object):
         print ElementTree.tostring(result)
 
     def test_post_jss(self, ns_jss, etree_building):
-        # type: (JSS) -> None
-
-        new_id = ns_jss.post('buildings/id/0', data=etree_building)
-        assert new_id is not None
-        result = ns_jss.get('buildings/id/{}'.format(new_id))
-        assert result is not None
-        assert isinstance(result, ElementTree.Element)
+        # type: (JSS, ElementTree.Element) -> None
+        fixture_building = ns_jss.Building(etree_building)
+        fixture_building.save()
 
     def test_put_jss(self, ns_jss, etree_building):
         # type: (JSS) -> None
