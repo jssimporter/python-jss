@@ -6,9 +6,10 @@ import logging
 import os
 import io
 from requests.adapters import BaseAdapter
-from requests.models import Response, PreparedRequest
+from requests.models import Response, PreparedRequest, Request
 from requests.structures import CaseInsensitiveDict
 from requests.utils import get_encoding_from_headers
+from requests.auth import AuthBase, HTTPBasicAuth
 
 import objc
 from Foundation import NSObject, NSMutableURLRequest, NSURL, NSURLRequestUseProtocolCachePolicy, \
@@ -141,17 +142,24 @@ def nsrequest_from_preparedrequest(request, timeout):
     return nsrequest
 
 
-def basic_credential(auth):
-    """Convert requests auth parameter to a HTTP basic authentication NSURLCredential."""
-    # type: (Tuple[str, str]) -> NSURLCredential
-    
-    credential = NSURLCredential.credentialWithUser_password_persistence_(
-        auth.username,
-        auth.password,
-        NSURLCredentialPersistenceNone  # we don't expect ephemeral requests to save keychain items.
-    )
+class NSURLCredentialHTTPBasicAuth(HTTPBasicAuth):
+    """HTTP Basic Authentication for NSURLSessionAdapter.
 
-    return credential
+    We can't use the HTTPBasic adapter without some kludge, so you need to supply this auth method for use with
+    NSURLSession."""
+    def __init__(self, username, password):
+        super(NSURLCredentialHTTPBasicAuth, self).__init__(username, password)
+
+    def __call__(self, r):  # type: (Request) -> Request
+        # Create an NSURLCredential and attach it to the prepared request.
+        credential = NSURLCredential.credentialWithUser_password_persistence_(
+            self.username,
+            self.password,
+            NSURLCredentialPersistenceNone  # we don't expect ephemeral requests to save keychain items.
+        )
+        r.credential = credential
+
+        return r
 
 
 class NSURLSessionAdapterDelegate(NSObject):
@@ -251,6 +259,17 @@ class NSURLSessionAdapterDelegate(NSObject):
             credential = NSURLCredential.credentialForTrust_(trust)
             completionHandler(
                 NSURLSessionAuthChallengePerformDefaultHandling, credential)
+        elif authenticationMethod in ['NSURLAuthenticationMethodDefault',
+                                      'NSURLAuthenticationMethodHTTPBasic',
+                                      'NSURLAuthenticationMethodHTTPDigest']:
+            logger.debug('Attempting to authenticate')
+            if getattr(self.adapter, 'credential', None) is not None:
+                logger.debug('Using supplied NSURLCredential')
+                completionHandler(
+                    NSURLSessionAuthChallengeUseCredential, self.adapter.credential)
+            else:
+                logger.debug('No NSURLCredential available, not authenticating.')
+                completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, None)
         else:
             completionHandler(
                 NSURLSessionAuthChallengePerformDefaultHandling, None)
@@ -278,6 +297,12 @@ class NSURLSessionAdapterDelegate(NSObject):
 class NSURLSessionAdapter(BaseAdapter):
 
     def __init__(self):
+        # type: (Tuple[str,str]) -> None
+        """NSURLSessionAdapter implements a requests adapter using PyObjC+NSURLSession.
+
+        Because of the way the delegate deals with authentication, we cannot support requests style auth.
+        You must pass the tuple to this adapter.
+        """
         super(NSURLSessionAdapter, self).__init__()
 
         self.verify = True
@@ -312,7 +337,7 @@ class NSURLSessionAdapter(BaseAdapter):
         # Add new cookies from the server.
         # extract_cookies_to_jar(response.cookies, req, resp)
 
-        body = buffer(delegate.output)
+        response.raw = io.BytesIO(buffer(delegate.output))
         
         # Give the Response some context.
         response.request = req
@@ -338,6 +363,10 @@ class NSURLSessionAdapter(BaseAdapter):
         assert not stream
         assert not cert
         assert not proxies
+
+        if getattr(request, 'credential') is not None:
+            self.delegate.credential = request.credential
+            
 
         if request.method in ['PUT', 'POST'] and request.body is not None:
             # These verbs should usually be an upload task to send the correct request headers.
