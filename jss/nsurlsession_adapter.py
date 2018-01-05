@@ -1,6 +1,9 @@
 """nsurlsession_adapter.py
 
-Requests API transport that uses NSURLSession and friends via PyObjC 2.1 that ships with macOS
+Requests API transport that uses NSURLSession and friends via PyObjC 2.1 that ships with macOS.
+
+Much of this code was copied, rewritten, or inspired by gurl.py from the munki project.
+Thanks to Greg Neagle and frogor, amongst many other contributors.
 """
 import logging
 import os
@@ -16,13 +19,13 @@ from Foundation import NSObject, NSMutableURLRequest, NSURL, NSURLRequestUseProt
     NSURLRequestReloadIgnoringLocalCacheData, NSURLRequestReturnCacheDataElseLoad, \
     NSURLSessionConfiguration, NSURLSession, NSOperationQueue, NSURLCredential, \
     NSURLCredentialPersistenceNone, NSRunLoop, NSDate, NSURLResponseUnknownLength, \
-    NSURLAuthenticationMethodServerTrust, NSMutableData
+    NSURLAuthenticationMethodServerTrust, NSMutableData, NSBundle
 
 
 # These headers are reserved to the NSURLSession and should not be set by
 # Requests, though we may use them.
 _RESERVED_HEADERS = set([
-    'authorization', 'connection', 'host', 'proxy-authenticate',
+    'connection', 'host', 'proxy-authenticate', 'authorization',
     'proxy-authorization', 'www-authenticate',
 ])
 
@@ -117,6 +120,13 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
+# ATS hack stolen from gurl.py
+# disturbing hack warning!
+# this works around an issue with App Transport Security on 10.11
+bundle = NSBundle.mainBundle()
+info = bundle.localizedInfoDictionary() or bundle.infoDictionary()
+info['NSAppTransportSecurity'] = {'NSAllowsArbitraryLoads': True}
+
 
 def nsrequest_from_preparedrequest(request, timeout):
     """Convert a requests PreparedRequest into a suitable NSMutableURLRequest."""
@@ -142,22 +152,32 @@ def nsrequest_from_preparedrequest(request, timeout):
     return nsrequest
 
 
-class NSURLCredentialHTTPBasicAuth(HTTPBasicAuth):
+class NSURLCredentialAuth(AuthBase):
     """HTTP Basic Authentication for NSURLSessionAdapter.
 
     We can't use the HTTPBasic adapter without some kludge, so you need to supply this auth method for use with
     NSURLSession."""
     def __init__(self, username, password):
-        super(NSURLCredentialHTTPBasicAuth, self).__init__(username, password)
+        self.username = username
+        self.password = password
+        self.credential = None
 
-    def __call__(self, r):  # type: (Request) -> Request
+    def __eq__(self, other):
+        return all([
+            self.username == getattr(other, 'username', None),
+            self.password == getattr(other, 'password', None)
+        ])
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __call__(self, r):  # type: (PreparedRequest) -> PreparedRequest
         # Create an NSURLCredential and attach it to the prepared request.
         credential = NSURLCredential.credentialWithUser_password_persistence_(
-            self.username,
-            self.password,
+            self.username, self.password,
             NSURLCredentialPersistenceNone  # we don't expect ephemeral requests to save keychain items.
         )
-        r.credential = credential
+        self.credential = credential
 
         return r
 
@@ -181,6 +201,7 @@ class NSURLSessionAdapterDelegate(NSObject):
         self.status = None
         self.headers = {}
         self.verify = True
+        self.credential = None
 
         return self
 
@@ -263,10 +284,10 @@ class NSURLSessionAdapterDelegate(NSObject):
                                       'NSURLAuthenticationMethodHTTPBasic',
                                       'NSURLAuthenticationMethodHTTPDigest']:
             logger.debug('Attempting to authenticate')
-            if getattr(self.adapter, 'credential', None) is not None:
+            if getattr(self, 'credential', None) is not None:
                 logger.debug('Using supplied NSURLCredential')
                 completionHandler(
-                    NSURLSessionAuthChallengeUseCredential, self.adapter.credential)
+                    NSURLSessionAuthChallengeUseCredential, self.credential)
             else:
                 logger.debug('No NSURLCredential available, not authenticating.')
                 completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, None)
@@ -296,19 +317,22 @@ class NSURLSessionAdapterDelegate(NSObject):
 
 class NSURLSessionAdapter(BaseAdapter):
 
-    def __init__(self):
-        # type: (Tuple[str,str]) -> None
-        """NSURLSessionAdapter implements a requests adapter using PyObjC+NSURLSession.
+    def __init__(self, credential=None):
+        # type: (Optional[NSURLCredential]) -> None
+        """NSURLSessionAdapter implements a requests adapter using PyObjC + NSURLSession.
 
-        Because of the way the delegate deals with authentication, we cannot support requests style auth.
-        You must pass the tuple to this adapter.
+        Because of the way the delegate deals with authentication, we cannot support requests style auth which may only
+        act on the content of the request. For NSURLSessionAdapter you should use NSURLCredentialAuth, which supplies an
+        NSURLCredential object whenever authentication is required by the remote host.
         """
         super(NSURLSessionAdapter, self).__init__()
 
         self.verify = True
+        self.credential = credential
 
         configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
         self.delegate = NSURLSessionAdapterDelegate.alloc().initWithAdapter_(self)
+        self.delegate.credential = credential
         self.session = NSURLSession.sessionWithConfiguration_delegate_delegateQueue_(
             configuration,
             self.delegate,
@@ -363,10 +387,6 @@ class NSURLSessionAdapter(BaseAdapter):
         assert not stream
         assert not cert
         assert not proxies
-
-        if getattr(request, 'credential') is not None:
-            self.delegate.credential = request.credential
-            
 
         if request.method in ['PUT', 'POST'] and request.body is not None:
             # These verbs should usually be an upload task to send the correct request headers.

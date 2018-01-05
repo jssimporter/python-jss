@@ -5,6 +5,11 @@ from jss import JSS, Building
 from xml.etree import ElementTree
 
 
+@pytest.fixture
+def gurl_adapter():  # type: () -> GurlAdapter
+    adapter = GurlAdapter()
+    return adapter
+
 
 
 @pytest.mark.skipif(sys.platform.startswith('linux'), reason='PyObjC not present on linux')

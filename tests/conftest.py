@@ -58,12 +58,6 @@ def jrequests(jss_prefs_dict):  # type: (dict) -> JSS
 
 
 @pytest.fixture
-def gurl_adapter():  # type: () -> GurlAdapter
-    adapter = GurlAdapter()
-    return adapter
-
-
-@pytest.fixture
 def requests_adapter(jss_prefs_dict):  # type: () -> RequestsAdapter
     adapter = RequestsAdapter(jss_prefs_dict['jss_url'])
     return adapter
