@@ -231,6 +231,7 @@ class JSS(object):
         self.ssl_verify = ssl_verify
 
     def get(self, url_path):
+        # type: (str) -> Union[ElementTree.Element, dict]
         """GET a url, handle errors, and return an etree.
 
         In general, it is better to use a higher level interface for
@@ -259,13 +260,15 @@ class JSS(object):
         elif response.status_code >= 400:
             error_handler(GetError, response)
 
-        # ElementTree in python2 only accepts bytes.
-        try:
-            xmldata = ElementTree.fromstring(response.content)
-        except ElementTree.ParseError:
-            raise GetError("Error Parsing XML:\n%s" % response.content)
-
-        return xmldata
+        if 'text/xml' in response.headers['content-type']:
+            # ElementTree in python2 only accepts bytes.
+            try:
+                xmldata = ElementTree.fromstring(response.content)
+                return xmldata
+            except ElementTree.ParseError:
+                raise GetError("Error Parsing XML:\n%s" % response.content)
+        else:
+            raise TypeError('Unimplemented')
 
     def post(self, url_path, data):
         # type: (str, Union[ElementTree.Element, dict]) -> str
@@ -314,6 +317,7 @@ class JSS(object):
         return id_
 
     def put(self, url_path, data):
+        # type: (str, Union[ElementTree.Element, dict]) -> str
         """Update an existing object on the JSS.
 
         In general, it is better to use a higher level interface for
@@ -330,8 +334,18 @@ class JSS(object):
             PutError if provided url_path has a >= 400 response.
         """
         request_url = os.path.join(self._url, quote_and_encode(url_path))
-        data = ElementTree.tostring(data, encoding='UTF-8')
-        response = self.session.put(request_url, data=data, headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'})
+        headers = {}
+
+        if isinstance(data, ElementTree.Element):
+            data = ElementTree.tostring(data, encoding='UTF-8')
+            headers = {'Content-Type': 'text/xml', 'Accept': 'text/xml'}
+        elif isinstance(data, dict):
+            data = json.dumps(data)
+            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        else:
+            raise TypeError('Could not PUT unrecognised data type')
+
+        response = self.session.put(request_url, data=data, headers=headers)
 
         if response.status_code == 201 and self.verbose:
             print "PUT %s: Success." % request_url
@@ -339,6 +353,7 @@ class JSS(object):
             error_handler(PutError, response)
 
     def delete(self, url_path, data=None):
+        # type: (str, Optional[Union[ElementTree.Element, dict]]) -> None
         """Delete an object from the JSS.
 
         In general, it is better to use a higher level interface for
@@ -356,7 +371,8 @@ class JSS(object):
         request_url = os.path.join(self._url, quote_and_encode(url_path))
         if data:
             data = ElementTree.tostring(data, encoding='UTF-8')
-            response = self.session.delete(request_url, data=data, headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'})
+            response = self.session.delete(request_url, data=data,
+                                           headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'})
         else:
             response = self.session.delete(request_url)
 
