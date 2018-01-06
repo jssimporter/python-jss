@@ -23,9 +23,13 @@ as JSSObjects.
 import cPickle
 import gzip
 import os
+import platform
 import re
+import json
 from xml.etree import ElementTree
+import requests
 
+from jss.nsurlsession_adapter import NSURLSessionAdapter
 from . import distribution_points
 from .curl_adapter import CurlAdapter
 from .exceptions import GetError, PutError, PostError, DeleteError
@@ -116,7 +120,25 @@ class JSS(object):
 
         self.base_url = url
 
-        self.session = kwargs.get('adapter', CurlAdapter())
+        if 'adapter' in kwargs:
+            self.session = kwargs['adapter']
+        else:
+            self.session = requests.session()
+            
+            if platform.system() == 'Darwin':
+                from Foundation import NSURLCredential, NSURLCredentialPersistenceNone
+
+                credential = NSURLCredential.credentialWithUser_password_persistence_(
+                    user, password, NSURLCredentialPersistenceNone
+                    # we don't expect ephemeral requests to save keychain items.
+                )
+
+                adapter = NSURLSessionAdapter(credential=credential)
+                adapter.verify = ssl_verify
+
+                self.session.mount('https://', adapter)
+                self.session.mount('http://', adapter)
+
         self.user = user
         self.password = password
         self.repo_prefs = repo_prefs if repo_prefs else []
@@ -230,7 +252,7 @@ class JSS(object):
             to returning None.
         """
         request_url = os.path.join(self._url, quote_and_encode(url_path))
-        response = self.session.get(request_url)
+        response = self.session.get(request_url, headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'})
 
         if response.status_code == 200 and self.verbose:
             print "GET %s: Success." % request_url
@@ -246,6 +268,7 @@ class JSS(object):
         return xmldata
 
     def post(self, url_path, data):
+        # type: (str, Union[ElementTree.Element, dict]) -> str
         """POST an object to the JSS. For creating new objects only.
 
         The JSS responds with the new object's ID number if successful.
@@ -265,15 +288,28 @@ class JSS(object):
         # The JSS expects a post to ID 0 to create an object
 
         request_url = os.path.join(self._url, quote_and_encode(url_path))
-        data = ElementTree.tostring(data, encoding='UTF-8')
-        response = self.session.post(request_url, data=data)
+        headers = {}
+
+        if isinstance(data, ElementTree.Element):
+            data = ElementTree.tostring(data, encoding='UTF-8')
+            headers = {'Content-Type': 'text/xml', 'Accept': 'text/xml'}
+        elif isinstance(data, dict):
+            data = json.dumps(data)
+            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        else:
+            raise TypeError('Could not POST unrecognised data type')
+
+        response = self.session.post(request_url, data=data, headers=headers)
 
         if response.status_code == 201 and self.verbose:
             print "POST %s: Success" % request_url
         elif response.status_code >= 400:
             error_handler(PostError, response)
 
-        id_ = re.search(r"<id>([0-9]+)</id>", response.content).group(1)
+        if 'text/xml' in response.headers['content-type']:
+            id_ = re.search(r"<id>([0-9]+)</id>", response.content).group(1)
+        else:
+            raise TypeError('Unimplemented')
 
         return id_
 
@@ -295,7 +331,7 @@ class JSS(object):
         """
         request_url = os.path.join(self._url, quote_and_encode(url_path))
         data = ElementTree.tostring(data, encoding='UTF-8')
-        response = self.session.put(request_url, data=data)
+        response = self.session.put(request_url, data=data, headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'})
 
         if response.status_code == 201 and self.verbose:
             print "PUT %s: Success." % request_url
@@ -320,7 +356,7 @@ class JSS(object):
         request_url = os.path.join(self._url, quote_and_encode(url_path))
         if data:
             data = ElementTree.tostring(data, encoding='UTF-8')
-            response = self.session.delete(request_url, data=data)
+            response = self.session.delete(request_url, data=data, headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'})
         else:
             response = self.session.delete(request_url)
 
@@ -480,7 +516,9 @@ class JSS(object):
     def scrape(self, url_path, session_id=None):
         if session_id is None:
             response = self.session.post(self.base_url, data={'username': self.user, 'password': self.password})
-            print response
+
+            if response.status_code == 200:
+                return self.session.get('{}/{}'.format(self.base_url, url_path))
 
     def version(self):
         return self.JSSUser().version.text

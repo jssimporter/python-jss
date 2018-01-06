@@ -219,7 +219,7 @@ class NSURLSessionAdapterDelegate(NSObject):
             self,
             session,           # type: NSURLSession
             task,              # type: NSURLSessionDataTask
-            response,          # type: NSURLResponse
+            response,          # type: NSHTTPURLResponse
             completionHandler  # type: (NSURLSessionResponseDisposition) -> Void
     ):  # type: (...) -> None
         logger.debug('URLSession_dataTask_didReceiveResponse_completionHandler_')

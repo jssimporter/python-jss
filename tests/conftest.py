@@ -3,7 +3,6 @@ import plistlib
 from jss import JSSPrefs, JSS
 from xml.etree import ElementTree
 from jss.requests_adapter import RequestsAdapter
-from jss.gurl_adapter import GurlAdapter
 from subprocess import call
 
 JSS_PREFS = {
@@ -92,18 +91,6 @@ def dp_smb_ip_port(docker_ip, docker_services):
         check=lambda: is_smb_responsive("//jss:jss@%s:%s" % (docker_ip, docker_services.port_for('samba', 139)))
     )
     return docker_ip, docker_services.port_for('samba', 139)
-
-
-@pytest.fixture
-def gurl_jss(gurl_adapter, jss_prefs_dict):  # type: (GurlAdapter, dict) -> JSS
-    j = JSS(
-        adapter=gurl_adapter,
-        url=jss_prefs_dict['jss_url'],
-        user=jss_prefs_dict['jss_user'],
-        password=jss_prefs_dict['jss_password'],
-        ssl_verify=jss_prefs_dict['verify'],
-    )
-    return j
 
 
 # @pytest.fixture
