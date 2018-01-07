@@ -104,3 +104,8 @@ def dp_smb_ip_port(docker_ip, docker_services):
 #         check=lambda: is_afp_responsive(afp_url)
 #     )
 #     return afp_url
+
+@pytest.fixture
+def uapi_token(jss_prefs_dict, j):
+    response = j.post('uapi/auth/tokens', data={})
+    json_data = response.json()

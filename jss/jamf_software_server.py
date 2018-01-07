@@ -31,10 +31,10 @@ import requests
 
 from jss.nsurlsession_adapter import NSURLSessionAdapter
 from . import distribution_points
-from .curl_adapter import CurlAdapter
 from .exceptions import GetError, PutError, PostError, DeleteError
 from .jssobject import JSSObject
 from . import jssobjects
+from . import uapiobjects
 from .queryset import QuerySet
 from .tools import error_handler, quote_and_encode
 
@@ -230,8 +230,8 @@ class JSS(object):
         self.user, self.password = auth
         self.ssl_verify = ssl_verify
 
-    def get(self, url_path):
-        # type: (str) -> Union[ElementTree.Element, dict]
+    def get(self, url_path, headers=None):
+        # type: (str) -> Union[ElementTree.Element, dict, bytes]
         """GET a url, handle errors, and return an etree.
 
         In general, it is better to use a higher level interface for
@@ -240,9 +240,12 @@ class JSS(object):
 
         Args:
             url_path: String API endpoint path to GET (e.g. "packages")
+            headers: [Optional] headers to add to the request
 
         Returns:
-            ElementTree.Element for the XML returned from the JSS.
+            ElementTree.Element for the XML returned from the JSS if the response was XML,
+            dict if the response had Content-Type for json,
+            bytes for anything else
 
         Raises:
             GetError if provided url_path has a >= 400 response, for
@@ -252,8 +255,11 @@ class JSS(object):
             This behavior will change in the future for 404/Not Found
             to returning None.
         """
-        request_url = os.path.join(self._url, quote_and_encode(url_path))
-        response = self.session.get(request_url, headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'})
+        request_url = os.path.join(self.base_url, quote_and_encode(url_path))
+        if headers is None:  # Fall back to XML to support python-jss prior to addition of UAPI
+            headers = {'Content-Type': 'text/xml', 'Accept': 'text/xml'}
+
+        response = self.session.get(request_url, headers=headers)
 
         if response.status_code == 200 and self.verbose:
             print "GET %s: Success." % request_url
@@ -267,10 +273,12 @@ class JSS(object):
                 return xmldata
             except ElementTree.ParseError:
                 raise GetError("Error Parsing XML:\n%s" % response.content)
+        elif response.headers['content-type'] == 'application/json':
+            return response.json()
         else:
-            raise TypeError('Unimplemented')
+            return response.content
 
-    def post(self, url_path, data):
+    def post(self, url_path, data=None):
         # type: (str, Union[ElementTree.Element, dict]) -> str
         """POST an object to the JSS. For creating new objects only.
 
@@ -290,7 +298,7 @@ class JSS(object):
         """
         # The JSS expects a post to ID 0 to create an object
 
-        request_url = os.path.join(self._url, quote_and_encode(url_path))
+        request_url = os.path.join(self.base_url, quote_and_encode(url_path))
         headers = {}
 
         if isinstance(data, ElementTree.Element):
@@ -299,8 +307,6 @@ class JSS(object):
         elif isinstance(data, dict):
             data = json.dumps(data)
             headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
-        else:
-            raise TypeError('Could not POST unrecognised data type')
 
         response = self.session.post(request_url, data=data, headers=headers)
 
@@ -333,7 +339,7 @@ class JSS(object):
         Raises:
             PutError if provided url_path has a >= 400 response.
         """
-        request_url = os.path.join(self._url, quote_and_encode(url_path))
+        request_url = os.path.join(self.base_url, quote_and_encode(url_path))
         headers = {}
 
         if isinstance(data, ElementTree.Element):
@@ -368,7 +374,7 @@ class JSS(object):
         Raises:
             DeleteError if provided url_path has a >= 400 response.
         """
-        request_url = os.path.join(self._url, quote_and_encode(url_path))
+        request_url = os.path.join(self.base_url, quote_and_encode(url_path))
         if data:
             data = ElementTree.tostring(data, encoding='UTF-8')
             response = self.session.delete(request_url, data=data,
@@ -624,12 +630,99 @@ def add_search_method(cls, name):
     setattr(cls, name, api_method)
 
 
+# TODO: DRY.. this is just a temp copy/paste to try abstracting
+def add_uapi_search_method(cls, name):
+    """Add a class-specific search method to a class (JSS)"""
+    # Get the actual class to search for, from str `name`
+    obj_type = getattr(uapiobjects, name)
+
+    # Create a closure over the retrieved class to do our search.
+    def api_method(self, data=None, **kwargs):
+        """Flexibly search the JSS for objects of type {0}.
+
+            Args:
+                data (None, int, str, xml.etree.ElementTree.Element):
+                    Argument to query for. Different queries are
+                    performed depending on the type of this arg:
+                        None (or provide no argument / default):
+                            Search for all objects.
+                        int: Search for an object by ID.
+                        str: Search for an object by name. Some objects
+                            allow 'match' searches, using '*' as the
+                            wildcard operator.
+                        xml.etree.ElementTree.Element: create a new
+                            object from the Element's data.
+                kwargs:
+                    {1}
+
+                    Some classes allow additional filters, subsets, etc,
+                    in their queries. Check the object's `allowed_kwargs`
+                    attribute for a complete list of implemented keys.
+
+                    Not all classes offer all types of searches, nor are
+                    they all necessarily offered in a single query.
+                    Consult the Casper API documentation for usage.
+
+                    In general, the key name is applied to the end of the
+                    URL, followed by the val; e.g.
+                    '<url>/subset/general'.
+
+                    Some common types of extra arguments:
+
+                    subset (list of str or str): XML subelement tags to
+                        request (e.g.  ['general', 'purchasing']), OR an
+                        '&' delimited string (e.g.
+                        'general&purchasing').  Defaults to None.
+                    start_date/end_date (str or datetime): Either dates
+                        in the form 'YYYY-MM-DD' or a datetime.datetime
+                        object.
+
+            Returns:
+                QuerySet: If data=None, return all objects of this
+                    type.
+                {0}: If searching or creating new objects, return an
+                    instance of that object.
+                None: (FUTURE) Will return None if nothing is found that
+                    matches the search criteria.
+
+            Raises:
+                GetError for nonexistent objects.
+        """
+        if not isinstance(data, ElementTree.Element):
+            url = obj_type.build_query(data, **kwargs)
+            data = self.get(url)
+
+        # TODO: Deprecated and pending removal
+        if hasattr(obj_type, "container"):
+            data = data.find(obj_type.container)
+
+        if data.find("size") is not None:
+            return QuerySet.from_response(obj_type, data, self, **kwargs)
+        else:
+            return obj_type(self, data)
+
+    # Add in the missing variables to the docstring and set name.
+    if hasattr(obj_type, 'allowed_kwargs') and obj_type.allowed_kwargs:
+        allowed = ', '.join(obj_type.allowed_kwargs)
+        msg = 'Allowed keyword arguments for this class are:\n{}{}'
+        kwarg_doc = msg.format(6 * "    ", allowed) if allowed else ""
+    else:
+        kwarg_doc = "(None supported)"
+    api_method.__doc__ = api_method.__doc__.format(name, kwarg_doc)
+    api_method.__name__ = name
+    # Add the method to the class with the correct name.
+    setattr(cls, name, api_method)
+
+
 # Run `add_search_method` against everything that jss.jssobjects exports.
 for jss_class in jssobjects.__all__:
     add_search_method(JSS, jss_class)
 
+for jss_uapi_class in uapiobjects.__all__:
+    add_uapi_search_method(JSS, jss_uapi_class)
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
+
 
 class JSSObjectFactory(object):
     """Deprecated"""

@@ -13,6 +13,8 @@ from requests.models import Response, PreparedRequest, Request
 from requests.structures import CaseInsensitiveDict
 from requests.utils import get_encoding_from_headers
 from requests.auth import AuthBase, HTTPBasicAuth
+from requests.cookies import RequestsCookieJar
+from cookielib import Cookie
 
 import objc
 from Foundation import NSObject, NSMutableURLRequest, NSURL, NSURLRequestUseProtocolCachePolicy, \
@@ -330,16 +332,17 @@ class NSURLSessionAdapter(BaseAdapter):
         self.verify = True
         self.credential = credential
 
-        configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
+        self.configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
         self.delegate = NSURLSessionAdapterDelegate.alloc().initWithAdapter_(self)
         self.delegate.credential = credential
         self.session = NSURLSession.sessionWithConfiguration_delegate_delegateQueue_(
-            configuration,
+            self.configuration,
             self.delegate,
             None,
         )
 
-    def build_response(self, req, delegate):  # type: (PreparedRequest, NSURLSessionAdapterDelegate) -> Response
+    def build_response(self, req, delegate, cookiestore):
+        # type: (PreparedRequest, NSURLSessionAdapterDelegate, NSHTTPCookieStorage) -> Response
         response = Response()
 
         # Fallback to None if there's no status_code, for whatever reason.
@@ -358,8 +361,30 @@ class NSURLSessionAdapter(BaseAdapter):
         else:
             response.url = req.url
 
-        # Add new cookies from the server.
-        # extract_cookies_to_jar(response.cookies, req, resp)
+        # Add new cookies from the server. For NSURLSession these have already been parsed.
+        # jar = RequestsCookieJar()
+        # for cookie in cookiestore.cookies():
+        #     print cookie
+        #     c = Cookie(
+        #         version=cookie.version(),
+        #         name=cookie.name(),
+        #         value=cookie.value(),
+        #         port=8444,
+        #         # port=cookie.portList()[-1],
+        #         port_specified=0,
+        #         domain=cookie.domain(),
+        #         domain_specified=cookie.domain(),
+        #         domain_initial_dot=cookie.domain(),
+        #         path=cookie.path(),
+        #         path_specified=cookie.path(),
+        #         secure=!cookie.HTTPOnly(),
+        #         expires=cookie.expiresDate(),
+        #         comment=cookie.comment(),
+        #         comment_url=cookie.commentURL(),
+        #     )
+        #     jar.set_cookie(c)
+        #
+        # response.cookies = jar
 
         response.raw = io.BytesIO(buffer(delegate.output))
         
@@ -399,10 +424,12 @@ class NSURLSessionAdapter(BaseAdapter):
         while not self.delegate.isDone():
             pass
 
+        cookiestore = self.configuration.HTTPCookieStorage()
+
         if self.delegate.error is not None:
             raise self.delegate.error
 
         if self.delegate.SSLError is not None:
             raise self.delegate.SSLError
 
-        return self.build_response(request, self.delegate)
+        return self.build_response(request, self.delegate, cookiestore)
