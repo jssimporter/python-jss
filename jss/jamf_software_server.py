@@ -540,7 +540,8 @@ class JSS(object):
             response = self.session.post(self.base_url, data={'username': self.user, 'password': self.password})
 
             if response.status_code == 200:
-                return self.session.get('{}/{}'.format(self.base_url, url_path))
+                scrape_url = '{}/{}'.format(self.base_url, url_path)
+                return self.session.get(scrape_url)
 
     def version(self):
         return self.JSSUser().version.text
