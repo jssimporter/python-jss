@@ -111,9 +111,10 @@ PyObjCMethodSignature_WithMetaData = (
     _objc_so.PyObjCMethodSignature_WithMetaData)
 PyObjCMethodSignature_WithMetaData.restype = ctypes.py_object
 
+
 def objc_method_signature(signature_str):
-    '''Return a PyObjCMethodSignature given a call signature in string
-    format'''
+    """Return a PyObjCMethodSignature given a call signature in string
+    format"""
     return PyObjCMethodSignature_WithMetaData(
         ctypes.create_string_buffer(signature_str), None, False)
 
@@ -442,7 +443,7 @@ class NSURLSessionAdapter(BaseAdapter):
         self.verify = True
         self.credential = credential
 
-        self.configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
+        self.configuration = NSURLSessionConfiguration.ephemeralSessionConfiguration()
         self.delegate = NSURLSessionAdapterDelegate.alloc().initWithAdapter_(self)
         self.delegate.credential = credential
         self.session = NSURLSession.sessionWithConfiguration_delegate_delegateQueue_(
