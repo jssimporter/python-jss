@@ -13,6 +13,8 @@ from requests.models import Response, PreparedRequest, Request
 from requests.structures import CaseInsensitiveDict
 from requests.utils import get_encoding_from_headers
 from requests.auth import AuthBase, HTTPBasicAuth
+from requests.cookies import RequestsCookieJar
+from cookielib import Cookie
 
 import objc
 from Foundation import NSObject, NSMutableURLRequest, NSURL, NSURLRequestUseProtocolCachePolicy, \
@@ -109,9 +111,10 @@ PyObjCMethodSignature_WithMetaData = (
     _objc_so.PyObjCMethodSignature_WithMetaData)
 PyObjCMethodSignature_WithMetaData.restype = ctypes.py_object
 
+
 def objc_method_signature(signature_str):
-    '''Return a PyObjCMethodSignature given a call signature in string
-    format'''
+    """Return a PyObjCMethodSignature given a call signature in string
+    format"""
     return PyObjCMethodSignature_WithMetaData(
         ctypes.create_string_buffer(signature_str), None, False)
 
@@ -128,9 +131,9 @@ info = bundle.localizedInfoDictionary() or bundle.infoDictionary()
 info['NSAppTransportSecurity'] = {'NSAllowsArbitraryLoads': True}
 
 
-def nsrequest_from_preparedrequest(request, timeout):
-    """Convert a requests PreparedRequest into a suitable NSMutableURLRequest."""
+def build_request(request, timeout):
     # type: (PreparedRequest, Union[float, Tuple[float, float]]) -> NSMutableURLRequest
+    """Convert a requests `PreparedRequest` into a suitable NSMutableURLRequest."""
 
     timeout = timeout if timeout else 0.0
 
@@ -145,6 +148,7 @@ def nsrequest_from_preparedrequest(request, timeout):
         k, v = k.lower(), v.lower()
 
         if k in _RESERVED_HEADERS:
+            logging.debug('Ignoring reserved header: %s', k)
             continue
 
         nsrequest.setValue_forHTTPHeaderField_(v, k)
@@ -152,27 +156,87 @@ def nsrequest_from_preparedrequest(request, timeout):
     return nsrequest
 
 
+def build_response(req, delegate, cookiestore):
+    # type: (PreparedRequest, NSURLSessionAdapterDelegate, NSHTTPCookieStorage) -> Response
+    """Build a requests `Response` object from the response data collected by the NSURLSessionDelegate, and the
+    default cookie store."""
+
+    response = Response()
+
+    # Fallback to None if there's no status_code, for whatever reason.
+    response.status_code = getattr(delegate, 'status', None)
+
+    # Make headers case-insensitive.
+    response.headers = CaseInsensitiveDict(getattr(delegate, 'headers', {}))
+
+    # Set encoding.
+    response.encoding = get_encoding_from_headers(response.headers)
+    # response.raw = resp
+    # response.reason = response.raw.reason
+
+    if isinstance(req.url, bytes):
+        response.url = req.url.decode('utf-8')
+    else:
+        response.url = req.url
+
+    # Add new cookies from the server. For NSURLSession these have already been parsed.
+    # jar = RequestsCookieJar()
+    # for cookie in cookiestore.cookies():
+    #     print cookie
+    #     c = Cookie(
+    #         version=cookie.version(),
+    #         name=cookie.name(),
+    #         value=cookie.value(),
+    #         port=8444,
+    #         # port=cookie.portList()[-1],
+    #         port_specified=0,
+    #         domain=cookie.domain(),
+    #         domain_specified=cookie.domain(),
+    #         domain_initial_dot=cookie.domain(),
+    #         path=cookie.path(),
+    #         path_specified=cookie.path(),
+    #         secure=!cookie.HTTPOnly(),
+    #         expires=cookie.expiresDate(),
+    #         comment=cookie.comment(),
+    #         comment_url=cookie.commentURL(),
+    #     )
+    #     jar.set_cookie(c)
+    #
+    # response.cookies = jar
+
+    response.raw = io.BytesIO(buffer(delegate.output))
+
+    # Give the Response some context.
+    response.request = req
+    # response.connection = self
+
+    return response
+
+
 class NSURLCredentialAuth(AuthBase):
     """HTTP Basic Authentication for NSURLSessionAdapter.
 
-    We can't use the HTTPBasic adapter without some kludge, so you need to supply this auth method for use with
-    NSURLSession."""
-    def __init__(self, username, password):
+    It isn't possible to use the requests built-in HTTPBasicAuth adapter because it adds headers, which doesn't really
+    gel with NSURLSession's delegate challenge methods."""
+
+    def __init__(self, username, password):  # type: (str, str) -> None
         self.username = username
         self.password = password
         self.credential = None
 
-    def __eq__(self, other):
+    def __eq__(self, other):  # type: (Any) -> bool
         return all([
             self.username == getattr(other, 'username', None),
             self.password == getattr(other, 'password', None)
         ])
 
-    def __ne__(self, other):
+    def __ne__(self, other):  # type: (Any) -> bool
         return not self == other
 
     def __call__(self, r):  # type: (PreparedRequest) -> PreparedRequest
-        # Create an NSURLCredential and attach it to the prepared request.
+        """Instead of modifying the request object, we construct an instance of NSURLCredential to attach to ourselves.
+
+        When the delegate detects that attribute is present, it uses it whenever a challenge comes in."""
         credential = NSURLCredential.credentialWithUser_password_persistence_(
             self.username, self.password,
             NSURLCredentialPersistenceNone  # we don't expect ephemeral requests to save keychain items.
@@ -183,6 +247,12 @@ class NSURLCredentialAuth(AuthBase):
 
 
 class NSURLSessionAdapterDelegate(NSObject):
+    """NSURLSessionAdapterDelegate implements the delegate methods of NSURLSession protocols such as:
+
+    - `NSURLSessionDelegate <https://developer.apple.com/documentation/foundation/nsurlsessiondelegate?language=objc>`_.
+    - `NSURLSessionTaskDelegate <https://developer.apple.com/documentation/foundation/nsurlsessiontaskdelegate?language=objc>`_.
+    - `NSURLSessionDataDelegate <https://developer.apple.com/documentation/foundation/nsurlsessiondatadelegate?language=objc>`_.
+    """
 
     def initWithAdapter_(self, adapter):
         self = objc.super(NSURLSessionAdapterDelegate, self).init()
@@ -202,10 +272,11 @@ class NSURLSessionAdapterDelegate(NSObject):
         self.headers = {}
         self.verify = True
         self.credential = None
+        self.history = []
 
         return self
 
-    def isDone(self):
+    def isDone(self):  # () -> bool
         """Check if the connection request is complete. As a side effect,
         allow the delegates to work by letting the run loop run for a bit"""
         if self.done:
@@ -219,7 +290,7 @@ class NSURLSessionAdapterDelegate(NSObject):
             self,
             session,           # type: NSURLSession
             task,              # type: NSURLSessionDataTask
-            response,          # type: NSURLResponse
+            response,          # type: NSHTTPURLResponse
             completionHandler  # type: (NSURLSessionResponseDisposition) -> Void
     ):  # type: (...) -> None
         logger.debug('URLSession_dataTask_didReceiveResponse_completionHandler_')
@@ -295,7 +366,6 @@ class NSURLSessionAdapterDelegate(NSObject):
             completionHandler(
                 NSURLSessionAuthChallengePerformDefaultHandling, None)
 
-
     def URLSession_task_didCompleteWithError_(
             self,
             session,    # type: NSURLSession
@@ -314,6 +384,49 @@ class NSURLSessionAdapterDelegate(NSObject):
                         ssl_code, 'Unknown SSL error'))
         self.done = True
 
+    def URLSession_task_willPerformHTTPRedirection_newRequest_completionHandler_(
+            self,
+            session,           # type: NSURLSession
+            task,              # type: NSURLSessionTask
+            response,          # type: NSHTTPURLResponse
+            request,           # type: NSURLRequest
+            completionHandler  # type: (NSURLRequest) -> None
+    ):
+        """This method copied largely from gurl.py"""
+        # we don't actually use the session or task arguments, so
+        # pylint: disable=W0613
+        logger.debug('URLSession_task_willPerformHTTPRedirection_newRequest_')
+        completionHandler.__block_signature__ = objc_method_signature('v@@')
+
+        if response is None:
+            # the request has changed the NSURLRequest in order to standardize
+            # its format, for example, changing a request for
+            # http://www.apple.com to http://www.apple.com/. This occurs because
+            # the standardized, or canonical, version of the request is used for
+            # cache management. Pass the request back as-is
+            # (it appears that at some point Apple also defined a redirect like
+            # http://developer.apple.com to https://developer.apple.com to be
+            # 'merely' a change in the canonical URL.)
+            # Further -- it appears that this delegate method isn't called at
+            # all in this scenario, unlike NSConnectionDelegate method
+            # connection:willSendRequest:redirectResponse:
+            # we'll leave this here anyway in case we're wrong about that
+            if completionHandler:
+                completionHandler(request)
+                return
+            else:
+                return request
+
+        # If we get here, it appears to be a real redirect attempt
+        # Annoyingly, we apparently can't get access to the headers from the
+        # site that told us to redirect. All we know is that we were told
+        # to redirect and where the new location is.
+        newURL = request.URL().absoluteString()
+
+        logging.debug('Being redirected to: %s' % newURL)
+        # self.history.append()
+        completionHandler(request)
+
 
 class NSURLSessionAdapter(BaseAdapter):
 
@@ -330,44 +443,14 @@ class NSURLSessionAdapter(BaseAdapter):
         self.verify = True
         self.credential = credential
 
-        configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
+        self.configuration = NSURLSessionConfiguration.ephemeralSessionConfiguration()
         self.delegate = NSURLSessionAdapterDelegate.alloc().initWithAdapter_(self)
         self.delegate.credential = credential
         self.session = NSURLSession.sessionWithConfiguration_delegate_delegateQueue_(
-            configuration,
+            self.configuration,
             self.delegate,
             None,
         )
-
-    def build_response(self, req, delegate):  # type: (PreparedRequest, NSURLSessionAdapterDelegate) -> Response
-        response = Response()
-
-        # Fallback to None if there's no status_code, for whatever reason.
-        response.status_code = getattr(delegate, 'status', None)
-
-        # Make headers case-insensitive.
-        response.headers = CaseInsensitiveDict(getattr(delegate, 'headers', {}))
-
-        # Set encoding.
-        response.encoding = get_encoding_from_headers(response.headers)
-        # response.raw = resp
-        # response.reason = response.raw.reason
-
-        if isinstance(req.url, bytes):
-            response.url = req.url.decode('utf-8')
-        else:
-            response.url = req.url
-
-        # Add new cookies from the server.
-        # extract_cookies_to_jar(response.cookies, req, resp)
-
-        response.raw = io.BytesIO(buffer(delegate.output))
-        
-        # Give the Response some context.
-        response.request = req
-        response.connection = self
-
-        return response
 
     def send(
             self,
@@ -380,7 +463,7 @@ class NSURLSessionAdapter(BaseAdapter):
         ):
         # type: (...) -> Response
         
-        nsrequest = nsrequest_from_preparedrequest(request, timeout)
+        nsrequest = build_request(request, timeout)
         self.verify = verify
 
         # TODO: Support all of this stuff.
@@ -394,6 +477,13 @@ class NSURLSessionAdapter(BaseAdapter):
         else:
             task = self.session.dataTaskWithRequest_(nsrequest)
 
+        cookiestore = self.configuration.HTTPCookieStorage()
+
+        for cookie in cookiestore.cookies():
+            if cookie.name() == 'JSESSIONID':
+                logging.debug('Making request using JSESSIONID: %s', cookie.value())
+                break
+
         task.resume()
 
         while not self.delegate.isDone():
@@ -405,4 +495,4 @@ class NSURLSessionAdapter(BaseAdapter):
         if self.delegate.SSLError is not None:
             raise self.delegate.SSLError
 
-        return self.build_response(request, self.delegate)
+        return build_response(request, self.delegate, cookiestore)
