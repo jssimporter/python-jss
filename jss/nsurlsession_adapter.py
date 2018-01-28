@@ -14,6 +14,7 @@ from requests.structures import CaseInsensitiveDict
 from requests.utils import get_encoding_from_headers
 from requests.auth import AuthBase, HTTPBasicAuth
 from requests.cookies import RequestsCookieJar
+from requests.exceptions import SSLError
 from cookielib import Cookie
 
 import objc
@@ -380,7 +381,7 @@ class NSURLSessionAdapterDelegate(NSObject):
                 ssl_code = error.userInfo()['NSUnderlyingError'].userInfo().get(
                     '_kCFNetworkCFStreamSSLErrorOriginalValue', None)
                 if ssl_code:
-                    self.SSLerror = (ssl_code, ssl_error_codes.get(
+                    self.SSLError = (ssl_code, ssl_error_codes.get(
                         ssl_code, 'Unknown SSL error'))
         self.done = True
 
@@ -489,10 +490,13 @@ class NSURLSessionAdapter(BaseAdapter):
         while not self.delegate.isDone():
             pass
 
-        if self.delegate.error is not None:
-            raise self.delegate.error
+        response = build_response(request, self.delegate, cookiestore)
+
+        # if self.delegate.error is not None:
+        #     raise self.delegate.error
 
         if self.delegate.SSLError is not None:
-            raise self.delegate.SSLError
+            code, message = self.delegate.SSLError
+            raise SSLError('{}: {}'.format(code, message), response=response, request=request)
 
         return build_response(request, self.delegate, cookiestore)
