@@ -35,8 +35,34 @@ JSS object beginning with python-jss 2.0.0.
 
 import copy
 import subprocess
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 
 from .exceptions import JSSError, SSLVerifyError
+
+CURL_RETURNCODE = {
+    1: 'Unsupported protocol. This build of curl has no support for this protocol.',
+    2: 'Failed to initialize.',
+    3: 'URL malformed. The syntax was not correct.',
+    4: 'A feature or option that was needed to perform the desired request was not enabled or was explicitly disabled '
+       'at build-time. To make curl able to do this, you probably need another build of libcurl!',
+    5: 'Couldn\'t resolve proxy. The given proxy host could not be resolved.',
+    6: 'Couldn\'t resolve host. The given remote host was not resolved.',
+    7: 'Failed to connect to host.',
+    8: 'Weird server reply. The server sent data curl couldn\'t parse.',
+    22: 'HTTP page not retrieved. The requested url was not found or returned another error with the HTTP error '
+        'code being 400 or above.',
+    23: 'Write error. Curl couldn\'t write data to a local filesystem or similar.',
+    27: 'Out of memory. A memory allocation request failed.',
+    28: 'Operation timeout. The specified time-out period was reached according to the conditions.',
+    33: 'HTTP range error. The range "command" didn\'t work.',
+    35: 'SSL connect error. The SSL handshaking failed.',
+    47: 'Too many redirects. When following redirects, curl hit the maximum amount.',
+    60: 'Peer certificate cannot be authenticated with known CA certificates.'
+}
 
 
 class CurlAdapter(object):
@@ -50,9 +76,9 @@ class CurlAdapter(object):
     """
     base_headers = ['Accept: application/xml']
 
-    def __init__(self):
+    def __init__(self, verify=True):
         self.auth = ('', '')
-        self.verify = True
+        self.verify = verify
         self.use_tls = True
 
     def get(self, url, headers=None):
@@ -62,7 +88,7 @@ class CurlAdapter(object):
         content_type = 'text/xml' if not files else 'multipart/form-data'
         header = ['Content-Type: {}'.format(content_type)]
         if headers:
-            header += headers
+            [header.append('{}: {}'.format(k, v)) for k, v in headers.iteritems()]
 
         post_kwargs = {"--request": "POST"}
         return self._request(url, header, data, files, **post_kwargs)
@@ -71,7 +97,8 @@ class CurlAdapter(object):
         content_type = 'text/xml' if not files else 'multipart/form-data'
         header = ['Content-Type: {}'.format(content_type)]
         if headers:
-            header += headers
+            [header.append('{}: {}'.format(k, v)) for k, v in headers.iteritems()]
+            
         put_args = {"--request": "PUT"}
         return self._request(url, header, data, files, **put_args)
 
@@ -92,14 +119,15 @@ class CurlAdapter(object):
             item.encode('UTF-8') if isinstance(item, unicode) else item
             for item in command]
 
+        logger.debug(' '.join(command))
+
         try:
             response = subprocess.check_output(command)
         except subprocess.CalledProcessError as err:
-            if err.returncode == 60:
-                raise SSLVerifyError(
-                    'The JSS\'s certificate cannot be verified.')
+            if err.returncode in CURL_RETURNCODE:
+                raise JSSError('CURL Error: {}'.format(CURL_RETURNCODE[err.returncode]))
             else:
-                raise JSSError('Unknown curl error')
+                raise JSSError('Unknown curl error: {}'.format(err.returncode))
 
         return CurlResponseAdapter(response, url)
 
@@ -143,7 +171,12 @@ class CurlAdapter(object):
             command += ['--header', header]
 
         if data:
-            command += ["--data", data]
+            if isinstance(data, file):
+                command += ["--data", "@{}".format(data.name)]
+            elif isinstance(data, dict):
+                [command.extend(["-F", "{}={}".format(k, v)]) for k, v in data.iteritems()]
+            else:
+                command += ["--data", data]
 
         if files:
             path = files['name'][1].name
