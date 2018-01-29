@@ -593,7 +593,7 @@ class DistributionServer(Repository):
         headers = {"DESTINATION": self.destination, "OBJECT_ID": str(id_),
                    "FILE_TYPE": file_type, "FILE_NAME": basefname}
         response = self.connection["jss"].session.post(
-            url=self.connection["upload_url"], data=resource, headers=headers)
+            url=self.connection["upload_url"], data=resource.read(), headers=headers)
         if self.connection["jss"].verbose:
             print response
 

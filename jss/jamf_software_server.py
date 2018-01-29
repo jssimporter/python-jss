@@ -719,8 +719,8 @@ def add_uapi_search_method(cls, name):
 for jss_class in jssobjects.__all__:
     add_search_method(JSS, jss_class)
 
-for jss_uapi_class in uapiobjects.__all__:
-    add_uapi_search_method(JSS, jss_uapi_class)
+# for jss_uapi_class in uapiobjects.__all__:
+#     add_uapi_search_method(JSS, jss_uapi_class)
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
 
