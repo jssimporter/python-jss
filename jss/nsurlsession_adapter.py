@@ -121,7 +121,7 @@ def objc_method_signature(signature_str):
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 # ATS hack stolen from gurl.py
@@ -383,6 +383,9 @@ class NSURLSessionAdapterDelegate(NSObject):
                 if ssl_code:
                     self.SSLError = (ssl_code, ssl_error_codes.get(
                         ssl_code, 'Unknown SSL error'))
+        else:
+            logger.debug('no error(s)')
+
         self.done = True
 
     def URLSession_task_willPerformHTTPRedirection_newRequest_completionHandler_(
@@ -431,27 +434,27 @@ class NSURLSessionAdapterDelegate(NSObject):
 
 class NSURLSessionAdapter(BaseAdapter):
 
-    def __init__(self, credential=None):
-        # type: (Optional[NSURLCredential]) -> None
+    def __init__(self, credential=None, force_basic=False):
+        # type: (Optional[NSURLCredential], bool) -> None
         """NSURLSessionAdapter implements a requests adapter using PyObjC + NSURLSession.
 
         Because of the way the delegate deals with authentication, we cannot support requests style auth which may only
         act on the content of the request. For NSURLSessionAdapter you should use NSURLCredentialAuth, which supplies an
         NSURLCredential object whenever authentication is required by the remote host.
+
+        :param credential: NSURLCredential that will be used if the server requests basic auth.
+        :param force_basic: Force basic authentication to be used for every request by preparing the Authorization
+            header. This is sometimes required because NSURLSession only checks with the delegate for credentials when
+            the server sends a "challenge". Some web services never even send a challenge.
         """
         super(NSURLSessionAdapter, self).__init__()
 
         self.verify = True
         self.credential = credential
-
-        self.configuration = NSURLSessionConfiguration.ephemeralSessionConfiguration()
-        self.delegate = NSURLSessionAdapterDelegate.alloc().initWithAdapter_(self)
-        self.delegate.credential = credential
-        self.session = NSURLSession.sessionWithConfiguration_delegate_delegateQueue_(
-            self.configuration,
-            self.delegate,
-            None,
-        )
+        self.force_basic = force_basic
+        self.configuration = None
+        self.delegate = None
+        self.session = None
 
     def send(
             self,
@@ -463,7 +466,16 @@ class NSURLSessionAdapter(BaseAdapter):
             proxies=None   # type: dict
         ):
         # type: (...) -> Response
-        
+
+        self.configuration = NSURLSessionConfiguration.ephemeralSessionConfiguration()
+        self.delegate = NSURLSessionAdapterDelegate.alloc().initWithAdapter_(self)
+        self.delegate.credential = self.credential
+        self.session = NSURLSession.sessionWithConfiguration_delegate_delegateQueue_(
+            self.configuration,
+            self.delegate,
+            None,
+        )
+
         nsrequest = build_request(request, timeout)
         self.verify = verify
 
@@ -480,11 +492,6 @@ class NSURLSessionAdapter(BaseAdapter):
 
         cookiestore = self.configuration.HTTPCookieStorage()
 
-        for cookie in cookiestore.cookies():
-            if cookie.name() == 'JSESSIONID':
-                logging.debug('Making request using JSESSIONID: %s', cookie.value())
-                break
-
         task.resume()
 
         while not self.delegate.isDone():
@@ -499,4 +506,4 @@ class NSURLSessionAdapter(BaseAdapter):
             code, message = self.delegate.SSLError
             raise SSLError('{}: {}'.format(code, message), response=response, request=request)
 
-        return build_response(request, self.delegate, cookiestore)
+        return response
