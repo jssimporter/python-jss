@@ -750,7 +750,7 @@ class JSS(object):
         return self.factory.get_object(jssobjects.Printer, data)
 
     @_docstring_parameter(jssobjects.RestrictedSoftware)
-    def RestrictedSfotware(self, data=None):
+    def RestrictedSoftware(self, data=None):
         """{dynamic_docstring}"""
         return self.factory.get_object(jssobjects.RestrictedSoftware, data)
 
