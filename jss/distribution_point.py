@@ -557,10 +557,18 @@ class DistributionServer(Repository):
         super(DistributionServer, self).__init__(**connection_args)
         self.connection["url"] = self.connection["jss"].base_url
 
+    def _build_url_legacy(self):
+        """Build the URL for POSTing files. 10.2 and earlier"""
+        self.connection["upload_url"] = (
+                "%s/%s" % (self.connection["jss"].base_url, "dbfileupload"))
+        self.connection["delete_url"] = (
+                "%s/%s" % (self.connection["jss"].base_url,
+                           "casperAdminSave.jxml"))
+
     def _build_url(self):
         """Build the URL for POSTing files."""
         self.connection["upload_url"] = (
-            "%s/%s" % (self.connection["jss"].base_url, "dbfileupload"))
+            "%s/%s" % (self.connection["jss"].base_url, "upload"))
         self.connection["delete_url"] = (
             "%s/%s" % (self.connection["jss"].base_url,
                        "casperAdminSave.jxml"))
@@ -578,7 +586,7 @@ class DistributionServer(Repository):
         self._copy(filename, id_=id_, file_type=PKG_FILE_TYPE)
 
     def _copy(self, filename, id_=-1, file_type=0):
-        """Upload a file to the distribution server.
+        """Upload a file to the distribution server. 10.2 and earlier
 
         Directories/bundle-style packages must be zipped prior to
         copying.
@@ -593,7 +601,32 @@ class DistributionServer(Repository):
         headers = {"DESTINATION": self.destination, "OBJECT_ID": str(id_),
                    "FILE_TYPE": file_type, "FILE_NAME": basefname}
         response = self.connection["jss"].session.post(
-            url=self.connection["upload_url"], data=resource.read(), headers=headers)
+            url=self.connection["upload_url"],
+            data=resource.read(),
+            headers=headers)
+        if self.connection["jss"].verbose:
+            print response
+
+    def _copy_new(self, filename, id_=-1, file_type=0):
+        """Upload a file to the distribution server.
+
+        Directories/bundle-style packages must be zipped prior to
+        copying.
+        """
+        if os.path.isdir(filename):
+            raise TypeError(
+                "Distribution Server type repos do not permit directory "
+                "uploads. You are probably trying to upload a non-flat "
+                "package. Please zip or create a flat package.")
+        basefname = os.path.basename(filename)
+        resource = open(filename, "rb")
+        headers = {"sessionIdentifier": "com.jamfsoftware.jss.objects.packages.Package:%s" % str(id_),
+                   "fileIdentifier": "FIELD_FILE_NAME_FOR_DIST_POINTS"}
+        response = self.connection["jss"].session.post(
+            url=self.connection["upload_url"],
+            data=resource.read(),
+            headers=headers)
+        print response
         if self.connection["jss"].verbose:
             print response
 
