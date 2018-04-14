@@ -557,7 +557,7 @@ class DistributionServer(Repository):
         super(DistributionServer, self).__init__(**connection_args)
         self.connection["url"] = self.connection["jss"].base_url
 
-    def _build_url_legacy(self):
+    def _build_url(self):
         """Build the URL for POSTing files. 10.2 and earlier"""
         self.connection["upload_url"] = (
                 "%s/%s" % (self.connection["jss"].base_url, "dbfileupload"))
@@ -565,7 +565,7 @@ class DistributionServer(Repository):
                 "%s/%s" % (self.connection["jss"].base_url,
                            "casperAdminSave.jxml"))
 
-    def _build_url(self):
+    def _build_url_modern(self):
         """Build the URL for POSTing files."""
         self.connection["upload_url"] = (
             "%s/%s" % (self.connection["jss"].base_url, "upload"))

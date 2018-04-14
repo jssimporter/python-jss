@@ -30,6 +30,7 @@ from xml.etree import ElementTree
 import requests
 
 from jss.nsurlsession_adapter import NSURLSessionAdapter
+from .curl_adapter import CurlAdapter
 from . import distribution_points
 from .exceptions import GetError, PutError, PostError, DeleteError
 from .jssobject import JSSObject
@@ -124,20 +125,21 @@ class JSS(object):
             self.session = kwargs['adapter']
         else:
             self.session = requests.session()
-            
-            if platform.system() == 'Darwin':
-                from Foundation import NSURLCredential, NSURLCredentialPersistenceNone
 
-                credential = NSURLCredential.credentialWithUser_password_persistence_(
-                    user, password, NSURLCredentialPersistenceNone
-                    # we don't expect ephemeral requests to save keychain items.
-                )
-
-                adapter = NSURLSessionAdapter(credential=credential)
-                adapter.verify = ssl_verify
-
-                self.session.mount('https://', adapter)
-                self.session.mount('http://', adapter)
+            # Reverted to urllib3 because High Sierra uses LibreSSL
+            # if platform.system() == 'Darwin':
+            #     from Foundation import NSURLCredential, NSURLCredentialPersistenceNone
+            #
+            #     credential = NSURLCredential.credentialWithUser_password_persistence_(
+            #         user, password, NSURLCredentialPersistenceNone
+            #         # we don't expect ephemeral requests to save keychain items.
+            #     )
+            #
+            #     adapter = NSURLSessionAdapter(credential=credential)
+            #     adapter.verify = ssl_verify
+            #
+            #     self.session.mount('https://', adapter)
+            #     self.session.mount('http://', adapter)
 
         self.user = user
         self.password = password
