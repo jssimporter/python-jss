@@ -603,7 +603,10 @@ class JSS(object):
     def scrape(self, url_path, session_id=None):
         if session_id is None:
             response = self.session.post(self.base_url, data={'username': self.user, 'password': self.password})
-            print response
+
+            if response.status_code == 200:
+                scrape_url = '{}/{}'.format(self.base_url, url_path)
+                return self.session.get(scrape_url)
 
     def version(self):
         return self.JSSUser().version.text
