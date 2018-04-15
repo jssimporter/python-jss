@@ -39,7 +39,10 @@ except ImportError:
     # Python 3
     from html.parser import HTMLParser
 
+import boto
+from boto.s3.connection import S3Connection
 from . import casper
+from . import abstract
 from .exceptions import JSSError
 try:
     from .contrib.mount_shares_better import mount_share
@@ -835,14 +838,73 @@ def _jcds_upload_chunk(
     return response.json()
 
 
+class AWS(CloudDistributionServer, abstract.AbstractRepository):
+    """Class for representing an AWS Cloud Distribution Point and its controlling JSS.
+
+    """
+    required_attrs = {"jss", "bucket"}
+
+    def __init__(self, **connection_args):
+        """Set up a connection to an AWS S3 bucket.
+
+        It is more secure to use the following environment variables provided by boto:
+
+            AWS_ACCESS_KEY_ID - The access key id to the jamf bucket
+            AWS_SECRET_ACCESS_KEY - The secret access key to the jamf bucket
+
+        Args:
+            connection_args: Dict, with required keys:
+                jss: A JSS Object.
+                bucket: Name of the JAMF bucket.
+                aws_access_key_id (optional): The access key id
+                secret_access_key (optional): The secret access key, use environment instead.
+                chunk_size (optional): The chunk size for large objects >50mb
+
+        Throws:
+            S3ResponseError if the bucket does not exist
+        """
+        super(AWS, self).__init__(**connection_args)
+        self.s3 = S3Connection(
+            connection_args.get('aws_access_key_id', None),
+            connection_args.get('aws_secret_access_key', None))
+
+        self.bucket = self.s3.get_bucket(connection_args['bucket'])
+        self.chunk_size = connection_args.get('chunk_size', 52428800)  # 50 mb default
+
+    def copy_pkg(self, filename, id_=-1):
+        """Copy a package to the repo's Package subdirectory.
+
+        Args:
+            filename: Path for file to copy.
+            id_: Unused
+        """
+        k = boto.s3.Key(self.bucket)
+        k.key = os.path.basename(filename)
+        k.set_contents_from_filename(filename)
+
+    def _copy(self, filename, bucket):   # type: (str, boto.s3.Bucket) -> None
+        """Copy a file or folder to the bucket.
+
+        Args:
+            filename: Path to copy.
+            destination: Remote path to copy file to.
+        """
+        full_filename = os.path.abspath(os.path.expanduser(filename))
+
+
+    def delete(self, filename):
+        pass
+
+    def exists(self, filename):
+        k = self.bucket.get_key(os.path.basename(filename))
+        return k is not None
+
 class JCDS(CloudDistributionServer):
     """Class for representing a JCDS and its controlling jamfcloud JSS.
 
     The JSS allows direct upload to the JCDS by exposing the access token from the package upload page.
 
     This class should be considered experimental!
-
-
     """
     required_attrs = {"jss"}
     destination = "3"

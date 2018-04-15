@@ -1,5 +1,5 @@
 import pytest
-from jss.distribution_point import SMBDistributionPoint
+from jss.distribution_point import SMBDistributionPoint, AWS
 
 
 class TestAFPDistributionPoint(object):
@@ -52,3 +52,12 @@ class TestCDP(object):
     pass
 
 
+class TestAWS(object):
+
+    def test_aws(self, j, bucket):
+        aws_dp = AWS(
+            jss=j,
+            bucket=bucket
+        )
+
+        aws_dp.copy_pkg("~/Downloads/QuickAdd.pkg")
