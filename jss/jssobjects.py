@@ -183,7 +183,7 @@ class Computer(JSSDeviceObject):
     list_type = "computer"
     _url = "/computers"
     search_types = {"name": "/name/", "serial_number": "/serialnumber/",
-                    "udid": "/udid/", "macaddress": "/macadress/",
+                    "udid": "/udid/", "macaddress": "/macaddress/",
                     "match": "/match/"}
 
     @property
