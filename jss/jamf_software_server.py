@@ -1,4 +1,4 @@
-    #!/usr/bin/env python
+#!/usr/bin/env python
 # Copyright (C) 2014-2017 Shea G Craig
 #
 # This program is free software: you can redistribute it and/or modify

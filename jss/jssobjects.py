@@ -135,8 +135,7 @@ class Computer(Container):
     root_tag = "computer"
     _endpoint_path = "computers"
     search_types = {"name": "name", "serial_number": "serialnumber",
-                    "udid": "udid", "macaddress": "macaddress",
-                    "match": "match"}
+                    "udid": "udid", "macaddress": "macaddress"}
     # The '/computers/match/name/{matchname}' variant is not supported
     # here because in testing, it didn't actually do anything.
     allowed_kwargs = ('subset', 'match')
