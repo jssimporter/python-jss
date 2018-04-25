@@ -98,7 +98,7 @@ class CurlAdapter(object):
         header = ['Content-Type: {}'.format(content_type)]
         if headers:
             [header.append('{}: {}'.format(k, v)) for k, v in headers.iteritems()]
-            
+
         put_args = {"--request": "PUT"}
         return self._request(url, header, data, files, **put_args)
 
@@ -172,7 +172,7 @@ class CurlAdapter(object):
 
         if data:
             if isinstance(data, file):
-                command += ["--data", "@{}".format(data.name)]
+                command += ["--data-binary", "@{}".format(data.name)]
             elif isinstance(data, dict):
                 [command.extend(["-F", "{}={}".format(k, v)]) for k, v in data.iteritems()]
             else:
