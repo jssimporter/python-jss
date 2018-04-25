@@ -169,7 +169,8 @@ class ComputerApplicationUsage(Container):
     can_post = False
     allowed_kwargs = ('start_date', 'end_date')
     search_types = {"name": "name", "serial_number": "serialnumber",
-                    "udid": "udid", "macaddress": "macadress"}
+                    "udid": "udid", "macaddress": "macaddress",
+                    "match": "match"}
 
     @classmethod
     def _handle_kwargs(cls, kwargs):
