@@ -35,6 +35,9 @@ setup(name = 'python-jss',
       author = 'Shea G. Craig',
       url = 'https://github.com/sheagcraig/python-jss/',
       license = 'GPLv3',
+      extras_require={
+          'reST': ["Sphinx>=1.5.3", "docutils>=0.13.1", "sphinx-rtd-theme>=0.2.4"]
+      },
       classifiers = [
           'Development Status :: 5 - Production/Stable',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)']
