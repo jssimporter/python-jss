@@ -142,6 +142,17 @@ for each DP you wish to include. Here are examples of each type of repo::
             <key>share_name</key>
             <string>LocalRepo</string>
         </dict>
+        <dict>
+            <!-- AWS S3 via boto -->
+            <key>type</key>
+            <string>AWS</string>
+            <key>aws_access_key_id</key>
+            <string>Access Key ID from IAM</string>
+            <key>aws_secret_access_key</key>
+            <string>Secret key</string>
+            <key>bucket</key>
+            <string>Bucket Name</string>
+        </dict>
     </array>
 
 Notice two alternate forms for defining distribution points. The first uses just a name and a password.

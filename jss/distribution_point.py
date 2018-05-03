@@ -53,6 +53,13 @@ except ImportError:
     mount_share = None
 from .tools import (is_osx, is_linux, is_package)
 
+try:
+    import boto
+    from boto.s3.connection import S3Connection
+    BOTO_AVAILABLE = True
+except ImportError:
+    print("boto is not available, you will not be able to use the AWS distribution point type")
+    BOTO_AVAILABLE = False
 
 PKG_FILE_TYPE = '0'
 EBOOK_FILE_TYPE = '1'
