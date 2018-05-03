@@ -64,7 +64,7 @@ from .jssobject import JSSObject
 from .jssobjects import *
 from .jss_prefs import JSSPrefs
 from .misc_endpoints import *
-from .uapi_endpoints import *
+from .misc_uapi_endpoints import *
 from .queryset import QuerySet
 from .pretty_element import PrettyElement
 

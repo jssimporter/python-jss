@@ -44,3 +44,16 @@ class SystemInitialize(object):
     def initialize(self, data):
         r = self.jss.post(self.url, data)
 
+
+class RecalculateComputerSmartGroups(object):
+    _endpoint_path = "computer/obj/computer"
+    can_get = False
+    can_put = False
+    can_delete = False
+
+
+class RecalculateSmartGroupComputers(object):
+    _endpoint_path = "computer/obj/smartgroup"
+    can_get = False
+    can_put = False
+    can_delete = False

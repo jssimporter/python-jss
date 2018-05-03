@@ -28,6 +28,7 @@ import re
 import json
 from xml.etree import ElementTree
 import requests
+from UserDict import UserDict
 
 # from jss.nsurlsession_adapter import NSURLSessionAdapter
 from .curl_adapter import CurlAdapter
@@ -354,6 +355,9 @@ class JSS(object):
         elif isinstance(data, dict):
             data = json.dumps(data)
             headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        elif isinstance(data, UserDict):
+            data = json.dumps(data.data)
+            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         else:
             headers = {'Content-Type': 'application/octet-stream', 'Accept': '*/*'}
 
@@ -396,6 +400,9 @@ class JSS(object):
             headers = {'Content-Type': 'text/xml', 'Accept': 'text/xml'}
         elif isinstance(data, dict):
             data = json.dumps(data)
+            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        elif isinstance(data, UserDict):
+            data = json.dumps(data.data)
             headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         else:
             raise TypeError('Could not PUT unrecognised data type')
