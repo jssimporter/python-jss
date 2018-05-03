@@ -53,11 +53,12 @@ class TestObjectsPatch(object):
         assert patch_software_titles is not None
 
     def test_post_patchsoftwaretitle(self, j):
+        random_package = j.Package()[0]
+
         patch_software_title = jss.PatchSoftwareTitle(j, "Fixture")
         patch_software_title.find('name_id').text = "Fixture"
-        patch_software_title.find('source_id').text = "1"
-        first_version = ElementTree.SubElement(patch_software_title.find('versions'), 'version')
-        ElementTree.SubElement(first_version, 'software_version', text="1.0.0")
+        patch_software_title.find('source_id').text = "17"
+        patch_software_title.add_package(random_package, '1.0.0')
 
         xmlstr = ElementTree.tostring(patch_software_title)
         print(xmlstr)
