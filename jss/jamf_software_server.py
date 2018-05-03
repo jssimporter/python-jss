@@ -29,7 +29,9 @@ import json
 from xml.etree import ElementTree
 import requests
 
-from jss.nsurlsession_adapter import NSURLSessionAdapter
+# from jss.nsurlsession_adapter import NSURLSessionAdapter
+from .curl_adapter import CurlAdapter
+from .auth import UAPIAuth
 from . import distribution_points
 from .exceptions import GetError, PutError, PostError, DeleteError
 from .jssobject import JSSObject
@@ -125,23 +127,24 @@ class JSS(object):
         else:
             self.session = requests.session()
 
-            if platform.system() == 'Darwin':
-                from Foundation import NSURLCredential, NSURLCredentialPersistenceNone
+            # Reverted to urllib3 because High Sierra uses LibreSSL
+            # if platform.system() == 'Darwin':
+            #     from Foundation import NSURLCredential, NSURLCredentialPersistenceNone
+            #
+            #     credential = NSURLCredential.credentialWithUser_password_persistence_(
+            #         user, password, NSURLCredentialPersistenceNone
+            #         # we don't expect ephemeral requests to save keychain items.
+            #     )
+            #
+            #     adapter = NSURLSessionAdapter(credential=credential)
+            #     adapter.verify = ssl_verify
+            #
+            #     self.session.mount('https://', adapter)
+            #     self.session.mount('http://', adapter)
 
-                credential = NSURLCredential.credentialWithUser_password_persistence_(
-                    user, password, NSURLCredentialPersistenceNone
-                    # we don't expect ephemeral requests to save keychain items.
-                )
-
-                adapter = NSURLSessionAdapter(credential=credential)
-                adapter.verify = ssl_verify
-
-                self.session.mount('https://', adapter)
-                self.session.mount('http://', adapter)
-
-        # self.session = kwargs.get('adapter', CurlAdapter())
         self.user = user
         self.password = password
+        self.token = None  # For uapi
         self.repo_prefs = repo_prefs if repo_prefs else []
         self.verbose = verbose
         self.ssl_verify = ssl_verify
@@ -231,7 +234,7 @@ class JSS(object):
         self.user, self.password = auth
         self.ssl_verify = ssl_verify
 
-    def get(self, url_path, headers=None):
+    def get(self, url_path, headers=None, **kwargs):
         # type: (str) -> Union[ElementTree.Element, dict, bytes]
         """GET a url, handle errors, and return an etree.
 
@@ -260,7 +263,7 @@ class JSS(object):
         if headers is None:  # Fall back to XML to support python-jss prior to addition of UAPI
             headers = {'Content-Type': 'text/xml', 'Accept': 'text/xml'}
 
-        response = self.session.get(request_url, headers=headers)
+        response = self.session.get(request_url, headers=headers, **kwargs)
 
         if response.status_code == 200 and self.verbose:
             print "GET %s: Success." % request_url
@@ -274,7 +277,7 @@ class JSS(object):
                 return xmldata
             except ElementTree.ParseError:
                 raise GetError("Error Parsing XML:\n%s" % response.content)
-        elif response.headers['content-type'] == 'application/json':
+        elif response.headers['content-type'].startswith('application/json'):
             return response.json()
         else:
             return response.content
@@ -308,6 +311,8 @@ class JSS(object):
         elif isinstance(data, dict):
             data = json.dumps(data)
             headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        else:
+            headers = {'Content-Type': 'application/octet-stream', 'Accept': '*/*'}
 
         response = self.session.post(request_url, data=data, headers=headers)
 
@@ -319,7 +324,7 @@ class JSS(object):
         if 'text/xml' in response.headers['content-type']:
             id_ = re.search(r"<id>([0-9]+)</id>", response.content).group(1)
         else:
-            raise TypeError('Unimplemented')
+            return response
 
         return id_
 
@@ -682,16 +687,13 @@ def add_uapi_search_method(cls, name):
             Raises:
                 GetError for nonexistent objects.
         """
-        if not isinstance(data, ElementTree.Element):
+        if not isinstance(data, dict):
             url = obj_type.build_query(data, **kwargs)
-            data = self.get(url)
+            data = self.get(url, headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+                            auth=UAPIAuth(self.user, self.password, "{}/uapi/auth/tokens".format(self.base_url)))
 
-        # TODO: Deprecated and pending removal
-        if hasattr(obj_type, "container"):
-            data = data.find(obj_type.container)
-
-        if data.find("size") is not None:
-            return QuerySet.from_response(obj_type, data, self, **kwargs)
+        if isinstance(data, list):
+            return [obj_type(self, d) for d in data]
         else:
             return obj_type(self, data)
 

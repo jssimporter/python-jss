@@ -19,7 +19,7 @@ Classes representing JSS database objects and their UAPI endpoints
 """
 from .uapiobject import UAPIObject, UAPIContainer
 
-__all__ = ('Cache', 'MobileDevice')
+__all__ = 'Cache', 'UAPIEbook', 'AlertNotification'
 
 
 class Cache(UAPIObject):
@@ -28,35 +28,36 @@ class Cache(UAPIObject):
     can_delete = False
 
 
-class Ebook(UAPIObject):
+class UAPIEbook(UAPIObject):
     _endpoint_path = "deployable/obj/ebook"
     can_put = False
     can_post = False
     can_delete = False
-
-
-class MobileDevice(UAPIObject):
-    _endpoint_path = "inventory/obj/mobileDevice"
-
+#
+#
+# class MobileDevice(UAPIObject):
+#     _endpoint_path = "inventory/obj/mobileDevice"
+#
+#
 
 class AlertNotification(UAPIObject):
     _endpoint_path = "notifications/alerts"
     can_put = False
     can_post = False
-
-
-class PatchPolicy(UAPIObject):
-    _endpoint_path = "patch/obj/policy"
-
-
-class EnrollmentSettings(UAPIObject):
-    _endpoint_path = "settings/obj/enrollment"
-    can_post = False
-    can_delete = False
-
-
-class SelfServiceSettings(UAPIObject):
-    _endpoint_path = "settings/obj/selfservice"
-    can_post = False
-    can_delete = False
+#
+#
+# class PatchPolicy(UAPIObject):
+#     _endpoint_path = "patch/obj/policy"
+#
+#
+# class EnrollmentSettings(UAPIObject):
+#     _endpoint_path = "settings/obj/enrollment"
+#     can_post = False
+#     can_delete = False
+#
+#
+# class SelfServiceSettings(UAPIObject):
+#     _endpoint_path = "settings/obj/selfservice"
+#     can_post = False
+#     can_delete = False
 
