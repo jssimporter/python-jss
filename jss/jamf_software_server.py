@@ -70,6 +70,48 @@ class JSS(object):
                 positive number: Number of seconds to keep.
     """
 
+    class UAPI(object):
+        """This object represents the UAPI. All UAPI search methods will be attached here."""
+        def __init__(self, jss, url=None):
+            self.jss = jss
+            self._base_url = url
+
+        @property
+        def base_url(self):
+            """The URL to the Casper JSS, including port if needed."""
+            return self._base_url
+
+        @base_url.setter
+        def base_url(self, url):
+            """The URL to the Casper JSS, including port if needed."""
+            # Remove the frequently included yet incorrect trailing slash.
+            self._base_url = url.rstrip("/")
+
+        @property
+        def url(self):  # type: () -> str
+            return "%s/%s" % (self.base_url, "uapi")
+
+    class JSSAPI(object):
+        """This object represents the XML API. All regular API search methods will be attached here."""
+        def __init__(self, jss, url=None):
+            self.jss = jss
+            self._base_url = url
+
+        @property
+        def base_url(self):
+            """The URL to the Casper JSS, including port if needed."""
+            return self._base_url
+
+        @base_url.setter
+        def base_url(self, url):
+            """The URL to the Casper JSS, including port if needed."""
+            # Remove the frequently included yet incorrect trailing slash.
+            self._base_url = url.rstrip("/")
+
+        @property
+        def url(self):  # type: () -> str
+            return "%s/%s" % (self.base_url, "JSSResource")
+
     # pylint: disable=too-many-arguments
     def __init__(
         self, jss_prefs=None, url=None, user=None, password=None,
@@ -150,15 +192,16 @@ class JSS(object):
         self.ssl_verify = ssl_verify
 
         self.distribution_points = distribution_points.DistributionPoints(self)
-
         self.max_age = -1
+        self.uapi = JSS.UAPI(self, url)
+        self.api = JSS.JSSAPI(self, url)
 
     # pylint: disable=too-many-arguments
 
     @property
     def _url(self):
         """The URL to the Casper JSS API endpoints. Get only."""
-        return "%s/%s" % (self.base_url, "JSSResource")
+        return self.api.url
 
     @property
     def base_url(self):
@@ -689,8 +732,8 @@ def add_uapi_search_method(cls, name):
         """
         if not isinstance(data, dict):
             url = obj_type.build_query(data, **kwargs)
-            data = self.get(url, headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
-                            auth=UAPIAuth(self.user, self.password, "{}/uapi/auth/tokens".format(self.base_url)))
+            data = self.jss.get(url, headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+                            auth=UAPIAuth(self.jss.user, self.jss.password, "{}/uapi/auth/tokens".format(self.jss.base_url)))
 
         if isinstance(data, list):
             return [obj_type(self, d) for d in data]
@@ -715,7 +758,8 @@ for jss_class in jssobjects.__all__:
     add_search_method(JSS, jss_class)
 
 for jss_uapi_class in uapiobjects.__all__:
-    add_uapi_search_method(JSS, jss_uapi_class)
+    print(jss_uapi_class)
+    add_uapi_search_method(JSS.UAPI, jss_uapi_class)
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
 

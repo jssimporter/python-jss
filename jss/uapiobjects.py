@@ -19,7 +19,8 @@ Classes representing JSS database objects and their UAPI endpoints
 """
 from .uapiobject import UAPIObject, UAPIContainer
 
-__all__ = 'Cache', 'UAPIEbook', 'AlertNotification'
+__all__ = 'Cache', 'Ebook', 'AlertNotification', 'MobileDevice', 'PatchPolicy', 'EnrollmentSettings', \
+          'EnrollmentHistory', 'SelfServiceSettings', 'SystemInformation'
 
 
 class Cache(UAPIObject):
@@ -28,36 +29,48 @@ class Cache(UAPIObject):
     can_delete = False
 
 
-class UAPIEbook(UAPIObject):
+class Ebook(UAPIContainer):
     _endpoint_path = "deployable/obj/ebook"
     can_put = False
     can_post = False
     can_delete = False
-#
-#
-# class MobileDevice(UAPIObject):
-#     _endpoint_path = "inventory/obj/mobileDevice"
-#
-#
 
-class AlertNotification(UAPIObject):
+
+class MobileDevice(UAPIObject):
+    _endpoint_path = "inventory/obj/mobileDevice"
+
+
+class AlertNotification(UAPIContainer):
     _endpoint_path = "notifications/alerts"
     can_put = False
     can_post = False
-#
-#
-# class PatchPolicy(UAPIObject):
-#     _endpoint_path = "patch/obj/policy"
-#
-#
-# class EnrollmentSettings(UAPIObject):
-#     _endpoint_path = "settings/obj/enrollment"
-#     can_post = False
-#     can_delete = False
-#
-#
-# class SelfServiceSettings(UAPIObject):
-#     _endpoint_path = "settings/obj/selfservice"
-#     can_post = False
-#     can_delete = False
 
+
+class PatchPolicy(UAPIContainer):
+    _endpoint_path = "patch/obj/policy"
+
+
+class EnrollmentSettings(UAPIObject):
+    _endpoint_path = "settings/obj/enrollment"
+    can_post = False
+    can_delete = False
+
+
+class EnrollmentHistory(UAPIContainer):
+    _endpoint_path = "settings/obj/enrollment/history"
+    can_post = False
+    can_put = False
+    can_delete = False
+
+
+class SelfServiceSettings(UAPIObject):
+    _endpoint_path = "settings/obj/selfservice"
+    can_post = False
+    can_delete = False
+
+
+class SystemInformation(UAPIObject):
+    _endpoint_path = "system/obj/info"
+    can_put = False
+    can_post = False
+    can_delete = False
