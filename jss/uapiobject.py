@@ -23,13 +23,14 @@ import datetime as dt
 import json
 
 import tools
+from UserDict import UserDict
 from .exceptions import JSSError, MethodNotAllowedError, PutError, PostError
 
 
 DATE_FMT = "%Y/%m/%d-%H:%M:%S.%f"
 
 
-class UAPIObject(dict):
+class UAPIObject(UserDict):
     """Subclass for JSS UAPI objects which do not return a list of objects.
 
     These objects have in common that they cannot be created. They can,
@@ -59,10 +60,10 @@ class UAPIObject(dict):
             kwargs: Unused, but present to support a unified signature
                 for all subclasses (which need and use kwargs).
         """
+        UserDict.__init__(self, data)
         self.jss = jss
         self.cached = False
-
-        super(UAPIObject, self).__init__(data)
+        #super(UAPIObject, self).__init__(data)
 
     @property
     def cached(self):  # type: () -> bool
@@ -224,7 +225,7 @@ class UAPIContainer(UAPIObject):
 
         elif isinstance(data, dict):
             # Create a new object from passed XML.
-            super(UAPIContainer, self).__init__(jss, data)
+            UAPIObject.__init__(self, jss, data, **kwargs)
             # If this has an ID, assume it's from the JSS and set the
             # cache time, otherwise set it to "Unsaved".
             if 'id' in data and data['id']:
