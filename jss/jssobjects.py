@@ -698,6 +698,7 @@ class PatchAvailableTitle(Container):
     can_post = False
     can_put = False
     search_types = {"sourceid": "sourceid"}
+    default_search = "sourceid"
 
 
 class PatchExternalSource(Container):
@@ -722,11 +723,38 @@ class PatchReport(Container):
     can_delete = False
     can_put = False
     can_post = False
+    default_search = "patchsoftwaretitleid"
     search_types = {"patchsoftwaretitleid": "patchsoftwaretitleid"}
 
 
 class PatchSoftwareTitle(Container):
     _endpoint_path = "patchsoftwaretitles"
+    root_tag = "patch_software_title"
+    data_keys = {
+        "name_id": None,
+        "source_id": None,
+        "notifications": {
+            "web_notification": "true",
+            "email_notification": "false"
+        },
+        "versions": None
+    }
+
+    def add_package(self, pkg, version):
+        """Add a Package object to the software title.
+
+        Args:
+            pkg: A Package object to add.
+            version: The version of the package being added.
+        """
+        if isinstance(pkg, Package):
+            version = ElementTree.SubElement(self.find('versions'), 'version')
+            software_version = ElementTree.SubElement(version, version)
+            package_version = self.add_object_to_path(pkg, version)
+
+        else:
+            raise ValueError("Please pass a Package object to parameter: "
+                             "pkg.")
 
 
 class PatchPolicy(Container):
