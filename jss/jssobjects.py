@@ -748,9 +748,10 @@ class PatchSoftwareTitle(Container):
             version: The version of the package being added.
         """
         if isinstance(pkg, Package):
-            version = ElementTree.SubElement(self.find('versions'), 'version')
-            software_version = ElementTree.SubElement(version, version)
-            package_version = self.add_object_to_path(pkg, version)
+            version_el = ElementTree.SubElement(self.find('versions'), 'version')
+            software_version = ElementTree.SubElement(version_el, 'software_version')
+            software_version.text = version
+            package_version = self.add_object_to_path(pkg, version_el)
 
         else:
             raise ValueError("Please pass a Package object to parameter: "
@@ -759,8 +760,145 @@ class PatchSoftwareTitle(Container):
 
 class PatchPolicy(Container):
     _endpoint_path = "patchpolicies"
-    search_types = {"id": "id", "softwaretitleconfigid": "softwaretitleconfigid"}
+    root_tag = "patch_policy"
+    search_types = {"id": "id", "softwaretitleconfigid": "softwaretitleconfigid/id"}
     allowed_kwargs = ('subset',)
+    _name_element = "general/name"
+    data_keys = {
+        "general": {
+            "enabled": "true",
+            "target_version": None,
+            "release_date": None,
+            "incremental_updates": "false",
+            "reboot": "false",
+            "minimum_os": None,
+            "kill_apps": None,
+            "distribution_method": "selfservice",
+            "allow_downgrade": "true",
+            "patch_unknown": "true"
+        },
+        "scope": {
+            "computers": None,
+            "computer_groups": None,
+            "buildings": None,
+            "departments": None,
+            "limitations": {
+                "network_segments": None,
+                "ibeacons": None
+            },
+            "exclusions": {
+                "computers": None,
+                "computer_groups": None,
+                "buildings": None,
+                "departments": None,
+                "network_segments": None,
+                "ibeacons": None,
+            }
+        },
+        "user_interaction": {
+            "install_button_text": "Update",
+            "self_service_description": None,
+            "notifications": {
+                "notification_enabled": "true",
+                "notification_type": "Self Service",
+                "notification_subject": "Update Available",
+                "notification_message": "Update Available",
+                "reminders": {
+                    "notification_reminders_enabled": "true",
+                    "notification_reminder_frequency": "1"
+                }
+            }
+        }
+    }
+
+    def add_object_to_scope(self, obj):
+        """Add an object to the appropriate scope block.
+
+        Args:
+            obj: JSSObject to add to scope. Accepted subclasses are:
+                Computer
+                ComputerGroup
+                Building
+                Department
+
+        Raises:
+            TypeError if invalid obj type is provided.
+        """
+        if isinstance(obj, Computer):
+            self.add_object_to_path(obj, "scope/computers")
+        elif isinstance(obj, ComputerGroup):
+            self.add_object_to_path(obj, "scope/computer_groups")
+        elif isinstance(obj, Building):
+            self.add_object_to_path(obj, "scope/buildings")
+        elif isinstance(obj, Department):
+            self.add_object_to_path(obj, "scope/departments")
+        else:
+            raise TypeError
+
+    def clear_scope(self):
+        """Clear all objects from the scope, including exclusions."""
+        clear_list = ["computers", "computer_groups", "buildings",
+                      "departments", "limit_to_users/user_groups",
+                      "limitations/users", "limitations/user_groups",
+                      "limitations/network_segments", "exclusions/computers",
+                      "exclusions/computer_groups", "exclusions/buildings",
+                      "exclusions/departments", "exclusions/users",
+                      "exclusions/user_groups", "exclusions/network_segments"]
+        for section in clear_list:
+            self.clear_list("%s%s" % ("scope/", section))
+
+    def add_object_to_exclusions(self, obj):
+        """Add an object to the appropriate scope exclusions
+        block.
+
+        Args:
+            obj: JSSObject to add to exclusions. Accepted subclasses
+                    are:
+                Computer
+                ComputerGroup
+                Building
+                Department
+
+        Raises:
+            TypeError if invalid obj type is provided.
+        """
+        if isinstance(obj, Computer):
+            self.add_object_to_path(obj, "scope/exclusions/computers")
+        elif isinstance(obj, ComputerGroup):
+            self.add_object_to_path(obj, "scope/exclusions/computer_groups")
+        elif isinstance(obj, Building):
+            self.add_object_to_path(obj, "scope/exclusions/buildings")
+        elif isinstance(obj, Department):
+            self.add_object_to_path(obj, "scope/exclusions/departments")
+        else:
+            raise TypeError
+
+    def add_object_to_limitations(self, obj):
+        """Add an object to the appropriate scope limitations
+        block.
+
+        Args:
+            obj: JSSObject to add to limitations. Accepted subclasses
+                are:
+                    User
+                    UserGroup
+                    NetworkSegment
+                    IBeacon
+
+        Raises:
+            TypeError if invalid obj type is provided.
+        """
+        if isinstance(obj, User):
+            self.add_object_to_path(obj, "scope/limitations/users")
+        elif isinstance(obj, UserGroup):
+            self.add_object_to_path(obj, "scope/limitations/user_groups")
+        elif isinstance(obj, NetworkSegment):
+            self.add_object_to_path(obj, "scope/limitations/network_segments")
+        elif isinstance(obj, IBeacon):
+            self.add_object_to_path(obj, "scope/limitations/ibeacons")
+        else:
+            raise TypeError
+
 
 
 class Peripheral(Container):
