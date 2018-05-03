@@ -30,7 +30,7 @@ from xml.etree import ElementTree
 import requests
 
 # from jss.nsurlsession_adapter import NSURLSessionAdapter
-# from .curl_adapter import CurlAdapter
+from .curl_adapter import CurlAdapter
 from . import distribution_points
 from .exceptions import GetError, PutError, PostError, DeleteError
 from .jssobject import JSSObject
