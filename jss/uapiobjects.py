@@ -19,7 +19,7 @@ Classes representing JSS database objects and their UAPI endpoints
 """
 from .uapiobject import UAPIObject, UAPIContainer
 
-__all__ = 'Cache', 'Ebook', 'AlertNotification', 'MobileDevice', 'PatchPolicy', 'EnrollmentSettings', \
+__all__ = 'Cache', 'Ebook', 'AlertNotification', 'MobileDevice', 'PatchPolicy', 'EnrollmentSetting', \
           'EnrollmentHistory', 'SelfServiceSettings', 'SystemInformation'
 
 
@@ -38,6 +38,9 @@ class Ebook(UAPIContainer):
 
 class MobileDevice(UAPIObject):
     _endpoint_path = "inventory/obj/mobileDevice"
+    can_put = False
+    can_post = False
+    can_delete = False
 
 
 class AlertNotification(UAPIContainer):
@@ -50,7 +53,7 @@ class PatchPolicy(UAPIContainer):
     _endpoint_path = "patch/obj/policy"
 
 
-class EnrollmentSettings(UAPIObject):
+class EnrollmentSetting(UAPIObject):
     _endpoint_path = "settings/obj/enrollment"
     can_post = False
     can_delete = False
