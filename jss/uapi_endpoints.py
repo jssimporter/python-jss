@@ -19,5 +19,28 @@ Classes representing UAPI endpoints that are more RPC style than CRUD.
 """
 
 
-__all__ = ('AuthToken')
+__all__ = 'SystemInitialize',
+
+
+class SystemInitialize(object):
+    _endpoint_path = "system/initialize"
+    can_get = False
+    can_put = False
+    can_delete = False
+
+    def __init__(self, jss):
+        """Initialize a new SystemInitialize
+
+        Args:
+            jss: JSS object.
+        """
+        self.jss = jss
+
+    @property
+    def url(self):
+        """Return the path subcomponent of the url to this object."""
+        return self._endpoint_path
+
+    def initialize(self, data):
+        r = self.jss.post(self.url, data)
 
