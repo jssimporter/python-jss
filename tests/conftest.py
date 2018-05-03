@@ -54,6 +54,10 @@ def etree_building():  # type: () -> ElementTree.Element
     return building
 
 
+@pytest.fixture
+def package():  # type: () -> JSS.Package
+    pass
+
 # def is_afp_responsive(afpurl):
 #     """Check if something responds to ``url``."""
 #     pass
