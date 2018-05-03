@@ -50,7 +50,9 @@ __all__ = (
     'MobileDeviceEnrollmentProfile', 'MobileDeviceExtensionAttribute',
     'MobileDeviceGroup', 'MobileDeviceHistory', 'MobileDeviceInvitation',
     'MobileDeviceProvisioningProfile', 'NetbootServer', 'NetworkSegment',
-    'OSXConfigurationProfile', 'Package', 'Patch', 'Peripheral',
+    'OSXConfigurationProfile', 'Package', 'Patch', 'PatchAvailableTitle',
+    'PatchExternalSource', 'PatchInternalSource', 'PatchPolicy',
+    'PatchReport', 'PatchSoftwareTitle', 'Peripheral',
     'PeripheralType', 'Policy', 'Printer', 'RestrictedSoftware',
     'RemovableMACAddress', 'SavedSearch', 'Script', 'Site',
     'SoftwareUpdateServer', 'SMTPServer', 'UserExtensionAttribute', 'User',
@@ -680,6 +682,7 @@ class Package(Container):
         self.find("category").text = name
 
 
+# DEPRECATED
 class Patch(Container):
     _endpoint_path = "patches"
     root_tag = "software_title"
@@ -687,6 +690,49 @@ class Patch(Container):
     allowed_kwargs = ('subset',)
     # The /patches/id/{id}/version/{version} variant is not currently
     # implemented.
+
+
+class PatchAvailableTitle(Container):
+    _endpoint_path = "patchavailabletitles"
+    can_delete = False
+    can_post = False
+    can_put = False
+    search_types = {"sourceid": "sourceid"}
+
+
+class PatchExternalSource(Container):
+    _endpoint_path = "patchexternalsources"
+    root_tag = "patch_external_source"
+    data_keys = {
+        'host_name': None,
+        'ssl_enabled': 'true',
+        'port': '443',
+    }
+
+
+class PatchInternalSource(Container):
+    _endpoint_path = "patchinternalsources"
+    can_delete = False
+    can_put = False
+    can_post = False
+
+
+class PatchReport(Container):
+    _endpoint_path = "patchreports"
+    can_delete = False
+    can_put = False
+    can_post = False
+    search_types = {"patchsoftwaretitleid": "patchsoftwaretitleid"}
+
+
+class PatchSoftwareTitle(Container):
+    _endpoint_path = "patchsoftwaretitles"
+
+
+class PatchPolicy(Container):
+    _endpoint_path = "patchpolicies"
+    search_types = {"id": "id", "softwaretitleconfigid": "softwaretitleconfigid"}
+    allowed_kwargs = ('subset',)
 
 
 class Peripheral(Container):
