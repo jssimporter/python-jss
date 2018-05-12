@@ -373,6 +373,7 @@ class JSONWebTokenConfigurations(JSSObject):
 
 class LDAPServer(Container):
     _endpoint_path = "ldapservers"
+    root_tag = "ldap_server"
 
     def search_users(self, user):
         """Search for LDAP users.
@@ -445,7 +446,7 @@ class LDAPServer(Container):
         """Return object ID or None."""
         # LDAPServer's ID is in "connection"
         result = self.findtext("connection/id")
-        return result
+        return result or "0"
 
     @property
     def name(self):
