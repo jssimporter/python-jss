@@ -20,6 +20,8 @@ the JAMF Pro Server.
 """
 
 from __future__ import division
+from __future__ import print_function
+
 import os
 import re
 import shutil
@@ -458,7 +460,7 @@ class AFPDistributionPoint(MountedRepository):
         # mount_afp "afp://scraig:<password>@address/share" <mnt_point>
         if is_osx():
             if self.connection["jss"].verbose:
-                print self.connection["mount_url"]
+                print(self.connection["mount_url"])
             if mount_share:
                 self.connection["mount_point"] = mount_share(
                     self.connection["mount_url"])
@@ -468,14 +470,14 @@ class AFPDistributionPoint(MountedRepository):
                         self.connection["mount_url"],
                         self.connection["mount_point"]]
                 if self.connection["jss"].verbose:
-                    print " ".join(args)
+                    print(" ".join(args))
                 subprocess.check_call(args)
         elif is_linux():
             args = ["mount_afp", "-t", self.protocol,
                     self.connection["mount_url"],
                     self.connection["mount_point"]]
             if self.connection["jss"].verbose:
-                print " ".join(args)
+                print(" ".join(args))
             subprocess.check_call(args)
         else:
             raise JSSError("Unsupported OS.")
@@ -536,7 +538,7 @@ class SMBDistributionPoint(MountedRepository):
             if mount_share:
                 mount_url = "smb:%s" % self.connection["mount_url"]
                 if self.connection["jss"].verbose:
-                    print mount_url
+                    print(mount_url)
                 self.connection["mount_point"] = mount_share(mount_url)
             else:
                 # Non-Apple OS X python:
@@ -544,7 +546,7 @@ class SMBDistributionPoint(MountedRepository):
                         self.connection["mount_url"],
                         self.connection["mount_point"]]
                 if self.connection["jss"].verbose:
-                    print " ".join(args)
+                    print(" ".join(args))
                 subprocess.check_call(args)
         elif is_linux():
             args = ["mount", "-t", "cifs", "-o",
@@ -555,7 +557,7 @@ class SMBDistributionPoint(MountedRepository):
                                  self.connection["share_name"]),
                     self.connection["mount_point"]]
             if self.connection["jss"].verbose:
-                print " ".join(args)
+                print(" ".join(args))
             subprocess.check_call(args)
         else:
             raise JSSError("Unsupported OS.")
@@ -587,9 +589,17 @@ class DistributionServer(Repository):
         self.connection["url"] = self.connection["jss"].base_url
 
     def _build_url(self):
+        """Build the URL for POSTing files. 10.2 and earlier"""
+        self.connection["upload_url"] = (
+                "%s/%s" % (self.connection["jss"].base_url, "dbfileupload"))
+        self.connection["delete_url"] = (
+                "%s/%s" % (self.connection["jss"].base_url,
+                           "casperAdminSave.jxml"))
+
+    def _build_url_modern(self):
         """Build the URL for POSTing files."""
         self.connection["upload_url"] = (
-            "%s/%s" % (self.connection["jss"].base_url, "dbfileupload"))
+            "%s/%s" % (self.connection["jss"].base_url, "upload"))
         self.connection["delete_url"] = (
             "%s/%s" % (self.connection["jss"].base_url,
                        "casperAdminSave.jxml"))
@@ -607,7 +617,7 @@ class DistributionServer(Repository):
         self._copy(filename, id_=id_, file_type=PKG_FILE_TYPE)
 
     def _copy(self, filename, id_=-1, file_type=0):
-        """Upload a file to the distribution server.
+        """Upload a file to the distribution server. 10.2 and earlier
 
         Directories/bundle-style packages must be zipped prior to
         copying.
@@ -622,9 +632,34 @@ class DistributionServer(Repository):
         headers = {"DESTINATION": self.destination, "OBJECT_ID": str(id_),
                    "FILE_TYPE": file_type, "FILE_NAME": basefname}
         response = self.connection["jss"].session.post(
-            url=self.connection["upload_url"], data=resource, headers=headers)
+            url=self.connection["upload_url"],
+            data=resource.read(),
+            headers=headers)
         if self.connection["jss"].verbose:
-            print response
+            print(response)
+
+    def _copy_new(self, filename, id_=-1, file_type=0):
+        """Upload a file to the distribution server.
+
+        Directories/bundle-style packages must be zipped prior to
+        copying.
+        """
+        if os.path.isdir(filename):
+            raise TypeError(
+                "Distribution Server type repos do not permit directory "
+                "uploads. You are probably trying to upload a non-flat "
+                "package. Please zip or create a flat package.")
+        basefname = os.path.basename(filename)
+        resource = open(filename, "rb")
+        headers = {"sessionIdentifier": "com.jamfsoftware.jss.objects.packages.Package:%s" % str(id_),
+                   "fileIdentifier": "FIELD_FILE_NAME_FOR_DIST_POINTS"}
+        response = self.connection["jss"].session.post(
+            url=self.connection["upload_url"],
+            data=resource.read(),
+            headers=headers)
+        print(response)
+        if self.connection["jss"].verbose:
+            print(response)
 
     def delete_with_casper_admin_save(self, pkg):
         """Delete a pkg from the distribution server.

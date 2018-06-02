@@ -23,7 +23,10 @@ import copy
 from functools import wraps
 import os
 import re
-from urllib import quote
+try:
+    from urllib import quote  # Python 2.X
+except ImportError:
+    from urllib.parse import quote  # Python 3+
 from xml.etree import ElementTree
 
 

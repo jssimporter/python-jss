@@ -17,11 +17,16 @@
 
 Base Classes representing JSS database objects and their API endpoints
 """
-
+from __future__ import print_function
 
 import collections
 import copy
-import cPickle
+
+try:
+    import cPickle  # Python 2.X
+except ImportError:
+    import _pickle as cPickle  # Python 3+
+
 import datetime as dt
 import gzip
 import os
@@ -29,7 +34,7 @@ from xml.etree import ElementTree
 
 from .exceptions import JSSError, MethodNotAllowedError, PutError, PostError
 from .pretty_element import PrettyElement
-import tools
+from jss import tools
 
 
 
@@ -156,7 +161,7 @@ class JSSObject(PrettyElement):
     def retrieve(self):
         """Replace this object's data with JSS data, reset cache-age."""
         if self.jss.verbose:
-            print "Retrieving data from JSS..."
+            print("Retrieving data from JSS...")
 
         xmldata = self.jss.get(self.url)
         self._reset_data(xmldata)
