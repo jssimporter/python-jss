@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import pytest
 import sys
 import requests
@@ -94,7 +96,7 @@ class TestNSURLSessionAdapter(object):
         assert response.status_code == 200
         assert response.content is not None
 
-        print response.content
+        print(response.content)
 
     def test_post_xml(self, session, jss_prefs_dict, etree_building):
         # type: (requests.Session, dict, ElementTree.Element) -> None
@@ -108,7 +110,7 @@ class TestNSURLSessionAdapter(object):
         assert response.status_code == 201
         assert response.content is not None
 
-        print response.content
+        print(response.content)
 
     def test_delete_xml(self, session, jss_prefs_dict, etree_building):
         # type: (requests.Session, dict, ElementTree.Element) -> None
@@ -121,7 +123,7 @@ class TestNSURLSessionAdapter(object):
         assert response.status_code == 200
         assert response.content is not None
 
-        print response.content
+        print(response.content)
 
     def test_get_jss(self, ns_jss):
         # type: (JSS) -> None

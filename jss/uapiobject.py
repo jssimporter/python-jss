@@ -17,13 +17,18 @@
 
 Base Classes representing JSS database objects and their UAPI endpoints
 """
+from __future__ import print_function
 
 import os
 import datetime as dt
 import json
 
-import tools
-from UserDict import UserDict
+from jss import tools
+try:
+    from UserDict import UserDict  # Python 2.X
+except ImportError:
+    from collections import UserDict  # Python 3.3+
+
 from .exceptions import JSSError, MethodNotAllowedError, PutError, PostError
 
 
@@ -116,7 +121,7 @@ class UAPIObject(UserDict):
     def retrieve(self):
         """Replace this object's data with JSS data, reset cache-age."""
         if self.jss.verbose:
-            print "Retrieving data from JSS..."
+            print("Retrieving data from JSS...")
 
         json_data = self.jss.get(self.url, headers={'Accept': 'application/json'})
         self.update(json_data)

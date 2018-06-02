@@ -19,7 +19,7 @@ Class for using a plist for storing python-jss preferences, with an
 interactive configuration that runs if you have not previously set up
 a plist.
 """
-
+from __future__ import print_function
 
 import getpass
 import os
@@ -183,7 +183,7 @@ class JSSPrefs(object):
         prefs["repos"] = self._handle_repos(prefs)
 
         plistlib.writePlist(prefs, self.preferences_file)
-        print "Preferences created.\n"
+        print("Preferences created.\n")
 
     def _handle_repos(self, prefs):
         """Handle repo configuration."""
@@ -193,7 +193,7 @@ class JSSPrefs(object):
         jss_server = JSS(
             url=prefs["jss_url"], user=prefs["jss_user"],
             password=prefs["jss_pass"], ssl_verify=prefs["verify"])
-        print "Fetching distribution point info..."
+        print("Fetching distribution point info...")
         try:
             dpts = jss_server.DistributionPoint()
         except GetError:
