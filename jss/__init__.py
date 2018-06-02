@@ -56,7 +56,7 @@ Private package contents include:
 from .casper import Casper
 from .curl_adapter import CurlAdapter
 from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
-                                 JDS, CDP, LocalRepository)
+                                 JDS, CDP, LocalRepository, JCDS)
 from .distribution_points import DistributionPoints
 from .exceptions import *
 from .jamf_software_server import JSS
@@ -64,6 +64,7 @@ from .jssobject import JSSObject
 from .jssobjects import *
 from .jss_prefs import JSSPrefs
 from .misc_endpoints import *
+from .misc_uapi_endpoints import *
 from .queryset import QuerySet
 from .pretty_element import PrettyElement
 
@@ -80,4 +81,4 @@ from .tools import is_osx, is_linux, element_str
 from .jssobjectlist import JSSObjectList
 
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"

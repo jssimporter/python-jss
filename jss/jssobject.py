@@ -108,7 +108,7 @@ class JSSObject(PrettyElement):
         Returns:
             str path construction for this class to query.
         """
-        return cls._endpoint_path
+        return 'JSSResource/%s' % cls._endpoint_path
 
     @property
     def url(self):
@@ -117,7 +117,7 @@ class JSSObject(PrettyElement):
         For example: "/activationcode"
         """
         # Flat objects have no ID property, so there is only one URL.
-        return self._endpoint_path
+        return 'JSSResource/%s' % self._endpoint_path
 
     def __repr__(self):
         if isinstance(self.cached, dt.datetime):
@@ -432,7 +432,7 @@ class Container(JSSObject):
         Returns:
             str path construction for this class to query.
         """
-        url_components = [cls._endpoint_path]
+        url_components = ['JSSResource', cls._endpoint_path]
 
         try:
             data = int(data)
@@ -509,7 +509,7 @@ class Container(JSSObject):
 
         For example: "computers/id/451"
         """
-        url_components = [self._endpoint_path, self._id_path, self.id]
+        url_components = ['JSSResource', self._endpoint_path, self._id_path, self.id]
         url_components.extend(self._process_kwargs(self.kwargs))
         return os.path.join(*url_components)
 

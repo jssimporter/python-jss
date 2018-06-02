@@ -50,7 +50,9 @@ __all__ = (
     'MobileDeviceEnrollmentProfile', 'MobileDeviceExtensionAttribute',
     'MobileDeviceGroup', 'MobileDeviceHistory', 'MobileDeviceInvitation',
     'MobileDeviceProvisioningProfile', 'NetbootServer', 'NetworkSegment',
-    'OSXConfigurationProfile', 'Package', 'Patch', 'Peripheral',
+    'OSXConfigurationProfile', 'Package', 'Patch', 'PatchAvailableTitle',
+    'PatchExternalSource', 'PatchInternalSource', 'PatchPolicy',
+    'PatchReport', 'PatchSoftwareTitle', 'Peripheral',
     'PeripheralType', 'Policy', 'Printer', 'RestrictedSoftware',
     'RemovableMACAddress', 'SavedSearch', 'Script', 'Site',
     'SoftwareUpdateServer', 'SMTPServer', 'UserExtensionAttribute', 'User',
@@ -371,6 +373,7 @@ class JSONWebTokenConfigurations(JSSObject):
 
 class LDAPServer(Container):
     _endpoint_path = "ldapservers"
+    root_tag = "ldap_server"
 
     def search_users(self, user):
         """Search for LDAP users.
@@ -443,7 +446,7 @@ class LDAPServer(Container):
         """Return object ID or None."""
         # LDAPServer's ID is in "connection"
         result = self.findtext("connection/id")
-        return result
+        return result or "0"
 
     @property
     def name(self):
@@ -650,6 +653,7 @@ class Package(Container):
         self.find("category").text = name
 
 
+# DEPRECATED
 class Patch(Container):
     _endpoint_path = "patches"
     root_tag = "software_title"
@@ -657,6 +661,215 @@ class Patch(Container):
     allowed_kwargs = ('subset',)
     # The /patches/id/{id}/version/{version} variant is not currently
     # implemented.
+
+
+class PatchAvailableTitle(Container):
+    _endpoint_path = "patchavailabletitles"
+    can_delete = False
+    can_post = False
+    can_put = False
+    search_types = {"sourceid": "sourceid"}
+    default_search = "sourceid"
+
+
+class PatchExternalSource(Container):
+    _endpoint_path = "patchexternalsources"
+    root_tag = "patch_external_source"
+    data_keys = {
+        'host_name': None,
+        'ssl_enabled': 'true',
+        'port': '443',
+    }
+
+
+class PatchInternalSource(Container):
+    _endpoint_path = "patchinternalsources"
+    can_delete = False
+    can_put = False
+    can_post = False
+
+
+class PatchReport(Container):
+    _endpoint_path = "patchreports"
+    can_delete = False
+    can_put = False
+    can_post = False
+    default_search = "patchsoftwaretitleid"
+    search_types = {"patchsoftwaretitleid": "patchsoftwaretitleid"}
+
+
+class PatchSoftwareTitle(Container):
+    _endpoint_path = "patchsoftwaretitles"
+    root_tag = "patch_software_title"
+    data_keys = {
+        "name_id": None,
+        "source_id": None,
+        "notifications": {
+            "web_notification": "true",
+            "email_notification": "false"
+        },
+        "versions": None
+    }
+
+    def add_package(self, pkg, version):
+        """Add a Package object to the software title.
+
+        Args:
+            pkg: A Package object to add.
+            version: The version of the package being added.
+        """
+        if isinstance(pkg, Package):
+            version_el = ElementTree.SubElement(self.find('versions'), 'version')
+            software_version = ElementTree.SubElement(version_el, 'software_version')
+            software_version.text = version
+            package_version = self.add_object_to_path(pkg, version_el)
+
+        else:
+            raise ValueError("Please pass a Package object to parameter: "
+                             "pkg.")
+
+
+class PatchPolicy(Container):
+    _endpoint_path = "patchpolicies"
+    root_tag = "patch_policy"
+    search_types = {"id": "id", "softwaretitleconfigid": "softwaretitleconfigid/id"}
+    allowed_kwargs = ('subset',)
+    _name_element = "general/name"
+    data_keys = {
+        "general": {
+            "enabled": "true",
+            "target_version": None,
+            "release_date": None,
+            "incremental_updates": "false",
+            "reboot": "false",
+            "minimum_os": None,
+            "kill_apps": None,
+            "distribution_method": "selfservice",
+            "allow_downgrade": "true",
+            "patch_unknown": "true"
+        },
+        "scope": {
+            "computers": None,
+            "computer_groups": None,
+            "buildings": None,
+            "departments": None,
+            "limitations": {
+                "network_segments": None,
+                "ibeacons": None
+            },
+            "exclusions": {
+                "computers": None,
+                "computer_groups": None,
+                "buildings": None,
+                "departments": None,
+                "network_segments": None,
+                "ibeacons": None,
+            }
+        },
+        "user_interaction": {
+            "install_button_text": "Update",
+            "self_service_description": None,
+            "notifications": {
+                "notification_enabled": "true",
+                "notification_type": "Self Service",
+                "notification_subject": "Update Available",
+                "notification_message": "Update Available",
+                "reminders": {
+                    "notification_reminders_enabled": "true",
+                    "notification_reminder_frequency": "1"
+                }
+            }
+        }
+    }
+
+    def add_object_to_scope(self, obj):
+        """Add an object to the appropriate scope block.
+
+        Args:
+            obj: JSSObject to add to scope. Accepted subclasses are:
+                Computer
+                ComputerGroup
+                Building
+                Department
+
+        Raises:
+            TypeError if invalid obj type is provided.
+        """
+        if isinstance(obj, Computer):
+            self.add_object_to_path(obj, "scope/computers")
+        elif isinstance(obj, ComputerGroup):
+            self.add_object_to_path(obj, "scope/computer_groups")
+        elif isinstance(obj, Building):
+            self.add_object_to_path(obj, "scope/buildings")
+        elif isinstance(obj, Department):
+            self.add_object_to_path(obj, "scope/departments")
+        else:
+            raise TypeError
+
+    def clear_scope(self):
+        """Clear all objects from the scope, including exclusions."""
+        clear_list = ["computers", "computer_groups", "buildings",
+                      "departments", "limit_to_users/user_groups",
+                      "limitations/users", "limitations/user_groups",
+                      "limitations/network_segments", "exclusions/computers",
+                      "exclusions/computer_groups", "exclusions/buildings",
+                      "exclusions/departments", "exclusions/users",
+                      "exclusions/user_groups", "exclusions/network_segments"]
+        for section in clear_list:
+            self.clear_list("%s%s" % ("scope/", section))
+
+    def add_object_to_exclusions(self, obj):
+        """Add an object to the appropriate scope exclusions
+        block.
+
+        Args:
+            obj: JSSObject to add to exclusions. Accepted subclasses
+                    are:
+                Computer
+                ComputerGroup
+                Building
+                Department
+
+        Raises:
+            TypeError if invalid obj type is provided.
+        """
+        if isinstance(obj, Computer):
+            self.add_object_to_path(obj, "scope/exclusions/computers")
+        elif isinstance(obj, ComputerGroup):
+            self.add_object_to_path(obj, "scope/exclusions/computer_groups")
+        elif isinstance(obj, Building):
+            self.add_object_to_path(obj, "scope/exclusions/buildings")
+        elif isinstance(obj, Department):
+            self.add_object_to_path(obj, "scope/exclusions/departments")
+        else:
+            raise TypeError
+
+    def add_object_to_limitations(self, obj):
+        """Add an object to the appropriate scope limitations
+        block.
+
+        Args:
+            obj: JSSObject to add to limitations. Accepted subclasses
+                are:
+                    User
+                    UserGroup
+                    NetworkSegment
+                    IBeacon
+
+        Raises:
+            TypeError if invalid obj type is provided.
+        """
+        if isinstance(obj, User):
+            self.add_object_to_path(obj, "scope/limitations/users")
+        elif isinstance(obj, UserGroup):
+            self.add_object_to_path(obj, "scope/limitations/user_groups")
+        elif isinstance(obj, NetworkSegment):
+            self.add_object_to_path(obj, "scope/limitations/network_segments")
+        elif isinstance(obj, IBeacon):
+            self.add_object_to_path(obj, "scope/limitations/ibeacons")
+        else:
+            raise TypeError
+
 
 
 class Peripheral(Container):
