@@ -43,7 +43,7 @@ NetFS_bundle = initFrameworkWrapper(
 # https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 # Fix NetFSMountURLSync signature
 del NetFS['NetFSMountURLSync']
-loadBundleFunctions(NetFS_bundle, NetFS, [('NetFSMountURLSync', 'i@@@@@@o^@')])
+loadBundleFunctions(NetFS_bundle, NetFS, [('NetFSMountURLSync', b'i@@@@@@o^@')])
 
 
 def mount_share(share_path):

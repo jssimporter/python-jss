@@ -12,3 +12,4 @@ pip = "*"
 pytest = "*"
 pytest-docker = "*"
 "e1839a8" = {path = ".", editable = true}
+pyobjc = "*"

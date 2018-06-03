@@ -1,5 +1,5 @@
 import pytest
-import __builtin__
+# import __builtin__
 from jss import JSSPrefs, tools
 import os.path
 
@@ -12,7 +12,7 @@ class TestJSSPrefs(object):
 
     @pytest.mark.skip(reason='disabled')
     def test_configure_without_prefs(self, monkeypatch):
-        monkeypatch.setattr(__builtin__, 'raw_input', mock_raw_input)
+        # monkeypatch.setattr(__builtin__, 'raw_input', mock_raw_input)
         p = JSSPrefs()
         assert p is not None
 

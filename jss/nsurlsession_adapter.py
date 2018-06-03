@@ -15,7 +15,7 @@ from requests.utils import get_encoding_from_headers
 from requests.auth import AuthBase, HTTPBasicAuth
 from requests.cookies import RequestsCookieJar
 from requests.exceptions import SSLError
-from cookielib import Cookie
+# from cookielib import Cookie
 
 import objc
 from Foundation import NSObject, NSMutableURLRequest, NSURL, NSURLRequestUseProtocolCachePolicy, \
