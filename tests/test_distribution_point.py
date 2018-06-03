@@ -60,4 +60,4 @@ class TestAWS(object):
             bucket=s3_bucket
         )
 
-        aws_dp.copy_pkg("~/Downloads/QuickAdd.pkg")
+        aws_dp.copy_pkg("/Users/Shared/SkypeForBusinessInstaller-16.17.0.65.pkg")

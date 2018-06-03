@@ -60,6 +60,7 @@ from .tools import (is_osx, is_linux, is_package)
 try:
     import boto
     from boto.s3.connection import S3Connection
+    from boto.s3.key import Key
     BOTO_AVAILABLE = True
 except ImportError:
     print("boto is not available, you will not be able to use the AWS distribution point type")
@@ -896,6 +897,8 @@ class AWS(CloudDistributionServer, abstract.AbstractRepository):
             AWS_ACCESS_KEY_ID - The access key id to the jamf bucket
             AWS_SECRET_ACCESS_KEY - The secret access key to the jamf bucket
 
+        You may also use the file ~/.boto as described in the boto documentation.
+
         Args:
             connection_args: Dict, with required keys:
                 jss: A JSS Object.
@@ -915,6 +918,10 @@ class AWS(CloudDistributionServer, abstract.AbstractRepository):
         self.bucket = self.s3.get_bucket(connection_args['bucket'])
         self.chunk_size = connection_args.get('chunk_size', 52428800)  # 50 mb default
 
+    def _build_url(self):
+        """Build a connection URL."""
+        pass
+
     def copy_pkg(self, filename, id_=-1):
         """Copy a package to the repo's Package subdirectory.
 
@@ -922,9 +929,14 @@ class AWS(CloudDistributionServer, abstract.AbstractRepository):
             filename: Path for file to copy.
             id_: Unused
         """
-        k = boto.s3.Key(self.bucket)
-        k.key = os.path.basename(filename)
-        k.set_contents_from_filename(filename)
+        bucket_key = os.path.basename(filename)
+        exists = self.bucket.get_key(bucket_key)
+        if exists:
+            print("Already exists")
+        else:
+            k = Key(self.bucket)
+            k.key = bucket_key
+            k.set_contents_from_filename(filename)
 
     def _copy(self, filename, bucket):   # type: (str, boto.s3.Bucket) -> None
         """Copy a file or folder to the bucket.

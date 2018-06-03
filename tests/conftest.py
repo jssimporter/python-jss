@@ -5,6 +5,7 @@ from jss import JSSPrefs, JSS
 from xml.etree import ElementTree
 from jss.requests_adapter import RequestsAdapter
 from subprocess import call
+import boto
 from boto.s3.connection import S3Connection
 from boto.s3.bucket import Bucket
 
@@ -152,9 +153,12 @@ def pkg_path():
 
 @pytest.fixture
 def s3_connection():
-    return S3Connection(is_secure=False)
+    # calling_format is passed because i use a bucket with periods which normally raises a CertificateError
+    # see: https://github.com/boto/boto/issues/2836
+    return boto.s3.connect_to_region('ap-southeast-2', calling_format=boto.s3.connection.OrdinaryCallingFormat())
+    #return S3Connection(calling_format=boto.s3.connection.OrdinaryCallingFormat())
 
 
 @pytest.fixture
 def s3_bucket(s3_connection):  # type: (S3Connection) -> Bucket
-    return s3_connection.get_bucket('com.github.mosen.python-jss.pytest')
+    return s3_connection.get_bucket('python-jss-pytest')
