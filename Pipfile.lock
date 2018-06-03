@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "b222f4722256abceff448544ef4341a02101f9f17e0b99745891f7a6166df74c"
+            "sha256": "dfd8eab58e726b2cb8b8f11f2c497d68b0289d892d1a009ad8feb08e1dca1966"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -35,6 +35,13 @@
                 "sha256:fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"
             ],
             "version": "==3.0.4"
+        },
+        "filechunkio": {
+            "hashes": [
+                "sha256:c8540c2d27e851d3a475b2e14ac109d66c777dd43ab67031891c826e82026745"
+            ],
+            "index": "pypi",
+            "version": "==1.8"
         },
         "idna": {
             "hashes": [
@@ -155,6 +162,7 @@
                 "sha256:52b0ae314009d403b67536def30078034732b28e3cff101577d2ab309b21245f",
                 "sha256:deef8c7b3874b57f7470d9ea29a2571d7f061f22c630a41d09690fef070838ab"
             ],
+            "markers": "platform_release >= '12.0'",
             "version": "==4.2.1"
         },
         "pyobjc-framework-addressbook": {
@@ -206,6 +214,7 @@
                 "sha256:e53479f9cf52185bb9d226da9960863007f75e41fcfa8ec932d087ae97552aba",
                 "sha256:fef56ca8e0c136141971ca3aec2fa5c7f873dfcff43960de97943639af132dbb"
             ],
+            "markers": "platform_release >= '11.0'",
             "version": "==4.2.1"
         },
         "pyobjc-framework-avkit": {
@@ -338,6 +347,7 @@
                 "sha256:bad02d64379f7bcdebf7172ac0a5b3e8b2d0c476a5d4771634d4451fdcfa9230",
                 "sha256:f5ba05e142aa5c7ea1d966f32db1092f8eee0d85d36840e51c011fb5f432d409"
             ],
+            "markers": "platform_release >= '10.0'",
             "version": "==4.2.1"
         },
         "pyobjc-framework-coreml": {
@@ -411,6 +421,7 @@
                 "sha256:4ea0263f32707cd2303833228029bc6c4eede31d6122744995d7a971682d8a8b",
                 "sha256:76328e2f9c13b8c8bfd5970f6f0502928a9b761ff1533ec2be4b0af878fceb9b"
             ],
+            "markers": "platform_release >= '9.0'",
             "version": "==4.2.1"
         },
         "pyobjc-framework-diskarbitration": {
@@ -464,6 +475,7 @@
                 "sha256:e925e09a143edf9c6b5fdeb6ac50aca3f68ead1d8450a0450451f6a34ff4cc75",
                 "sha256:f138595ea7d7fd4c81844287359af30089d663485f98d7c6a56eea59e8028098"
             ],
+            "markers": "platform_release >= '9.0'",
             "version": "==4.2.1"
         },
         "pyobjc-framework-gamecenter": {

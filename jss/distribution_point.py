@@ -916,7 +916,7 @@ class AWS(CloudDistributionServer, abstract.AbstractRepository):
         self.s3 = S3Connection(
             aws_access_key_id=connection_args.get('aws_access_key_id', None),
             aws_secret_access_key=connection_args.get('aws_secret_access_key', None),
-            host=connection_args.get('host', None),
+            host=connection_args.get('host', boto.s3.connection.NoHostProvided),
         )
 
         self.bucket = self.s3.get_bucket(connection_args['bucket'])
@@ -951,7 +951,7 @@ class AWS(CloudDistributionServer, abstract.AbstractRepository):
         else:
             k = Key(self.bucket)
             k.key = bucket_key
-            k.set_metadata('jamf_package_id', id_)
+            k.set_metadata('jamf-package-id', id_)
             k.set_contents_from_filename(filename)
 
     def delete(self, filename):  # type: (str) -> None
