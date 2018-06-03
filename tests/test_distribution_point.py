@@ -54,10 +54,10 @@ class TestCDP(object):
 
 class TestAWS(object):
 
-    def test_aws(self, j, bucket):
+    def test_aws(self, j, s3_bucket):
         aws_dp = AWS(
             jss=j,
-            bucket=bucket
+            bucket=s3_bucket
         )
 
         aws_dp.copy_pkg("~/Downloads/QuickAdd.pkg")
