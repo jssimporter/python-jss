@@ -905,6 +905,8 @@ class AWS(CloudDistributionServer, abstract.AbstractRepository):
                 bucket: Name of the JAMF bucket.
                 aws_access_key_id (optional): The access key id
                 secret_access_key (optional): The secret access key, use environment instead.
+                host (optional): A bucket host. Seems to be needed if your bucket is not in the default location
+                    eg. southeast asia ap 2
                 chunk_size (optional): The chunk size for large objects >50mb
 
         Throws:
@@ -912,8 +914,10 @@ class AWS(CloudDistributionServer, abstract.AbstractRepository):
         """
         super(AWS, self).__init__(**connection_args)
         self.s3 = S3Connection(
-            connection_args.get('aws_access_key_id', None),
-            connection_args.get('aws_secret_access_key', None))
+            aws_access_key_id=connection_args.get('aws_access_key_id', None),
+            aws_secret_access_key=connection_args.get('aws_secret_access_key', None),
+            host=connection_args.get('host', None),
+        )
 
         self.bucket = self.s3.get_bucket(connection_args['bucket'])
         self.chunk_size = connection_args.get('chunk_size', 52428800)  # 50 mb default
@@ -929,6 +933,17 @@ class AWS(CloudDistributionServer, abstract.AbstractRepository):
             filename: Path for file to copy.
             id_: Unused
         """
+        self._copy(filename, id_=id_)
+
+    def _copy(self, filename, id_=-1):   # type: (str, int) -> None
+        """Copy a file or folder to the bucket.
+
+        Does not yet support chunking.
+
+        Args:
+            filename: Path to copy.
+            destination: Remote path to copy file to.
+        """
         bucket_key = os.path.basename(filename)
         exists = self.bucket.get_key(bucket_key)
         if exists:
@@ -936,22 +951,14 @@ class AWS(CloudDistributionServer, abstract.AbstractRepository):
         else:
             k = Key(self.bucket)
             k.key = bucket_key
+            k.set_metadata('jamf_package_id', id_)
             k.set_contents_from_filename(filename)
 
-    def _copy(self, filename, bucket):   # type: (str, boto.s3.Bucket) -> None
-        """Copy a file or folder to the bucket.
+    def delete(self, filename):  # type: (str) -> None
+        bucket_key = os.path.basename(filename)
+        self.bucket.delete_key(bucket_key)
 
-        Args:
-            filename: Path to copy.
-            destination: Remote path to copy file to.
-        """
-        full_filename = os.path.abspath(os.path.expanduser(filename))
-
-
-    def delete(self, filename):
-        pass
-
-    def exists(self, filename):
+    def exists(self, filename):  # type: (str) -> bool
         k = self.bucket.get_key(os.path.basename(filename))
         return k is not None
 
