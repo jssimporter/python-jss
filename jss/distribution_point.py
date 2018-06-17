@@ -58,9 +58,10 @@ except ImportError:
 from .tools import (is_osx, is_linux, is_package)
 
 try:
-    import boto
-    from boto.s3.connection import S3Connection
+    import boto.s3
+    from boto.s3.connection import S3Connection, OrdinaryCallingFormat, S3ResponseError
     from boto.s3.key import Key
+
     BOTO_AVAILABLE = True
 except ImportError:
     print("boto is not available, you will not be able to use the AWS distribution point type")
@@ -918,8 +919,12 @@ class AWS(CloudDistributionServer, abstract.AbstractRepository):
             aws_secret_access_key=connection_args.get('aws_secret_access_key', None),
             host=connection_args.get('host', boto.s3.connection.NoHostProvided),
         )
+        try:
+            self.bucket = self.s3.get_bucket(connection_args['bucket'])
+        except S3ResponseError as e:
+            raise JSSError("got error getting bucket, may not exist: {}".format(connection_args['bucket']))
 
-        self.bucket = self.s3.get_bucket(connection_args['bucket'])
+        self.connection["url"] = self.bucket
         self.chunk_size = connection_args.get('chunk_size', 52428800)  # 50 mb default
 
     def _build_url(self):
@@ -959,6 +964,14 @@ class AWS(CloudDistributionServer, abstract.AbstractRepository):
         self.bucket.delete_key(bucket_key)
 
     def exists(self, filename):  # type: (str) -> bool
+        """Check whether a package already exists by checking for a bucket item with the same filename.
+
+        Args:
+            filename: full path to filename. Only the name itself will be checked.
+
+        Returns:
+            True if the package exists, else false
+        """
         k = self.bucket.get_key(os.path.basename(filename))
         return k is not None
 

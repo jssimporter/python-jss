@@ -61,3 +61,4 @@ class TestAWS(object):
         )
 
         aws_dp.copy_pkg("/Users/Shared/SkypeForBusinessInstaller-16.17.0.65.pkg")
+
