@@ -2,10 +2,15 @@ import pytest
 import sys
 import requests
 from xml.etree import ElementTree
-from jss.nsurlsession_adapter import NSURLSessionAdapter, NSURLCredentialAuth
-from jss import JSS
+try:
+    from jss.nsurlsession_adapter import NSURLSessionAdapter, NSURLCredentialAuth
+    from Foundation import NSURLCredential, NSURLCredentialPersistenceNone
+except ImportError:
+    pass
+
+from jss import JSS, QuerySet
 from jss.exceptions import GetError
-from Foundation import NSURLCredential, NSURLCredentialPersistenceNone
+
 
 
 @pytest.fixture
@@ -50,6 +55,7 @@ def ns_jss(session, jss_prefs_dict):
 
 
 @pytest.mark.skipif(sys.platform.startswith('linux'), reason='PyObjC not present on linux')
+@pytest.mark.macos
 class TestNSURLSessionAdapter(object):
 
     def test_get_json(self, session, jss_prefs_dict):

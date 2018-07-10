@@ -53,5 +53,7 @@ class TestJSS(object):
         fixture_building.delete()
 
     def test_scrape(self, j):
-        r = j.scrape('legacy/cloudDistributionPoint.html?id=0&o=r')
+        #scrape_url = '/'
+        scrape_url = 'legacy/packages.html?id=-1&o=c'
+        r = j.scrape(scrape_url)
         assert r is not None
