@@ -22,6 +22,24 @@ Constructors
 Each class takes a **kwargs** object that describes the parameters needed for connection to the respective Distribution
 Point. This varies greatly by the class that is being instantiated.
 
+A general guide to some conventional parameters to **connection_args**::
+
+    {
+        'mount_point': '/path/to/mount/point',  # The mounted directory of an AFP or SMB share.
+        'share_name': 'Share Name',  # Name of share mounted, may be used to construct mount URL.
+        'url': 'dp.hostname',  # Hostname of the distribution point
+        'port': 548,  # Port number of the distribution point
+        'password': 'secret',  #  If the distribution point requires a mount password, set it here.
+
+    }
+
+**Requirements**:
+
+- **AFP**: url, mount_point, username, password, share_name
+- **SMB**: url, mount_point, username, password, share_name, domain
+- **CDP** and **JDS**: jss
+
+
 Classes
 -------
 

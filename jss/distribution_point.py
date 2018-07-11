@@ -19,13 +19,23 @@ Classes representing the various types of file storage available to
 the JAMF Pro Server.
 """
 
-
+from __future__ import division
 import os
 import re
 import shutil
 import socket
 import subprocess
 import urllib
+import io
+import math
+
+
+try:
+    # Python 2.6-2.7
+    from HTMLParser import HTMLParser
+except ImportError:
+    # Python 3
+    from html.parser import HTMLParser
 
 from . import casper
 from .exceptions import JSSError
@@ -63,7 +73,12 @@ class Repository(object):
     init which all subclasses should use.
 
     Attributes:
-        connection: Dictionary for storing connection arguments.
+        connection (dict): Dictionary for storing connection arguments.
+        required_attrs (Set): A set of the keys which must be supplied to the initializer, otherwise a JSSError will
+            be raised.
+
+    Raises:
+        JSSError: If mandatory arguments are not supplied to the initializer.
     """
     required_attrs = set()
 
@@ -159,7 +174,7 @@ class FileRepository(Repository):
 
 
 class LocalRepository(FileRepository):
-    """Casper repo located on a local filesystem path."""
+    """JAMF Pro repo located on a local filesystem path."""
     required_attrs = {"mount_point", "share_name"}
 
     def __init__(self, **connection_args):
@@ -751,7 +766,165 @@ class JCDS(CloudDistributionServer):
     The JSS allows direct upload to the JCDS by exposing the access token from the package upload page.
 
     This class should be considered experimental!
-    - Access token needs to be scraped.
+
+
     """
     required_attrs = {"jss"}
     destination = "3"
+    workers = 3
+    chunk_size = 1048768
+
+    def __init__(self, **connection_args):
+        """Set up a connection to a distribution server.
+
+        Args:
+            connection_args (dict):
+                jss (JSS): The associated JAMF Pro Server instance
+        """
+        super(JCDS, self).__init__(**connection_args)
+
+    @classmethod
+    def _upload_chunk(cls,
+                      session,
+                      base_url,
+                      upload_token,
+                      filename,
+                      chunk_index,
+                      total_chunks):
+        """Upload a single chunk of a file to JCDS.
+
+        Args:
+            session (requests.Session): The session to use to upload the chunk.
+            base_url (str): The JCDS base URL which includes the regional hostname and the tenant id.
+            upload_token (str): The upload token, scraped from legacy/packages.html
+            chunk_index (int): The zero-based index of the chunk being uploaded.
+            total_chunks (int): The total count of chunks to upload
+
+        Returns:
+            dict: JSON Response from JCDS
+        """
+        pass
+        # print("Chunk #{}".format(chunk))
+        # resource.seek(chunk * JCDS.chunk_size)
+        # chunk_data = resource.read(JCDS.chunk_size)
+        # print(len(chunk_data))
+        # chunk_reader = io.BytesIO(chunk_data)
+        # chunk_url = self._build_chunk_url(basefname, chunk, total_chunks)
+        # print(chunk_url)
+        # response = self.connection["jss"].session.post(
+        #     url=chunk_url,
+        #     headers=headers,
+        #     files={'file': chunk_reader},
+        # )
+        # # if self.connection["jss"].verbose:
+        # print response.json()
+
+    def _scrape_tokens(self):
+        """Scrape JCDS upload URL and upload access token from the jamfcloud instance."""
+        jss = self.connection['jss']
+        response = jss.scrape('legacy/packages.html?id=-1&o=c')
+        matches = re.search(r'data-base-url="([^"]*)"', response.content)
+        if matches is None:
+            raise JSSError('Did not find the JCDS base URL on the packages page. Is this actually Jamfcloud?')
+
+        jcds_base_url = matches.group(1)
+
+        matches = re.search(r'data-upload-token="([^"]*)"', response.content)
+        if matches is None:
+            raise JSSError('Did not find the JCDS upload token on the packages page. Is this actually Jamfcloud?')
+
+        jcds_upload_token = matches.group(1)
+
+        h = HTMLParser()
+        jcds_base_url = h.unescape(jcds_base_url)
+        self.connection['jcds_base_url'] = jcds_base_url
+        self.connection['jcds_upload_token'] = jcds_upload_token
+
+    def _build_url(self):
+        """Build a connection URL."""
+        pass
+
+    def copy_pkg(self, filename, id_=-1):
+        """Copy a package to the JAMF Cloud distribution server.
+
+        Bundle-style packages must be zipped prior to copying.
+
+        Args:
+            filename: Full path to file to upload.
+            id_: ID of Package object to associate with, or -1 for new
+                packages (default).
+        """
+        self._copy(filename, id_=id_)
+
+    def _build_chunk_url(self, filename, chunk, chunk_total):
+        """Build the path to the chunk being uploaded to the JCDS."""
+        return "{}/{}/part?chunk={}&chunks={}".format(
+            self.connection["jcds_base_url"], filename, chunk, chunk_total
+        )
+
+    def _copy(self, filename, id_=-1, file_type=0):
+        """Upload a file to the distribution server. 10.2 and earlier
+
+        Directories/bundle-style packages must be zipped prior to
+        copying.
+
+        JCDS returns a JSON structure like this::
+
+            {
+                u'status': u'PENDING',
+                u'created': u'2018-07-10T03:21:17.000Z',
+                u'lastModified': u'2018-07-11T03:55:32.000Z',
+                u'filename': u'SkypeForBusinessInstaller-16.18.0.51.pkg',
+                u'version': 6,
+                u'md5': u'',
+                u'sha512': u'',
+                u'id': u'3a7e6a7479fc4000bf53a9693d906b11',
+                u'size': 35658112
+            }
+
+        """
+        if os.path.isdir(filename):
+            raise TypeError(
+                "JCDS Server type repos do not permit directory "
+                "uploads. You are probably trying to upload a non-flat "
+                "package. Please zip or create a flat package.")
+
+        fsize = os.stat(filename).st_size
+        print("Total Size: {}".format(fsize))
+        total_chunks = int(math.ceil(fsize / JCDS.chunk_size))
+        print("Total Chunks: {}".format(total_chunks))
+
+        basefname = os.path.basename(filename)
+        resource = open(filename, "rb")
+        headers = {
+            "X-Auth-Token": self.connection['jcds_upload_token'],
+            # "Content-Type": "application/octet-steam",
+        }
+
+        for chunk in xrange(0, total_chunks):
+            print("Chunk #{}".format(chunk))
+            resource.seek(chunk * JCDS.chunk_size)
+            chunk_data = resource.read(JCDS.chunk_size)
+            print(len(chunk_data))
+            chunk_reader = io.BytesIO(chunk_data)
+            chunk_url = self._build_chunk_url(basefname, chunk, total_chunks)
+            print(chunk_url)
+            response = self.connection["jss"].session.post(
+                url=chunk_url,
+                headers=headers,
+                files={'file': chunk_reader},
+            )
+        # if self.connection["jss"].verbose:
+            print response.json()
+
+        resource.close()
+
+    def __repr__(self):
+        """Return string representation of connection arguments."""
+        output = ["JAMF Cloud Distribution Server: %s" % self.connection["jss"].base_url]
+        output.append("Type: %s" % type(self))
+        output.append("Connection Information:")
+        for key, val in self.connection.items():
+            output.append("\t%s: %s" % (key, val))
+
+        return "\n".join(output) + "\n"
