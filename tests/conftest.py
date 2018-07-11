@@ -1,5 +1,6 @@
 import pytest
 import plistlib
+import os
 from jss import JSSPrefs, JSS
 from xml.etree import ElementTree
 from jss.requests_adapter import RequestsAdapter
@@ -8,7 +9,16 @@ from subprocess import call
 JSS_PREFS = {
     'jss_url': 'https://localhost:8444',
     'jss_user': 'admin',
-    'jss_password': 'passw0rd',
+    'jss_password': 'P@ssw0rd',
+    'verify': False,
+    'suppress_warnings': False,
+    'repos': [],
+}
+
+JAMFCLOUD_PREFS = {
+    'jss_url': os.environ.get('JAMFCLOUD_URL'),
+    'jss_user': os.environ.get('JAMFCLOUD_USER'),
+    'jss_password': os.environ.get('JAMFCLOUD_PASSWORD'),
     'verify': False,
     'suppress_warnings': False,
     'repos': [],
@@ -18,6 +28,11 @@ JSS_PREFS = {
 @pytest.fixture
 def jss_prefs_dict():  # type: () -> dict
     return JSS_PREFS
+
+
+@pytest.fixture
+def cloud_jss_prefs_dict():  # type: () -> dict
+    return JAMFCLOUD_PREFS
 
 
 @pytest.fixture
@@ -40,6 +55,17 @@ def j(jss_prefs_dict):  # type: (dict) -> JSS
         user=jss_prefs_dict['jss_user'],
         password=jss_prefs_dict['jss_password'],
         ssl_verify=jss_prefs_dict['verify'],
+    )
+    return o
+
+
+@pytest.fixture
+def cloud_j(cloud_jss_prefs_dict):  # type: (dict) -> JSS
+    o = JSS(
+        url=cloud_jss_prefs_dict['jss_url'],
+        user=cloud_jss_prefs_dict['jss_user'],
+        password=cloud_jss_prefs_dict['jss_password'],
+        ssl_verify=cloud_jss_prefs_dict['verify'],
     )
     return o
 

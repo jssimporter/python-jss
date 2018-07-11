@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2014-2017 Shea G Craig
+# Copyright (C) 2014-2018 Shea G Craig, 2018 Mosen
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """distribution_point.py
 
-Classes representing the various types of file storage availble to
-Casper.
+Classes representing the various types of file storage available to
+the JAMF Pro Server.
 """
 
 
