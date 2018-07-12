@@ -782,6 +782,7 @@ class JCDS(CloudDistributionServer):
                 jss (JSS): The associated JAMF Pro Server instance
         """
         super(JCDS, self).__init__(**connection_args)
+        self.connection["url"] = "JCDS"
 
     @classmethod
     def _upload_chunk(cls,
@@ -839,6 +840,7 @@ class JCDS(CloudDistributionServer):
         jcds_base_url = h.unescape(jcds_base_url)
         self.connection['jcds_base_url'] = jcds_base_url
         self.connection['jcds_upload_token'] = jcds_upload_token
+        self.connection["url"] = jcds_base_url  # This is to make JSSImporter happy because it accesses .connection
 
     def _build_url(self):
         """Build a connection URL."""
@@ -893,6 +895,9 @@ class JCDS(CloudDistributionServer):
         print("Total Size: {}".format(fsize))
         total_chunks = int(math.ceil(fsize / JCDS.chunk_size))
         print("Total Chunks: {}".format(total_chunks))
+
+        if 'jcds_upload_token' not in self.connection:
+            self._scrape_tokens()
 
         basefname = os.path.basename(filename)
         resource = open(filename, "rb")

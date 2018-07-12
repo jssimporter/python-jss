@@ -20,7 +20,7 @@ Classes representing JSS database objects and their UAPI endpoints
 from .uapiobject import UAPIObject, UAPIContainer
 
 __all__ = 'Cache', 'Ebook', 'AlertNotification', 'MobileDevice', 'PatchPolicy', 'EnrollmentSetting', \
-          'EnrollmentHistory', 'SelfServiceSettings', 'SystemInformation'
+          'EnrollmentHistory', 'SelfServiceSettings', 'SystemInformation', 'VPPSubscription'
 
 
 class Cache(UAPIObject):
@@ -74,6 +74,13 @@ class SelfServiceSettings(UAPIObject):
 
 class SystemInformation(UAPIObject):
     _endpoint_path = "system/obj/info"
+    can_put = False
+    can_post = False
+    can_delete = False
+
+
+class VPPSubscription(UAPIContainer):
+    _endpoint_path = "vpp/subscriptions"
     can_put = False
     can_post = False
     can_delete = False
