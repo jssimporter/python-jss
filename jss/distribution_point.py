@@ -757,7 +757,41 @@ class CloudDistributionServer(Repository):
     """Abstract class for representing JCDS type repos.
 
     """
-    pass
+    def package_index_using_casper(self, filename):
+        """Get a list of packages on the JCDS
+
+        Similar to JDS and CDP, JCDS types have no
+        documented interface for checking whether the server and its
+        children have a complete copy of a file. The best we can do is
+        check for an object using the API /packages URL--JSS.Package()
+        and look for matches on the filename.
+
+        If this is not enough, this method uses the results of the
+        casper.jxml page to determine if a package exists. This is an
+        undocumented feature and as such should probably not be relied
+        upon.
+
+        It will test for whether the file exists on only cloud distribution points.
+        """
+        casper_results = casper.Casper(self.connection["jss"])
+        cloud_distribution_points = casper_results.find("cloudDistributionPoints")
+
+        # Step one: Build a list of sets of all package names.
+        all_packages = []
+        for distribution_point in cloud_distribution_points:
+            if distribution_point.findtext('name') != 'Jamf Cloud':
+                continue  # type 4 might be reserved for JCDS?
+
+            for package in distribution_point.findall("packages/package"):
+                all_packages.append({
+                    'id': package.findtext('id'),
+                    'checksum': package.findtext('checksum'),
+                    'size': package.findtext('size'),
+                    'lastModified': package.findText('lastModified'),
+                    'fileURL': package.findText('fileURL'),
+                })
+
+        return all_packages
 
 
 class JCDS(CloudDistributionServer):
