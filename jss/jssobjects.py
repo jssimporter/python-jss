@@ -614,7 +614,51 @@ class NetworkSegment(Container):
 
 class OSXConfigurationProfile(Container):
     _endpoint_path = "osxconfigurationprofiles"
+    root_tag = "os_x_configuration_profile"
+    search_types = {"name": "name"}
     allowed_kwargs = ('subset',)
+    _name_element = "general/name"
+    data_keys = {
+        "general": {
+            "description": "",
+            "category": "",
+            "distribution_method": "Install Automatically",
+            "user_removable": "true",
+            "level": "computer",
+            "uuid": None,
+            "redeploy_on_update": "Newly Assigned",
+            "payloads": None,
+        },
+        "scope": {
+            "computers": None,
+            "computer_groups": None,
+            "buildings": None,
+            "departments": None,
+            "exclusions": {
+                "computers": None,
+                "computer_groups": None,
+                "buildings": None,
+                "departments": None,
+            },
+        }
+        # TODO: Self Service
+    }
+
+    def set_category(self, category):
+        """Set the OSXConfigurationProfile's category.
+
+        Args:
+            category: A category object.
+        """
+        pcategory = self.find("general/category")
+        pcategory.clear()
+        name = ElementTree.SubElement(pcategory, "name")
+        if isinstance(category, Category):
+            id_ = ElementTree.SubElement(pcategory, "id")
+            id_.text = category.id
+            name.text = category.name
+        elif isinstance(category, basestring):
+            name.text = category
 
 
 class Package(Container):
