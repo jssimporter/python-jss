@@ -759,7 +759,7 @@ class CloudDistributionServer(Repository):
     """Abstract class for representing JCDS type repos.
 
     """
-    def package_index_using_casper(self, filename):
+    def package_index_using_casper(self):
         """Get a list of packages on the JCDS
 
         Similar to JDS and CDP, JCDS types have no
@@ -789,8 +789,8 @@ class CloudDistributionServer(Repository):
                     'id': package.findtext('id'),
                     'checksum': package.findtext('checksum'),
                     'size': package.findtext('size'),
-                    'lastModified': package.findText('lastModified'),
-                    'fileURL': package.findText('fileURL'),
+                    'lastModified': package.findtext('lastModified'),
+                    'fileURL': urllib.unquote(package.findtext('fileURL'))
                 })
 
         return all_packages
@@ -953,7 +953,6 @@ class JCDS(CloudDistributionServer):
 
         resource.close()
 
-
     def _copy(self, filename, id_=-1, file_type=0):
         """Upload a file to the distribution server. 10.2 and earlier
 
@@ -988,6 +987,18 @@ class JCDS(CloudDistributionServer):
             self._copy_sequential(filename, self.connection['jcds_upload_token'])
         else:
             self._copy_threaded(filename, self.connection['jcds_upload_token'])
+
+    def exists(self, filename):
+        """Check whether a package file already exists."""
+        packages = self.package_index_using_casper()
+        for p in packages:
+            url, token = p['fileURL'].split('?', 2)
+            urlparts = url.split('/')
+
+            if urlparts[-1] == filename:
+                return True
+
+        return False
 
     def __repr__(self):
         """Return string representation of connection arguments."""
