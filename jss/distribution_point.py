@@ -28,6 +28,8 @@ import subprocess
 import urllib
 import io
 import math
+import multiprocessing
+import requests
 
 
 try:
@@ -820,16 +822,16 @@ class JCDS(CloudDistributionServer):
 
     @classmethod
     def _upload_chunk(cls,
-                      session,
+                      filename,
                       base_url,
                       upload_token,
-                      filename,
                       chunk_index,
+                      chunk_size,
                       total_chunks):
         """Upload a single chunk of a file to JCDS.
 
         Args:
-            session (requests.Session): The session to use to upload the chunk.
+            filename (str): The full path to the file being uploaded.
             base_url (str): The JCDS base URL which includes the regional hostname and the tenant id.
             upload_token (str): The upload token, scraped from legacy/packages.html
             chunk_index (int): The zero-based index of the chunk being uploaded.
@@ -838,21 +840,24 @@ class JCDS(CloudDistributionServer):
         Returns:
             dict: JSON Response from JCDS
         """
-        pass
-        # print("Chunk #{}".format(chunk))
-        # resource.seek(chunk * JCDS.chunk_size)
-        # chunk_data = resource.read(JCDS.chunk_size)
-        # print(len(chunk_data))
-        # chunk_reader = io.BytesIO(chunk_data)
-        # chunk_url = self._build_chunk_url(basefname, chunk, total_chunks)
-        # print(chunk_url)
-        # response = self.connection["jss"].session.post(
-        #     url=chunk_url,
-        #     headers=headers,
-        #     files={'file': chunk_reader},
-        # )
-        # # if self.connection["jss"].verbose:
-        # print response.json()
+        print("Working on Chunk [{}/{}]".format(chunk_index, total_chunks))
+        resource = open(filename, "rb")
+        resource.seek(chunk_index * chunk_size)
+        chunk_data = resource.read(chunk_size)
+        basefname = os.path.basename(filename)
+        chunk_url = "{}/{}/part?chunk={}&chunks={}".format(
+            base_url, basefname, chunk_index, total_chunks
+        )
+
+        chunk_reader = io.BytesIO(chunk_data)
+        headers = {"X-Auth-Token": upload_token}
+        response = requests.post(
+            url=chunk_url,
+            headers=headers,
+            files={'file': chunk_reader},
+        )
+
+        return response.json()
 
     def _scrape_tokens(self):
         """Scrape JCDS upload URL and upload access token from the jamfcloud instance."""
@@ -898,6 +903,57 @@ class JCDS(CloudDistributionServer):
             self.connection["jcds_base_url"], filename, chunk, chunk_total
         )
 
+    def _copy_threaded(self, filename, upload_token, id_=-1):
+        """Upload a file to the distribution server using multiple threads to upload several chunks in parallel.
+
+        Directories/bundle-style packages must be zipped prior to copying.
+        """
+        fsize = os.stat(filename).st_size
+        total_chunks = int(math.ceil(fsize / JCDS.chunk_size))
+        p = multiprocessing.Pool(3)
+
+        def _chunk_args(chunk_index):
+            return filename, self.connection["jcds_base_url"], upload_token, chunk_index, JCDS.chunk_size, total_chunks
+
+        p.map(JCDS._upload_chunk, [_chunk_args(x) for x in xrange(0, total_chunks)])
+
+    def _copy_sequential(self, filename, upload_token, id_=-1):
+        """Upload a file to the distribution server using the same process as python-jss.
+
+        Directories/bundle-style packages must be zipped prior to copying.
+        """
+        fsize = os.stat(filename).st_size
+        # print("Total Size: {}".format(fsize))
+        total_chunks = int(math.ceil(fsize / JCDS.chunk_size))
+        # print("Total Chunks: {}".format(total_chunks))
+
+        basefname = os.path.basename(filename)
+        resource = open(filename, "rb")
+
+        headers = {
+            "X-Auth-Token": self.connection['jcds_upload_token'],
+            # "Content-Type": "application/octet-steam",
+        }
+
+        for chunk in xrange(0, total_chunks):
+            # print("Chunk #{}".format(chunk))
+            resource.seek(chunk * JCDS.chunk_size)
+            chunk_data = resource.read(JCDS.chunk_size)
+            # print(len(chunk_data))
+            chunk_reader = io.BytesIO(chunk_data)
+            chunk_url = self._build_chunk_url(basefname, chunk, total_chunks)
+            # print(chunk_url)
+            response = self.connection["jss"].session.post(
+                url=chunk_url,
+                headers=headers,
+                files={'file': chunk_reader},
+            )
+            # if self.connection["jss"].verbose:
+            print response.json()
+
+        resource.close()
+
+
     def _copy(self, filename, id_=-1, file_type=0):
         """Upload a file to the distribution server. 10.2 and earlier
 
@@ -925,38 +981,13 @@ class JCDS(CloudDistributionServer):
                 "uploads. You are probably trying to upload a non-flat "
                 "package. Please zip or create a flat package.")
 
-        fsize = os.stat(filename).st_size
-        print("Total Size: {}".format(fsize))
-        total_chunks = int(math.ceil(fsize / JCDS.chunk_size))
-        print("Total Chunks: {}".format(total_chunks))
-
         if 'jcds_upload_token' not in self.connection:
             self._scrape_tokens()
 
-        basefname = os.path.basename(filename)
-        resource = open(filename, "rb")
-        headers = {
-            "X-Auth-Token": self.connection['jcds_upload_token'],
-            # "Content-Type": "application/octet-steam",
-        }
-
-        for chunk in xrange(0, total_chunks):
-            print("Chunk #{}".format(chunk))
-            resource.seek(chunk * JCDS.chunk_size)
-            chunk_data = resource.read(JCDS.chunk_size)
-            print(len(chunk_data))
-            chunk_reader = io.BytesIO(chunk_data)
-            chunk_url = self._build_chunk_url(basefname, chunk, total_chunks)
-            print(chunk_url)
-            response = self.connection["jss"].session.post(
-                url=chunk_url,
-                headers=headers,
-                files={'file': chunk_reader},
-            )
-        # if self.connection["jss"].verbose:
-            print response.json()
-
-        resource.close()
+        if False:
+            self._copy_sequential(filename, self.connection['jcds_upload_token'])
+        else:
+            self._copy_threaded(filename, self.connection['jcds_upload_token'])
 
     def __repr__(self):
         """Return string representation of connection arguments."""
