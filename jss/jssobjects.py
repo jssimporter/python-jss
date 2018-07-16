@@ -660,6 +660,32 @@ class OSXConfigurationProfile(Container):
         elif isinstance(category, basestring):
             name.text = category
 
+    def add_payloads(self, payloads_contents):
+        """Add xml configuration profile to the correct tag in the OSXConfigurationProfile object.
+
+        The profile content will be XML encoded prior to addition,
+        so there's no need to encode prior to addition with this
+        method.
+
+        Args:
+            payloads_contents (str, unicode): Mobile Configuration Profile.
+        """
+        payloads_contents_tag = self.find("general/payloads")
+        if not payloads_contents_tag:
+            payloads_contents_tag = ElementTree.SubElement(
+                self.find("general"), "payloads")
+
+        # Normally, when embedding xml within xml you would think that a normal person would
+        # require escaping to avoid parsing issues. But nope, we just put the profile inline with the
+        # payloads tag.
+        payloads_contents_tag.text = payloads_contents
+
+        uuid_tag = self.find("uuid")
+        if not uuid_tag:
+            uuid_tag = ElementTree.SubElement(
+                self.find("general"), "uuid")
+        uuid_tag.text = "336001A6-460A-4213-B000-ECAE32E8429E"
+
 
 class Package(Container):
     _endpoint_path = "packages"
