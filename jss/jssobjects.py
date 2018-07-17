@@ -241,6 +241,18 @@ class ComputerConfiguration(Container):
 
 class ComputerExtensionAttribute(Container):
     _endpoint_path = "computerextensionattributes"
+    search_types = {"name": "name"}
+    data_keys = {
+        "description": "",
+        "data_type": None,
+        "input_type": {
+            "type": None,  # script, Pop-up Menu, LDAP Attribute Mapping, Text Field
+            "script": None,
+            "popup_choices": None,  # Array of <choice>value</choice> for Pop-Up type
+        },
+        "inventory_display": None,
+        "recon_display": None,
+    }
 
 
 class ComputerGroup(Group):
