@@ -41,10 +41,6 @@ except ImportError:
     # Python 3
     from html.parser import HTMLParser
 
-import boto
-from boto.s3.connection import S3Connection
-import boto
-from boto.s3.connection import S3Connection
 from . import casper
 from . import abstract
 from .exceptions import JSSError
@@ -1087,7 +1083,7 @@ class JCDS(CloudDistributionServer):
             )
 
             if self.connection["jss"].verbose:
-                print response.json()
+                print(response.json())
 
         resource.close()
 
