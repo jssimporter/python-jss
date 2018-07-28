@@ -136,11 +136,37 @@ class Class(Container):
 class Computer(Container):
     root_tag = "computer"
     _endpoint_path = "computers"
-    search_types = {"name": "name", "serial_number": "serialnumber",
-                    "udid": "udid", "macaddress": "macaddress"}
+    _name_path = "general/name"
+    search_types = {"name": "/name/", "serial_number": "/serialnumber/",
+                    "udid": "/udid/", "macaddress": "/macadress/",
+                    "match": "/match/"}
     # The '/computers/match/name/{matchname}' variant is not supported
     # here because in testing, it didn't actually do anything.
     allowed_kwargs = ('subset', 'match')
+    data_keys = {
+        "general": {
+            "mac_address": None,
+            "alt_mac_address": None,
+            "ip_address": None,
+            "last_reported_ip": None,
+            "serial_number": None,
+            "udid": None,
+            "jamf_version": None,
+            "platform": None,
+            "report_date": None,
+            "initial_entry_date": None,
+            "mdm_capable": None,
+        },
+        "location": {
+            "username": None,
+            "realname": None,
+            "real_name": None,
+            "email_address": None,
+            "position": None,
+            "phone": None,
+            "phone_number": None,
+        }
+    }
 
     @property
     def mac_addresses(self):
