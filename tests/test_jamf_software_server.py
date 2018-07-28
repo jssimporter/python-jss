@@ -1,5 +1,6 @@
 import pytest
 import os.path
+import jss
 from jss import JSS, QuerySet
 from xml.etree import ElementTree
 from jss.exceptions import GetError
@@ -34,7 +35,7 @@ class TestJSS(object):
         assert isinstance(result, QuerySet)
 
     def test_new_building(self, j, etree_building):
-        fixture_building = j.Building(etree_building)
+        fixture_building = jss.Building(j, etree_building)
         fixture_building.save()
         assert fixture_building.id is not None
 
@@ -47,6 +48,7 @@ class TestJSS(object):
         fixture_building = j.Building(etree_building.findtext('name'))
         fixture_building.find('name').text = 'Updated Fixture'
         fixture_building.save()
+        fixture_building.delete()
 
     def test_delete_building(self, j, etree_building):
         fixture_building = j.Building(etree_building.findtext('name'))
