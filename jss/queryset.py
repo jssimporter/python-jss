@@ -21,7 +21,10 @@ result of all queries in python-jss.
 
 
 from collections import defaultdict
-import cPickle
+try:
+    import cPickle  # Python 2.X
+except ImportError:
+    import _pickle as cPickle  # Python 3+
 import datetime
 import os
 

@@ -18,9 +18,14 @@
 Classes representing a JSS, and its available API calls, represented
 as JSSObjects.
 """
+from __future__ import print_function
+
+try:
+    import cPickle  # Python 2.X
+except ImportError:
+    import _pickle as cPickle  # Python 3+
 
 
-import cPickle
 import gzip
 import os
 import platform
@@ -28,7 +33,11 @@ import re
 import json
 from xml.etree import ElementTree
 import requests
-from UserDict import UserDict
+
+try:
+    from UserDict import UserDict  # Python 2.X
+except ImportError:
+    from collections import UserDict  # Python 3.3+
 
 # from jss.nsurlsession_adapter import NSURLSessionAdapter
 from .curl_adapter import CurlAdapter
@@ -310,7 +319,7 @@ class JSS(object):
         response = self.session.get(request_url, headers=headers, **kwargs)
 
         if response.status_code == 200 and self.verbose:
-            print "GET %s: Success." % request_url
+            print("GET %s: Success." % request_url)
         elif response.status_code >= 400:
             error_handler(GetError, response)
 
@@ -364,7 +373,7 @@ class JSS(object):
         response = self.session.post(request_url, data=data, headers=headers)
 
         if response.status_code == 201 and self.verbose:
-            print "POST %s: Success" % request_url
+            print("POST %s: Success" % request_url)
         elif response.status_code >= 400:
             error_handler(PostError, response)
 
@@ -410,7 +419,7 @@ class JSS(object):
         response = self.session.put(request_url, data=data, headers=headers)
 
         if response.status_code == 201 and self.verbose:
-            print "PUT %s: Success." % request_url
+            print("PUT %s: Success." % request_url)
         elif response.status_code >= 400:
             error_handler(PutError, response)
 
@@ -439,7 +448,7 @@ class JSS(object):
             response = self.session.delete(request_url)
 
         if response.status_code == 200 and self.verbose:
-            print "DEL %s: Success." % request_url
+            print("DEL %s: Success." % request_url)
         elif response.status_code >= 400:
             error_handler(DeleteError, response)
 
@@ -456,7 +465,7 @@ class JSS(object):
                 msg = "Unable to retrieve '{}'"
                 if err.status_code == 401:
                     msg += "; permission error"
-                print msg.format(name)
+                print(msg.format(name))
                 continue
 
 
@@ -470,7 +479,7 @@ class JSS(object):
                 except GetError:
                     # A failure to get means the object type has zero
                     # results.
-                    print name, " has no results! (GETERRROR)"
+                    print(name, " has no results! (GETERRROR)")
                     all_objects[name] = []
 
         return all_objects

@@ -23,7 +23,7 @@ CDPs, and JDSs.
 import os
 
 from .distribution_point import (
-    AFPDistributionPoint, SMBDistributionPoint, JDS, CDP, LocalRepository, JCDS)
+    AFPDistributionPoint, SMBDistributionPoint, JDS, CDP, LocalRepository, AWS, JCDS)
 from .exceptions import JSSError
 from .tools import (is_osx, is_linux, is_package)
 
@@ -101,6 +101,8 @@ class DistributionPoints(object):
                                           share_name=share_name, jss=self.jss)
                 elif repo.get("type") == "JCDS":
                     dpt = JCDS(jss=self.jss)
+                elif repo.get("type") == "AWS":
+                    dpt = AWS(jss=self.jss, **repo)
                 else:
                     raise ValueError("Distribution Point Type not recognized.")
 

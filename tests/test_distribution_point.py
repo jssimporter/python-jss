@@ -1,5 +1,5 @@
 import pytest
-from jss.distribution_point import SMBDistributionPoint
+from jss.distribution_point import SMBDistributionPoint, AWS
 
 
 class TestAFPDistributionPoint(object):
@@ -51,4 +51,14 @@ class TestLocalRepository(object):
 class TestCDP(object):
     pass
 
+
+class TestAWS(object):
+
+    def test_aws(self, j, s3_bucket):
+        aws_dp = AWS(
+            jss=j,
+            bucket=s3_bucket
+        )
+
+        aws_dp.copy_pkg("/Users/Shared/SkypeForBusinessInstaller-16.17.0.65.pkg")
 

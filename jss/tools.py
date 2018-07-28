@@ -23,7 +23,10 @@ import copy
 from functools import wraps
 import os
 import re
-from urllib import quote
+try:
+    from urllib import quote  # Python 2.X
+except ImportError:
+    from urllib.parse import quote  # Python 3+
 from xml.etree import ElementTree
 
 
@@ -174,5 +177,6 @@ def triggers_cache(func):
 
 def decorate_class_with_caching(cls, methods):
     for method_name in methods:
-        decorated_method = triggers_cache(getattr(cls, method_name))
-        setattr(cls, method_name, decorated_method)
+        if hasattr(cls, method_name):  # JSSObject does not have copy ?
+            decorated_method = triggers_cache(getattr(cls, method_name))
+            setattr(cls, method_name, decorated_method)

@@ -22,7 +22,7 @@ import copy
 import re
 from xml.etree import ElementTree
 
-import tools
+from jss import tools
 
 
 _DUNDER_PATTERN = re.compile(r'__[a-zA-Z]+__')

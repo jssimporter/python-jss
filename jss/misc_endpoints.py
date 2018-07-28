@@ -17,7 +17,7 @@
 
 Classes representing API endpoints that don't subclass JSSObject
 """
-
+from __future__ import print_function
 
 import mimetypes
 import os
@@ -206,8 +206,8 @@ class FileUpload(object):
 
         if response.status_code == 201:
             if self.jss.verbose:
-                print "POST: Success"
-                print response.content
+                print("POST: Success")
+                print(response.content)
         elif response.status_code >= 400:
             error_handler(PostError, response)
 

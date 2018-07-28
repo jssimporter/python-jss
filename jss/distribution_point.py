@@ -20,6 +20,8 @@ the JAMF Pro Server.
 """
 
 from __future__ import division
+from __future__ import print_function
+
 import os
 import re
 import shutil
@@ -40,6 +42,7 @@ except ImportError:
     from html.parser import HTMLParser
 
 from . import casper
+from . import abstract
 from .exceptions import JSSError
 try:
     from .contrib.mount_shares_better import mount_share
@@ -50,6 +53,15 @@ except ImportError:
     mount_share = None
 from .tools import (is_osx, is_linux, is_package)
 
+try:
+    import boto.s3
+    from boto.s3.connection import S3Connection, OrdinaryCallingFormat, S3ResponseError
+    from boto.s3.key import Key
+
+    BOTO_AVAILABLE = True
+except ImportError:
+    print("boto is not available, you will not be able to use the AWS distribution point type")
+    BOTO_AVAILABLE = False
 
 PKG_FILE_TYPE = '0'
 EBOOK_FILE_TYPE = '1'
@@ -446,7 +458,7 @@ class AFPDistributionPoint(MountedRepository):
         # mount_afp "afp://scraig:<password>@address/share" <mnt_point>
         if is_osx():
             if self.connection["jss"].verbose:
-                print self.connection["mount_url"]
+                print(self.connection["mount_url"])
             if mount_share:
                 self.connection["mount_point"] = mount_share(
                     self.connection["mount_url"])
@@ -456,14 +468,14 @@ class AFPDistributionPoint(MountedRepository):
                         self.connection["mount_url"],
                         self.connection["mount_point"]]
                 if self.connection["jss"].verbose:
-                    print " ".join(args)
+                    print(" ".join(args))
                 subprocess.check_call(args)
         elif is_linux():
             args = ["mount_afp", "-t", self.protocol,
                     self.connection["mount_url"],
                     self.connection["mount_point"]]
             if self.connection["jss"].verbose:
-                print " ".join(args)
+                print(" ".join(args))
             subprocess.check_call(args)
         else:
             raise JSSError("Unsupported OS.")
@@ -524,7 +536,7 @@ class SMBDistributionPoint(MountedRepository):
             if mount_share:
                 mount_url = "smb:%s" % self.connection["mount_url"]
                 if self.connection["jss"].verbose:
-                    print mount_url
+                    print(mount_url)
                 self.connection["mount_point"] = mount_share(mount_url)
             else:
                 # Non-Apple OS X python:
@@ -532,7 +544,7 @@ class SMBDistributionPoint(MountedRepository):
                         self.connection["mount_url"],
                         self.connection["mount_point"]]
                 if self.connection["jss"].verbose:
-                    print " ".join(args)
+                    print(" ".join(args))
                 subprocess.check_call(args)
         elif is_linux():
             args = ["mount", "-t", "cifs", "-o",
@@ -543,7 +555,7 @@ class SMBDistributionPoint(MountedRepository):
                                  self.connection["share_name"]),
                     self.connection["mount_point"]]
             if self.connection["jss"].verbose:
-                print " ".join(args)
+                print(" ".join(args))
             subprocess.check_call(args)
         else:
             raise JSSError("Unsupported OS.")
@@ -575,9 +587,17 @@ class DistributionServer(Repository):
         self.connection["url"] = self.connection["jss"].base_url
 
     def _build_url(self):
+        """Build the URL for POSTing files. 10.2 and earlier"""
+        self.connection["upload_url"] = (
+                "%s/%s" % (self.connection["jss"].base_url, "dbfileupload"))
+        self.connection["delete_url"] = (
+                "%s/%s" % (self.connection["jss"].base_url,
+                           "casperAdminSave.jxml"))
+
+    def _build_url_modern(self):
         """Build the URL for POSTing files."""
         self.connection["upload_url"] = (
-            "%s/%s" % (self.connection["jss"].base_url, "dbfileupload"))
+            "%s/%s" % (self.connection["jss"].base_url, "upload"))
         self.connection["delete_url"] = (
             "%s/%s" % (self.connection["jss"].base_url,
                        "casperAdminSave.jxml"))
@@ -595,7 +615,7 @@ class DistributionServer(Repository):
         self._copy(filename, id_=id_, file_type=PKG_FILE_TYPE)
 
     def _copy(self, filename, id_=-1, file_type=0):
-        """Upload a file to the distribution server.
+        """Upload a file to the distribution server. 10.2 and earlier
 
         Directories/bundle-style packages must be zipped prior to
         copying.
@@ -610,9 +630,34 @@ class DistributionServer(Repository):
         headers = {"DESTINATION": self.destination, "OBJECT_ID": str(id_),
                    "FILE_TYPE": file_type, "FILE_NAME": basefname}
         response = self.connection["jss"].session.post(
-            url=self.connection["upload_url"], data=resource, headers=headers)
+            url=self.connection["upload_url"],
+            data=resource.read(),
+            headers=headers)
         if self.connection["jss"].verbose:
-            print response
+            print(response)
+
+    def _copy_new(self, filename, id_=-1, file_type=0):
+        """Upload a file to the distribution server.
+
+        Directories/bundle-style packages must be zipped prior to
+        copying.
+        """
+        if os.path.isdir(filename):
+            raise TypeError(
+                "Distribution Server type repos do not permit directory "
+                "uploads. You are probably trying to upload a non-flat "
+                "package. Please zip or create a flat package.")
+        basefname = os.path.basename(filename)
+        resource = open(filename, "rb")
+        headers = {"sessionIdentifier": "com.jamfsoftware.jss.objects.packages.Package:%s" % str(id_),
+                   "fileIdentifier": "FIELD_FILE_NAME_FOR_DIST_POINTS"}
+        response = self.connection["jss"].session.post(
+            url=self.connection["upload_url"],
+            data=resource.read(),
+            headers=headers)
+        print(response)
+        if self.connection["jss"].verbose:
+            print(response)
 
     def delete_with_casper_admin_save(self, pkg):
         """Delete a pkg from the distribution server.
@@ -835,14 +880,103 @@ def _jcds_upload_chunk(
     return response.json()
 
 
+class AWS(CloudDistributionServer, abstract.AbstractRepository):
+    """Class for representing an AWS Cloud Distribution Point and its controlling JSS.
+
+    """
+    required_attrs = {"jss", "bucket"}
+
+    def __init__(self, **connection_args):
+        """Set up a connection to an AWS S3 bucket.
+
+        It is more secure to use the following environment variables provided by boto:
+
+            AWS_ACCESS_KEY_ID - The access key id to the jamf bucket
+            AWS_SECRET_ACCESS_KEY - The secret access key to the jamf bucket
+
+        You may also use the file ~/.boto as described in the boto documentation.
+
+        Args:
+            connection_args: Dict, with required keys:
+                jss: A JSS Object.
+                bucket: Name of the JAMF bucket.
+                aws_access_key_id (optional): The access key id
+                secret_access_key (optional): The secret access key, use environment instead.
+                host (optional): A bucket host. Seems to be needed if your bucket is not in the default location
+                    eg. southeast asia ap 2
+                chunk_size (optional): The chunk size for large objects >50mb
+
+        Throws:
+            S3ResponseError if the bucket does not exist
+        """
+        super(AWS, self).__init__(**connection_args)
+        self.s3 = S3Connection(
+            aws_access_key_id=connection_args.get('aws_access_key_id', None),
+            aws_secret_access_key=connection_args.get('aws_secret_access_key', None),
+            host=connection_args.get('host', boto.s3.connection.NoHostProvided),
+        )
+        try:
+            self.bucket = self.s3.get_bucket(connection_args['bucket'])
+        except S3ResponseError as e:
+            raise JSSError("got error getting bucket, may not exist: {}".format(connection_args['bucket']))
+
+        self.connection["url"] = self.bucket
+        self.chunk_size = connection_args.get('chunk_size', 52428800)  # 50 mb default
+
+    def _build_url(self):
+        """Build a connection URL."""
+        pass
+
+    def copy_pkg(self, filename, id_=-1):
+        """Copy a package to the repo's Package subdirectory.
+
+        Args:
+            filename: Path for file to copy.
+            id_: Unused
+        """
+        self._copy(filename, id_=id_)
+
+    def _copy(self, filename, id_=-1):   # type: (str, int) -> None
+        """Copy a file or folder to the bucket.
+
+        Does not yet support chunking.
+
+        Args:
+            filename: Path to copy.
+            destination: Remote path to copy file to.
+        """
+        bucket_key = os.path.basename(filename)
+        exists = self.bucket.get_key(bucket_key)
+        if exists:
+            print("Already exists")
+        else:
+            k = Key(self.bucket)
+            k.key = bucket_key
+            k.set_metadata('jamf-package-id', id_)
+            k.set_contents_from_filename(filename)
+
+    def delete(self, filename):  # type: (str) -> None
+        bucket_key = os.path.basename(filename)
+        self.bucket.delete_key(bucket_key)
+
+    def exists(self, filename):  # type: (str) -> bool
+        """Check whether a package already exists by checking for a bucket item with the same filename.
+
+        Args:
+            filename: full path to filename. Only the name itself will be checked.
+
+        Returns:
+            True if the package exists, else false
+        """
+        k = self.bucket.get_key(os.path.basename(filename))
+        return k is not None
+
 class JCDS(CloudDistributionServer):
     """Class for representing a JCDS and its controlling jamfcloud JSS.
 
     The JSS allows direct upload to the JCDS by exposing the access token from the package upload page.
 
     This class should be considered experimental!
-
-
     """
     required_attrs = {"jss"}
     destination = "3"
@@ -949,7 +1083,7 @@ class JCDS(CloudDistributionServer):
             )
 
             if self.connection["jss"].verbose:
-                print response.json()
+                print(response.json())
 
         resource.close()
 

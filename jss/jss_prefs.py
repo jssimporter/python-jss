@@ -19,7 +19,7 @@ Class for using a plist for storing python-jss preferences, with an
 interactive configuration that runs if you have not previously set up
 a plist.
 """
-
+from __future__ import print_function
 
 import getpass
 import os
@@ -68,7 +68,7 @@ class JSSPrefs(object):
         - **repos:** *(Optional)* A list of file repositories dicts to connect.
             - repos dicts:
 
-                Each file-share distribution point requires:
+                CDP and JDS distribution points require:
 
                 - **name:** String name of the distribution point. Must match
                   the value on the JSS.
@@ -78,10 +78,18 @@ class JSSPrefs(object):
                 the remaining information. There is also an explicit form;
                 See the distribution_points module for more info
 
-                CDP and JDS types require one dict for the master, with
+                CDP, JDS and AWS types require one dict for the master, with
                 key:
 
-                - **type:** String, either "CDP" or "JDS".
+                - **type:** String, "CDP", "JDS" or "AWS".
+
+                AWS distribution points require:
+
+                - **aws_access_key_id:** The access key ID for the user with r/w permission
+                    to the jamf bucket
+                - **aws_secret_access_key:** The secret key for this user. NOTE: to avoid storing sensitive credentials
+                    this can also be read from the environment variable `AWS_SECRET_ACCESS_KEY`.
+
     """
 
     def __init__(self, preferences_file=None):
@@ -175,7 +183,7 @@ class JSSPrefs(object):
         prefs["repos"] = self._handle_repos(prefs)
 
         plistlib.writePlist(prefs, self.preferences_file)
-        print "Preferences created.\n"
+        print("Preferences created.\n")
 
     def _handle_repos(self, prefs):
         """Handle repo configuration."""
@@ -185,7 +193,7 @@ class JSSPrefs(object):
         jss_server = JSS(
             url=prefs["jss_url"], user=prefs["jss_user"],
             password=prefs["jss_pass"], ssl_verify=prefs["verify"])
-        print "Fetching distribution point info..."
+        print("Fetching distribution point info...")
         try:
             dpts = jss_server.DistributionPoint()
         except GetError:
