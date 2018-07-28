@@ -49,42 +49,38 @@ class JSSPrefs(object):
 
     This JSSPrefs object can be used as an argument for a new JSS.
     By default and with no arguments, it uses the preference domain
-    ``"com.github.sheagcraig.python-jss.plist"``. However, alternate
+    "com.github.sheagcraig.python-jss.plist". However, alternate
     configurations can be supplied to the __init__ method to use
     something else.
 
     If no preference file is found, an interactive configuration
     function will try to help configure python-jss.
 
-    The preference file should include the following keys:
-    
-        - **jss_url**: String, full path, including port, to JSS, e.g.
-          "https://mycasper.donkey.com:8443".
-        - **jss_user**: String, API username to use.
-        - **jss_pass**: String, API password.
-        - **verify**: *(Optional)* Boolean for whether to verify the JSS's
-          certificate matches the SSL traffic. This certificate must
-          be in your keychain. Defaults to True.
-        - **suppress_warnings**: *(Optional)* Boolean for whether to suppress
-          the urllib3 warnings likely spamming you if you choose not
-          to set verify=False. Enabled by default when verify=False.
-        - **repos:** *(Optional)* A list of file repositories dicts to connect.
-            - repos dicts:
+    Preference file should include the following keys:
+        jss_url: String, full path, including port, to JSS, e.g.
+            "https://mycasper.donkey.com:8443".
+        jss_user: String, API username to use.
+        jss_pass: String, API password.
+        verify: (Optional) Boolean for whether to verify the JSS's
+            certificate matches the SSL traffic. This certificate must
+            be in your keychain. Defaults to True.
+        suppress_warnings: (Optional) Boolean for whether to suppress
+            the urllib3 warnings likely spamming you if you choose not
+            to set verify=False. Enabled by default when verify=False.
+        repos: (Optional) A list of file repositories dicts to connect.
+        repos dicts:
+            Each file-share distribution point requires:
+            name: String name of the distribution point. Must match
+                the value on the JSS.
+            password: String password for the read/write user.
 
-                Each file-share distribution point requires:
+            This form uses the distributionpoints API call to determine
+            the remaining information. There is also an explicit form;
+            See distribution_points package for more info
 
-                - **name:** String name of the distribution point. Must match
-                  the value on the JSS.
-                - **password:** String password for the read/write user.
-
-                This form uses the distributionpoints API call to determine
-                the remaining information. There is also an explicit form;
-                See distribution_points package for more info
-
-                CDP and JDS types require one dict for the master, with
-                key:
-
-                - **type:** String, either "CDP" or "JDS".
+            CDP and JDS types require one dict for the master, with
+            key:
+                type: String, either "CDP" or "JDS".
     """
 
     def __init__(self, preferences_file=None):

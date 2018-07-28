@@ -78,23 +78,23 @@ class JSS(object):
 
             repo_prefs: A list of dicts with repository names and
                 passwords.
-                repos: (Optional) List of file repositories dicts to
-                connect.
-                    repo dicts:
-                        Each file-share distribution point requires:
-                            name: String name of the distribution point.
-                                Must match the value on the JSS.
-                            password: String password for the read/write
-                                user.
+            repos: (Optional) List of file repositories dicts to
+                    connect.
+                repo dicts:
+                    Each file-share distribution point requires:
+                        name: String name of the distribution point.
+                            Must match the value on the JSS.
+                        password: String password for the read/write
+                            user.
 
-                        This form uses the distributionpoints API call to
-                        determine the remaining information. There is also
-                        an explicit form; See distribution_points package
-                        for more info
+                    This form uses the distributionpoints API call to
+                    determine the remaining information. There is also
+                    an explicit form; See distribution_points package
+                    for more info
 
-                        CDP and JDS types require one dict for the master,
-                        with key:
-                            type: String, either "CDP" or "JDS".
+                    CDP and JDS types require one dict for the master,
+                    with key:
+                        type: String, either "CDP" or "JDS".
 
             ssl_verify: Boolean whether to verify SSL traffic from the
                 JSS is genuine.
@@ -823,7 +823,7 @@ class JSSObjectFactory(object):
 
         Args:
             jss: JSS object to which API requests should be
-                 delegated.
+                delegated.
         """
         self.jss = jss
 
@@ -836,15 +836,14 @@ class JSSObjectFactory(object):
                 create.
             data: The data parameter performs different operations
                 depending on the type passed.
-
-                - None: Perform a list operation, or for non-container
-                  objects, return all data.
-                - int: Retrieve an object with ID of <data>.
-                - str: Retrieve an object with name of <str>. For some
-                  objects, this may be overridden to include searching
-                  by other criteria. See those objects for more info.
-                - xml.etree.ElementTree.Element: Create a new object from
-                  xml.
+                None: Perform a list operation, or for non-container
+                    objects, return all data.
+                int: Retrieve an object with ID of <data>.
+                str: Retrieve an object with name of <str>. For some
+                    objects, this may be overridden to include searching
+                    by other criteria. See those objects for more info.
+                xml.etree.ElementTree.Element: Create a new object from
+                    xml.
             subset:
                 A list of XML subelement tags to request (e.g.
                 ['general', 'purchasing']), OR an '&' delimited string
