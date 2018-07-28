@@ -56,18 +56,13 @@ def jrequests(jss_prefs_dict):  # type: (dict) -> JSS
     return o
 
 
-# @pytest.fixture
-# def gurl_adapter():  # () -> GurlAdapter
-#     adapter = GurlAdapter()
-#     return adapter
-
-
 @pytest.fixture
 def requests_adapter(jss_prefs_dict):  # type: () -> RequestsAdapter
     adapter = RequestsAdapter(jss_prefs_dict['jss_url'])
     return adapter
 
-  
+
+
 @pytest.fixture
 def etree_building():  # type: () -> ElementTree.Element
     building = ElementTree.Element('building')
@@ -99,18 +94,6 @@ def dp_smb_ip_port(docker_ip, docker_services):
     return docker_ip, docker_services.port_for('samba', 139)
 
 
-
-@pytest.fixture
-def gurl_jss(gurl_adapter, jss_prefs_dict):  # type: (GurlAdapter, dict) -> JSS
-    j = JSS(
-        adapter=gurl_adapter,
-        url=jss_prefs_dict['jss_url'],
-        user=jss_prefs_dict['jss_user'],
-        password=jss_prefs_dict['jss_password'],
-        ssl_verify=jss_prefs_dict['verify'],
-    )
-    return j
-
 # @pytest.fixture
 # def dp_afp_url(docker_ip, docker_services):
 #     afp_url = 'afp://%s:%s/distribution_point' % (
@@ -122,3 +105,8 @@ def gurl_jss(gurl_adapter, jss_prefs_dict):  # type: (GurlAdapter, dict) -> JSS
 #         check=lambda: is_afp_responsive(afp_url)
 #     )
 #     return afp_url
+
+@pytest.fixture
+def uapi_token(jss_prefs_dict, j):
+    response = j.post('uapi/auth/tokens', data={})
+    json_data = response.json()

@@ -1,6 +1,6 @@
 import pytest
 import os.path
-from jss import JSS
+from jss import JSS, QuerySet
 from xml.etree import ElementTree
 from jss.exceptions import GetError
 
@@ -28,28 +28,30 @@ class TestJSS(object):
         j = JSS(url=jss_prefs_dict['jss_url']+'/')
         assert j.base_url[-1] != '/'
 
-    def test_get(self, j):
-        result = j.get('packages')
+    def test_get_packages(self, j):
+        result = j.Package()
         assert result is not None
-        assert isinstance(result, ElementTree.Element)
+        assert isinstance(result, QuerySet)
 
-    def test_post(self, j, etree_building):
-        new_id = j.post('buildings/id/0', data=etree_building)
-        assert new_id is not None
-        result = j.get('buildings/id/{}'.format(new_id))
-        assert result is not None
-        assert isinstance(result, ElementTree.Element)
+    def test_new_building(self, j, etree_building):
+        fixture_building = j.Building(etree_building)
+        fixture_building.save()
+        assert fixture_building.id is not None
 
-    def test_put(self, j, etree_building):
-        etree_building.find('name').text = 'UpdatedFixture'
-        j.put('buildings/name/Fixture', data=etree_building)
-        result = j.get('buildings/name/UpdatedFixture')
-        assert result is not None
-        assert isinstance(result, ElementTree.Element)
+    def test_get_building(self, j, etree_building):
+        fixture_building = j.Building(etree_building.findtext('name'))
+        assert fixture_building is not None
+        assert fixture_building.id is not None
 
-    def test_delete(self, j):
-        j.delete('buildings/name/UpdatedFixture')
+    def test_update_building(self, j, etree_building):
+        fixture_building = j.Building(etree_building.findtext('name'))
+        fixture_building.find('name').text = 'Updated Fixture'
+        fixture_building.save()
 
-        with pytest.raises(GetError):
-            result = j.get('buildings/name/UpdatedFixture')
-            assert result is None
+    def test_delete_building(self, j, etree_building):
+        fixture_building = j.Building(etree_building.findtext('name'))
+        fixture_building.delete()
+
+    def test_scrape(self, j):
+        r = j.scrape('legacy/cloudDistributionPoint.html?id=0&o=r')
+        assert r is not None

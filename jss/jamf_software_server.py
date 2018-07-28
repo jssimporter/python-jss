@@ -23,14 +23,21 @@ as JSSObjects.
 import cPickle
 import gzip
 import os
+import platform
 import re
+import json
 from xml.etree import ElementTree
+import requests
+from UserDict import UserDict
 
-from . import distribution_points
+# from jss.nsurlsession_adapter import NSURLSessionAdapter
 from .curl_adapter import CurlAdapter
+from .auth import UAPIAuth
+from . import distribution_points
 from .exceptions import GetError, PutError, PostError, DeleteError
 from .jssobject import JSSObject
 from . import jssobjects
+from . import uapiobjects
 from .queryset import QuerySet
 from .tools import error_handler, quote_and_encode
 
@@ -63,6 +70,48 @@ class JSS(object):
                 0: Retrieve data from data for every access.
                 positive number: Number of seconds to keep.
     """
+
+    class UAPI(object):
+        """This object represents the UAPI. All UAPI search methods will be attached here."""
+        def __init__(self, jss, url=None):
+            self.jss = jss
+            self._base_url = url
+
+        @property
+        def base_url(self):
+            """The URL to the Casper JSS, including port if needed."""
+            return self._base_url
+
+        @base_url.setter
+        def base_url(self, url):
+            """The URL to the Casper JSS, including port if needed."""
+            # Remove the frequently included yet incorrect trailing slash.
+            self._base_url = url.rstrip("/")
+
+        @property
+        def url(self):  # type: () -> str
+            return "%s/%s" % (self.base_url, "uapi")
+
+    class JSSAPI(object):
+        """This object represents the XML API. All regular API search methods will be attached here."""
+        def __init__(self, jss, url=None):
+            self.jss = jss
+            self._base_url = url
+
+        @property
+        def base_url(self):
+            """The URL to the Casper JSS, including port if needed."""
+            return self._base_url
+
+        @base_url.setter
+        def base_url(self, url):
+            """The URL to the Casper JSS, including port if needed."""
+            # Remove the frequently included yet incorrect trailing slash.
+            self._base_url = url.rstrip("/")
+
+        @property
+        def url(self):  # type: () -> str
+            return "%s/%s" % (self.base_url, "JSSResource")
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -116,23 +165,44 @@ class JSS(object):
 
         self.base_url = url
 
-        self.session = kwargs.get('adapter', CurlAdapter())
+        if 'adapter' in kwargs:
+            self.session = kwargs['adapter']
+        else:
+            self.session = requests.session()
+
+            # Reverted to urllib3 because High Sierra uses LibreSSL
+            # if platform.system() == 'Darwin':
+            #     from Foundation import NSURLCredential, NSURLCredentialPersistenceNone
+            #
+            #     credential = NSURLCredential.credentialWithUser_password_persistence_(
+            #         user, password, NSURLCredentialPersistenceNone
+            #         # we don't expect ephemeral requests to save keychain items.
+            #     )
+            #
+            #     adapter = NSURLSessionAdapter(credential=credential)
+            #     adapter.verify = ssl_verify
+            #
+            #     self.session.mount('https://', adapter)
+            #     self.session.mount('http://', adapter)
+
         self.user = user
         self.password = password
+        self.token = None  # For uapi
         self.repo_prefs = repo_prefs if repo_prefs else []
         self.verbose = verbose
         self.ssl_verify = ssl_verify
 
         self.distribution_points = distribution_points.DistributionPoints(self)
-
         self.max_age = -1
+        self.uapi = JSS.UAPI(self, url)
+        self.api = JSS.JSSAPI(self, url)
 
     # pylint: disable=too-many-arguments
 
     @property
     def _url(self):
         """The URL to the Casper JSS API endpoints. Get only."""
-        return "%s/%s" % (self.base_url, "JSSResource")
+        return self.api.url
 
     @property
     def base_url(self):
@@ -208,7 +278,8 @@ class JSS(object):
         self.user, self.password = auth
         self.ssl_verify = ssl_verify
 
-    def get(self, url_path):
+    def get(self, url_path, headers=None, **kwargs):
+        # type: (str) -> Union[ElementTree.Element, dict, bytes]
         """GET a url, handle errors, and return an etree.
 
         In general, it is better to use a higher level interface for
@@ -217,9 +288,12 @@ class JSS(object):
 
         Args:
             url_path: String API endpoint path to GET (e.g. "packages")
+            headers: [Optional] headers to add to the request
 
         Returns:
-            ElementTree.Element for the XML returned from the JSS.
+            ElementTree.Element for the XML returned from the JSS if the response was XML,
+            dict if the response had Content-Type for json,
+            bytes for anything else
 
         Raises:
             GetError if provided url_path has a >= 400 response, for
@@ -229,23 +303,31 @@ class JSS(object):
             This behavior will change in the future for 404/Not Found
             to returning None.
         """
-        request_url = os.path.join(self._url, quote_and_encode(url_path))
-        response = self.session.get(request_url)
+        request_url = os.path.join(self.base_url, quote_and_encode(url_path))
+        if headers is None:  # Fall back to XML to support python-jss prior to addition of UAPI
+            headers = {'Content-Type': 'text/xml', 'Accept': 'text/xml'}
+
+        response = self.session.get(request_url, headers=headers, **kwargs)
 
         if response.status_code == 200 and self.verbose:
             print "GET %s: Success." % request_url
         elif response.status_code >= 400:
             error_handler(GetError, response)
 
-        # ElementTree in python2 only accepts bytes.
-        try:
-            xmldata = ElementTree.fromstring(response.content)
-        except ElementTree.ParseError:
-            raise GetError("Error Parsing XML:\n%s" % response.content)
+        if 'text/xml' in response.headers['content-type']:
+            # ElementTree in python2 only accepts bytes.
+            try:
+                xmldata = ElementTree.fromstring(response.content)
+                return xmldata
+            except ElementTree.ParseError:
+                raise GetError("Error Parsing XML:\n%s" % response.content)
+        elif response.headers['content-type'].startswith('application/json'):
+            return response.json()
+        else:
+            return response.content
 
-        return xmldata
-
-    def post(self, url_path, data):
+    def post(self, url_path, data=None):
+        # type: (str, Union[ElementTree.Element, dict]) -> str
         """POST an object to the JSS. For creating new objects only.
 
         The JSS responds with the new object's ID number if successful.
@@ -264,20 +346,37 @@ class JSS(object):
         """
         # The JSS expects a post to ID 0 to create an object
 
-        request_url = os.path.join(self._url, quote_and_encode(url_path))
-        data = ElementTree.tostring(data, encoding='UTF-8')
-        response = self.session.post(request_url, data=data)
+        request_url = os.path.join(self.base_url, quote_and_encode(url_path))
+        headers = {}
+
+        if isinstance(data, ElementTree.Element):
+            data = ElementTree.tostring(data, encoding='UTF-8')
+            headers = {'Content-Type': 'text/xml', 'Accept': 'text/xml'}
+        elif isinstance(data, dict):
+            data = json.dumps(data)
+            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        elif isinstance(data, UserDict):
+            data = json.dumps(data.data)
+            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        else:
+            headers = {'Content-Type': 'application/octet-stream', 'Accept': '*/*'}
+
+        response = self.session.post(request_url, data=data, headers=headers)
 
         if response.status_code == 201 and self.verbose:
             print "POST %s: Success" % request_url
         elif response.status_code >= 400:
             error_handler(PostError, response)
 
-        id_ = re.search(r"<id>([0-9]+)</id>", response.content).group(1)
+        if 'text/xml' in response.headers['content-type']:
+            id_ = re.search(r"<id>([0-9]+)</id>", response.content).group(1)
+        else:
+            return response
 
         return id_
 
     def put(self, url_path, data):
+        # type: (str, Union[ElementTree.Element, dict]) -> str
         """Update an existing object on the JSS.
 
         In general, it is better to use a higher level interface for
@@ -293,9 +392,22 @@ class JSS(object):
         Raises:
             PutError if provided url_path has a >= 400 response.
         """
-        request_url = os.path.join(self._url, quote_and_encode(url_path))
-        data = ElementTree.tostring(data, encoding='UTF-8')
-        response = self.session.put(request_url, data=data)
+        request_url = os.path.join(self.base_url, quote_and_encode(url_path))
+        headers = {}
+
+        if isinstance(data, ElementTree.Element):
+            data = ElementTree.tostring(data, encoding='UTF-8')
+            headers = {'Content-Type': 'text/xml', 'Accept': 'text/xml'}
+        elif isinstance(data, dict):
+            data = json.dumps(data)
+            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        elif isinstance(data, UserDict):
+            data = json.dumps(data.data)
+            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        else:
+            raise TypeError('Could not PUT unrecognised data type')
+
+        response = self.session.put(request_url, data=data, headers=headers)
 
         if response.status_code == 201 and self.verbose:
             print "PUT %s: Success." % request_url
@@ -303,6 +415,7 @@ class JSS(object):
             error_handler(PutError, response)
 
     def delete(self, url_path, data=None):
+        # type: (str, Optional[Union[ElementTree.Element, dict]]) -> None
         """Delete an object from the JSS.
 
         In general, it is better to use a higher level interface for
@@ -317,10 +430,11 @@ class JSS(object):
         Raises:
             DeleteError if provided url_path has a >= 400 response.
         """
-        request_url = os.path.join(self._url, quote_and_encode(url_path))
+        request_url = os.path.join(self.base_url, quote_and_encode(url_path))
         if data:
             data = ElementTree.tostring(data, encoding='UTF-8')
-            response = self.session.delete(request_url, data=data)
+            response = self.session.delete(request_url, data=data,
+                                           headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'})
         else:
             response = self.session.delete(request_url)
 
@@ -565,12 +679,97 @@ def add_search_method(cls, name):
     setattr(cls, name, api_method)
 
 
+# TODO: DRY.. this is just a temp copy/paste to try abstracting
+def add_uapi_search_method(cls, name):
+    """Add a class-specific search method to a class (JSS)"""
+    # Get the actual class to search for, from str `name`
+    obj_type = getattr(uapiobjects, name)
+
+    # Create a closure over the retrieved class to do our search.
+    def api_method(self, data=None, **kwargs):
+        """Flexibly search the JSS for objects of type {0}.
+
+            Args:
+                data (None, int, str, xml.etree.ElementTree.Element):
+                    Argument to query for. Different queries are
+                    performed depending on the type of this arg:
+                        None (or provide no argument / default):
+                            Search for all objects.
+                        int: Search for an object by ID.
+                        str: Search for an object by name. Some objects
+                            allow 'match' searches, using '*' as the
+                            wildcard operator.
+                        xml.etree.ElementTree.Element: create a new
+                            object from the Element's data.
+                kwargs:
+                    {1}
+
+                    Some classes allow additional filters, subsets, etc,
+                    in their queries. Check the object's `allowed_kwargs`
+                    attribute for a complete list of implemented keys.
+
+                    Not all classes offer all types of searches, nor are
+                    they all necessarily offered in a single query.
+                    Consult the Casper API documentation for usage.
+
+                    In general, the key name is applied to the end of the
+                    URL, followed by the val; e.g.
+                    '<url>/subset/general'.
+
+                    Some common types of extra arguments:
+
+                    subset (list of str or str): XML subelement tags to
+                        request (e.g.  ['general', 'purchasing']), OR an
+                        '&' delimited string (e.g.
+                        'general&purchasing').  Defaults to None.
+                    start_date/end_date (str or datetime): Either dates
+                        in the form 'YYYY-MM-DD' or a datetime.datetime
+                        object.
+
+            Returns:
+                QuerySet: If data=None, return all objects of this
+                    type.
+                {0}: If searching or creating new objects, return an
+                    instance of that object.
+                None: (FUTURE) Will return None if nothing is found that
+                    matches the search criteria.
+
+            Raises:
+                GetError for nonexistent objects.
+        """
+        if not isinstance(data, dict):
+            url = obj_type.build_query(data, **kwargs)
+            data = self.jss.get(url, headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+                            auth=UAPIAuth(self.jss.user, self.jss.password, "{}/uapi/auth/tokens".format(self.jss.base_url)))
+
+        if isinstance(data, list):
+            return [obj_type(self, d) for d in data]
+        else:
+            return obj_type(self, data)
+
+    # Add in the missing variables to the docstring and set name.
+    if hasattr(obj_type, 'allowed_kwargs') and obj_type.allowed_kwargs:
+        allowed = ', '.join(obj_type.allowed_kwargs)
+        msg = 'Allowed keyword arguments for this class are:\n{}{}'
+        kwarg_doc = msg.format(6 * "    ", allowed) if allowed else ""
+    else:
+        kwarg_doc = "(None supported)"
+    api_method.__doc__ = api_method.__doc__.format(name, kwarg_doc)
+    api_method.__name__ = name
+    # Add the method to the class with the correct name.
+    setattr(cls, name, api_method)
+
+
 # Run `add_search_method` against everything that jss.jssobjects exports.
 for jss_class in jssobjects.__all__:
     add_search_method(JSS, jss_class)
 
+for jss_uapi_class in uapiobjects.__all__:
+    print(jss_uapi_class)
+    add_uapi_search_method(JSS.UAPI, jss_uapi_class)
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
+
 
 class JSSObjectFactory(object):
     """Deprecated"""
