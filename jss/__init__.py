@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2014, 2015 Shea G Craig <shea.craig@da.org>
+# Copyright (C) 2014-2017 Shea G Craig
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@ Python wrapper for the JAMF Casper JSS API.
 
 Public package contents include:
     casper: Class using the Casper private API call to casper.jxml.
+    curl_adapter: Networking adapter to use the curl command with the
+        Requests API.
     distribution_point: Classes for AFP, SMB, CDP, and JDS DPs.
     distribution_points: Class for managing distribution point classes.
         distribution points, JDS, and CDP distribution servers, and
@@ -36,12 +38,15 @@ Public package contents include:
     jss_prefs: Class for loading python-jss configuration via a plist
         file, and for use as an argument to JSS. Includes an
         interactive setup helper.
+    requests_adapter: Networking adapter to use the Requests library.
+    response_adapter: Adapter for wrapping Curl response objects with the
+        Requests API.
 
 Private package contents include:
     contrib: Code from other authors used in python-jss.
     jssobjectlist: Classes for representing lists of objects returned
         from the JSS' GET searches.
-    tlsadapter: Adapter to allow python HTTP requests to use TLS, and
+    tlsadapter: Adapter to allow Requests to use TLS, and
         with the correct ciphers to match current JAMF recommendations.
     tools: Assorted functions for common tasks used throughout the
         package.
@@ -49,37 +54,30 @@ Private package contents include:
 
 
 from .casper import Casper
+from .curl_adapter import CurlAdapter
 from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
                                  JDS, CDP, LocalRepository)
 from .distribution_points import DistributionPoints
-from .exceptions import (
-    JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
-    JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
-    JSSUnsupportedSearchMethodError, JSSFileUploadParameterError,
-    JSSUnsupportedFileType, JSSError)
+from .exceptions import *
 from .jamf_software_server import JSS
 from .jssobject import JSSObject
-from .jssobjectlist import JSSObjectList
-from .jssobjects import (
-    Account, AccountGroup, ActivationCode, AdvancedComputerSearch,
-    AdvancedMobileDeviceSearch, AdvancedUserSearch, Building, BYOProfile,
-    Category, Class, CommandFlush, Computer, ComputerCheckIn, ComputerCommand,
-    ComputerConfiguration, ComputerExtensionAttribute, ComputerGroup,
-    ComputerHistory, ComputerInventoryCollection, ComputerInvitation,
-    ComputerReport, Department, DirectoryBinding, DiskEncryptionConfiguration,
-    DistributionPoint, DockItem, EBook, FileUpload, GSXConnection, IBeacon,
-    JSSUser, LDAPServer, LicensedSoftware, LogFlush, MacApplication,
-    ManagedPreferenceProfile, MobileDevice, MobileDeviceApplication,
-    MobileDeviceCommand, MobileDeviceConfigurationProfile,
-    MobileDeviceEnrollmentProfile, MobileDeviceExtensionAttribute,
-    MobileDeviceInvitation, MobileDeviceGroup, MobileDeviceProvisioningProfile,
-    NetbootServer, NetworkSegment, OSXConfigurationProfile, Package, Patch,
-    Peripheral, PeripheralType, Policy, Printer, RestrictedSoftware,
-    RemovableMACAddress, SavedSearch, Script, Site, SoftwareUpdateServer,
-    SMTPServer, UserExtensionAttribute, User, UserGroup, VPPAccount,
-    VPPAssignment, VPPInvitation)
+from .jssobjects import *
 from .jss_prefs import JSSPrefs
-from .tools import is_osx, is_linux
+from .misc_endpoints import *
+from .queryset import QuerySet
+from .pretty_element import PrettyElement
+
+# If a system doesn't have the required dependencies for requests, do
+# nothing.
+try:
+    from .requests_adapter import RequestsAdapter
+except ImportError:
+    RequestsAdapter = None
+
+from .tools import is_osx, is_linux, element_str
+
+# Deprecated
+from .jssobjectlist import JSSObjectList
 
 
-__version__ = "1.5.0"
+__version__ = "2.0.0"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2014, 2015 Shea G Craig <shea.craig@da.org>
+# Copyright (C) 2014-2017 Shea G Craig
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,21 +21,18 @@ as JSSObjects.
 
 
 import cPickle
+import gzip
 import os
 import re
-from urllib import quote
 from xml.etree import ElementTree
 
-import requests
-
 from . import distribution_points
-from .exceptions import (JSSGetError, JSSPutError, JSSPostError,
-                         JSSDeleteError, JSSMethodNotAllowedError)
-from .jssobject import JSSFlatObject
+from .curl_adapter import CurlAdapter
+from .exceptions import GetError, PutError, PostError, DeleteError
+from .jssobject import JSSObject
 from . import jssobjects
-from .jssobjectlist import (JSSObjectList, JSSListData)
-from .tlsadapter import TLSAdapter
-from .tools import error_handler
+from .queryset import QuerySet
+from .tools import error_handler, quote_and_encode
 
 
 # Pylint wants us to store our many attributes in a dictionary.
@@ -51,20 +48,26 @@ class JSS(object):
         password: String API password for user.
         repo_prefs: List of dicts of repository configuration data.
         verbose: Boolean whether to include extra output.
-        jss_migrated: Boolean whether JSS has had scripts "migrated".
-            Used to determine whether to upload scripts in Script
-            object XML or as files to the distribution points.
-        session: Requests session used to make all HTTP requests.
+        session: "Session" used to make all HTTP requests through
+            whichever network adapter is in use (default is CurlAdapter).
         ssl_verify: Boolean whether to verify SSL traffic from the JSS
             is genuine.
         factory: JSSObjectFactory object for building JSSObjects.
         distribution_points: DistributionPoints
+        max_age (int): Number of seconds cached object information
+            should be kept before re-retrieving. Defaults to '-1'.
+
+            Possible values:
+                -1: Keep cached data forever, or until manually
+                    retrieved with the `JSSObject.retrieve()` method.
+                0: Retrieve data from data for every access.
+                positive number: Number of seconds to keep.
     """
 
     # pylint: disable=too-many-arguments
-    def __init__(self, jss_prefs=None, url=None, user=None, password=None,
-                 repo_prefs=None, ssl_verify=True, verbose=False,
-                 jss_migrated=False, suppress_warnings=False):
+    def __init__(
+        self, jss_prefs=None, url=None, user=None, password=None,
+        repo_prefs=None, ssl_verify=True, verbose=False, **kwargs):
         """Setup a JSS for making API requests.
 
         Provide either a JSSPrefs object OR specify url, user, and
@@ -78,34 +81,27 @@ class JSS(object):
 
             repo_prefs: A list of dicts with repository names and
                 passwords.
-            repos: (Optional) List of file repositories dicts to
-                    connect.
-                repo dicts:
-                    Each file-share distribution point requires:
-                        name: String name of the distribution point.
-                            Must match the value on the JSS.
-                        password: String password for the read/write
-                            user.
+                repos: (Optional) List of file repositories dicts to
+                connect.
+                    repo dicts:
+                        Each file-share distribution point requires:
+                            name: String name of the distribution point.
+                                Must match the value on the JSS.
+                            password: String password for the read/write
+                                user.
 
-                    This form uses the distributionpoints API call to
-                    determine the remaining information. There is also
-                    an explicit form; See distribution_points package
-                    for more info
+                        This form uses the distributionpoints API call to
+                        determine the remaining information. There is also
+                        an explicit form; See distribution_points package
+                        for more info
 
-                    CDP and JDS types require one dict for the master,
-                    with key:
-                        type: String, either "CDP" or "JDS".
+                        CDP and JDS types require one dict for the master,
+                        with key:
+                            type: String, either "CDP" or "JDS".
 
             ssl_verify: Boolean whether to verify SSL traffic from the
                 JSS is genuine.
             verbose: Boolean whether to include extra output.
-            jss_migrated: Boolean whether JSS has had scripts
-                "migrated". Used to determine whether to upload scripts
-                in Script object XML or as files to the distribution
-                points.
-            suppress_warnings: Turns off the urllib3 warnings. Remember,
-                these warnings are there for a reason! Use at your own
-                risk.
         """
         if jss_prefs is not None:
             url = jss_prefs.url
@@ -115,33 +111,21 @@ class JSS(object):
             ssl_verify = jss_prefs.verify
             suppress_warnings = jss_prefs.suppress_warnings
 
-        if suppress_warnings:
-            requests.packages.urllib3.disable_warnings()
+        # TODO: This method currently accepts '**kwargs' to soften
+        # the deprecation of the urllib warnings removal.
 
-        self._base_url = ""
         self.base_url = url
+
+        self.session = kwargs.get('adapter', CurlAdapter())
         self.user = user
         self.password = password
         self.repo_prefs = repo_prefs if repo_prefs else []
         self.verbose = verbose
-        self.jss_migrated = jss_migrated
-        self.session = requests.Session()
-        self.session.auth = (self.user, self.password)
         self.ssl_verify = ssl_verify
 
-        # For some objects the JSS tries to return JSON, so we explictly
-        # request XML.
-
-        headers = {"content-type": "text/xml", "Accept": "application/xml"}
-        self.session.headers.update(headers)
-
-        # Add a TransportAdapter to force TLS, since JSS no longer
-        # accepts SSLv23, which is the default.
-
-        self.session.mount(self.base_url, TLSAdapter())
-
-        self.factory = JSSObjectFactory(self)
         self.distribution_points = distribution_points.DistributionPoints(self)
+
+        self.max_age = -1
 
     # pylint: disable=too-many-arguments
 
@@ -162,6 +146,38 @@ class JSS(object):
         self._base_url = url.rstrip("/")
 
     @property
+    def user(self):
+        """Username used to connect to the Casper API"""
+        return self.session.auth[0]
+
+    @user.setter
+    def user(self, value):
+        """Username used to connect to the Casper API.
+
+        Args:
+            value (str): username.
+        """
+        auth = self.session.auth
+        password = auth[1] if auth else ''
+        self.session.auth = (value, password)
+
+    @property
+    def password(self):
+        """Password used to connect to the Casper API"""
+        return self.session.auth[1]
+
+    @password.setter
+    def password(self, value):
+        """Password used to connect to the Casper API.
+
+        Args:
+            value (str): password.
+        """
+        auth = self.session.auth
+        user = auth[0] if auth else ''
+        self.session.auth = (user, value)
+
+    @property
     def ssl_verify(self):
         """Boolean value for whether to verify SSL traffic is valid."""
         return self.session.verify
@@ -175,6 +191,23 @@ class JSS(object):
         """
         self.session.verify = value
 
+    def mount_network_adapter(self, network_adapter):
+        """Mount a network adapter that uses the Requests API.
+
+        The existing user, password, and ssl_verify values are
+        transferred to the new adapter.
+
+        Args:
+            network_adapter: A network adapter object that uses the
+                basic Requests API. Included in python-jss are the
+                CurlAdapter and RequestsAdapter.
+        """
+        auth = (self.user, self.password)
+        ssl_verify = self.ssl_verify
+        self.session = network_adapter
+        self.user, self.password = auth
+        self.ssl_verify = ssl_verify
+
     def get(self, url_path):
         """GET a url, handle errors, and return an etree.
 
@@ -183,87 +216,66 @@ class JSS(object):
         JSSObjects themselves.
 
         Args:
-            url_path: String API endpoint path to GET (e.g. "/packages")
+            url_path: String API endpoint path to GET (e.g. "packages")
 
         Returns:
             ElementTree.Element for the XML returned from the JSS.
 
         Raises:
-            JSSGetError if provided url_path has a >= 400 response, for
+            GetError if provided url_path has a >= 400 response, for
             example, if an object queried for does not exist (404). Will
-            also raise JSSGetError for bad XML.
+            also raise GetError for bad XML.
 
             This behavior will change in the future for 404/Not Found
             to returning None.
         """
-        request_url = "%s%s" % (self._url, quote(url_path.encode("utf_8")))
+        request_url = os.path.join(self._url, quote_and_encode(url_path))
         response = self.session.get(request_url)
 
         if response.status_code == 200 and self.verbose:
             print "GET %s: Success." % request_url
         elif response.status_code >= 400:
-            error_handler(JSSGetError, response)
+            error_handler(GetError, response)
 
-        # requests GETs JSS data as XML encoded in utf-8, but
-        # ElementTree.fromstring wants a string.
-        jss_results = response.text.encode("utf-8")
+        # ElementTree in python2 only accepts bytes.
         try:
-            xmldata = ElementTree.fromstring(jss_results)
+            xmldata = ElementTree.fromstring(response.content)
         except ElementTree.ParseError:
-            raise JSSGetError("Error Parsing XML:\n%s" % jss_results)
+            raise GetError("Error Parsing XML:\n%s" % response.content)
 
         return xmldata
 
-    def post(self, obj_class, url_path, data):
+    def post(self, url_path, data):
         """POST an object to the JSS. For creating new objects only.
 
-        The data argument is POSTed to the JSS, which, upon success,
-        returns the complete XML for the new object. This data is used
-        to get the ID of the new object, and, via the
-        JSSObjectFactory, GET that ID to instantiate a new JSSObject of
-        class obj_class.
-
-        This allows incomplete (but valid) XML for an object to be used
-        to create a new object, with the JSS filling in the remaining
-        data. Also, only the JSS may specify things like ID, so this
-        method retrieves those pieces of data.
-
-        In general, it is better to use a higher level interface for
-        creating new objects, namely, creating a JSSObject subclass and
-        then using its save method.
+        The JSS responds with the new object's ID number if successful.
 
         Args:
-            obj_class: JSSObject subclass to create from POST.
             url_path: String API endpoint path to POST (e.g.
-                "/packages/id/0")
+                "packages/id/0")
             data: xml.etree.ElementTree.Element with valid XML for the
                 desired obj_class.
 
         Returns:
-            An object of class obj_class, representing a newly created
-            object on the JSS. The data is what has been returned after
-            it has been parsed by the JSS and added to the database.
+            str ID number of the newly created object.
 
         Raises:
-            JSSPostError if provided url_path has a >= 400 response.
+            PostError if provided url_path has a >= 400 response.
         """
         # The JSS expects a post to ID 0 to create an object
 
-        request_url = "%s%s" % (self._url, url_path)
-        data = ElementTree.tostring(data)
+        request_url = os.path.join(self._url, quote_and_encode(url_path))
+        data = ElementTree.tostring(data, encoding='UTF-8')
         response = self.session.post(request_url, data=data)
 
         if response.status_code == 201 and self.verbose:
             print "POST %s: Success" % request_url
         elif response.status_code >= 400:
-            error_handler(JSSPostError, response)
+            error_handler(PostError, response)
 
-        # Get the ID of the new object. JSS returns xml encoded in utf-8
+        id_ = re.search(r"<id>([0-9]+)</id>", response.content).group(1)
 
-        jss_results = response.text.encode("utf-8")
-        id_ = int(re.search(r"<id>([0-9]+)</id>", jss_results).group(1))
-
-        return self.factory.get_object(obj_class, id_)
+        return id_
 
     def put(self, url_path, data):
         """Update an existing object on the JSS.
@@ -274,20 +286,21 @@ class JSS(object):
 
         Args:
             url_path: String API endpoint path to PUT, with ID (e.g.
-                "/packages/id/<object ID>")
+                "packages/id/<object ID>")
             data: xml.etree.ElementTree.Element with valid XML for the
                 desired obj_class.
+
         Raises:
-            JSSPutError if provided url_path has a >= 400 response.
+            PutError if provided url_path has a >= 400 response.
         """
-        request_url = "%s%s" % (self._url, url_path)
-        data = ElementTree.tostring(data)
-        response = self.session.put(request_url, data)
+        request_url = os.path.join(self._url, quote_and_encode(url_path))
+        data = ElementTree.tostring(data, encoding='UTF-8')
+        response = self.session.put(request_url, data=data)
 
         if response.status_code == 201 and self.verbose:
             print "PUT %s: Success." % request_url
         elif response.status_code >= 400:
-            error_handler(JSSPutError, response)
+            error_handler(PutError, response)
 
     def delete(self, url_path, data=None):
         """Delete an object from the JSS.
@@ -297,13 +310,16 @@ class JSS(object):
 
         Args:
             url_path: String API endpoint path to DEL, with ID (e.g.
-                "/packages/id/<object ID>")
+                "packages/id/<object ID>")
+            data: xml.etree.ElementTree.Element with valid XML for the
+                desired obj_class. Most classes don't need this.
 
         Raises:
-            JSSDeleteError if provided url_path has a >= 400 response.
+            DeleteError if provided url_path has a >= 400 response.
         """
-        request_url = "%s%s" % (self._url, url_path)
+        request_url = os.path.join(self._url, quote_and_encode(url_path))
         if data:
+            data = ElementTree.tostring(data, encoding='UTF-8')
             response = self.session.delete(request_url, data=data)
         else:
             response = self.session.delete(request_url)
@@ -311,49 +327,41 @@ class JSS(object):
         if response.status_code == 200 and self.verbose:
             print "DEL %s: Success." % request_url
         elif response.status_code >= 400:
-            error_handler(JSSDeleteError, response)
+            error_handler(DeleteError, response)
 
-    # Convenience methods for all JSSObject types ######################
+    def retrieve_all(self):
+        all_search_methods = [
+            getattr(self, name) for name in jssobjects.__all__]
 
-    # Define a docstring to add with a decorator. Why? To avoid having
-    # the identical docstring repeat for each object type!
+        all_objects = {}
+        for method in all_search_methods:
+            name = method.__name__
+            try:
+                result = method()
+            except GetError as err:
+                msg = "Unable to retrieve '{}'"
+                if err.status_code == 401:
+                    msg += "; permission error"
+                print msg.format(name)
+                continue
 
-    def _docstring_parameter(obj_type, subset=False):   # pylint: disable=no-self-argument
-        """Decorator for adding _docstring to repetitive methods."""
-        docstring = (
-            "Flexibly search the JSS for objects of type {}.\n\n\tArgs:\n\t\t"
-            "Data: Allows different types to conduct different types of "
-            "searches. Argument of type:\n\t\t\tNone (or Provide no argument) "
-            "to search for all objects.\n\t\t\tInt to search for an object by "
-            "ID.\n\t\t\tString to search for an object by name.\n\t\t\t"
-            "xml.etree.ElementTree.Element to create a new object from the "
-            "Element's data.{}\n\n\tReturns:\n\t\tJSSObjectList for empty "
-            "data arguments.\n\t\tReturns an object of type {} for searches "
-            "and new objects.\n\t\t(FUTURE) Will return None if nothing is "
-            "found that match the search criteria.\n\n\tRaises:\n\t\t"
-            "JSSGetError for nonexistent objects.")
 
-        if subset:
-            subset_string = (
-                "\n\t\tsubset: A list of XML subelement tags to request\n"
-                "\t\t\t(e.g. ['general', 'purchasing']), OR an '&' \n\t\t\t"
-                "delimited string (e.g. 'general&purchasing').")
-        else:
-            subset_string = ""
+            # Flat objects can go straight in.
+            if isinstance(result, JSSObject):
+                all_objects[name] = result.retrieve()
+            # Container types need to be retrieved.
+            else:
+                try:
+                    all_objects[name] = result.retrieve_all()
+                except GetError:
+                    # A failure to get means the object type has zero
+                    # results.
+                    print name, " has no results! (GETERRROR)"
+                    all_objects[name] = []
 
-        def dec(obj):
-            """Dynamically decorate a docstring."""
-            class_name = str(obj_type)[:-2].rsplit(".")[-1]
-            updated_docstring = docstring.format(class_name, subset_string,
-                                                 class_name)
-            obj.__doc__ = obj.__doc__.format(
-                dynamic_docstring=updated_docstring)
-            return obj
-        return dec
+        return all_objects
 
-    #pylint: disable=invalid-name
-
-    def pickle_all(self, path):
+    def pickle_all(self, path, compress=True):
         """Back up entire JSS to a Python Pickle.
 
         For each object type, retrieve all objects, and then pickle
@@ -367,35 +375,28 @@ class JSS(object):
 
         Args:
             path: String file path to the file you wish to (over)write.
-                Path will have ~ expanded prior to opening.
+                Path will have ~ expanded prior to opening, and `.gz`
+                appended if compress=True and it's missing.
+            compress (bool): Whether to gzip output. Default is True.
         """
-        all_search_methods = [(name, self.__getattribute__(name)) for name in
-                              dir(self) if name[0].isupper()]
-        # all_search_methods = [("Account", self.__getattribute__("Account")), ("Package", self.__getattribute__("Package"))]
-        all_objects = {}
-        for method in all_search_methods:
-            result = method[1]()
-            if isinstance(result, JSSFlatObject):
-                all_objects[method[0]] = result
-            else:
-                try:
-                    all_objects[method[0]] = result.retrieve_all()
-                except JSSGetError:
-                    # A failure to get means the object type has zero
-                    # results.
-                    print method[0], " has no results! (GETERRROR)"
-                    all_objects[method[0]] = []
-        # all_objects = {method[0]: method[1]().retrieve_all()
-        #                for method in all_search_methods}
-        with open(os.path.expanduser(path), "wb") as pickle:
-            cPickle.Pickler(pickle, cPickle.HIGHEST_PROTOCOL).dump(all_objects)
+        all_objects = self.retrieve_all()
+        path = os.path.expanduser(path)
+        gz_ext = ".gz"
+        if compress and not path.endswith(gz_ext):
+            path = path + gz_ext
 
+        opener = gzip.open if compress else open
+        with opener(path, 'wb') as file_handle:
+            cPickle.Pickler(
+                file_handle, cPickle.HIGHEST_PROTOCOL).dump(all_objects)
+
+    @classmethod
     def from_pickle(cls, path):
         """Load all objects from pickle file and return as dict.
 
         The dict returned will have keys named the same as the
         JSSObject classes contained, and the values will be
-        JSSObjectLists of all full objects of that class (for example,
+        QuerySets of all full objects of that class (for example,
         the equivalent of my_jss.Computer().retrieve_all()).
 
         This method can potentially take a very long time!
@@ -409,7 +410,16 @@ class JSS(object):
             path: String file path to the file you wish to load from.
                 Path will have ~ expanded prior to opening.
         """
+        gz_magic = "\x1f\x8b\x08"
+
+        # Determine if file is gzipped.
         with open(os.path.expanduser(path), "rb") as pickle:
+            pickle_magic = pickle.read(len(gz_magic))
+            compressed = True if pickle_magic == gz_magic else False
+
+        opener = gzip.open if compressed else open
+
+        with opener(os.path.expanduser(path), "rb") as pickle:
             return cPickle.Unpickler(pickle).load()
 
     def write_all(self, path):
@@ -428,28 +438,12 @@ class JSS(object):
             path: String file path to the file you wish to (over)write.
                 Path will have ~ expanded prior to opening.
         """
-        all_search_methods = [(name, self.__getattribute__(name)) for name in
-                              dir(self) if name[0].isupper()]
-        # all_search_methods = [("Account", self.__getattribute__("Account")), ("Package", self.__getattribute__("Package"))]
-        all_objects = {}
-        for method in all_search_methods:
-            result = method[1]()
-            if isinstance(result, JSSFlatObject):
-                all_objects[method[0]] = result
-            else:
-                try:
-                    all_objects[method[0]] = result.retrieve_all()
-                except JSSGetError:
-                    # A failure to get means the object type has zero
-                    # results.
-                    print method[0], " has no results! (GETERRROR)"
-                    all_objects[method[0]] = []
-        # all_objects = {method[0]: method[1]().retrieve_all()
-        #                for method in all_search_methods}
+        all_objects = self.retrieve_all()
+
         with open(os.path.expanduser(path), "w") as ofile:
             root = ElementTree.Element("JSS")
             for obj_type, objects in all_objects.items():
-                if objects is not None:
+                if objects:
                     sub_element = ElementTree.SubElement(root, obj_type)
                     sub_element.extend(objects)
 
@@ -461,7 +455,7 @@ class JSS(object):
 
         The dict returned will have keys named the same as the
         JSSObject classes contained, and the values will be
-        JSSObjectLists of all full objects of that class (for example,
+        QuerySets of all full objects of that class (for example,
         the equivalent of my_jss.Computer().retrieve_all()).
 
         This method can potentially take a very long time!
@@ -477,521 +471,107 @@ class JSS(object):
 
         all_objects = {}
         for child in root:
-            obj_type = self.__getattribute__(child.tag)
-            objects = [obj_type(obj) for obj in child]
-            all_objects[child.tag] = JSSObjectList(self.factory, None, objects)
+            obj_type = getattr(jssobjects, child.tag)
+            objects = [obj_type(self, obj) for obj in child]
+            all_objects[child.tag] = QuerySet(objects)
 
         return all_objects
 
-    @_docstring_parameter(jssobjects.Account)
-    def Account(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Account, data)
+    def version(self):
+        return self.JSSUser().version.text
 
-    @_docstring_parameter(jssobjects.AccountGroup)
-    def AccountGroup(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.AccountGroup, data)
+# There's a lot of repetition involved in creating the object query
+# methods on JSS, so we create them dynamically at import time.
+def add_search_method(cls, name):
+    """Add a class-specific search method to a class (JSS)"""
+    # Get the actual class to search for, from str `name`
+    obj_type = getattr(jssobjects, name)
 
-    @_docstring_parameter(jssobjects.AdvancedComputerSearch)
-    def AdvancedComputerSearch(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.AdvancedComputerSearch, data)
+    # Create a closure over the retrieved class to do our search.
+    def api_method(self, data=None, **kwargs):
+        """Flexibly search the JSS for objects of type {0}.
 
-    @_docstring_parameter(jssobjects.AdvancedMobileDeviceSearch)
-    def AdvancedMobileDeviceSearch(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.AdvancedMobileDeviceSearch,
-                                       data)
+            Args:
+                data (None, int, str, xml.etree.ElementTree.Element):
+                    Argument to query for. Different queries are
+                    performed depending on the type of this arg:
+                        None (or provide no argument / default):
+                            Search for all objects.
+                        int: Search for an object by ID.
+                        str: Search for an object by name. Some objects
+                            allow 'match' searches, using '*' as the
+                            wildcard operator.
+                        xml.etree.ElementTree.Element: create a new
+                            object from the Element's data.
+                kwargs:
+                    {1}
 
-    @_docstring_parameter(jssobjects.AdvancedUserSearch)
-    def AdvancedUserSearch(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.AdvancedUserSearch, data)
+                    Some classes allow additional filters, subsets, etc,
+                    in their queries. Check the object's `allowed_kwargs`
+                    attribute for a complete list of implemented keys.
 
-    @_docstring_parameter(jssobjects.ActivationCode)
-    def ActivationCode(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ActivationCode, data)
+                    Not all classes offer all types of searches, nor are
+                    they all necessarily offered in a single query.
+                    Consult the Casper API documentation for usage.
 
-    @_docstring_parameter(jssobjects.Building)
-    def Building(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Building, data)
+                    In general, the key name is applied to the end of the
+                    URL, followed by the val; e.g.
+                    '<url>/subset/general'.
 
-    @_docstring_parameter(jssobjects.BYOProfile)
-    def BYOProfile(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.BYOProfile, data)
+                    Some common types of extra arguments:
 
-    @_docstring_parameter(jssobjects.Category)
-    def Category(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Category, data)
+                    subset (list of str or str): XML subelement tags to
+                        request (e.g.  ['general', 'purchasing']), OR an
+                        '&' delimited string (e.g.
+                        'general&purchasing').  Defaults to None.
+                    start_date/end_date (str or datetime): Either dates
+                        in the form 'YYYY-MM-DD' or a datetime.datetime
+                        object.
 
-    @_docstring_parameter(jssobjects.Class)
-    def Class(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Class, data)
+            Returns:
+                QuerySet: If data=None, return all objects of this
+                    type.
+                {0}: If searching or creating new objects, return an
+                    instance of that object.
+                None: (FUTURE) Will return None if nothing is found that
+                    matches the search criteria.
 
-    @_docstring_parameter(jssobjects.Computer, subset=True)
-    def Computer(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Computer, data, subset)
+            Raises:
+                GetError for nonexistent objects.
+        """
+        if not isinstance(data, ElementTree.Element):
+            url = obj_type.build_query(data, **kwargs)
+            data = self.get(url)
 
-    @_docstring_parameter(jssobjects.ComputerCheckIn)
-    def ComputerCheckIn(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerCheckIn, data)
+        # TODO: Deprecated and pending removal
+        if hasattr(obj_type, "container"):
+            data = data.find(obj_type.container)
 
-    @_docstring_parameter(jssobjects.ComputerCommand)
-    def ComputerCommand(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerCommand, data)
+        if data.find("size") is not None:
+            return QuerySet.from_response(obj_type, data, self, **kwargs)
+        else:
+            return obj_type(self, data)
 
-    @_docstring_parameter(jssobjects.ComputerConfiguration)
-    def ComputerConfiguration(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerConfiguration, data)
-
-    @_docstring_parameter(jssobjects.ComputerExtensionAttribute)
-    def ComputerExtensionAttribute(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerExtensionAttribute,
-                                       data)
-
-    @_docstring_parameter(jssobjects.ComputerGroup)
-    def ComputerGroup(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerGroup, data)
-
-    @_docstring_parameter(jssobjects.ComputerInventoryCollection)
-    def ComputerInventoryCollection(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerInventoryCollection,
-                                       data)
-
-    @_docstring_parameter(jssobjects.ComputerInvitation)
-    def ComputerInvitation(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerInvitation, data)
-
-    @_docstring_parameter(jssobjects.ComputerReport)
-    def ComputerReport(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ComputerReport, data)
-
-    @_docstring_parameter(jssobjects.Department)
-    def Department(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Department, data)
-
-    @_docstring_parameter(jssobjects.DirectoryBinding)
-    def DirectoryBinding(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.DirectoryBinding, data)
-
-    @_docstring_parameter(jssobjects.DiskEncryptionConfiguration)
-    def DiskEncryptionConfiguration(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.DiskEncryptionConfiguration,
-                                       data)
-
-    @_docstring_parameter(jssobjects.DistributionPoint)
-    def DistributionPoint(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.DistributionPoint, data)
-
-    @_docstring_parameter(jssobjects.DockItem)
-    def DockItem(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.DockItem, data)
-
-    @_docstring_parameter(jssobjects.EBook, subset=True)
-    def EBook(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.EBook, data, subset)
-
-    # FileUploads' only function is to upload, so a method here is not
-    # provided.
-
-    @_docstring_parameter(jssobjects.GSXConnection)
-    def GSXConnection(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.GSXConnection, data)
-
-    @_docstring_parameter(jssobjects.IBeacon)
-    def IBeacon(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.IBeacon, data)
-
-    @_docstring_parameter(jssobjects.JSSUser)
-    def JSSUser(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.JSSUser, data)
-
-    @_docstring_parameter(jssobjects.LDAPServer)
-    def LDAPServer(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.LDAPServer, data)
-
-    @_docstring_parameter(jssobjects.LicensedSoftware)
-    def LicensedSoftware(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.LicensedSoftware, data)
-
-    @_docstring_parameter(jssobjects.MacApplication, subset=True)
-    def MacApplication(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.MacApplication, data, subset)
-
-    @_docstring_parameter(jssobjects.ManagedPreferenceProfile, subset=True)
-    def ManagedPreferenceProfile(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.ManagedPreferenceProfile,
-                                       data, subset)
-
-    @_docstring_parameter(jssobjects.MobileDevice, subset=True)
-    def MobileDevice(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.MobileDevice, data, subset)
-
-    @_docstring_parameter(jssobjects.MobileDeviceApplication, subset=True)
-    def MobileDeviceApplication(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.MobileDeviceApplication,
-                                       data, subset)
-
-    @_docstring_parameter(jssobjects.MobileDeviceCommand)
-    def MobileDeviceCommand(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.MobileDeviceCommand, data)
-
-    @_docstring_parameter(jssobjects.MobileDeviceConfigurationProfile,
-                          subset=True)
-    def MobileDeviceConfigurationProfile(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(
-            jssobjects.MobileDeviceConfigurationProfile, data, subset)
-
-    @_docstring_parameter(jssobjects.MobileDeviceEnrollmentProfile,
-                          subset=True)
-    def MobileDeviceEnrollmentProfile(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(
-            jssobjects.MobileDeviceEnrollmentProfile, data, subset)
-
-    @_docstring_parameter(jssobjects.MobileDeviceExtensionAttribute)
-    def MobileDeviceExtensionAttribute(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(
-            jssobjects.MobileDeviceExtensionAttribute, data)
-
-    @_docstring_parameter(jssobjects.MobileDeviceInvitation)
-    def MobileDeviceInvitation(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.MobileDeviceInvitation, data)
-
-    @_docstring_parameter(jssobjects.MobileDeviceGroup)
-    def MobileDeviceGroup(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.MobileDeviceGroup, data)
-
-    @_docstring_parameter(jssobjects.MobileDeviceProvisioningProfile,
-                          subset=True)
-    def MobileDeviceProvisioningProfile(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(
-            jssobjects.MobileDeviceProvisioningProfile, data, subset)
-
-    @_docstring_parameter(jssobjects.NetbootServer)
-    def NetbootServer(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.NetbootServer, data)
-
-    @_docstring_parameter(jssobjects.NetworkSegment)
-    def NetworkSegment(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.NetworkSegment, data)
-
-    @_docstring_parameter(jssobjects.OSXConfigurationProfile, subset=True)
-    def OSXConfigurationProfile(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.OSXConfigurationProfile,
-                                       data, subset)
-
-    @_docstring_parameter(jssobjects.Package)
-    def Package(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Package, data)
-
-    @_docstring_parameter(jssobjects.Patch)
-    def Patch(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Patch, data)
-    @_docstring_parameter(jssobjects.Peripheral, subset=True)
-    def Peripheral(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Peripheral, data, subset)
-
-    @_docstring_parameter(jssobjects.PeripheralType)
-    def PeripheralType(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.PeripheralType, data)
-
-    @_docstring_parameter(jssobjects.Policy, subset=True)
-    def Policy(self, data=None, subset=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Policy, data, subset)
-
-    @_docstring_parameter(jssobjects.Printer)
-    def Printer(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Printer, data)
-
-    @_docstring_parameter(jssobjects.RestrictedSoftware)
-    def RestrictedSfotware(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.RestrictedSoftware, data)
-
-    @_docstring_parameter(jssobjects.RemovableMACAddress)
-    def RemovableMACAddress(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.RemovableMACAddress, data)
-
-    @_docstring_parameter(jssobjects.SavedSearch)
-    def SavedSearch(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.SavedSearch, data)
-
-    @_docstring_parameter(jssobjects.Script)
-    def Script(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Script, data)
-
-    @_docstring_parameter(jssobjects.Site)
-    def Site(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.Site, data)
-
-    @_docstring_parameter(jssobjects.SoftwareUpdateServer)
-    def SoftwareUpdateServer(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.SoftwareUpdateServer, data)
-
-    @_docstring_parameter(jssobjects.SMTPServer)
-    def SMTPServer(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.SMTPServer, data)
-
-    @_docstring_parameter(jssobjects.UserExtensionAttribute)
-    def UserExtensionAttribute(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.UserExtensionAttribute, data)
-
-    @_docstring_parameter(jssobjects.User)
-    def User(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.User, data)
-
-    @_docstring_parameter(jssobjects.UserGroup)
-    def UserGroup(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.UserGroup, data)
-
-    @_docstring_parameter(jssobjects.VPPAccount)
-    def VPPAccount(self, data=None):
-        """{dynamic_docstring}"""
-        return self.factory.get_object(jssobjects.VPPAccount, data)
+    # Add in the missing variables to the docstring and set name.
+    if hasattr(obj_type, 'allowed_kwargs') and obj_type.allowed_kwargs:
+        allowed = ', '.join(obj_type.allowed_kwargs)
+        msg = 'Allowed keyword arguments for this class are:\n{}{}'
+        kwarg_doc = msg.format(6 * "    ", allowed) if allowed else ""
+    else:
+        kwarg_doc = "(None supported)"
+    api_method.__doc__ = api_method.__doc__.format(name, kwarg_doc)
+    api_method.__name__ = name
+    # Add the method to the class with the correct name.
+    setattr(cls, name, api_method)
 
 
-    #pylint: enable=invalid-name
+# Run `add_search_method` against everything that jss.jssobjects exports.
+for jss_class in jssobjects.__all__:
+    add_search_method(JSS, jss_class)
 
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
 
 class JSSObjectFactory(object):
-    """Create JSSObjects intelligently based on a single parameter.
-
-    Attributes:
-        jss: Copy of a JSS object to which API requests are
-        delegated.
-    """
-
-    def __init__(self, jss):
-        """Configure a JSSObjectFactory
-
-        Args:
-            jss: JSS object to which API requests should be
-                delegated.
-        """
-        self.jss = jss
-
-    def get_object(self, obj_class, data=None, subset=None):
-        """Return a subclassed JSSObject instance by querying for
-        existing objects or posting a new object.
-
-        Args:
-            obj_class: The JSSObject subclass type to search for or
-                create.
-            data: The data parameter performs different operations
-                depending on the type passed.
-                None: Perform a list operation, or for non-container
-                    objects, return all data.
-                int: Retrieve an object with ID of <data>.
-                str: Retrieve an object with name of <str>. For some
-                    objects, this may be overridden to include searching
-                    by other criteria. See those objects for more info.
-                xml.etree.ElementTree.Element: Create a new object from
-                    xml.
-            subset:
-                A list of XML subelement tags to request (e.g.
-                ['general', 'purchasing']), OR an '&' delimited string
-                (e.g. 'general&purchasing'). This is not supported for
-                all JSSObjects.
-
-        Returns:
-            JSSObjectList: for empty or None arguments to data.
-            JSSObject: Returns an object of type obj_class for searches
-                and new objects.
-            (FUTURE) Will return None if nothing is found that match
-                the search criteria.
-
-        Raises:
-            TypeError: if subset not formatted properly.
-            JSSMethodNotAllowedError: if you try to perform an operation
-                not supported by that object type.
-            JSSGetError: If object searched for is not found.
-            JSSPostError: If attempted object creation fails.
-        """
-        if subset:
-            if not isinstance(subset, list):
-                if isinstance(subset, basestring):
-                    subset = subset.split("&")
-                else:
-                    raise TypeError
-
-        if data is None:
-            return self.get_list(obj_class, data, subset)
-        elif isinstance(data, (basestring, int)):
-            return self.get_individual_object(obj_class, data, subset)
-        elif isinstance(data, ElementTree.Element):
-            return self.get_new_object(obj_class, data)
-        else:
-            raise ValueError
-
-    def get_list(self, obj_class, data, subset):
-        """Get a list of objects as JSSObjectList.
-
-        Args:
-            obj_class: The JSSObject subclass type to search for.
-            data: None
-            subset: Some objects support a subset for listing; namely
-                Computer, with subset="basic".
-
-        Returns:
-            JSSObjectList
-        """
-        url = obj_class.get_url(data)
-        if obj_class.can_list and obj_class.can_get:
-            if (subset and len(subset) == 1 and subset[0].upper() ==
-                    "BASIC") and obj_class is jssobjects.Computer:
-                url += "/subset/basic"
-
-            result = self.jss.get(url)
-
-            if obj_class.container:
-                result = result.find(obj_class.container)
-
-            return self._build_jss_object_list(result, obj_class)
-
-        # Single object
-
-        elif obj_class.can_get:
-            xmldata = self.jss.get(url)
-            return obj_class(self.jss, xmldata)
-        else:
-            raise JSSMethodNotAllowedError(
-                obj_class.__class__.__name__)
-
-    def get_individual_object(self, obj_class, data, subset):
-        """Return a JSSObject of type obj_class searched for by data.
-
-        Args:
-            obj_class: The JSSObject subclass type to search for.
-            data: The data parameter performs different operations
-                depending on the type passed.
-                int: Retrieve an object with ID of <data>.
-                str: Retrieve an object with name of <str>. For some
-                    objects, this may be overridden to include searching
-                    by other criteria. See those objects for more info.
-            subset:
-                A list of XML subelement tags to request (e.g.
-                ['general', 'purchasing']), OR an '&' delimited string
-                (e.g. 'general&purchasing'). This is not supported for
-                all JSSObjects.
-
-        Returns:
-            JSSObject: Returns an object of type obj_class.
-            (FUTURE) Will return None if nothing is found that match
-                the search criteria.
-
-        Raises:
-            TypeError: if subset not formatted properly.
-            JSSMethodNotAllowedError: if you try to perform an operation
-                not supported by that object type.
-            JSSGetError: If object searched for is not found.
-        """
-        if obj_class.can_get:
-            url = obj_class.get_url(data)
-            if subset:
-                if not "general" in subset:
-                    subset.append("general")
-                url += "/subset/%s" % "&".join(subset)
-
-            xmldata = self.jss.get(url)
-
-            # Some name searches may result in multiple found
-            # objects. e.g. A computer search for "MacBook Pro" may
-            # return ALL computers which have not had their name
-            # changed.
-            if xmldata.find("size") is not None:
-                return self._build_jss_object_list(xmldata, obj_class)
-            else:
-                return obj_class(self.jss, xmldata)
-        else:
-            raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
-
-    def get_new_object(self, obj_class, data):
-        """Create a new object.
-
-        Args:
-            obj_class: The JSSObject subclass type to create.
-            data: xml.etree.ElementTree.Element; Create a new object
-                from xml.
-
-        Returns:
-            JSSObject: Returns an object of type obj_class.
-
-        Raises:
-            JSSMethodNotAllowedError: if you try to perform an operation
-                not supported by that object type.
-            JSSPostError: If attempted object creation fails.
-        """
-        # if obj_class.can_post:
-        #     url = obj_class.get_post_url()
-        #     return self.jss.post(obj_class, url, data)
-        return obj_class(self.jss, data)
-        # else:
-        #     raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
-
-    def _build_jss_object_list(self, response, obj_class):
-        """Build a JSSListData object from response."""
-        response_objects = [item for item in response
-                            if item is not None and
-                            item.tag != "size"]
-        objects = [
-            JSSListData(obj_class, {i.tag: i.text for i in response_object},
-                        self) for response_object in response_objects]
-
-        return JSSObjectList(self, obj_class, objects)
+    """Deprecated"""
+    pass

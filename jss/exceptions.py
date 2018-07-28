@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2014, 2015 Shea G Craig <shea.craig@da.org>
+# Copyright (C) 2014-2017 Shea G Craig
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,51 +24,38 @@ class JSSError(Exception):
     pass
 
 
-class JSSPrefsMissingFileError(JSSError):
-    """Missing preference file exception."""
-    pass
+class RequestError(JSSError):
+
+    def __init__(self, *args, **kwargs):
+        super(RequestError, self).__init__(*args, **kwargs)
+        self.status_code = None
 
 
-class JSSPrefsMissingKeyError(JSSError):
-    """Incomplete preferences file exception."""
-    pass
-
-
-class JSSGetError(JSSError):
+class GetError(RequestError):
     """GET exception."""
     pass
 
 
-class JSSPutError(JSSError):
+class PutError(RequestError):
     """PUT exception."""
     pass
 
 
-class JSSPostError(JSSError):
+class PostError(RequestError):
     """POST exception."""
     pass
 
 
-class JSSDeleteError(JSSError):
+class DeleteError(RequestError):
     """DEL exception."""
     pass
 
 
-class JSSMethodNotAllowedError(JSSError):
-    """Casper object not allowed to use that method."""
+class MethodNotAllowedError(JSSError):
+    """JSSObject is not allowed to use HTTP method."""
     pass
 
 
-class JSSUnsupportedSearchMethodError(JSSError):
-    """Unrecognized or unsupported GET search argument."""
-    pass
-
-
-class JSSFileUploadParameterError(JSSError):
-    """FileUpload parameter poorfly formed exception."""
-    pass
-
-
-class JSSUnsupportedFileType(JSSError):
-    """Unsupported file type exception."""
+class SSLVerifyError(JSSError):
+    """Server's certificate could not be verified."""
     pass

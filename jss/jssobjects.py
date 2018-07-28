@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2014, 2015 Shea G Craig <shea.craig@da.org>
+# Copyright (C) 2014-2017 Shea G Craig
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,169 +22,123 @@ Classes representing JSS database objects and their API endpoints
 import mimetypes
 import os
 from xml.etree import ElementTree
+from xml.sax.saxutils import escape
 
 import requests
 
-from .exceptions import (JSSMethodNotAllowedError, JSSPostError,
-                         JSSFileUploadParameterError, JSSGetError,
-                         JSSDeleteError)
-from .jssobject import (JSSContainerObject, JSSFlatObject,
-                        JSSGroupObject, JSSDeviceObject, JSSObject)
+from .exceptions import GetError
+from .jssobject import Container, Group, JSSObject
 from .tools import error_handler
 
 
+__all__ = (
+    'Account', 'AccountGroup', 'ActivationCode', 'AdvancedComputerSearch',
+    'AdvancedMobileDeviceSearch', 'AdvancedUserSearch',
+    'AllowedFileExtension', 'Building', 'BYOProfile', 'Category', 'Class',
+    'Computer', 'ComputerApplication', 'ComputerApplicationUsage',
+    'ComputerCheckIn', 'ComputerCommand', 'ComputerConfiguration',
+    'ComputerExtensionAttribute', 'ComputerGroup',
+    'ComputerHardwareSoftwareReport', 'ComputerHistory',
+    'ComputerInventoryCollection', 'ComputerInvitation', 'ComputerManagement',
+    'ComputerReport', 'Department', 'DirectoryBinding',
+    'DiskEncryptionConfiguration', 'DistributionPoint', 'DockItem', 'EBook',
+    'GSXConnection', 'HealthcareListener', 'HealthcareListenerRule', 'IBeacon',
+    'InfrastructureManager', 'JSSUser', 'JSONWebTokenConfigurations',
+    'LDAPServer', 'LicensedSoftware', 'MacApplication',
+    'ManagedPreferenceProfile', 'MobileDevice', 'MobileDeviceApplication',
+    'MobileDeviceCommand', 'MobileDeviceConfigurationProfile',
+    'MobileDeviceEnrollmentProfile', 'MobileDeviceExtensionAttribute',
+    'MobileDeviceGroup', 'MobileDeviceHistory', 'MobileDeviceInvitation',
+    'MobileDeviceProvisioningProfile', 'NetbootServer', 'NetworkSegment',
+    'OSXConfigurationProfile', 'Package', 'Patch', 'Peripheral',
+    'PeripheralType', 'Policy', 'Printer', 'RestrictedSoftware',
+    'RemovableMACAddress', 'SavedSearch', 'Script', 'Site',
+    'SoftwareUpdateServer', 'SMTPServer', 'UserExtensionAttribute', 'User',
+    'UserGroup', 'VPPAccount', 'VPPAssignment', 'VPPInvitation', 'Webhook')
+
+
 # pylint: disable=missing-docstring
-class Account(JSSContainerObject):
+class Account(Container):
     """JSS account."""
-    _url = "/accounts"
+    _endpoint_path = "accounts"
+    # TODO: This is pending removal.
     container = "users"
-    id_url = "/userid/"
-    search_types = {"userid": "/userid/", "username": "/username/",
-                    "name": "/username/"}
+    id_url = "userid"
+    search_types = {"userid": "userid", "username": "username",
+                    "name": "username"}
 
 
-class AccountGroup(JSSContainerObject):
+class AccountGroup(Container):
     """Account groups are groups of users on the JSS.
 
     Within the API hierarchy they are actually part of accounts, but I
     seperated them.
     """
 
-    _url = "/accounts"
+    _endpoint_path = "accounts"
+    # TODO: This is pending removal.
     container = "groups"
-    id_url = "/groupid/"
-    search_types = {"groupid": "/groupid/", "groupname": "/groupname/",
-                    "name": "/groupname/"}
+    id_url = "groupid"
+    search_types = {"groupid": "groupid", "groupname": "groupname",
+                    "name": "groupname"}
 
 
-class ActivationCode(JSSFlatObject):
-    _url = "/activationcode"
-    list_type = "activation_code"
+class ActivationCode(JSSObject):
+    _endpoint_path = "activationcode"
     can_delete = False
     can_post = False
-    can_list = False
 
 
-class AdvancedComputerSearch(JSSContainerObject):
-    _url = "/advancedcomputersearches"
+class AdvancedComputerSearch(Container):
+    _endpoint_path = "advancedcomputersearches"
 
 
-class AdvancedMobileDeviceSearch(JSSContainerObject):
-    _url = "/advancedmobiledevicesearches"
+class AdvancedMobileDeviceSearch(Container):
+    _endpoint_path = "advancedmobiledevicesearches"
 
 
-class AdvancedUserSearch(JSSContainerObject):
-    _url = "/advancedusersearches"
+class AdvancedUserSearch(Container):
+    _endpoint_path = "advancedusersearches"
 
 
-class Building(JSSContainerObject):
-    _url = "/buildings"
-    list_type = "building"
-
-
-class BYOProfile(JSSContainerObject):
-    _url = "/byoprofiles"
-    list_type = "byoprofiles"
-    can_delete = False
-    can_post = False
-    search_types = {"sitename": "/site/name/", "siteid": "/site/id/",
-                    "name": "/name/"}
-
-
-class Category(JSSContainerObject):
-    _url = "/categories"
-    list_type = "category"
-
-
-class Class(JSSContainerObject):
-    _url = "/classes"
-
-
-class CommandFlush(JSSObject):
-    _url = "/commandflush"
-    can_list = False
-    can_get = False
+class AllowedFileExtension(Container):
+    _endpoint_path = "allowedfileextensions"
     can_put = False
+    default_search = "extension"
+    search_types = {"extension": "extension"}
+
+
+class Building(Container):
+    _endpoint_path = "buildings"
+    root_tag = "building"
+
+
+class BYOProfile(Container):
+    _endpoint_path = "byoprofiles"
+    root_tag = "byoprofiles"
+    can_delete = False
     can_post = False
-
-    def __init__(self, jss):
-        """Initialize a new CommandFlush
-
-        Args:
-            jss: JSS object.
-        """
-        self.jss = jss
-
-    @property
-    def url(self):
-        """Return the path subcomponent of the url to this object."""
-        return self._url
-
-    def command_flush_with_xml(self, data):
-        """Flush commands for devices with a supplied xml string.
-
-        From the Casper API docs:
-        Status and devices specified in an XML file. Id lists may be
-        specified for <computers>, <computer_groups>, <mobile_devices>,
-        <mobile_device_groups>. Sample file:
-            <commandflush>
-              <status>Pending+Failed</status>
-              <mobile_devices>
-                <mobile_device>
-                  <id>1</id>
-                </mobile_device>
-                <mobile_device>
-                  <id>2</id>
-                </mobile_device>
-              </mobile_devices>
-            </commandflush>
-
-        Args:
-            data (string): XML string following the above structure or
-                an ElementTree/Element.
-
-        Raises:
-            JSSDeleteError if provided url_path has a >= 400 response.
-        """
-        if not isinstance(data, basestring):
-            data = ElementTree.tostring(data)
-        response = self.delete(data)
-
-    def command_flush_for(self, id_type, command_id, status):
-        """Flush commands for an individual device.
-
-        Args:
-            id_type (str): One of 'computers', 'computergroups',
-                'mobiledevices', or 'mobiledevicegroups'.
-            id_value (str, int, list): ID value(s) for the devices to
-                flush. More than one device should be passed as IDs
-                in a list or tuple.
-            status (str): One of 'Pending', 'Failed', 'Pending+Failed'.
-
-        Raises:
-            JSSDeleteError if provided url_path has a >= 400 response.
-        """
-        id_types = ('computers', 'computergroups', 'mobiledevices',
-                    'mobiledevicegroups')
-        status_types = ('Pending', 'Failed', 'Pending+Failed')
-        if id_type not in id_types or status not in status_types:
-            raise ValueError("Invalid arguments.")
-
-        if isinstance(command_id, list):
-            command_id = ",".join(str(item) for item in command_id)
-
-        flush_url = "{}/{}/id/{}/status/{}".format(
-            self.url, id_type, command_id, status)
-
-        self.jss.delete(flush_url)
+    search_types = {"sitename": "site/name", "siteid": "site/id",
+                    "name": "name"}
 
 
-class Computer(JSSDeviceObject):
-    list_type = "computer"
-    _url = "/computers"
-    search_types = {"name": "/name/", "serial_number": "/serialnumber/",
-                    "udid": "/udid/", "macaddress": "/macadress/",
-                    "match": "/match/"}
+class Category(Container):
+    _endpoint_path = "categories"
+    root_tag = "category"
+
+
+class Class(Container):
+    _endpoint_path = "classes"
+
+
+class Computer(Container):
+    root_tag = "computer"
+    _endpoint_path = "computers"
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macaddress"}
+    # The '/computers/match/name/{matchname}' variant is not supported
+    # here because in testing, it didn't actually do anything.
+    allowed_kwargs = ('subset', 'match')
 
     @property
     def mac_addresses(self):
@@ -198,32 +152,44 @@ class Computer(JSSDeviceObject):
             return mac_addresses
 
 
-class ComputerApplication(JSSContainerObject):
-    """Unimplemented at this time."""
-    _url = "/computerapplications/application"
+class ComputerApplication(Container):
+    _endpoint_path = "computerapplications"
     can_delete = False
     can_put = False
     can_post = False
-    list_type = "computer_application"
+    default_search = "application"
+    search_types = {"application": "application"}
+    allowed_kwargs = ("version", "inventory")
 
-    # Does not support ID lookups.
 
-
-class ComputerApplicationUsage(JSSContainerObject):
-    _url = "/computerapplicationusage"
+class ComputerApplicationUsage(Container):
+    _endpoint_path = "computerapplicationusage"
     can_delete = False
     can_put = False
     can_post = False
-    list_type = "computer_application_usage"
+    allowed_kwargs = ('start_date', 'end_date')
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macaddress",
+                    "match": "match"}
 
-    def __init__(self, data):
-        raise NotImplementedError
+    @classmethod
+    def _handle_kwargs(cls, kwargs):
+        """Do nothing. Can be overriden by classes which need it."""
+        if not all(key in kwargs for key in ('start_date', 'end_date')):
+            raise TypeError(
+                "This class requires a `start_date` and an `end_date` "
+                "parameter.")
+
+        # The current `build_query` implementation needs dates to be a
+        # single item in the keywords dict, so combine them.
+        start, end = kwargs.pop('start_date'), kwargs.pop('end_date')
+        kwargs['date_range'] = (start, end)
+        return kwargs
 
 
-class ComputerCheckIn(JSSFlatObject):
-    _url = "/computercheckin"
+class ComputerCheckIn(JSSObject):
+    _endpoint_path = "computercheckin"
     can_delete = False
-    can_list = False
     can_post = False
 
 
@@ -266,43 +232,22 @@ class ComputerCommand(JSSContainerObject):
         return self.jss.post(ComputerCommand, command_url, None)
         
 
-class ComputerConfiguration(JSSContainerObject):
-    _url = "/computerconfigurations"
-    list_type = "computer_configuration"
+class ComputerConfiguration(Container):
+    _endpoint_path = "computerconfigurations"
+    root_tag = "computer_configuration"
 
 
-class ComputerExtensionAttribute(JSSContainerObject):
-    _url = "/computerextensionattributes"
+class ComputerExtensionAttribute(Container):
+    _endpoint_path = "computerextensionattributes"
 
 
-class ComputerGroup(JSSGroupObject):
-    _url = "/computergroups"
-    list_type = "computer_group"
+class ComputerGroup(Group):
+    _endpoint_path = "computergroups"
+    root_tag = "computer_group"
     data_keys = {
         "is_smart": False,
         "criteria": None,
         "computers": None,}
-
-    def __init__(self, jss, data, **kwargs):
-        """Init a ComputerGroup
-
-        Adds convenience attributes to assist in configuring.
-
-        Args:
-            name: String name of the object to use as the
-                object's name property.
-            kwargs:
-                Accepted keyword args can be viewed by checking the
-                "data_keys" class attribute. Typically, they include all
-                top-level keys, and non-duplicated keys used elsewhere.
-
-                Values will be cast to string. (Int 10, bool False
-                become string values "10" and "false").
-
-                Ignores kwargs that aren't in object's keys attribute.
-        """
-        super(ComputerGroup, self).__init__(jss, data, **kwargs)
-        self.criteria = self.find("criteria")
 
     def add_computer(self, computer):
         """Add a computer to the group.
@@ -322,196 +267,140 @@ class ComputerGroup(JSSGroupObject):
             computer, "computers")
 
 
-class ComputerHardwareSoftwareReport(JSSContainerObject):
+class ComputerHardwareSoftwareReport(Container):
+    _endpoint_path = "computers"
+    can_put = False
+    can_post = False
+    can_delete = False
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macadress",
+                    "match": "match"}
+    allowed_kwargs = ('start_date', 'end_date', 'subset')
+
+
+class ComputerHardwareSoftwareReport(Container):
     """Unimplemented at this time."""
-    _url = "/computerhardwaresoftwarereports"
+    _endpoint_path = "computerhardwaresoftwarereports"
     can_delete = False
     can_put = False
     can_post = False
 
 
-class ComputerHistory(JSSContainerObject):
-    _url = "/computerhistory"
+class ComputerHistory(Container):
+    _endpoint_path = "computerhistory"
     can_delete = False
     can_put = False
     can_post = False
-    search_types = {"name": "/name/", "serial_number": "/serialnumber/",
-                    "udid": "/udid/", "macaddress": "/macadress/"}
+    allowed_kwargs = ('subset',)
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macadress"}
 
 
-class ComputerInventoryCollection(JSSFlatObject):
-    _url = "/computerinventorycollection"
-    can_list = False
+class ComputerInventoryCollection(JSSObject):
+    _endpoint_path = "computerinventorycollection"
     can_post = False
     can_delete = False
 
 
-class ComputerInvitation(JSSContainerObject):
-    _url = "/computerinvitations"
+class ComputerInvitation(Container):
+    _endpoint_path = "computerinvitations"
     can_put = False
-    search_types = {"name": "/name/", "invitation": "/invitation/"}
+    search_types = {"name": "name", "invitation": "invitation"}
 
 
-class ComputerReport(JSSContainerObject):
-    _url = "/computerreports"
+class ComputerManagement(Container):
+    _endpoint_path = "computermanagement"
+    can_put = False
+    can_post = False
+    can_delete = False
+    allowed_kwargs = ('patchfilter', 'username', 'subset')
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macadress"}
+
+
+class ComputerReport(Container):
+    _endpoint_path = "computerreports"
     can_put = False
     can_post = False
     can_delete = False
 
 
-class Department(JSSContainerObject):
-    _url = "/departments"
-    list_type = "department"
+class Department(Container):
+    _endpoint_path = "departments"
+    root_tag = "department"
 
 
-class DirectoryBinding(JSSContainerObject):
-    _url = "/directorybindings"
+class DirectoryBinding(Container):
+    _endpoint_path = "directorybindings"
 
 
-class DiskEncryptionConfiguration(JSSContainerObject):
-    _url = "/diskencryptionconfigurations"
+class DiskEncryptionConfiguration(Container):
+    _endpoint_path = "diskencryptionconfigurations"
 
 
-class DistributionPoint(JSSContainerObject):
-    _url = "/distributionpoints"
+class DistributionPoint(Container):
+    _endpoint_path = "distributionpoints"
 
 
-class DockItem(JSSContainerObject):
-    _url = "/dockitems"
+class DockItem(Container):
+    _endpoint_path = "dockitems"
 
 
-class EBook(JSSContainerObject):
-    _url = "/ebooks"
+class EBook(Container):
+    _endpoint_path = "ebooks"
+    allowed_kwargs = ('subset',)
 
 
-# pylint: disable=too-few-public-methods
-class FileUpload(object):
-    """FileUploads are a special case in the API. They allow you to add
-    file resources to a number of objects on the JSS.
-
-    To use, instantiate a new FileUpload object, then use the save()
-    method to upload.
-
-    Once the upload has been posted you may only interact with it
-    through the web interface. You cannot list/get it or delete it
-    through the API.
-
-    However, you can reuse the FileUpload object if you wish, by
-    changing the parameters, and issuing another save().
-    """
-    _url = "fileuploads"
-
-    def __init__(self, j, resource_type, id_type, _id, resource):
-        """Prepare a new FileUpload.
-
-        Args:
-            j: A JSS object to POST the upload to.
-            resource_type:
-                String. Acceptable Values:
-                    Attachments:
-                        computers
-                        mobiledevices
-                        enrollmentprofiles
-                        peripherals
-                    Icons:
-                        policies
-                        ebooks
-                        mobiledeviceapplicationsicon
-                    Mobile Device Application:
-                        mobiledeviceapplicationsipa
-                    Disk Encryption
-                        diskencryptionconfigurations
-            id_type:
-                String of desired ID type:
-                    id
-                    name
-            _id: Int or String referencing the identity value of the
-                resource to add the FileUpload to.
-            resource: String path to the file to upload.
-        """
-        resource_types = ["computers", "mobiledevices", "enrollmentprofiles",
-                          "peripherals", "policies", "ebooks",
-                          "mobiledeviceapplicationsicon",
-                          "mobiledeviceapplicationsipa",
-                          "diskencryptionconfigurations"]
-        id_types = ["id", "name"]
-
-        self.jss = j
-
-        # Do some basic error checking on parameters.
-        if resource_type in resource_types:
-            self.resource_type = resource_type
-        else:
-            raise JSSFileUploadParameterError("resource_type must be one of: "
-                                              "%s" % resource_types)
-        if id_type in id_types:
-            self.id_type = id_type
-        else:
-            raise JSSFileUploadParameterError("id_type must be one of: "
-                                              "%s" % id_types)
-        self._id = str(_id)
-
-        basename = os.path.basename(resource)
-        content_type = mimetypes.guess_type(basename)[0]
-        self.resource = {"name": (basename, open(resource, "rb"),
-                                  content_type)}
-        self._set_upload_url()
-
-    def _set_upload_url(self):
-        """Generate the full URL for a POST."""
-        # pylint: disable=protected-access
-        self._upload_url = "/".join(
-            [self.jss._url, self._url, self.resource_type, self.id_type,
-             str(self._id)])
-        # pylint: enable=protected-access
-
-    def save(self):
-        """POST the object to the JSS."""
-        try:
-            response = requests.post(self._upload_url,
-                                     auth=self.jss.session.auth,
-                                     verify=self.jss.session.verify,
-                                     files=self.resource)
-        except JSSPostError as error:
-            if error.status_code == 409:
-                raise JSSPostError(error)
-            else:
-                raise JSSMethodNotAllowedError(self.__class__.__name__)
-
-        if response.status_code == 201:
-            if self.jss.verbose:
-                print "POST: Success"
-                print response.text.encode("utf-8")
-        elif response.status_code >= 400:
-            error_handler(JSSPostError, response)
-
-
-# pylint: enable=too-few-public-methods
-
-class GSXConnection(JSSFlatObject):
-    _url = "/gsxconnection"
-    can_list = False
+class GSXConnection(JSSObject):
+    _endpoint_path = "gsxconnection"
     can_post = False
     can_delete = False
 
 
-class IBeacon(JSSContainerObject):
-    _url = "/ibeacons"
-    list_type = "ibeacon"
+class HealthcareListener(Container):
+    _endpoint_path = "healthcarelistener"
+    can_post = False
+    can_delete = False
+    default_search = "id"
+    search_types = {"id": "id"}
 
 
-class JSSUser(JSSFlatObject):
+class HealthcareListenerRule(Container):
+    _endpoint_path = "healthcarelistenerrule"
+    can_delete = False
+    default_search = "id"
+    search_types = {"id": "id"}
+
+
+class IBeacon(Container):
+    _endpoint_path = "ibeacons"
+    root_tag = "ibeacon"
+
+
+class InfrastructureManager(Container):
+    _endpoint_path = "infrastructuremanager"
+    can_post = False
+    can_delete = False
+    default_search = "id"
+    search_types = {"id": "id"}
+
+
+class JSSUser(JSSObject):
     """JSSUser is deprecated."""
-    _url = "/jssuser"
-    can_list = False
+    _endpoint_path = "jssuser"
     can_post = False
     can_put = False
     can_delete = False
-    search_types = {}
 
 
-class LDAPServer(JSSContainerObject):
-    _url = "/ldapservers"
+class JSONWebTokenConfigurations(JSSObject):
+    _endpoint_path = "jsonwebtokenconfigurations"
+    default_search = "id"
+    search_types = {"id": "id"}
+
+
+class LDAPServer(Container):
+    _endpoint_path = "ldapservers"
 
     def search_users(self, user):
         """Search for LDAP users.
@@ -525,7 +414,7 @@ class LDAPServer(JSSContainerObject):
             LDAPUsersResult object.
 
         Raises:
-            Will raise a JSSGetError if no results are found.
+            Will raise a GetError if no results are found.
         """
         user_url = "%s/%s/%s" % (self.url, "user", user)
         response = self.jss.get(user_url)
@@ -543,7 +432,7 @@ class LDAPServer(JSSContainerObject):
             LDAPGroupsResult object.
 
         Raises:
-            JSSGetError if no results are found.
+            GetError if no results are found.
         """
         group_url = "%s/%s/%s" % (self.url, "group", group)
         response = self.jss.get(group_url)
@@ -576,7 +465,7 @@ class LDAPServer(JSSContainerObject):
                 if response.findtext("ldap_user/is_member") == "Yes":
                     result = True
         elif len(response) >= 2:
-            raise JSSGetError("Unexpected response.")
+            raise GetError("Unexpected response.")
         return result
 
     @property
@@ -594,7 +483,7 @@ class LDAPServer(JSSContainerObject):
         return result
 
 
-class LDAPUsersResults(JSSContainerObject):
+class LDAPUsersResults(Container):
     """Helper class for results of LDAPServer queries for users."""
     can_get = False
     can_post = False
@@ -602,7 +491,7 @@ class LDAPUsersResults(JSSContainerObject):
     can_delete = False
 
 
-class LDAPGroupsResults(JSSContainerObject):
+class LDAPGroupsResults(Container):
     """Helper class for results of LDAPServer queries for groups."""
     can_get = False
     can_post = False
@@ -610,220 +499,68 @@ class LDAPGroupsResults(JSSContainerObject):
     can_delete = False
 
 
-class LicensedSoftware(JSSContainerObject):
-    _url = "/licensedsoftware"
+class LicensedSoftware(Container):
+    _endpoint_path = "licensedsoftware"
 
 
-class LogFlush(JSSObject):
-    _url = "/logflush"
-    can_list = False
-    can_get = False
-    can_put = False
-    can_post = False
-
-    def __init__(self, jss):
-        """Initialize a new LogFlush
-
-        Args:
-            jss: JSS object.
-        """
-        self.jss = jss
-
-    @property
-    def url(self):
-        """Return the path subcomponent of the url to this object."""
-        return self._url
-
-    def log_flush_with_xml(self, data):
-        """Flush logs for devices with a supplied xml string.
-
-        From the Casper API docs:
-            log, log_id, interval, and devices specified in an XML file.
-            Sample file:
-              <logflush>
-                <log>policy</log>
-                <log_id>2</log_id>
-                <interval>THREE MONTHS</interval>
-                <computers>
-                  <computer>
-                    <id>1</id>
-                  </computer>
-                  <computer>
-                    <id>2</id>
-                  </computer>
-                </computers>
-              </logflush>
-
-        Args:
-            data (string): XML string following the above structure or
-                an ElementTree/Element.
-                Elements:
-                    logflush (root)
-                    log (Unknown; "policy" is the only one listed in
-                         docs).
-                    log_id: Log ID value.
-                     interval: Combination of "Zero", "One", "Two",
-                        "Three", "Six", and "Day", "Week", "Month",
-                        "Year". e.g. ("Three+Months")
-                        Please note: The documentation for this
-                        specifies the singular form (e.g. "Month"),
-                        and plural ("Months") at different times, and
-                        further the construction is listed as
-                        "THREE MONTHS" elsewhere. Limited testing
-                        indicates that pluralization does not matter,
-                        nor does capitalization. The "+" seems optional
-                        as well.
-                        Please test!
-                    Device Arrays:
-                        Again, acceptable values are not listed in the
-                        docs, aside from the example ("computers").
-                        Presumably "mobiledevices", and possibly
-                        "computergroups" and "mobiledevicegroups" work.
-
-        Raises:
-            JSSDeleteError if provided url_path has a >= 400 response.
-        """
-        if not isinstance(data, basestring):
-            data = ElementTree.tostring(data)
-        response = self.delete(data)
-
-    def log_flush_for_interval(self, log_type, interval):
-        """Flush logs for an interval of time.
-
-        Args:
-            log_type (str): Only documented type is "policies". This
-                will be applied by default if nothing is passed.
-            interval (str): Combination of "Zero", "One", "Two",
-                "Three", "Six", and "Day", "Week", "Month", "Year". e.g.
-                ("Three+Months") Please note: The documentation for this
-                specifies the singular form (e.g. "Month"), and plural
-                ("Months") at different times, and further the
-                construction is listed as "THREE MONTHS" elsewhere.
-                Limited testing indicates that pluralization does not
-                matter, nor does capitalization.
-                Please test!
-
-                No validation is performed on this prior to the request
-                being made.
-
-        Raises:
-            JSSDeleteError if provided url_path has a >= 400 response.
-        """
-        if not log_type:
-            log_type = "policies"
-
-        # The XML for the /logflush basic endpoint allows spaces
-        # instead of "+", so do a replace here just in case.
-        interval = interval.replace(" ", "+")
-
-        flush_url = "{}/{}/interval/{}".format(
-            self.url, log_type, interval)
-
-        self.jss.delete(flush_url)
-
-    def log_flush_for_obj_for_interval(self, log_type, obj_id, interval):
-        """Flush logs for an interval of time for a specific object.
-
-        Please note, log_type is a variable according to the API docs,
-        but acceptable values are not listed. Only "policies" is
-        demonstrated as an acceptable value.
-
-        Args:
-            log_type (str): Only documented type is "policies". This
-                will be applied by default if nothing is passed.
-            obj_id (str or int): ID of the object to have logs flushed.
-            interval (str): Combination of "Zero", "One", "Two",
-                "Three", "Six", and "Day", "Week", "Month", "Year". e.g.
-                ("Three+Months") Please note: The documentation for this
-                specifies the singular form (e.g. "Month"), and plural
-                ("Months") at different times, and further the
-                construction is listed as "THREE MONTHS" elsewhere.
-                Limited testing indicates that pluralization does not
-                matter, nor does capitalization.
-                Please test!
-
-                No validation is performed on this prior to the request
-                being made.
-
-        Raises:
-            JSSDeleteError if provided url_path has a >= 400 response.
-        """
-        if not log_type:
-            log_type = "policies"
-
-        # The XML for the /logflush basic endpoint allows spaces
-        # instead of "+", so do a replace here just in case.
-        interval = interval.replace(" ", "+")
-
-        flush_url = "{}/{}/id/{}/interval/{}".format(
-            self.url, log_type, obj_id, interval)
-
-        self.jss.delete(flush_url)
+class MacApplication(Container):
+    _endpoint_path = "macapplications"
+    root_tag = "mac_application"
+    allowed_kwargs = ('subset',)
 
 
-class MacApplication(JSSContainerObject):
-    _url = "/macapplications"
-    list_type = "mac_application"
+class ManagedPreferenceProfile(Container):
+    _endpoint_path = "managedpreferenceprofiles"
+    allowed_kwargs = ('subset',)
 
 
-class ManagedPreferenceProfile(JSSContainerObject):
-    _url = "/managedpreferenceprofiles"
-
-
-class MobileDevice(JSSDeviceObject):
+class MobileDevice(Container):
     """Mobile Device objects include a "match" search type which queries
     across multiple properties.
     """
 
-    _url = "/mobiledevices"
-    list_type = "mobile_device"
-    search_types = {"name": "/name/", "serial_number": "/serialnumber/",
-                    "udid": "/udid/", "macaddress": "/macadress/",
-                    "match": "/match/"}
-
-    @property
-    def wifi_mac_address(self):
-        """Return device's WIFI MAC address or None."""
-        return self.findtext("general/wifi_mac_address")
-
-    @property
-    def bluetooth_mac_address(self):
-        """Return device's Bluetooth MAC address or None."""
-        return self.findtext("general/bluetooth_mac_address") or \
-            self.findtext("general/mac_address")
+    _endpoint_path = "mobiledevices"
+    root_tag = "mobile_device"
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macadress",
+                    "match": "match"}
+    allowed_kwargs = ('subset',)
 
 
-class MobileDeviceApplication(JSSContainerObject):
-    _url = "/mobiledeviceapplications"
+class MobileDeviceApplication(Container):
+    _endpoint_path = "mobiledeviceapplications"
+    allowed_kwargs = ('subset',)
 
 
-class MobileDeviceCommand(JSSContainerObject):
-    _url = "/mobiledevicecommands"
+class MobileDeviceCommand(Container):
+    _endpoint_path = "mobiledevicecommands"
     can_put = False
     can_delete = False
-    search_types = {"name": "/name/", "uuid": "/uuid/",
-                    "command": "/command/"}
+    search_types = {"name": "name", "uuid": "uuid",
+                    "command": "command"}
     # TODO: This object _can_ post, but it works a little differently
     # and is not yet implemented
     can_post = False
 
 
-class MobileDeviceConfigurationProfile(JSSContainerObject):
-    _url = "/mobiledeviceconfigurationprofiles"
+class MobileDeviceConfigurationProfile(Container):
+    _endpoint_path = "mobiledeviceconfigurationprofiles"
+    allowed_kwargs = ('subset',)
 
 
-class MobileDeviceEnrollmentProfile(JSSContainerObject):
-    _url = "/mobiledeviceenrollmentprofiles"
-    search_types = {"name": "/name/", "invitation": "/invitation/"}
+class MobileDeviceEnrollmentProfile(Container):
+    _endpoint_path = "mobiledeviceenrollmentprofiles"
+    search_types = {"name": "name", "invitation": "invitation"}
+    allowed_kwargs = ('subset',)
 
 
-class MobileDeviceExtensionAttribute(JSSContainerObject):
-    _url = "/mobiledeviceextensionattributes"
+class MobileDeviceExtensionAttribute(Container):
+    _endpoint_path = "mobiledeviceextensionattributes"
 
 
-class MobileDeviceGroup(JSSGroupObject):
-    _url = "/mobiledevicegroups"
-    list_type = "mobile_device_group"
+class MobileDeviceGroup(Group):
+    _endpoint_path = "mobiledevicegroups"
+    root_tag = "mobile_device_group"
 
     def add_mobile_device(self, device):
         """Add a mobile_device to the group.
@@ -843,32 +580,44 @@ class MobileDeviceGroup(JSSGroupObject):
             device, "mobile_devices")
 
 
-class MobileDeviceInvitation(JSSContainerObject):
-    _url = "/mobiledeviceinvitations"
+class MobileDeviceHistory(Container):
+    _endpoint_path = "mobiledevicehistory"
+    can_delete = False
     can_put = False
-    search_types = {"invitation": "/invitation/"}
+    can_post = False
+    allowed_kwargs = ('subset',)
+    search_types = {"name": "name", "serial_number": "serialnumber",
+                    "udid": "udid", "macaddress": "macadress"}
 
 
-class MobileDeviceProvisioningProfile(JSSContainerObject):
-    _url = "/mobiledeviceprovisioningprofiles"
-    search_types = {"name": "/name/", "uuid": "/uuid/"}
+class MobileDeviceInvitation(Container):
+    _endpoint_path = "mobiledeviceinvitations"
+    can_put = False
+    search_types = {"invitation": "invitation"}
 
 
-class NetbootServer(JSSContainerObject):
-    _url = "/netbootservers"
+class MobileDeviceProvisioningProfile(Container):
+    _endpoint_path = "mobiledeviceprovisioningprofiles"
+    search_types = {"name": "name", "uuid": "uuid"}
+    allowed_kwargs = ('subset',)
 
 
-class NetworkSegment(JSSContainerObject):
-    _url = "/networksegments"
+class NetbootServer(Container):
+    _endpoint_path = "netbootservers"
 
 
-class OSXConfigurationProfile(JSSContainerObject):
-    _url = "/osxconfigurationprofiles"
+class NetworkSegment(Container):
+    _endpoint_path = "networksegments"
 
 
-class Package(JSSContainerObject):
-    _url = "/packages"
-    list_type = "package"
+class OSXConfigurationProfile(Container):
+    _endpoint_path = "osxconfigurationprofiles"
+    allowed_kwargs = ('subset',)
+
+
+class Package(Container):
+    _endpoint_path = "packages"
+    root_tag = "package"
     data_keys = {
         "category": None,
         "info": None,
@@ -931,31 +680,34 @@ class Package(JSSContainerObject):
         self.find("category").text = name
 
 
-class Patch(JSSContainerObject):
-    _url = "/patches"
-    list_type = "software_title"
+class Patch(Container):
+    _endpoint_path = "patches"
+    root_tag = "software_title"
     can_post = False
+    allowed_kwargs = ('subset',)
     # The /patches/id/{id}/version/{version} variant is not currently
     # implemented.
 
 
-class Peripheral(JSSContainerObject):
-    _url = "/peripherals"
+class Peripheral(Container):
+    _endpoint_path = "peripherals"
     search_types = {}
+    allowed_kwargs = ('subset',)
 
 
-class PeripheralType(JSSContainerObject):
-    _url = "/peripheraltypes"
+class PeripheralType(Container):
+    _endpoint_path = "peripheraltypes"
     search_types = {}
 
 
 # pylint: disable=too-many-instance-attributes
 # This class has a lot of convenience attributes. Sorry pylint.
-class Policy(JSSContainerObject):
-    _url = "/policies"
-    list_type = "policy"
-    search_types = {"name": "/name/", "category": "/category/"}
-    _name_path = "general/name"
+class Policy(Container):
+    _endpoint_path = "policies"
+    root_tag = "policy"
+    search_types = {"name": "name", "category": "category"}
+    allowed_kwargs = ('subset',)
+    _name_element = "general/name"
     data_keys = {
         "general": {
             "enabled": "true",
@@ -978,60 +730,6 @@ class Policy(JSSContainerObject):
         "maintenance": {
             "recon": "true"},
     }
-
-    def __init__(self, jss, name, **kwargs):
-        """Init a Policy from scratch.
-
-        Adds convenience attributes to assist in configuring.
-
-        Args:
-            name: String name of the object to use as the
-                object's name property.
-            kwargs:
-                Accepted keyword args can be viewed by checking the
-                "data_keys" class attribute. Typically, they include all
-                top-level keys, and non-duplicated keys used elsewhere.
-
-                Values will be cast to string. (Int 10, bool False
-                become string values "10" and "false").
-
-                Ignores kwargs that aren't in object's keys attribute.
-        """
-        super(Policy, self).__init__(jss, name, **kwargs)
-
-        # Set convenience attributes.
-        # This is an experiment. If it prooves to be more cumbersome
-        # than it is worth, they may come out.
-        # General
-        self.general = self.find("general")
-        self.enabled = self.general.find("enabled")
-        self.frequency = self.general.find("frequency")
-        self.category = self.general.find("category")
-
-        # Scope
-        self.scope = self.find("scope")
-        self.computers = self.find("scope/computers")
-        self.computer_groups = self.find("scope/computer_groups")
-        self.buildings = self.find("scope/buildings")
-        self.departments = self.find("scope/departments")
-        self.exclusions = self.find("scope/exclusions")
-        self.excluded_computers = self.find("scope/exclusions/computers")
-        self.excluded_computer_groups = self.find(
-            "scope/exclusions/computer_groups")
-        self.excluded_buildings = self.find("scope/exclusions/buildings")
-        self.excluded_departments = self.find("scope/exclusions/departments")
-
-        # Self Service
-        self.self_service = self.find("self_service")
-        self.use_for_self_service = self.find("self_service/"
-                                              "use_for_self_service")
-        # Package Configuration
-        self.pkg_config = self.find("package_configuration")
-        self.pkgs = self.find("package_configuration/packages")
-        # Maintenance
-        self.maintenance = self.find("maintenance")
-        self.recon = self.find("maintenance/recon")
-
 
     def add_object_to_scope(self, obj):
         """Add an object to the appropriate scope block.
@@ -1095,6 +793,32 @@ class Policy(JSSContainerObject):
         else:
             raise TypeError
 
+    def add_object_to_limitations(self, obj):
+        """Add an object to the appropriate scope limitations
+        block.
+
+        Args:
+            obj: JSSObject to add to limitations. Accepted subclasses
+                are:
+                    User
+                    UserGroup
+                    NetworkSegment
+                    IBeacon
+
+        Raises:
+            TypeError if invalid obj type is provided.
+        """
+        if isinstance(obj, User):
+            self.add_object_to_path(obj, "scope/limitations/users")
+        elif isinstance(obj, UserGroup):
+            self.add_object_to_path(obj, "scope/limitations/user_groups")
+        elif isinstance(obj, NetworkSegment):
+            self.add_object_to_path(obj, "scope/limitations/network_segments")
+        elif isinstance(obj, IBeacon):
+            self.add_object_to_path(obj, "scope/limitations/ibeacons")
+        else:
+            raise TypeError
+
     def add_package(self, pkg, action_type="Install"):
         """Add a Package object to the policy with action=install.
 
@@ -1144,68 +868,90 @@ class Policy(JSSContainerObject):
 
 # pylint: enable=too-many-instance-attributes, too-many-locals
 
-class Printer(JSSContainerObject):
-    _url = "/printers"
+
+class Printer(Container):
+    _endpoint_path = "printers"
 
 
-class RemovableMACAddress(JSSContainerObject):
-    _url = "/removablemacaddresses"
+class RemovableMACAddress(Container):
+    _endpoint_path = "removablemacaddresses"
 
 
-class RestrictedSoftware(JSSContainerObject):
-    _url = "/restrictedsoftware"
+class RestrictedSoftware(Container):
+    _endpoint_path = "restrictedsoftware"
 
 
-class SavedSearch(JSSContainerObject):
-    _url = "/savedsearches"
+class SavedSearch(Container):
+    _endpoint_path = "savedsearches"
     can_put = False
     can_post = False
     can_delete = False
 
 
-class Script(JSSContainerObject):
-    _url = "/scripts"
-    list_type = "script"
+class Script(Container):
+    _endpoint_path = "scripts"
+    root_tag = "script"
+
+    def add_script(self, script_contents):
+        """Add script code to the correct tag in the Script object.
+
+        The script content will be XML encoded prior to addition,
+        so there's no need to encode prior to addition with this
+        method.
+
+        Args:
+            script_contents (str, unicode): Script code.
+        """
+        escaped_script_contents = escape(script_contents)
+        script_contents_tag = self.find("script_contents")
+        if not script_contents_tag:
+            script_contents_tag = ElementTree.SubElement(
+                self, "script_contents")
+        script_contents_tag.text = escaped_script_contents
 
 
-class Site(JSSContainerObject):
-    _url = "/sites"
-    list_type = "site"
+class Site(Container):
+    _endpoint_path = "sites"
+    root_tag = "site"
 
 
-class SMTPServer(JSSFlatObject):
-    _url = "/smtpserver"
-    id_url = ""
-    can_list = False
+class SMTPServer(JSSObject):
+    _endpoint_path = "smtpserver"
     can_post = False
-    search_types = {}
+    can_delete = False
 
 
-class SoftwareUpdateServer(JSSContainerObject):
-    _url = "/softwareupdateservers"
+class SoftwareUpdateServer(Container):
+    _endpoint_path = "softwareupdateservers"
 
 
-class UserExtensionAttribute(JSSContainerObject):
-    _url = "/userextensionattributes"
+class UserExtensionAttribute(Container):
+    _endpoint_path = "userextensionattributes"
 
 
-class User(JSSContainerObject):
-    _url = "/users"
+class User(Container):
+    _endpoint_path = "users"
 
 
-class UserGroup(JSSContainerObject):
-    _url = "/usergroups"
+class UserGroup(Container):
+    _endpoint_path = "usergroups"
 
 
-class VPPAccount(JSSContainerObject):
-    _url = "/vppaccounts"
-    list_type = "vpp_account"
+class VPPAccount(Container):
+    _endpoint_path = "vppaccounts"
+    root_tag = "vpp_account"
 
 
-class VPPAssignment(JSSContainerObject):
-    _url = "/vppassignments"
+class VPPAssignment(Container):
+    _endpoint_path = "vppassignments"
 
 
-class VPPInvitation(JSSContainerObject):
-    _url = "/vppinvitations"
+class VPPInvitation(Container):
+    _endpoint_path = "vppinvitations"
+
+
+class Webhook(Container):
+    _endpoint_path = "webhooks"
+
+
 # pylint: enable=missing-docstring
