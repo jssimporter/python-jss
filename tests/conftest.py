@@ -3,7 +3,6 @@ import plistlib
 from jss import JSSPrefs, JSS
 from xml.etree import ElementTree
 from jss.requests_adapter import RequestsAdapter
-from jss.gurl_adapter import GurlAdapter
 from subprocess import call
 
 JSS_PREFS = {
@@ -57,12 +56,18 @@ def jrequests(jss_prefs_dict):  # type: (dict) -> JSS
     return o
 
 
+# @pytest.fixture
+# def gurl_adapter():  # () -> GurlAdapter
+#     adapter = GurlAdapter()
+#     return adapter
+
+
 @pytest.fixture
 def requests_adapter(jss_prefs_dict):  # type: () -> RequestsAdapter
     adapter = RequestsAdapter(jss_prefs_dict['jss_url'])
     return adapter
 
-
+  
 @pytest.fixture
 def etree_building():  # type: () -> ElementTree.Element
     building = ElementTree.Element('building')
@@ -94,6 +99,7 @@ def dp_smb_ip_port(docker_ip, docker_services):
     return docker_ip, docker_services.port_for('samba', 139)
 
 
+
 @pytest.fixture
 def gurl_jss(gurl_adapter, jss_prefs_dict):  # type: (GurlAdapter, dict) -> JSS
     j = JSS(
@@ -104,7 +110,6 @@ def gurl_jss(gurl_adapter, jss_prefs_dict):  # type: (GurlAdapter, dict) -> JSS
         ssl_verify=jss_prefs_dict['verify'],
     )
     return j
-
 
 # @pytest.fixture
 # def dp_afp_url(docker_ip, docker_services):

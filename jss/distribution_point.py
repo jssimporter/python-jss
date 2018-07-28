@@ -736,3 +736,22 @@ class CDP(DistributionServer):
     """
     required_attrs = {"jss"}
     destination = "2"
+
+
+class CloudDistributionServer(Repository):
+    """Abstract class for representing JCDS type repos.
+
+    """
+    pass
+
+
+class JCDS(CloudDistributionServer):
+    """Class for representing a JCDS and its controlling jamfcloud JSS.
+
+    The JSS allows direct upload to the JCDS by exposing the access token from the package upload page.
+
+    This class should be considered experimental!
+    - Access token needs to be scraped.
+    """
+    required_attrs = {"jss"}
+    destination = "3"

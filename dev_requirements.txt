@@ -1,2 +1,7 @@
 inflect
 selenium
+pytest
+coverage
+pyobjc-core==2.5.1
+pytest-docker==0.6.1
+
