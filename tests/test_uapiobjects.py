@@ -5,6 +5,10 @@ from UserDict import UserDict
 
 class TestUAPIObjects(object):
 
+    def test_get_auth(self, j):
+        # type: (JSS) -> None
+        pass
+
     def test_get_cache(self, j):
         # type: (JSS) -> None
         result = j.uapi.Cache()
@@ -48,4 +52,9 @@ class TestUAPIObjects(object):
     def test_get_system_info(self, j):
         # type: (JSS) -> None
         result = j.uapi.SystemInformation()
+        assert result is not None
+
+    def test_get_vppsubscriptions(self, j):
+        # type: (JSS) -> None
+        result = j.uapi.VPPSubscription()
         assert result is not None
