@@ -82,7 +82,7 @@ class TestNSURLSessionAdapter(object):
         assert response is not None
         assert response.status_code == 200
 
-    def test_get_xml(self, session, jss_prefs_dict, credentials):
+    def test_get_xml(self, session, jss_prefs_dict, credential):
         # type: (requests.Session, dict, NSURLCredentialAuth) -> None
         response = session.get(
             '{}/JSSResource/accounts'.format(jss_prefs_dict['jss_url']),
@@ -124,8 +124,7 @@ class TestNSURLSessionAdapter(object):
         # type: (JSS) -> None
         result = ns_jss.Package()
         assert result is not None
-        assert isinstance(result, ElementTree.Element)
-        print ElementTree.tostring(result)
+        assert isinstance(result, QuerySet)
 
     def test_post_jss(self, ns_jss, etree_building):
         # type: (JSS, ElementTree.Element) -> None
@@ -133,17 +132,12 @@ class TestNSURLSessionAdapter(object):
         fixture_building.save()
 
     def test_put_jss(self, ns_jss, etree_building):
-        # type: (JSS) -> None
+        # type: (JSS, ElementTree.Element) -> None
+        fixture_building = ns_jss.Building(etree_building.findtext('name'))
+        fixture_building.find('name').text = 'Updated Fixture'
+        fixture_building.save()
 
-        etree_building.find('name').text = 'UpdatedFixture'
-        ns_jss.put('buildings/name/Fixture', data=etree_building)
-        result = ns_jss.get('buildings/name/UpdatedFixture')
-        assert result is not None
-        assert isinstance(result, ElementTree.Element)
-
-    def test_delete_jss(self, ns_jss):
-        ns_jss.delete('buildings/name/UpdatedFixture')
-
-        with pytest.raises(GetError):
-            result = ns_jss.get('buildings/name/UpdatedFixture')
-            assert result is None
+    def test_delete_jss(self, ns_jss, etree_building):
+        # type: (JSS, ElementTree.Element) -> None
+        fixture_building = ns_jss.Building(etree_building.findtext('name'))
+        fixture_building.delete()

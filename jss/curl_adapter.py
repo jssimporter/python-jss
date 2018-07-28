@@ -172,7 +172,7 @@ class CurlAdapter(object):
 
         if data:
             if isinstance(data, file):
-                command += ["--data", "@{}".format(data.name)]
+                command += ["--data-binary", "@{}".format(data.name)]
             elif isinstance(data, dict):
                 [command.extend(["-F", "{}={}".format(k, v)]) for k, v in data.iteritems()]
             else:
