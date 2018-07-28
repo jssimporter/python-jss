@@ -98,7 +98,7 @@ class CurlAdapter(object):
         header = ['Content-Type: {}'.format(content_type)]
         if headers:
             [header.append('{}: {}'.format(k, v)) for k, v in headers.iteritems()]
-            
+
         put_args = {"--request": "PUT"}
         return self._request(url, header, data, files, **put_args)
 

@@ -62,7 +62,6 @@ class TestNSURLSessionAdapter(object):
 
     def test_get_json(self, session, jss_prefs_dict):
         # type: (requests.Session, dict) -> None
-
         response = session.get(
             '{}/uapi/auth'.format(jss_prefs_dict['jss_url']),
             headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
@@ -73,7 +72,6 @@ class TestNSURLSessionAdapter(object):
 
     def test_post_json(self, session, jss_prefs_dict):
         # type: (requests.Session, dict) -> None
-
         response = session.post(
             '{}/uapi/auth/tokens'.format(jss_prefs_dict['jss_url']),
             auth=(jss_prefs_dict['jss_user'], jss_prefs_dict['jss_password']),
@@ -86,7 +84,6 @@ class TestNSURLSessionAdapter(object):
 
     def test_get_xml(self, session, jss_prefs_dict, credentials):
         # type: (requests.Session, dict, NSURLCredentialAuth) -> None
-
         response = session.get(
             '{}/JSSResource/accounts'.format(jss_prefs_dict['jss_url']),
             headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'},
@@ -100,7 +97,6 @@ class TestNSURLSessionAdapter(object):
 
     def test_post_xml(self, session, jss_prefs_dict, etree_building):
         # type: (requests.Session, dict, ElementTree.Element) -> None
-
         response = session.post(
             '{}/JSSResource/buildings/id/0'.format(jss_prefs_dict['jss_url']),
             headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'},
@@ -114,7 +110,6 @@ class TestNSURLSessionAdapter(object):
 
     def test_delete_xml(self, session, jss_prefs_dict, etree_building):
         # type: (requests.Session, dict, ElementTree.Element) -> None
-
         response = session.delete(
             '{}/JSSResource/buildings/name/{}'.format(jss_prefs_dict['jss_url'], etree_building.findtext('name')),
             headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'},
@@ -127,8 +122,7 @@ class TestNSURLSessionAdapter(object):
 
     def test_get_jss(self, ns_jss):
         # type: (JSS) -> None
-
-        result = ns_jss.get('packages')
+        result = ns_jss.Package()
         assert result is not None
         assert isinstance(result, ElementTree.Element)
         print ElementTree.tostring(result)

@@ -3,7 +3,6 @@ import plistlib
 import os
 from jss import JSSPrefs, JSS
 from xml.etree import ElementTree
-from jss.requests_adapter import RequestsAdapter
 from subprocess import call
 import boto
 from boto.s3.connection import S3Connection
@@ -72,25 +71,6 @@ def cloud_j(cloud_jss_prefs_dict):  # type: (dict) -> JSS
         ssl_verify=cloud_jss_prefs_dict['verify'],
     )
     return o
-
-
-@pytest.fixture
-def jrequests(jss_prefs_dict):  # type: (dict) -> JSS
-    o = JSS(
-        url=jss_prefs_dict['jss_url'],
-        user=jss_prefs_dict['jss_user'],
-        password=jss_prefs_dict['jss_password'],
-        ssl_verify=jss_prefs_dict['verify'],
-        adapter=RequestsAdapter(jss_prefs_dict['jss_url']),
-    )
-    return o
-
-
-@pytest.fixture
-def requests_adapter(jss_prefs_dict):  # type: () -> RequestsAdapter
-    adapter = RequestsAdapter(jss_prefs_dict['jss_url'])
-    return adapter
-
 
 
 @pytest.fixture
