@@ -40,6 +40,9 @@ setup(name = 'python-jss',
               "Sphinx>=1.5.3", "docutils>=0.13.1", "sphinx-rtd-theme>=0.2.4"],
           'dev': ['inflect', 'selenium'],
       },
+      tests_require=[
+        'pytest', 'coverage', 'pytest-docker', 'pytest-runner'
+      ],
       classifiers = [
           'Development Status :: 5 - Production/Stable',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)']
