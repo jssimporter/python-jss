@@ -136,11 +136,37 @@ class Class(Container):
 class Computer(Container):
     root_tag = "computer"
     _endpoint_path = "computers"
-    search_types = {"name": "name", "serial_number": "serialnumber",
-                    "udid": "udid", "macaddress": "macaddress"}
+    _name_path = "general/name"
+    search_types = {"name": "/name/", "serial_number": "/serialnumber/",
+                    "udid": "/udid/", "macaddress": "/macadress/",
+                    "match": "/match/"}
     # The '/computers/match/name/{matchname}' variant is not supported
     # here because in testing, it didn't actually do anything.
     allowed_kwargs = ('subset', 'match')
+    data_keys = {
+        "general": {
+            "mac_address": None,
+            "alt_mac_address": None,
+            "ip_address": None,
+            "last_reported_ip": None,
+            "serial_number": None,
+            "udid": None,
+            "jamf_version": None,
+            "platform": None,
+            "report_date": None,
+            "initial_entry_date": None,
+            "mdm_capable": None,
+        },
+        "location": {
+            "username": None,
+            "realname": None,
+            "real_name": None,
+            "email_address": None,
+            "position": None,
+            "phone": None,
+            "phone_number": None,
+        }
+    }
 
     @property
     def mac_addresses(self):
@@ -241,6 +267,18 @@ class ComputerConfiguration(Container):
 
 class ComputerExtensionAttribute(Container):
     _endpoint_path = "computerextensionattributes"
+    search_types = {"name": "name"}
+    data_keys = {
+        "description": "",
+        "data_type": None,
+        "input_type": {
+            "type": None,  # script, Pop-up Menu, LDAP Attribute Mapping, Text Field
+            "script": None,
+            "popup_choices": None,  # Array of <choice>value</choice> for Pop-Up type
+        },
+        "inventory_display": None,
+        "recon_display": None,
+    }
 
 
 class ComputerGroup(Group):
@@ -403,6 +441,7 @@ class JSONWebTokenConfigurations(JSSObject):
 
 class LDAPServer(Container):
     _endpoint_path = "ldapservers"
+    root_tag = "ldap_server"
 
     def search_users(self, user):
         """Search for LDAP users.
@@ -475,7 +514,7 @@ class LDAPServer(Container):
         """Return object ID or None."""
         # LDAPServer's ID is in "connection"
         result = self.findtext("connection/id")
-        return result
+        return result or "0"
 
     @property
     def name(self):
@@ -614,7 +653,77 @@ class NetworkSegment(Container):
 
 class OSXConfigurationProfile(Container):
     _endpoint_path = "osxconfigurationprofiles"
+    root_tag = "os_x_configuration_profile"
+    search_types = {"name": "name"}
     allowed_kwargs = ('subset',)
+    _name_element = "general/name"
+    data_keys = {
+        "general": {
+            "description": "",
+            "category": "",
+            "distribution_method": "Install Automatically",
+            "user_removable": "true",
+            "level": "computer",
+            "uuid": None,
+            "redeploy_on_update": "Newly Assigned",
+            "payloads": None,
+        },
+        "scope": {
+            "computers": None,
+            "computer_groups": None,
+            "buildings": None,
+            "departments": None,
+            "exclusions": {
+                "computers": None,
+                "computer_groups": None,
+                "buildings": None,
+                "departments": None,
+            },
+        }
+        # TODO: Self Service
+    }
+
+    def set_category(self, category):
+        """Set the OSXConfigurationProfile's category.
+
+        Args:
+            category: A category object.
+        """
+        pcategory = self.find("general/category")
+        pcategory.clear()
+        name = ElementTree.SubElement(pcategory, "name")
+        if isinstance(category, Category):
+            id_ = ElementTree.SubElement(pcategory, "id")
+            id_.text = category.id
+            name.text = category.name
+        elif isinstance(category, basestring):
+            name.text = category
+
+    def add_payloads(self, payloads_contents):
+        """Add xml configuration profile to the correct tag in the OSXConfigurationProfile object.
+
+        The profile content will be XML encoded prior to addition,
+        so there's no need to encode prior to addition with this
+        method.
+
+        Args:
+            payloads_contents (str, unicode): Mobile Configuration Profile.
+        """
+        payloads_contents_tag = self.find("general/payloads")
+        if not payloads_contents_tag:
+            payloads_contents_tag = ElementTree.SubElement(
+                self.find("general"), "payloads")
+
+        # Normally, when embedding xml within xml you would think that a normal person would
+        # require escaping to avoid parsing issues. But nope, we just put the profile inline with the
+        # payloads tag.
+        payloads_contents_tag.text = payloads_contents
+
+        uuid_tag = self.find("uuid")
+        if not uuid_tag:
+            uuid_tag = ElementTree.SubElement(
+                self.find("general"), "uuid")
+        uuid_tag.text = "336001A6-460A-4213-B000-ECAE32E8429E"
 
 
 class Package(Container):

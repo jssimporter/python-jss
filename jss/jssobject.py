@@ -957,6 +957,98 @@ class Group(Container):
                     device.findtext("id") == device_object.id]) is not 0
 
 
+# class Scoped(Container):
+#     """Abstract class for a container that supports a <scope> element."""
+#
+#     def add_object_to_scope(self, obj):
+#         """Add an object to the appropriate scope block.
+#
+#         Args:
+#             obj: JSSObject to add to scope. Accepted subclasses are:
+#                 Computer
+#                 ComputerGroup
+#                 Building
+#                 Department
+#
+#         Raises:
+#             TypeError if invalid obj type is provided.
+#         """
+#         if isinstance(obj, Computer):
+#             self.add_object_to_path(obj, "scope/computers")
+#         elif isinstance(obj, ComputerGroup):
+#             self.add_object_to_path(obj, "scope/computer_groups")
+#         elif isinstance(obj, Building):
+#             self.add_object_to_path(obj, "scope/buildings")
+#         elif isinstance(obj, Department):
+#             self.add_object_to_path(obj, "scope/departments")
+#         else:
+#             raise TypeError
+#
+#     def clear_scope(self):
+#         """Clear all objects from the scope, including exclusions."""
+#         clear_list = ["computers", "computer_groups", "buildings",
+#                       "departments", "limit_to_users/user_groups",
+#                       "limitations/users", "limitations/user_groups",
+#                       "limitations/network_segments", "exclusions/computers",
+#                       "exclusions/computer_groups", "exclusions/buildings",
+#                       "exclusions/departments", "exclusions/users",
+#                       "exclusions/user_groups", "exclusions/network_segments"]
+#         for section in clear_list:
+#             self.clear_list("%s%s" % ("scope/", section))
+#
+#     def add_object_to_exclusions(self, obj):
+#         """Add an object to the appropriate scope exclusions
+#         block.
+#
+#         Args:
+#             obj: JSSObject to add to exclusions. Accepted subclasses
+#                     are:
+#                 Computer
+#                 ComputerGroup
+#                 Building
+#                 Department
+#
+#         Raises:
+#             TypeError if invalid obj type is provided.
+#         """
+#         if isinstance(obj, Computer):
+#             self.add_object_to_path(obj, "scope/exclusions/computers")
+#         elif isinstance(obj, ComputerGroup):
+#             self.add_object_to_path(obj, "scope/exclusions/computer_groups")
+#         elif isinstance(obj, Building):
+#             self.add_object_to_path(obj, "scope/exclusions/buildings")
+#         elif isinstance(obj, Department):
+#             self.add_object_to_path(obj, "scope/exclusions/departments")
+#         else:
+#             raise TypeError
+#
+#     def add_object_to_limitations(self, obj):
+#         """Add an object to the appropriate scope limitations
+#         block.
+#
+#         Args:
+#             obj: JSSObject to add to limitations. Accepted subclasses
+#                 are:
+#                     User
+#                     UserGroup
+#                     NetworkSegment
+#                     IBeacon
+#
+#         Raises:
+#             TypeError if invalid obj type is provided.
+#         """
+#         if isinstance(obj, User):
+#             self.add_object_to_path(obj, "scope/limitations/users")
+#         elif isinstance(obj, UserGroup):
+#             self.add_object_to_path(obj, "scope/limitations/user_groups")
+#         elif isinstance(obj, NetworkSegment):
+#             self.add_object_to_path(obj, "scope/limitations/network_segments")
+#         elif isinstance(obj, IBeacon):
+#             self.add_object_to_path(obj, "scope/limitations/ibeacons")
+#         else:
+#             raise TypeError
+#
+
 class SearchCriteria(PrettyElement):
     """Object for encapsulating a smart group search criteria."""
     root_tag = "criterion"
