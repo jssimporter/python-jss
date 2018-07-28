@@ -219,7 +219,7 @@ class ComputerCheckIn(JSSObject):
     can_post = False
 
 
-class ComputerCommand(JSSContainerObject):
+class ComputerCommand(Container):
     _url = "/computercommands"
     list_type = "computer_command"
     search_types = {"name": "/name/", "uuid": "/uuid/",

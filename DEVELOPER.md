@@ -1,6 +1,8 @@
 # Developer Setup #
 
-- Python dependencies are managed via `pipenv`.
+- Create a virtualenv based on System Python.
+- Activate the virtualenv.
+- Install dependencies into the virtualenv by running `pip install -r requirements.txt`.
 - Live tests are carried out by running a jss inside a `docker-jss` container.
 
 ## Symlinking the git repository into a live autopkg ##
@@ -17,6 +19,17 @@ Some care must be taken to symlink python-jss and JSSImporter into a live autopk
         sys.path.insert(0, '/path/to/python-jss')
 
 2. If symlinking `python-jss` into `/Library/Application Support/JSSImporter` it must be a subdirectory named `jss`.
+3. If you need to test against newer and/or different python-jss dependencies, you must run autopkg and tests from within
+	a virtualenv.
+
+## Running pytest ##
+
+- Make sure your virtualenv is activated.
+- Run `pytest` from within the python-jss directory, usually not everyone has the JCDS or CDP so you may also run:
+
+		$ pytest --verbose -m "not docker and not jamfcloud and not s3"
+		
+to skip all the docker, jamfcloud and s3 tests.
 
 
 ## Debugging autopkg ##
