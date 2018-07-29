@@ -227,11 +227,11 @@ class DistributionPoints(object):
             pre_callback: Func to call before each distribution point
                 starts copying. Should accept a Repository connection
                 dictionary as a parameter. Will be called like:
-                    `pre_callback(repo.connection)`
+                `pre_callback(repo.connection)`
             post_callback: Func to call after each distribution point
                 finishes copying. Should accept a Repository connection
                 dictionary as a parameter. Will be called like:
-                    `pre_callback(repo.connection)`
+                `pre_callback(repo.connection)`
         """
         for repo in self._children:
             if is_package(filename):

@@ -30,7 +30,6 @@ A general guide to some conventional parameters to **connection_args**::
         'url': 'dp.hostname',  # Hostname of the distribution point
         'port': 548,  # Port number of the distribution point
         'password': 'secret',  #  If the distribution point requires a mount password, set it here.
-
     }
 
 **Requirements**:
@@ -55,5 +54,5 @@ Classes
     cdp.rst
     jds.rst
     jcds
-
+    aws
 

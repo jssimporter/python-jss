@@ -9,7 +9,6 @@ DistributionPoints
 .. automethod:: DistributionPoints.remove_distribution_point
 .. automethod:: DistributionPoints.copy
 .. automethod:: DistributionPoints.copy_pkg
-.. automethod:: DistributionPoints.copy_script
 .. automethod:: DistributionPoints.delete
 .. automethod:: DistributionPoints.mount
 .. automethod:: DistributionPoints.umount

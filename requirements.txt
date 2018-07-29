@@ -14,3 +14,4 @@ pytest-docker==0.6.1
 requests==2.19.1
 six==1.11.0
 urllib3==1.23
+sphinx==1.5.3

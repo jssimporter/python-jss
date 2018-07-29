@@ -10,6 +10,6 @@ API Reference
     exceptions.rst
     jssprefs.rst
     jssobjects.rst
-    jssobjectfactory.rst
-    jssflatobject.rst
+    jssobject.rst
+    misc_endpoints
     casper.rst

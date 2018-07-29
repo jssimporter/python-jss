@@ -8,7 +8,9 @@ Prior to doing anything else, you need a JSS object, representing one server.
 
 .. note:: It's quite possible to have active connections to multiple servers for transferring data between them!
 
-Connect to the JSS::
+Connect to the JSS
+
+.. doctest::
 
     >>> import jss
     >>> jss_prefs = jss.JSSPrefs()
@@ -36,7 +38,7 @@ JSSObject
 JSSObjectList
     A list of JSSListData objects, containing only the most important information on an object.
 
-Example::
+.. doctest::
 
     >>> # To query, provide a search argument:
     >>> existing_policy = j.Policy("Install Adobe Flash Player-14.0.0.125")
@@ -46,7 +48,10 @@ Example::
 Creating new objects
 ^^^^^^^^^^^^^^^^^^^^
 
-For creating new objects (of classes which allow it) instantiate an object of the desired type directly::
+For creating new objects (of classes which allow it) instantiate an object of the desired type directly.
+
+
+.. doctest::
 
     >>> # This creates a new Policy object with the basic required XML.
     >>> new_policy = jss.Policy(j, "Al Pastor")
@@ -59,15 +64,19 @@ Think of this as associating this new object, in this case a Policy, with a serv
 Updating objects
 ^^^^^^^^^^^^^^^^
 
-Any time you want to save changes to an existing policy or upload a new one, call the .save() method on it::
+Any time you want to save changes to an existing policy or upload a new one, call the .save() method on it
 
-    >>> existing_policy.find('general/name').text = "Install Adobe Flash Player 202.0.0.14"
+.. doctest::
+
+    >>> existing_policy.general.name.text = "Install Adobe Flash Player 202.0.0.14"
     >>> existing_policy.save()
 
 Deleting objects
 ^^^^^^^^^^^^^^^^
 
-Deleting an object is a method on the object for those types which support it::
+Deleting an object is a method on the object for those types which support it:
+
+.. doctest::
 
     >>> new_policy.delete()
 
@@ -77,7 +86,10 @@ Querying for Objects
 
 Different objects allow different kinds of searches. Most objects allow you to search by ID or by name.
 
-Example::
+Find a Computer by name
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. doctest::
 
     >>> # Find a computer (returns a Computer object, which prints itself if not
     >>> # assigned
@@ -90,6 +102,11 @@ Example::
         </general>
         ... # Tons of information removed for example's sake
     </computer
+
+Inspect the computer objects' properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. doctest::
 
     >>> # Most JSSObjects have a name and id property.
     >>> mycomputer = j.Computer('my-computer')
@@ -114,6 +131,11 @@ Example::
     'C3:PO:XX:XX:XX:X1'
     >>> myipad.bluetooth_mac_address
     'C3:PO:XX:XX:XX:X2'
+
+Getting a list of computers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. doctest::
 
     >>> # Providing no arguments to the factory method returns a list.
     >>> # (Some object types return only a set of data, like ActivationCode).
@@ -148,7 +170,7 @@ Simply **print()** or call an object in the interpreter to see a nicely indented
 This aids in quickly experimenting with and manipulating data in the interpreter.
 
 In addition to the various methods of Element, JSSObjects also provides helper methods to wrap some of the more common
-tasks. Policies, for example, includes methods for **add_object_to_scope()**, **add_object_to_exclusions()**, **set_recon()**,
+tasks. Policies, for example, include methods for **add_object_to_scope()**, **add_object_to_exclusions()**, **set_recon()**,
 **set_set_service()**, etc.
 
 To see a full list of methods available for an object type, as well as their signatures and docstrings, use pythons
@@ -209,7 +231,7 @@ Next, modify the object to your needs and then call the **save()** method::
     >>> new_policy.save()
 
     >>> # Subsequent changes must also be saved:
-    >>> new_policy.find('general/name').text = 'Install Taco Software'
+    >>> new_policy.general.name.text = 'Install Taco Software'
     >>> new_policy.save()
 
     >>> # ...and to delete it:
