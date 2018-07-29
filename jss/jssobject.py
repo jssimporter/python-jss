@@ -53,12 +53,19 @@ class JSSObject(PrettyElement):
     These objects have in common that they cannot be created. They can,
     however, be updated.
 
-    Class Attributes:
-        cached: False, or datetime.datetime since last retrieval.
-        can_get: Bool whether object allows a GET request.
-        can_put: Bool whether object allows a PUT request.
-        can_post: Bool whether object allows a POST request.
-        can_delete: Bool whether object allows a DEL request.
+    Attributes:
+        cached (:obj:`datetime.datetime`, optional): False, or datetime.datetime since last retrieval.
+        can_get (bool): whether object allows a GET request.
+        can_put (bool): whether object allows a PUT request.
+        can_post (bool): whether object allows a POST request.
+        can_delete (bool): whether object allows a DEL request.
+
+    Args:
+        jss (:obj:`JSS`, optional): JSS to get data from, or None if no JSS
+            communications need to be performed.
+        data (:obj:`xml.etree.ElementTree.Element`): data for the object
+        **kwargs: Unused, but present to support a unified signature
+            for all subclasses (which need and use kwargs).
     """
     _endpoint_path = None
     can_get = True
@@ -69,15 +76,6 @@ class JSSObject(PrettyElement):
     __str__ = tools.triggers_cache(tools.element_str)
 
     def __init__(self, jss, data, **kwargs):
-        """Initialize a new JSSObject
-
-        Args:
-            jss (JSS, None): JSS to get data from, or None if no JSS
-                communications need to be performed.
-            data: xml.etree.ElementTree.Element data for the object
-            kwargs: Unused, but present to support a unified signature
-                for all subclasses (which need and use kwargs).
-        """
         self.jss = jss
         self.cached = False
 
@@ -267,42 +265,38 @@ class Container(JSSObject):
     This includes the majority of objects in the JSS, for example
     Computers and Policies.
 
-    Class Attributes:
-        cached: False, "Unsaved" for newly created objects that have
-            not been POSTed to the JSS, or datetime.datetime since last
-            retrieval.
-        kwargs (dict): Keyword argument dictionary used in the original
+    Attributes:
+        cached (:obj:`datetime.datetime`, optional): False, or datetime.datetime since last retrieval.
+        can_get (bool): whether object allows a GET request.
+        can_put (bool): whether object allows a PUT request.
+        can_post (bool): whether object allows a POST request.
+        can_delete (bool): whether object allows a DEL request.
+        **kwargs: Keyword argument dictionary used in the original
             GET request to retrieve this object. By default, kwargs are
             applied to subsequent `retrieve()` operations unless
             cleared.
-        can_get: Bool whether object allows a GET request.
-        can_put: Bool whether object allows a PUT request.
-        can_post: Bool whether object allows a POST request.
-        can_delete: Bool whether object allows a DEL request.
-        default_search: String default search type to utilize for GET.
-        search_types: Dict of search types available to object:
+        default_search (str): String default search type to utilize for GET.
+        search_types (dict): Dict of search types available to object:
             Key: Search type name. At least one must match the
                 default_search.
             Val: URL component to use to request via this search_type.
         allowed_kwargs: Tuple of query extensions that are
             available (or sometimes required). Please see the Casper
             API documentation for the final word on how these work.
-        root_tag: String singular form of object type found in
+        root_tag (str): String singular form of object type found in
             containers (e.g. ComputerGroup has a container with tag:
             "computers" holding "computer" elements. The root_tag is
             "computer").
-        data_keys: Dictionary of keys to create if instantiating a
+        data_keys (dict): Dictionary of keys to create if instantiating a
             blank object using the _new method.
             Keys: String names of keys to create at top level.
             Vals: Values to set for the key.
                 Int and bool values get converted to string.
                 Dicts are recursively added (so their keys are added to
                     parent key, etc).
-
-    Private Class Attributes:
         _id_path (str): URL Path subcomponent used to reference an
             object by ID when querying or posting.
-        _name_element(str): XML path to element which contains
+        _name_element (str): XML path to element which contains
             the name of the object, used for creating new objects only.
 
             Most objects use a name tag at the root, (e.g. "name")
@@ -310,6 +304,16 @@ class Container(JSSObject):
             implementing `data_keys` for an object type not yet
             impelemented, make sure to set this if it differs from the
             default/inherited value.
+
+    Args:
+        jss (:obj:`JSS`, optional): JSS to get data from, or None if no JSS
+            communications need to be performed.
+        data (:obj:`xml.etree.ElementTree.Element`, :obj:`Identity`, str): XML
+            data to use for creating the object, a name to use for
+            creating a new object, or an Identity object representing
+            basic object info.
+        **kwargs: Key/value pairs to be added to the object when
+            building one from scratch.
     """
     root_tag = "Container"
     can_get = True
@@ -326,18 +330,6 @@ class Container(JSSObject):
 
     # Overrides ###############################################################
     def __init__(self, jss, data, **kwargs):
-        """Initialize a new JSSObject from scratch or from XML data.
-
-        Args:
-            jss (JSS, None): JSS object, or None if no communication
-                with the JSS is needed.
-            data (xml.etree.ElementTree.Element, Identity, str): XML
-                data to use for creating the object, a name to use for
-                creating a new object, or an Identity object reprsenting
-                basic object info.
-            kwargs (str): Key/value pairs to be added to the object when
-                building one from scratch.
-        """
         self.jss = jss
         self._basic_identity = Identity(name="", id="")
         self.kwargs = {}

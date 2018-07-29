@@ -58,18 +58,23 @@ from .tools import error_handler, quote_and_encode
 class JSS(object):
     """Represents a JAMF Software Server, with object search methods.
 
+    Setup a JSS for making API requests.
+
+    Provide either a JSSPrefs object OR specify url, user, and
+    password to init. Other parameters are optional.
+
     Attributes:
-        base_url: String, full URL to the JSS, with port.
-        user: String API username.
-        password: String API password for user.
-        repo_prefs: List of dicts of repository configuration data.
-        verbose: Boolean whether to include extra output.
+        base_url (str): Full URL to the JSS, with port.
+        user (str): API username.
+        password (str): API password for user.
+        token (str, optional): UAPI authorization token.
+        repo_prefs (list): List of dicts of repository configuration data.
+        verbose (bool): Whether to include extra output.
         session: "Session" used to make all HTTP requests through
-            whichever network adapter is in use (default is CurlAdapter).
-        ssl_verify: Boolean whether to verify SSL traffic from the JSS
+            whichever network adapter is in use (default is the requests adapter).
+        ssl_verify (bool): Whether to verify SSL traffic from the JSS
             is genuine.
-        factory: JSSObjectFactory object for building JSSObjects.
-        distribution_points: DistributionPoints
+        distribution_points (:obj:`DistributionPoints`): DistributionPoints
         max_age (int): Number of seconds cached object information
             should be kept before re-retrieving. Defaults to '-1'.
 
@@ -78,6 +83,38 @@ class JSS(object):
                     retrieved with the `JSSObject.retrieve()` method.
                 0: Retrieve data from data for every access.
                 positive number: Number of seconds to keep.
+        uapi (:obj:`UAPI`): Reference to the UAPI transport facade.
+        api (:obj:`JSSAPI`): Reference to the classic API facade.
+
+    Args:
+        jss_prefs (:obj:`JSSPrefs`): A JSSPrefs object.
+        url (str): String, full URL to a JSS, with port.
+        user (str): API Username.
+        password (str): API Password.
+
+        repo_prefs (list): A list of dicts with repository names and passwords.
+
+            repos: (Optional) List of file repositories dicts to
+            connect.
+                repo dicts:
+                    Each file-share distribution point requires:
+                        name: String name of the distribution point.
+                            Must match the value on the JSS.
+                        password: String password for the read/write
+                            user.
+
+                    This form uses the distributionpoints API call to
+                    determine the remaining information. There is also
+                    an explicit form; See distribution_points package
+                    for more info
+
+                    CDP and JDS types require one dict for the master,
+                    with key:
+                        type: String, either "CDP" or "JDS".
+
+        ssl_verify (bool): Boolean whether to verify SSL traffic from the
+            JSS is genuine.
+        verbose (bool): Boolean whether to include extra output.
     """
 
     class UAPI(object):
@@ -126,41 +163,7 @@ class JSS(object):
     def __init__(
         self, jss_prefs=None, url=None, user=None, password=None,
         repo_prefs=None, ssl_verify=True, verbose=False, **kwargs):
-        """Setup a JSS for making API requests.
 
-        Provide either a JSSPrefs object OR specify url, user, and
-        password to init. Other parameters are optional.
-
-        Args:
-            jss_prefs:  A JSSPrefs object.
-            url: String, full URL to a JSS, with port.
-            user: API Username.
-            password: API Password.
-
-            repo_prefs: A list of dicts with repository names and
-                passwords.
-                repos: (Optional) List of file repositories dicts to
-                connect.
-                    repo dicts:
-                        Each file-share distribution point requires:
-                            name: String name of the distribution point.
-                                Must match the value on the JSS.
-                            password: String password for the read/write
-                                user.
-
-                        This form uses the distributionpoints API call to
-                        determine the remaining information. There is also
-                        an explicit form; See distribution_points package
-                        for more info
-
-                        CDP and JDS types require one dict for the master,
-                        with key:
-                            type: String, either "CDP" or "JDS".
-
-            ssl_verify: Boolean whether to verify SSL traffic from the
-                JSS is genuine.
-            verbose: Boolean whether to include extra output.
-        """
         if jss_prefs is not None:
             url = jss_prefs.url
             user = jss_prefs.user
@@ -623,18 +626,19 @@ def add_search_method(cls, name):
         """Flexibly search the JSS for objects of type {0}.
 
             Args:
-                data (None, int, str, xml.etree.ElementTree.Element):
-                    Argument to query for. Different queries are
-                    performed depending on the type of this arg:
-                        None (or provide no argument / default):
+                data (int, str, :obj:`xml.etree.ElementTree.Element`, optional): Argument to query for.
+
+                    Different queries are performed depending on the type of this arg:
+                        - **None** (or provide no argument / default):
                             Search for all objects.
-                        int: Search for an object by ID.
-                        str: Search for an object by name. Some objects
+                        - **int**: Search for an object by ID.
+                        - **str**: Search for an object by name. Some objects
                             allow 'match' searches, using '*' as the
                             wildcard operator.
-                        xml.etree.ElementTree.Element: create a new
+                        - :obj:`xml.etree.ElementTree.Element`: create a new
                             object from the Element's data.
-                kwargs:
+
+                **kwargs:
                     {1}
 
                     Some classes allow additional filters, subsets, etc,

@@ -18,7 +18,6 @@ JSS Objects
 .. autoclass:: BYOProfile
 .. autoclass:: Category
 .. autoclass:: Class
-.. autoclass:: CommandFlush
 .. autoclass:: Computer
 .. autoclass:: ComputerApplication
 .. autoclass:: ComputerApplicationUsage
@@ -38,7 +37,6 @@ JSS Objects
 .. autoclass:: DistributionPoint
 .. autoclass:: DockItem
 .. autoclass:: EBook
-.. autoclass:: FileUpload
 .. autoclass:: GSXConnection
 .. autoclass:: IBeacon
 .. autoclass:: JSSUser
@@ -46,7 +44,6 @@ JSS Objects
 .. autoclass:: LDAPUsersResults
 .. autoclass:: LDAPGroupsResults
 .. autoclass:: LicensedSoftware
-.. autoclass:: LogFlush
 .. autoclass:: MacApplication
 .. autoclass:: ManagedPreferenceProfile
 .. autoclass:: MobileDevice

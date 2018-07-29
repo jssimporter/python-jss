@@ -424,7 +424,7 @@ class AFPDistributionPoint(MountedRepository):
         """Set up an AFP connection.
 
         Args:
-            connection_args: Dict with the following key/val pairs:
+            connection_args (dict): Dict with the following key/val pairs:
                 url: URL to the mountpoint,including volume name e.g.:
                     "my_repository.domain.org/jamf" (Do _not_ include
                     protocol or auth info.)
