@@ -971,6 +971,7 @@ class AWS(CloudDistributionServer, abstract.AbstractRepository):
         k = self.bucket.get_key(os.path.basename(filename))
         return k is not None
 
+
 class JCDS(CloudDistributionServer):
     """Class for representing a JCDS and its controlling jamfcloud JSS.
 

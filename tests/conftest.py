@@ -73,15 +73,7 @@ def cloud_j(cloud_jss_prefs_dict):  # type: (dict) -> JSS
     return o
 
 
-@pytest.fixture
-def etree_building():  # type: () -> ElementTree.Element
-    building = ElementTree.Element('building')
-    name = ElementTree.SubElement(building, 'name')
-    name.text = 'Fixture Building'
-    # id = ElementTree.SubElement(building, 'id')
-    # id.text = '0'
-    
-    return building
+
 
 
 @pytest.fixture

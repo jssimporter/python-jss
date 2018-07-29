@@ -11,7 +11,7 @@ class TestSMBDistributionPoint(object):
     @pytest.mark.docker
     def test_mount(self, dp_smb_ip_port, tmpdir, j):
         smb_ip, smb_port = dp_smb_ip_port
-        
+
         dp = SMBDistributionPoint(
             url=smb_ip,
             port=str(smb_port),
@@ -54,6 +54,7 @@ class TestCDP(object):
 
 class TestAWS(object):
 
+    @pytest.mark.s3
     def test_aws(self, j, s3_bucket):
         aws_dp = AWS(
             jss=j,
