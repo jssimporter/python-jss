@@ -1,6 +1,7 @@
 JSS Objects
 ===========
 
+.. py:module:: jss.jssobjects
 .. automodule:: jss.jssobjects
 
 .. autoclass:: Account

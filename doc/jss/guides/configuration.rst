@@ -4,7 +4,7 @@ Configuration
 Introduction
 ------------
 
-The JSS class represents a Casper JSS, and provides methods to delegate access to all of the API classes.
+The JSS class represents a JAMF Pro Server, and provides methods to delegate access to all of the API classes.
 Before you can use it, you need to provide a few pieces of connection information.
 
 The JSS class can be hand-configured, supplying all of the information as parameters to the constructor,
@@ -19,7 +19,8 @@ Supplying Credentials to the JSSPrefs object
 
 You need a user account with API privileges on your JSS to connect and do anything useful.
 It is recommended that you create a user specifically for API access,
-with only the privileges required for the task at hand.
+with only the privileges required for the task at hand. At present, you cannot use a single-sign on user to perform
+these tasks.
 
 For testing purposes, a fully-enabled admin account is fine, but for production, permissions should be finely controlled.
 
@@ -48,7 +49,7 @@ If you are working on a non-OS X machine, the JSSPrefs object falls back to usin
 Configure Distribution Points and Distribution Servers
 ------------------------------------------------------
 
-Casper supports a few different means for handling package and script files:
+JAMF Pro supports a few different means for handling package and script files:
 
 File Share Distribution Points
     corresponds to AFP and SMB mountable shares.
@@ -64,14 +65,21 @@ Local Repositories
     File shares mounted on your system. They can be on the actual drive, or mounted through some other means,
     as long as you can access them through the file system.
 
+AWS (Cloud Distribution Point)
+   this is a newer style of CDP provider supporting Amazon S3 only via the boto library.
+
+JAMF Cloud Distribution Server
+   the default method for jamfcloud instances.
+
 The JSS stores all of the information about your "File Share Distribution Points" in an API object named,
 appropriately "DistributionPoints". These repositories contain the packages and scripts that are deployed with policies,
 and are normally managed with the Casper Admin application.
 
-JDS types have no corresponding API object, and are usually managed with the web-based "Packages" and "Scripts"
+JDS and JCDS types have no corresponding API object, and are usually managed with the web-based "Packages" and "Scripts"
 pages of the web interface's "Computer Management" section.
 
 python-jss includes classes to help work with these different repositories.
+
 When you create a JSS object, it includes a DistributionPoints object to delegate, named .distribution_points. e.g.
 ``my_jss.distribution_points``, to delegate file operations to. While you can always instantiate a DistributionPoints
 object (made up of DistributionPoint objects), or even set up individual DP's, it's probably easiest to use
@@ -79,6 +87,7 @@ this delegated approach.
 
 For this to be useful, you'll have to include some extra information in your
 ``com.github.sheagcraig.python-jss.plist`` file.
+
 Add a key **repos**, with an array as its value. The array should contain dictionaries containing connection information
 for each DP you wish to include. Here are examples of each type of repo::
 
@@ -153,12 +162,18 @@ for each DP you wish to include. Here are examples of each type of repo::
             <key>bucket</key>
             <string>Bucket Name</string>
         </dict>
+        <dict>
+            <!-- JCDS -->
+            <key>type</key>
+            <string>JCDS</string>
+        </dict>
     </array>
 
 Notice two alternate forms for defining distribution points. The first uses just a name and a password.
 For SMB and AFP shares, the remaining connection information can be pulled from the JSS.
+
 **name** corresponds to the name field on the
-JSS Computer Management->File Share Distribution Points->Display Name field.
+``JSS Computer Management->File Share Distribution Points->Display Name`` field.
 This is the preferred means for configuring things, as it is resilient to changes at the JSS level.
 
 However, you may also specify the complete set of connection information.
@@ -167,7 +182,7 @@ All other DP types must be fully-configured.
 
 At this time, if you are not using the auto-configuration method, the following keys are required:
 
-- AFP
+- **AFP**
    - name *(optional)*
    - URL
    - type: ``AFP``.
@@ -175,7 +190,7 @@ At this time, if you are not using the auto-configuration method, the following 
    - share_name
    - username *(rw user)*
    - password
-- SMB
+- **SMB**
    - name *(optional)*
    - URL
    - domain
@@ -184,14 +199,22 @@ At this time, if you are not using the auto-configuration method, the following 
    - share_name
    - username *(rw user)*
    - password
-- JDS
+- **JDS**
    - type: ``JDS``.
-- CDP
+- **CDP**
    - type: ``CDP``.
-- LocalRepository
+- **LocalRepository**
    - type: ``Local``
    - mount_point
    - share_name
+- **AWS**
+   - type: ``AWS``.
+   - aws_access_key_id *(optional)*
+   - aws_secret_access_key *(optional)*
+   - bucket
+- **JCDS**
+   - type: ``JCDS``.
+
 
 Please see the Repository subclass' docstrings for a list of required arguments and information for you using them.
 

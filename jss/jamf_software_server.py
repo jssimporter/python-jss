@@ -42,7 +42,7 @@ except ImportError:
 # from jss.nsurlsession_adapter import NSURLSessionAdapter
 from .curl_adapter import CurlAdapter
 from .auth import UAPIAuth
-from . import distribution_points
+import distribution_points
 from .exceptions import GetError, PutError, PostError, DeleteError
 from .jssobject import JSSObject
 from . import jssobjects
