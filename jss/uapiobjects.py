@@ -59,6 +59,13 @@ class EnrollmentSetting(UAPIObject):
     can_delete = False
 
 
+# Unbelievably, this has a different schema but is intended for the same usage as EnrollmentSetting
+class EnrollmentSettingSetting(UAPIObject):
+    _endpoint_path = "settings/obj/enrollment/settings"
+    can_post = False
+    can_delete = False
+
+
 class EnrollmentHistory(UAPIContainer):
     _endpoint_path = "settings/obj/enrollment/history"
     can_post = False

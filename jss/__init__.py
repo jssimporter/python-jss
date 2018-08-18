@@ -62,6 +62,7 @@ from .exceptions import *
 from .jamf_software_server import JSS
 from .jssobject import JSSObject
 from .jssobjects import *
+from .uapiobjects import *
 from .jss_prefs import JSSPrefs
 from .misc_endpoints import *
 from .misc_uapi_endpoints import *
