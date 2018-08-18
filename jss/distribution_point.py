@@ -1118,10 +1118,10 @@ class JCDS(CloudDistributionServer):
         if 'jcds_upload_token' not in self.connection:
             self._scrape_tokens()
 
-        if False:
-            self._copy_sequential(filename, self.connection['jcds_upload_token'])
-        else:
-            self._copy_threaded(filename, self.connection['jcds_upload_token'])
+        # if False:
+        self._copy_sequential(filename, self.connection['jcds_upload_token'])
+        # else:
+        #     self._copy_threaded(filename, self.connection['jcds_upload_token'])
 
     def exists(self, filename):
         """Check whether a package file already exists."""
