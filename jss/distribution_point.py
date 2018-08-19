@@ -31,6 +31,7 @@ import urllib
 import io
 import math
 import multiprocessing
+import threading
 import requests
 
 
@@ -880,6 +881,57 @@ def _jcds_upload_chunk(
     return response.json()
 
 
+# Semaphore controlling max workers for chunked uploads
+jcds_semaphore = threading.BoundedSemaphore(value=3)
+
+
+class JCDSChunkUploadThread(threading.Thread):
+    def __init__(self, *args, **kwargs):
+        self.filename = kwargs['filename']
+        self.base_url = kwargs['base_url']
+        self.upload_token = kwargs['upload_token']
+        self.chunk_index = kwargs['chunk_index']
+        self.chunk_size = kwargs['chunk_size']
+        self.total_chunks = kwargs['total_chunks']
+
+        super_kwargs = dict(kwargs)
+        del super_kwargs['filename']
+        del super_kwargs['base_url']
+        del super_kwargs['upload_token']
+        del super_kwargs['chunk_index']
+        del super_kwargs['chunk_size']
+        del super_kwargs['total_chunks']
+
+        super(JCDSChunkUploadThread, self).__init__(*args, **super_kwargs)
+
+    def run(self):
+        jcds_semaphore.acquire()
+        try:
+            print("Working on Chunk [{}/{}]".format(self.chunk_index + 1, self.total_chunks))
+
+            resource = open(self.filename, "rb")
+            resource.seek(self.chunk_index * self.chunk_size)
+            chunk_data = resource.read(self.chunk_size)
+            basefname = os.path.basename(self.filename)
+            chunk_url = "{}/{}/part?chunk={}&chunks={}".format(
+                self.base_url, basefname, self.chunk_index, self.total_chunks
+            )
+
+            chunk_reader = io.BytesIO(chunk_data)
+            headers = {"X-Auth-Token": self.upload_token}
+            response = requests.post(
+                url=chunk_url,
+                headers=headers,
+                files={'file': chunk_reader},
+            )
+
+            return response.json()
+        except:
+            pass
+        finally:
+            jcds_semaphore.release()
+
+
 class AWS(CloudDistributionServer, abstract.AbstractRepository):
     """Class for representing an AWS Cloud Distribution Point and its controlling JSS.
 
@@ -1038,8 +1090,8 @@ class JCDS(CloudDistributionServer):
             self.connection["jcds_base_url"], filename, chunk, chunk_total
         )
 
-    def _copy_threaded(self, filename, upload_token, id_=-1):
-        """Upload a file to the distribution server using multiple threads to upload several chunks in parallel.
+    def _copy_multiprocess(self, filename, upload_token, id_=-1):
+        """Upload a file to the distribution server using multiple processes to upload several chunks in parallel.
 
         Directories/bundle-style packages must be zipped prior to copying.
         """
@@ -1055,6 +1107,22 @@ class JCDS(CloudDistributionServer):
             data = res.get(timeout=10)
             print("id: {0}, version: {1}, size: {2}, filename: {3}, lastModified: {4}, created: {5}".format(
                 data['id'], data['version'], data['size'], data['filename'], data['lastModified'], data['created']))
+
+    def _copy_threaded(self, filename, upload_token, id_=-1):
+        """Upload a file to the distribution server using multiple threads to upload several chunks in parallel."""
+        fsize = os.stat(filename).st_size
+        total_chunks = int(math.ceil(fsize / JCDS.chunk_size))
+
+        for chunk in xrange(0, total_chunks):
+            t = JCDSChunkUploadThread(
+                filename=filename,
+                base_url=self.connection["jcds_base_url"],
+                upload_token=upload_token,
+                chunk_index=chunk,
+                chunk_size=JCDS.chunk_size,
+                total_chunks=total_chunks,
+            )
+            t.start()
 
     def _copy_sequential(self, filename, upload_token, id_=-1):
         """Upload a file to the distribution server using the same process as python-jss.
@@ -1118,8 +1186,9 @@ class JCDS(CloudDistributionServer):
         if 'jcds_upload_token' not in self.connection:
             self._scrape_tokens()
 
+        self._copy_threaded(filename, self.connection['jcds_upload_token'])
         # if False:
-        self._copy_sequential(filename, self.connection['jcds_upload_token'])
+        #self._copy_sequential(filename, self.connection['jcds_upload_token'])
         # else:
         #     self._copy_threaded(filename, self.connection['jcds_upload_token'])
 
