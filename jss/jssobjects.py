@@ -1161,6 +1161,37 @@ class Policy(Container):
             raise ValueError("Please pass a Package object to parameter: "
                              "pkg.")
 
+    def add_script(self, script, priority='After', parameters=None):
+        """Add a Script object to the policy with priority=After.
+
+        Args:
+            script: A Script object to add.
+            priority (str, optional): One of "After" or "Before".
+            parameters (list): List of parameters starting from parameter 4.
+        """
+        if isinstance(script, Script):
+            if priority not in ("After", "Before"):
+                raise ValueError
+            script_tag = self.add_object_to_path(
+                script, "scripts")
+            priority_tag = script_tag.find("priority")
+            if not priority_tag:
+                priority_tag = ElementTree.SubElement(script_tag, "priority")
+            priority_tag.text = priority
+
+            if isinstance(parameters, list):
+                for param_idx in range(4, 11, 1):
+                    param_tag = script_tag.find("parameter{}".format(param_idx))
+                    if not param_tag:
+                        param_tag = ElementTree.SubElement(script_tag, "parameter{}".format(param_idx))
+
+                    if param_idx - 4 > len(parameters) - 1:
+                        param_tag.text = ""
+                    else:
+                        param_tag.text = parameters[param_idx - 4]
+        else:
+            raise ValueError("Please pass a Script object to parameter: script")
+
     def set_self_service(self, state=True):
         """Set use_for_self_service to bool state."""
         self.set_bool(self.find("self_service/use_for_self_service"), state)
