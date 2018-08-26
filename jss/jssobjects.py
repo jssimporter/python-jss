@@ -26,6 +26,7 @@ from xml.sax.saxutils import escape
 
 import requests
 
+from .queryset import QuerySet
 from .exceptions import GetError
 from .jssobject import Container, Group, JSSObject
 from .tools import error_handler
@@ -647,6 +648,20 @@ class NetbootServer(Container):
 
 class NetworkSegment(Container):
     _endpoint_path = "networksegments"
+    root_tag = "network_segment"
+    data_keys = {
+        "starting_address": "",
+        "ending_address": "",
+        "distribution_server": None,
+        "distribution_point": None,
+        "url": None,
+        "netboot_server": None,
+        "swu_server": None,
+        "building": None,
+        "department": None,
+        "override_buildings": False,
+        "override_departments": False,
+    }
 
 
 class OSXConfigurationProfile(Container):
@@ -1160,6 +1175,16 @@ class Policy(Container):
         else:
             raise ValueError("Please pass a Package object to parameter: "
                              "pkg.")
+
+    def get_packages(self):  # type: () -> Optional[QuerySet]
+        """Get all package objects associated with this policy."""
+        package_set = QuerySet.from_response(
+            'Package',
+            self.package_configuration.packages.findall('package'),
+            jss=self.jss,
+        )
+
+        return package_set
 
     def add_script(self, script, priority='After', parameters=None):
         """Add a Script object to the policy with priority=After.

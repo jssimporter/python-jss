@@ -39,7 +39,7 @@ def cloud_jss_prefs_dict():  # type: () -> dict
 
 
 @pytest.fixture
-def jss_prefs_file(tmpdir):  # type: () -> str
+def jss_prefs_file(tmpdir):  # type: (str) -> str
     prefs_path = tmpdir.join('com.github.sheagcraig.python-jss.plist')
     plistlib.writePlist(JSS_PREFS, prefs_path)
     return prefs_path

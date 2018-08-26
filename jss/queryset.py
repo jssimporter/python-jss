@@ -110,8 +110,9 @@ class QuerySet(list):
         """Make data human readable."""
         return "QuerySet({})".format(super(QuerySet, self).__repr__())
 
-    def sort(self):
-        """Sort list elements by ID."""
+    def sort(self, **kwargs):
+        """Sort list elements by ID.
+        """
         super(QuerySet, self).sort(key=lambda k: int(k.id))
 
     def sort_by_name(self):
