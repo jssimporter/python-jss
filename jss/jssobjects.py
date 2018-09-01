@@ -1176,6 +1176,17 @@ class Policy(Container):
             raise ValueError("Please pass a Package object to parameter: "
                              "pkg.")
 
+    def remove_package(self, pkg):  # type: (Union[Package,str]) -> None
+        """Remove a Package object from the policy.
+
+        Args:
+            pkg: A Package object, id or name to remove.
+
+        Raises:
+            ValueError, if object is not found or xml element cannot be found.
+        """
+        self.remove_object_from_list(pkg, "package_configuration/packages")
+
     def get_packages(self):  # type: () -> Optional[QuerySet]
         """Get all package objects associated with this policy."""
         package_set = QuerySet.from_response(
