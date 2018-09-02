@@ -89,7 +89,9 @@ class QuerySet(list):
         fmt = "| " + " | ".join(format_strings) + cached_format
 
         # Begin building output with header lines.
-        results = ["{} QuerySet".format(self.contained_class.__name__)]
+        # Contained class can be None
+        contained_name = self.contained_class.__name__ if self.contained_class is not None else "Empty"
+        results = ["{} QuerySet".format(contained_name)]
         headers = {key: key for key in lengths}
         header_line = fmt.format(data=headers, cached="cached")
         bar = len(header_line) * '-'

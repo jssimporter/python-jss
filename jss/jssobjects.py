@@ -1228,6 +1228,20 @@ class Policy(Container):
         else:
             raise ValueError("Please pass a Script object to parameter: script")
 
+    def get_scripts(self, priority=None):
+        """Get Scripts that are referenced by this policy.
+
+        Args:
+            priority (str, optional): One of "After" or "Before" to filter attached scripts by their priority.
+        """
+        script_set = QuerySet.from_response(
+            Script,
+            self.scripts,
+            jss=self.jss,
+        )
+
+        return script_set
+
     def set_self_service(self, state=True):
         """Set use_for_self_service to bool state."""
         self.set_bool(self.find("self_service/use_for_self_service"), state)
