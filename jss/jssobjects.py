@@ -1061,6 +1061,7 @@ class Policy(Container):
             "use_for_self_service": "true"},
         "package_configuration": {
             "packages": None},
+        "scripts": None,
         "maintenance": {
             "recon": "true"},
     }
@@ -1237,7 +1238,6 @@ class Policy(Container):
         script_set = QuerySet.from_response(
             Script,
             self.scripts,
-            jss=self.jss,
         )
 
         return script_set
