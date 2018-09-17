@@ -142,6 +142,7 @@ class FileUpload(object):
                         mobiledevices
                         enrollmentprofiles
                         peripherals
+                        mobiledeviceenrollmentprofiles
                     Icons:
                         policies
                         ebooks
@@ -150,6 +151,9 @@ class FileUpload(object):
                         mobiledeviceapplicationsipa
                     Disk Encryption
                         diskencryptionconfigurations
+                        diskencryptions (synonymous)
+                    PPD
+                        printers
             id_type:
                 String of desired ID type:
                     id
@@ -159,10 +163,10 @@ class FileUpload(object):
             resource: String path to the file to upload.
         """
         resource_types = ["computers", "mobiledevices", "enrollmentprofiles",
-                          "peripherals", "policies", "ebooks",
-                          "mobiledeviceapplicationsicon",
+                          "peripherals", "mobiledeviceenrollmentprofiles",
+                          "policies", "ebooks", "mobiledeviceapplicationsicon",
                           "mobiledeviceapplicationsipa",
-                          "diskencryptionconfigurations"]
+                          "diskencryptionconfigurations", "printers"]
         id_types = ["id", "name"]
 
         self.jss = j
