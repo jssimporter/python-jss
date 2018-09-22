@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased][unreleased]
+## [2.0.1] - 2018-09-22 - The master and the student
+
+### Added
+- Completely new test suites from the ground up using [pytest](https://docs.pytest.org/en/latest/), using docker containers
+  to test functionality such as Distribution Points and temporarily standing up / tearing down JAMF Pro servers for groups of
+  test cases.
+- Added the `JCDS` Distribution Point type. This distribution point type takes no configuration parameters except the
+  `type` key. The `JCDS` type retrieves information about your jamfcloud instance and uploads packages directly instead
+  of the `/dbfileupload` endpoint which should improve speed and reliability.
+- Added a new transport adapter `NSURLSessionAdapter` to perform native API HTTP transfers on macOS. This was to work around
+  the TLS1.2 issue and is largely superseded by the default Requests Adapter.
+- Add support for the new JAMF Pro API (working, but incomplete).
+- Add support for Patch feature via `PatchAvailableTitle`, `PatchExternalSource`, `PatchInternalSource`, `PatchReport`,
+  `PatchSoftwareTitle` and `PatchPolicy`.
+- Allow `JCDS` distribution point type to get files via the legacy `Casper.jxml` API.
+- `JCDS` distribution point type has a multi-threaded implementation as well as a single threaded one.
+- Begun the `AWS` repo type, which will establish a direct connection to Amazon S3 via the boto library.
+- Python 3.x and 2.x compatibility.
+- Developer notes on how to set up the pytest environment.
+- Added `add_script` and `remove_package` methods to the `Policy` object.
+  
+### Changed
+- The **JSS** object now uses the `Content-Type` of the response from the API to determine how it should decode the response.
+  This was necessary to support the new UAPI/JAMF Pro API. 
+- Add more empty data keys to `OSXConfigurationProfile` to make creating new instances easier.
+- Add more empty data keys to `ComputerExtensionAttribute`.
+- Add more empty data keys to `Computer`.
+- Add more empty data keys to `NetworkSegment`.
+- The main package is now built using [munkipkg](https://github.com/munki/munki-pkg) instead of The Luggage.
+
+### Removed
+- Nose based test suites.
+- `RequestsAdapter`, because we are now using requests directly.
+- `TLSAdapter`, because we do not have the TLS1.2 problem.
+
+
+### Fixed
+- `LDAPServer` incorrectly tried to use **PUT** to create new objects because the implementation of the `id` property
+  was incorrect.
+
 
 ## [Unreleased][unreleased]
 ## [2.0.0] - 2017-03-19 - Start Choppin'
