@@ -379,6 +379,7 @@ class DiskEncryptionConfiguration(Container):
 
 class DistributionPoint(Container):
     _endpoint_path = "distributionpoints"
+    root_tag = "distribution_point"
 
 
 class DockItem(Container):
