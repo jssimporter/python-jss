@@ -27,7 +27,6 @@ import re
 import shutil
 import socket
 import subprocess
-import urllib
 import io
 import math
 import multiprocessing
@@ -41,6 +40,17 @@ try:
 except ImportError:
     # Python 3
     from html.parser import HTMLParser
+
+
+# 2 and 3 compatible
+try:
+    from urllib.parse import urlparse, urlencode, unquote
+    from urllib.request import urlopen, Request
+    from urllib.error import HTTPError
+except ImportError:
+    from urlparse import urlparse
+    from urllib import urlencode, unquote
+    from urllib2 import urlopen, Request, HTTPError
 
 from . import casper
 from . import abstract
@@ -831,12 +841,16 @@ class CloudDistributionServer(Repository):
                 continue  # type 4 might be reserved for JCDS?
 
             for package in distribution_point.findall("packages/package"):
+                package_obj = casper_results.find("./packages/package[id='%s']" % (package.findtext('id'),))
+
                 all_packages.append({
                     'id': package.findtext('id'),
                     'checksum': package.findtext('checksum'),
                     'size': package.findtext('size'),
                     'lastModified': package.findtext('lastModified'),
-                    'fileURL': urllib.unquote(package.findtext('fileURL'))
+                    'fileURL': unquote(package.findtext('fileURL')),
+                    'name': package_obj.findtext('name'),
+                    'filename': package_obj.findtext('filename'),
                 })
 
         return all_packages
