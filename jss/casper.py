@@ -38,7 +38,7 @@ from xml.etree import ElementTree
 from .pretty_element import PrettyElement
 
 
-class Casper(PrettyElement):
+class Casper(ElementTree.Element):
     """Interact with the JSS through its private casper endpoint.
 
     The API user must have the Casper Admin privileges "Use Casper
@@ -64,7 +64,7 @@ class Casper(PrettyElement):
         password = text(self.jss.password)
         self.auth = urlencode(
             {"username": user, "password": password})
-        super(Casper, self).__init__(tag="Casper")
+        super(Casper, self).__init__("Casper")
         self.update()
 
     def update(self):
@@ -75,5 +75,5 @@ class Casper(PrettyElement):
 
         # Remove previous data, if any, and then add in response's XML.
         self.clear()
-        for child in response_xml.getchildren():
-            self.append(child)
+        self.extend(response_xml)
+
