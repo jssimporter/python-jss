@@ -18,6 +18,7 @@
 Base Classes representing JSS database objects and their API endpoints
 """
 from __future__ import print_function
+from six import string_types
 
 import collections
 import copy
@@ -334,7 +335,7 @@ class Container(JSSObject):
         self._basic_identity = Identity(name="", id="")
         self.kwargs = {}
 
-        if isinstance(data, basestring):
+        if isinstance(data, string_types):
             self._new(data, **kwargs)
             self.cached = "Unsaved"
 
@@ -438,7 +439,7 @@ class Container(JSSObject):
         if isinstance(data, int):
             url_components.extend([cls._id_path, str(data)])
 
-        elif isinstance(data, basestring):
+        elif isinstance(data, string_types):
             if "=" in data:
                 key, value = data.split("=")   # pylint: disable=no-member
                 if key in cls.search_types:
@@ -493,8 +494,8 @@ class Container(JSSObject):
         elif key == 'date_range':
             start, end = val
             fmt = lambda s: s.strftime('%Y-%m-%d')
-            start = start if isinstance(start, basestring) else fmt(end)
-            end = end if isinstance(end, basestring) else fmt(end)
+            start = start if isinstance(start, string_types) else fmt(end)
+            end = end if isinstance(end, string_types) else fmt(end)
             return ['{}_{}'.format(start, end)]
 
         else:
@@ -735,7 +736,7 @@ class Container(JSSObject):
             "true"/"True"/"TRUE"; all other strings are False).
         """
         element = self._handle_location(location)
-        if isinstance(value, basestring):
+        if isinstance(value, string_types):
             value = True if value.upper() == "TRUE" else False
         elif not isinstance(value, bool):
             raise ValueError
@@ -778,7 +779,7 @@ class Container(JSSObject):
         if isinstance(obj, Container):
             results = [item for item in list_element.getchildren() if
                        item.findtext("id") == obj.id]
-        elif isinstance(obj, (int, basestring)):
+        elif isinstance(obj, (int, string_types)):
             results = [item for item in list_element.getchildren() if
                        item.findtext("id") == str(obj) or
                        item.findtext("name") == obj]

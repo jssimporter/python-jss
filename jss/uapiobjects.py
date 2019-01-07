@@ -20,11 +20,30 @@ Classes representing JSS database objects and their UAPI endpoints
 from .uapiobject import UAPIObject, UAPIContainer
 
 __all__ = 'Cache', 'Ebook', 'AlertNotification', 'MobileDevice', 'PatchPolicy', 'EnrollmentSetting', \
-          'EnrollmentHistory', 'SelfServiceSettings', 'SystemInformation', 'VPPSubscription'
+          'EnrollmentHistory', 'SelfServiceSettings', 'StartupStatus', 'SystemInformation', 'VPPSubscription', \
+          'Lobby'
+
+
+class AdvancedMobileDeviceSearch(UAPIContainer):
+    _endpoint_path = "devices/advancedSearches"
+
+
+class Building(UAPIContainer):
+    _endpoint_path = "settings/obj/building"
+
+
+class Category(UAPIContainer):
+    _endpoint_path = "settings/obj/category"
 
 
 class Cache(UAPIObject):
     _endpoint_path = "settings/obj/cache"
+    can_post = False
+    can_delete = False
+
+
+class ClientCheckIn(UAPIObject):
+    _endpoint_path = "settings/obj/checkIn"
     can_post = False
     can_delete = False
 
@@ -47,6 +66,13 @@ class AlertNotification(UAPIContainer):
     _endpoint_path = "notifications/alerts"
     can_put = False
     can_post = False
+
+
+class Lobby(UAPIObject):
+    _endpoint_path = ""
+    can_put = False
+    can_post = False
+    can_delete = False
 
 
 class PatchPolicy(UAPIContainer):
@@ -75,6 +101,13 @@ class EnrollmentHistory(UAPIContainer):
 
 class SelfServiceSettings(UAPIObject):
     _endpoint_path = "settings/obj/selfservice"
+    can_post = False
+    can_delete = False
+
+
+class StartupStatus(UAPIObject):
+    _endpoint_path = "startup-status"
+    can_put = False
     can_post = False
     can_delete = False
 
