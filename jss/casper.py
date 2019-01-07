@@ -20,15 +20,25 @@ Utility class for getting and presenting information from casper.jxml.
 The results from casper.jxml are undocumented and thus quite likely to be
 removed. Do not rely on its continued existence!
 """
+from __future__ import unicode_literals
+from builtins import str as text
 
+# 2 and 3 compatible
+try:
+    from urllib.parse import urlparse, urlencode
+    from urllib.request import urlopen, Request
+    from urllib.error import HTTPError
+except ImportError:
+    from urlparse import urlparse
+    from urllib import urlencode
+    from urllib2 import urlopen, Request, HTTPError
 
-import urllib
 from xml.etree import ElementTree
 
 from .pretty_element import PrettyElement
 
 
-class Casper(PrettyElement):
+class Casper(ElementTree.Element):
     """Interact with the JSS through its private casper endpoint.
 
     The API user must have the Casper Admin privileges "Use Casper
@@ -50,13 +60,11 @@ class Casper(PrettyElement):
         # TODO: If we can just pass in bytes rather than
         # urlencoded-bytes, we can remove this and let the request
         # adapter handle the outgoing data encoding.
-        user = (self.jss.user.encode('UTF-8') if
-                isinstance(self.jss.user, unicode) else self.jss.user)
-        password = (self.jss.password.encode('UTF-8') if
-                isinstance(self.jss.password, unicode) else self.jss.password)
-        self.auth = urllib.urlencode(
+        user = text(self.jss.user)
+        password = text(self.jss.password)
+        self.auth = urlencode(
             {"username": user, "password": password})
-        super(Casper, self).__init__(tag="Casper")
+        super(Casper, self).__init__("Casper")
         self.update()
 
     def update(self):
@@ -67,5 +75,5 @@ class Casper(PrettyElement):
 
         # Remove previous data, if any, and then add in response's XML.
         self.clear()
-        for child in response_xml.getchildren():
-            self.append(child)
+        self.extend(response_xml)
+

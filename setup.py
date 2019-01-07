@@ -34,7 +34,7 @@ setup(name='python-jss',
       description='Python wrapper for JSS API.',
       long_description=read_md('README.md'),
       author='Shea G. Craig',
-      url='https://github.com/sheagcraig/python-jss/',
+      url='https://github.com/JSSImporter/python-jss/',
       license='GPLv3',
       install_requires=['requests>=2.13.0'],
       extras_require={
