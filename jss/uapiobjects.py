@@ -19,21 +19,25 @@ Classes representing JSS database objects and their UAPI endpoints
 """
 from .uapiobject import UAPIObject, UAPIContainer
 
-__all__ = 'Cache', 'Ebook', 'AlertNotification', 'MobileDevice', 'PatchPolicy', 'EnrollmentSetting', \
-          'EnrollmentHistory', 'SelfServiceSettings', 'StartupStatus', 'SystemInformation', 'VPPSubscription', \
-          'Lobby'
+__all__ = 'AdvancedMobileDeviceSearch', 'AlertNotification', 'Building', 'Cache', 'Category', 'ClientCheckIn', \
+          'Department', 'Ebook', 'EnrollmentHistory', 'EnrollmentSetting', 'EnrollmentSettingSetting', 'Lobby', \
+          'MobileDevice', 'PatchPolicy', 'ReEnrollmentSetting', 'Script', 'SelfServiceBrandingConfiguration', \
+          'SelfServiceSettings', 'SSOCertificate', 'SSOSetting', 'Site', 'StartupStatus', 'SystemInformation', \
+          'User', 'VPPAdminAccount', 'VPPSubscription'
 
 
 class AdvancedMobileDeviceSearch(UAPIContainer):
     _endpoint_path = "devices/advancedSearches"
 
 
+class AlertNotification(UAPIContainer):
+    _endpoint_path = "notifications/alerts"
+    can_put = False
+    can_post = False
+
+
 class Building(UAPIContainer):
     _endpoint_path = "settings/obj/building"
-
-
-class Category(UAPIContainer):
-    _endpoint_path = "settings/obj/category"
 
 
 class Cache(UAPIObject):
@@ -42,10 +46,18 @@ class Cache(UAPIObject):
     can_delete = False
 
 
+class Category(UAPIContainer):
+    _endpoint_path = "settings/obj/category"
+
+
 class ClientCheckIn(UAPIObject):
     _endpoint_path = "settings/obj/checkIn"
     can_post = False
     can_delete = False
+
+
+class Department(UAPIContainer):
+    _endpoint_path = "settings/obj/department"
 
 
 class Ebook(UAPIContainer):
@@ -55,28 +67,11 @@ class Ebook(UAPIContainer):
     can_delete = False
 
 
-class MobileDevice(UAPIObject):
-    _endpoint_path = "inventory/obj/mobileDevice"
-    can_put = False
+class EnrollmentHistory(UAPIContainer):
+    _endpoint_path = "settings/obj/enrollment/history"
     can_post = False
+    can_put = False
     can_delete = False
-
-
-class AlertNotification(UAPIContainer):
-    _endpoint_path = "notifications/alerts"
-    can_put = False
-    can_post = False
-
-
-class Lobby(UAPIObject):
-    _endpoint_path = ""
-    can_put = False
-    can_post = False
-    can_delete = False
-
-
-class PatchPolicy(UAPIContainer):
-    _endpoint_path = "patch/obj/policy"
 
 
 class EnrollmentSetting(UAPIObject):
@@ -92,15 +87,55 @@ class EnrollmentSettingSetting(UAPIObject):
     can_delete = False
 
 
-class EnrollmentHistory(UAPIContainer):
-    _endpoint_path = "settings/obj/enrollment/history"
-    can_post = False
+class Lobby(UAPIObject):
+    _endpoint_path = ""
     can_put = False
+    can_post = False
     can_delete = False
+
+
+class MobileDevice(UAPIObject):
+    _endpoint_path = "inventory/obj/mobileDevice"
+    can_put = False
+    can_post = False
+    can_delete = False
+
+
+class PatchPolicy(UAPIContainer):
+    _endpoint_path = "patch/obj/policy"
+
+
+class ReEnrollmentSetting(UAPIObject):
+    _endpoint_path = "settings/obj/reenrollment"
+
+
+class Script(UAPIContainer):
+    _endpoint_path = "settings/scripts"
+
+
+class SelfServiceBrandingConfiguration(UAPIContainer):
+    _endpoint_path = "self-service/branding/configurations"
 
 
 class SelfServiceSettings(UAPIObject):
     _endpoint_path = "settings/obj/selfservice"
+    can_post = False
+    can_delete = False
+
+
+class Site(UAPIContainer):
+    _endpoint_path = "settings/sites"
+    can_delete = False
+    can_post = False
+    can_put = False
+
+
+class SSOCertificate(UAPIObject):
+    _endpoint_path = "settings/sso/cert"
+
+
+class SSOSetting(UAPIObject):
+    _endpoint_path = "settings/sso"
     can_post = False
     can_delete = False
 
@@ -114,6 +149,20 @@ class StartupStatus(UAPIObject):
 
 class SystemInformation(UAPIObject):
     _endpoint_path = "system/obj/info"
+    can_put = False
+    can_post = False
+    can_delete = False
+
+
+class User(UAPIContainer):
+    _endpoint_path = "user"
+    can_delete = False
+    can_post = False
+    can_put = False
+
+
+class VPPAdminAccount(UAPIContainer):
+    _endpoint_path = "vpp/admin-accounts"
     can_put = False
     can_post = False
     can_delete = False

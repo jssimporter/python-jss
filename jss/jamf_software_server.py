@@ -122,6 +122,7 @@ class JSS(object):
         def __init__(self, jss, url=None):
             self.jss = jss
             self._base_url = url
+            self.max_age = -1
 
         @property
         def base_url(self):
