@@ -73,5 +73,5 @@ class TLSAdapter(HTTPAdapter):
         """Set up a poolmanager to use TLS and our cipher list."""
         self.poolmanager = PoolManager(
             num_pools=connections, maxsize=maxsize, block=block,
-            ssl_version=ssl.PROTOCOL_TLSv1)   # pylint: disable=no-member
+            ssl_version=ssl.PROTOCOL_TLSv1_2)   # pylint: disable=no-member
         pyopenssl.DEFAULT_SSL_CIPHER_LIST = CIPHER_LIST
