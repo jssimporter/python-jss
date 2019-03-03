@@ -21,7 +21,13 @@ The results from casper.jxml are undocumented and thus quite likely to be
 removed. Do not rely on its continued existence!
 """
 from __future__ import unicode_literals
-from builtins import str as text
+
+try:
+    # Python 2
+    from __builtin__ import str as text
+except ImportError:
+    # Python 3
+    from builtins import str as text
 
 # 2 and 3 compatible
 try:

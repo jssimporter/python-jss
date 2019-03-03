@@ -197,6 +197,13 @@ class FileRepository(Repository):
             self.connection["mount_point"], "Packages", filename)
         return os.path.exists(filepath)
 
+    def __contains__(self, filename):
+        """Magic method to allow constructs similar to:
+
+            if 'abc.pkg' in dp:
+        """
+        return self.exists(filename)
+
 
 class LocalRepository(FileRepository):
     """JAMF Pro repo located on a local filesystem path."""
@@ -598,7 +605,10 @@ class DistributionServer(Repository):
         self.connection["url"] = self.connection["jss"].base_url
 
     def _build_url(self):
-        """Build the URL for POSTing files. 10.2 and earlier"""
+        """Build the URL for POSTing files. 10.2 and earlier.
+
+        This actually still works in some scenarios, but it seems like it will be deprecated soon.
+        """
         self.connection["upload_url"] = (
                 "%s/%s" % (self.connection["jss"].base_url, "dbfileupload"))
         self.connection["delete_url"] = (
@@ -606,7 +616,10 @@ class DistributionServer(Repository):
                            "casperAdminSave.jxml"))
 
     def _build_url_modern(self):
-        """Build the URL for POSTing files."""
+        """Build the URL for POSTing files.
+
+        This uses the UploadServlet that has been used to handle most file uploads into JAMF Pro.
+        """
         self.connection["upload_url"] = (
             "%s/%s" % (self.connection["jss"].base_url, "upload"))
         self.connection["delete_url"] = (
