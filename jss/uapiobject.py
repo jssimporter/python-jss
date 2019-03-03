@@ -18,6 +18,7 @@
 Base Classes representing JSS database objects and their UAPI endpoints
 """
 from __future__ import print_function
+from six import string_types
 
 import os
 import datetime as dt
@@ -224,7 +225,7 @@ class UAPIContainer(UAPIObject):
         # self._basic_identity = Identity(name="", id="")
         self.kwargs = {}
 
-        if isinstance(data, basestring):
+        if isinstance(data, string_types):
             self._new(data, **kwargs)
             self.cached = "Unsaved"
 
@@ -283,8 +284,8 @@ class UAPIContainer(UAPIObject):
         elif key == 'date_range':
             start, end = val
             fmt = lambda s: s.strftime('%Y-%m-%d')
-            start = start if isinstance(start, basestring) else fmt(end)
-            end = end if isinstance(end, basestring) else fmt(end)
+            start = start if isinstance(start, string_types) else fmt(end)
+            end = end if isinstance(end, string_types) else fmt(end)
             return ['{}_{}'.format(start, end)]
 
         else:

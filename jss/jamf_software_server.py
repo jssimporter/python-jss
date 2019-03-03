@@ -42,7 +42,7 @@ except ImportError:
 # from jss.nsurlsession_adapter import NSURLSessionAdapter
 from .curl_adapter import CurlAdapter
 from .auth import UAPIAuth
-from jss import distribution_points
+from .distribution_points import DistributionPoints
 from .exceptions import GetError, PutError, PostError, DeleteError
 from .jssobject import JSSObject
 from . import jssobjects
@@ -122,6 +122,7 @@ class JSS(object):
         def __init__(self, jss, url=None):
             self.jss = jss
             self._base_url = url
+            self.max_age = -1
 
         @property
         def base_url(self):
@@ -204,7 +205,7 @@ class JSS(object):
         self.verbose = verbose
         self.ssl_verify = ssl_verify
 
-        self.distribution_points = distribution_points.DistributionPoints(self)
+        self.distribution_points = DistributionPoints(self)
         self.max_age = -1
         self.uapi = JSS.UAPI(self, url)
         self.api = JSS.JSSAPI(self, url)

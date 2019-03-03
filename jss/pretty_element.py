@@ -15,10 +15,17 @@
 """pretty_element.py
 
 Pretty-printing xml.etree.ElementTree.Element subclass
+
+..note: As of python 3.3 it seems like you cannot easily subclass Element, see this StackOverflow answer:
+
+    Since 3.3 ElementTree tries to import the c implementation in for efficiency,
+    however you can't set arbitrary attributes on that implementation.
+    If you are in a situation where you don't want to use the Set or Get methods every time,
+    you should use ET._Element_Py, which is the Python implementation. - RandomName
+
+    https://stackoverflow.com/questions/20995601/cant-set-attributes-on-elementtree-element-instance-in-python-3
+
 """
-
-
-import copy
 import re
 from xml.etree import ElementTree
 
@@ -28,8 +35,14 @@ from jss import tools
 _DUNDER_PATTERN = re.compile(r'__[a-zA-Z]+__')
 _RESERVED_METHODS = ('cached',)
 
+# py3.x and py2 backwards compatible
+if hasattr(ElementTree, '_Element_Py'):
+    Element = ElementTree._Element_Py
+else:
+    Element = ElementTree.Element
 
-class PrettyElement(ElementTree.Element):
+
+class PrettyElement(Element):
     """Pretty printing element subclass
 
     Element subclasses xml.etree.ElementTree.Element to pretty print.
