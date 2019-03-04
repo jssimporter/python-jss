@@ -765,9 +765,9 @@ def add_uapi_search_method(cls, name):
                             auth=UAPIAuth(self.jss.user, self.jss.password, "{}/uapi/auth/tokens".format(self.jss.base_url)))
 
         if isinstance(data, list):
-            return [obj_type(self, d) for d in data]
+            return [obj_type(self.jss, d) for d in data]
         else:
-            return obj_type(self, data)
+            return obj_type(self.jss, data)
 
     # Add in the missing variables to the docstring and set name.
     if hasattr(obj_type, 'allowed_kwargs') and obj_type.allowed_kwargs:
