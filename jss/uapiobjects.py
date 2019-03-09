@@ -20,10 +20,11 @@ Classes representing JSS database objects and their UAPI endpoints
 from .uapiobject import UAPIObject, UAPIContainer
 
 __all__ = 'AdvancedMobileDeviceSearch', 'AlertNotification', 'Building', 'Cache', 'Category', 'ClientCheckIn', \
-          'Department', 'Ebook', 'EnrollmentHistory', 'EnrollmentSetting', 'EnrollmentSettingSetting', 'Lobby', \
+          'Department', 'DeviceEnrollment', 'Ebook', 'Engage', 'EnrollmentHistory', 'EnrollmentSetting', \
+          'EnrollmentSettingSetting', 'Lobby', \
           'MobileDevice', 'PatchPolicy', 'ReEnrollmentSetting', 'Script', 'SelfServiceBrandingConfiguration', \
           'SelfServiceSettings', 'SSOCertificate', 'SSOSetting', 'Site', 'StartupStatus', 'SystemInformation', \
-          'User', 'VPPAdminAccount', 'VPPSubscription'
+          'SystemInitialize', 'User', 'VPPAdminAccount', 'VPPSubscription'
 
 
 class AdvancedMobileDeviceSearch(UAPIContainer):
@@ -60,9 +61,23 @@ class Department(UAPIContainer):
     _endpoint_path = "settings/obj/department"
 
 
+class DeviceEnrollment(UAPIObject):
+    _endpoint_path = "device-enrollment"
+
+
+class DeviceEnrollmentPublicKey(UAPIObject):
+    _endpoint_path = "device-enrollment/public-key"
+
+
 class Ebook(UAPIContainer):
     _endpoint_path = "deployable/obj/ebook"
     can_put = False
+    can_post = False
+    can_delete = False
+
+
+class Engage(UAPIObject):
+    _endpoint_path = "engage"
     can_post = False
     can_delete = False
 
@@ -75,16 +90,20 @@ class EnrollmentHistory(UAPIContainer):
 
 
 class EnrollmentSetting(UAPIObject):
-    _endpoint_path = "settings/obj/enrollment"
+    _endpoint_path = "settings/enrollment"  # was: settings/obj/enrollment until about 10.9
     can_post = False
     can_delete = False
 
 
 # Unbelievably, this has a different schema but is intended for the same usage as EnrollmentSetting
 class EnrollmentSettingSetting(UAPIObject):
-    _endpoint_path = "settings/obj/enrollment/settings"
+    _endpoint_path = "settings/enrollment/settings"  # was: settings/obj/enrollment/settings until about 10.9
     can_post = False
     can_delete = False
+
+
+class InventoryPreload(UAPIContainer):
+    _endpoint_path = "inventory-preload"
 
 
 class Lobby(UAPIObject):
@@ -151,6 +170,13 @@ class SystemInformation(UAPIObject):
     _endpoint_path = "system/obj/info"
     can_put = False
     can_post = False
+    can_delete = False
+
+
+class SystemInitialize(UAPIObject):
+    _endpoint_path = "system/initialize"
+    can_get = False
+    can_put = False
     can_delete = False
 
 
