@@ -1261,12 +1261,14 @@ class Policy(Container):
         """
         pcategory = self.find("general/category")
         pcategory.clear()
-        name = ElementTree.SubElement(pcategory, "name")
+
         if isinstance(category, Category):
             id_ = ElementTree.SubElement(pcategory, "id")
             id_.text = category.id
+            name = ElementTree.SubElement(pcategory, "name")
             name.text = category.name
         elif isinstance(category, basestring):
+            name = ElementTree.SubElement(pcategory, "name")
             name.text = category
 
 # pylint: enable=too-many-instance-attributes, too-many-locals
