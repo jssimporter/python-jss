@@ -1,9 +1,8 @@
 
-;.j[from __future__ import print_function
+from __future__ import print_function
 import pytest
 import jss
 from xml.etree import ElementTree
-
 
 class TestObjectsPolicies(object):
     """Test Policy Object Methods"""
