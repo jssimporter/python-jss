@@ -211,12 +211,15 @@ class UAPIContainer(UAPIObject):
     def __init__(self, jss, data, **kwargs):
         """Initialize a new JSSObject from scratch or from a python dict.
 
+        data still adheres to the Classic API convention of being able to pass a string which represents
+        the object "name", as well as a dict, which will be the actual representation of the object.
+
         Args:
             jss (JSS, None): JSS object, or None if no communication
                 with the JSS is needed.
-            data (xml.etree.ElementTree.Element, Identity, str): XML
+            data (dict, Identity, str):
                 data to use for creating the object, a name to use for
-                creating a new object, or an Identity object reprsenting
+                creating a new object, or an Identity object representing
                 basic object info.
             kwargs (str): Key/value pairs to be added to the object when
                 building one from scratch.
@@ -226,7 +229,8 @@ class UAPIContainer(UAPIObject):
         self.kwargs = {}
 
         if isinstance(data, string_types):
-            self._new(data, **kwargs)
+            # self._new(data, **kwargs)
+            UAPIObject.__init__(self, jss, {"name": data}, **kwargs)
             self.cached = "Unsaved"
 
         elif isinstance(data, dict):
@@ -304,3 +308,29 @@ class UAPIContainer(UAPIObject):
     def _handle_kwargs(cls, kwargs):
         """Do nothing. Can be overriden by classes which need it."""
         return kwargs
+
+    def _new(self, name, **kwargs):
+        """Create a new UAPIObject with name and "keys".
+
+        Generate a default Dict template for this object, based on
+        the class attribute "keys".
+
+        Args:
+            name: String name of the object to use as the
+                object's name property.
+            kwargs:
+                Accepted keyword args can be viewed by checking the
+                "data_keys" class attribute. Typically, they include all
+                top-level keys, and non-duplicated keys used elsewhere.
+
+                Values will be cast to string. (Int 10, bool False
+                become string values "10" and "false").
+
+                Ignores kwargs that aren't in object's keys attribute.
+        """
+        super(UAPIContainer, self).__init__(self.jss, {"name": name})
+        UserDict.__init__(self, kwargs)
+
+        # # ignore _name_element
+        # for k, v in self.data_keys.items():
+        #     self[k] = v
