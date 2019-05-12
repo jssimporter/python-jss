@@ -183,21 +183,6 @@ class JSS(object):
         else:
             self.session = requests.session()
 
-            # Reverted to urllib3 because High Sierra uses LibreSSL
-            # if platform.system() == 'Darwin':
-            #     from Foundation import NSURLCredential, NSURLCredentialPersistenceNone
-            #
-            #     credential = NSURLCredential.credentialWithUser_password_persistence_(
-            #         user, password, NSURLCredentialPersistenceNone
-            #         # we don't expect ephemeral requests to save keychain items.
-            #     )
-            #
-            #     adapter = NSURLSessionAdapter(credential=credential)
-            #     adapter.verify = ssl_verify
-            #
-            #     self.session.mount('https://', adapter)
-            #     self.session.mount('http://', adapter)
-
         self.user = user
         self.password = password
         self.token = None  # For uapi
@@ -605,6 +590,16 @@ class JSS(object):
         return all_objects
 
     def scrape(self, url_path, session_id=None):
+        """This method allows for access to things that don't have an API.
+
+        It's entirely up to you how to implement handling the requests/responses because there's no way Jamf will
+        support this.
+
+        Args:
+            url_path: String the path to scrape
+            session_id: String the session id to use. You can extract a session cookie from a previous response,
+                probably using JSESSIONID
+        """
         if session_id is None:
             response = self.session.post(self.base_url, data={'username': self.user, 'password': self.password})
 
