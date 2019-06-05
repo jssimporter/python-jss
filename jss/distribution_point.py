@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2014, 2015 Shea G Craig <shea.craig@da.org>
+# Copyright (C) 2014-2018 Shea G Craig, 2018 Mosen
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,20 +15,46 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """distribution_point.py
 
-Classes representing the various types of file storage availble to
-Casper.
+Classes representing the various types of file storage available to
+the JAMF Pro Server.
 """
 
+from __future__ import division
+from __future__ import print_function
 
 import os
 import re
 import shutil
 import socket
 import subprocess
-import urllib
+import io
+import math
+import multiprocessing
+import threading
+import requests
+
+
+try:
+    # Python 2.6-2.7
+    from HTMLParser import HTMLParser
+except ImportError:
+    # Python 3
+    from html.parser import HTMLParser
+
+
+# 2 and 3 compatible
+try:
+    from urllib.parse import urlparse, urlencode, unquote
+    from urllib.request import urlopen, Request
+    from urllib.error import HTTPError
+except ImportError:
+    from urlparse import urlparse
+    from urllib import urlencode, unquote
+    from urllib2 import urlopen, Request, HTTPError
 
 from . import casper
-from .exceptions import JSSError, JSSUnsupportedFileType
+from . import abstract
+from .exceptions import JSSError
 try:
     from .contrib.mount_shares_better import mount_share
 except ImportError:
@@ -38,11 +64,19 @@ except ImportError:
     mount_share = None
 from .tools import (is_osx, is_linux, is_package)
 
+try:
+    import boto.s3
+    from boto.s3.connection import S3Connection, OrdinaryCallingFormat, S3ResponseError
+    from boto.s3.key import Key
+
+    BOTO_AVAILABLE = True
+except ImportError:
+    print("boto is not available, you will not be able to use the AWS distribution point type")
+    BOTO_AVAILABLE = False
 
 PKG_FILE_TYPE = '0'
 EBOOK_FILE_TYPE = '1'
 IN_HOUSE_APP_FILE_TYPE = '2'
-SCRIPT_FILE_TYPE = '3'
 
 
 def auto_mounter(original):
@@ -64,7 +98,12 @@ class Repository(object):
     init which all subclasses should use.
 
     Attributes:
-        connection: Dictionary for storing connection arguments.
+        connection (dict): Dictionary for storing connection arguments.
+        required_attrs (Set): A set of the keys which must be supplied to the initializer, otherwise a JSSError will
+            be raised.
+
+    Raises:
+        JSSError: If mandatory arguments are not supplied to the initializer.
     """
     required_attrs = set()
 
@@ -115,49 +154,6 @@ class FileRepository(Repository):
         self._copy(filename, os.path.join(self.connection["mount_point"],
                                           "Packages", basename))
 
-    def copy_script(self, filename, id_=-1):
-        """Copy a script to the repo's Script subdirectory.
-
-        Scripts are copied as files to a path, or, on a "migrated" JSS,
-        are POSTed to the JSS (pass an id if you wish to associate
-        the script with an existing Script object).
-
-        Args:
-            filename: Path for file to copy.
-            id_: Int ID, used _only_ for migrated repos. Default is -1,
-                which creates a new Script.
-        """
-        if ("jss" in self.connection.keys() and
-                self.connection["jss"].jss_migrated):
-            self._copy_script_migrated(filename, id_, SCRIPT_FILE_TYPE)
-        else:
-            basename = os.path.basename(filename)
-            self._copy(filename, os.path.join(self.connection["mount_point"],
-                                              "Scripts", basename))
-
-    def _copy_script_migrated(self, filename, id_=-1,
-                              file_type=SCRIPT_FILE_TYPE):
-        """Upload a script to a migrated JSS's database.
-
-        On a "migrated" JSS, scripts are POSTed to the JSS. Pass an id
-        if you wish to associate the script with an existing Script
-        object, otherwise, it will create a new Script object.
-
-        Args:
-            filename: Path to script file.
-            id_: Int ID of Script object to associate this file with.
-                Default is -1, which creates a new Script.
-        """
-        basefname = os.path.basename(filename)
-
-        resource = open(filename, "rb")
-        headers = {"DESTINATION": "1", "OBJECT_ID": str(id_), "FILE_TYPE":
-                   file_type, "FILE_NAME": basefname}
-        response = self.connection["jss"].session.post(
-            url="%s/%s" % (self.connection["jss"].base_url, "dbfileupload"),
-            data=resource, headers=headers)
-        return response
-
     def _copy(self, filename, destination):   # pylint: disable=no-self-use
         """Copy a file or folder to the repository.
 
@@ -177,15 +173,11 @@ class FileRepository(Repository):
     def delete(self, filename):
         """Delete a file from the repository.
 
-        This method will not delete a script from a migrated JSS.
-        Please remove migrated scripts with jss.Script.delete.
-
         Args:
             filename: String filename only (i.e. no path) of file to
-                delete. Will handle deleting scripts vs. packages
-                automatically.
+                delete.
         """
-        folder = "Packages" if is_package(filename) else "Scripts"
+        folder = "Packages"
         path = os.path.join(self.connection["mount_point"], folder, filename)
         if os.path.isdir(path):
             shutil.rmtree(path)
@@ -201,35 +193,31 @@ class FileRepository(Repository):
             filename: Filename you wish to check. (No path! e.g.:
                 "AdobeFlashPlayer-14.0.0.176.pkg")
         """
-        if is_package(filename):
-            filepath = os.path.join(self.connection["mount_point"],
-                                    "Packages", filename)
-        else:
-            filepath = os.path.join(self.connection["mount_point"],
-                                    "Scripts", filename)
+        filepath = os.path.join(
+            self.connection["mount_point"], "Packages", filename)
         return os.path.exists(filepath)
+
+    def __contains__(self, filename):
+        """Magic method to allow constructs similar to:
+
+            if 'abc.pkg' in dp:
+        """
+        return self.exists(filename)
 
 
 class LocalRepository(FileRepository):
-    """Casper repo located on a local filesystem path."""
+    """JAMF Pro repo located on a local filesystem path."""
     required_attrs = {"mount_point", "share_name"}
 
     def __init__(self, **connection_args):
         """Set up Local file share.
 
-        If you have migrated your JSS, you need to pass a JSS object as
-        a keyword argument during repository setup, and the JSS object
-        needs the jss_migrated=True preference set.
-
         Args:
             connection_args: Dict with the following key/val pairs:
                 mount_point: Path to a valid mount point.
                 share_name: The fileshare's name.
-
-                Optional connection arguments (Migrated script support):
-                    jss: A JSS Object. NOTE: jss_migrated must be True
-                        for this to do anything.
         """
+
         super(LocalRepository, self).__init__(**connection_args)
         self.connection["url"] = "local://%s" % self.connection["mount_point"]
 
@@ -413,8 +401,7 @@ class MountedRepository(FileRepository):
 
         Args:
             filename: String filename only (i.e. no path) of file to
-                delete. Will handle deleting scripts vs. packages
-                automatically.
+                delete.
         """
         super(MountedRepository, self).delete(filename)
 
@@ -445,10 +432,7 @@ class MountedRepository(FileRepository):
 
 
 class AFPDistributionPoint(MountedRepository):
-    """Represents an AFP repository.
-
-    For a migrated JSS, please see __init__ and copy_script docs.
-    """
+    """Represents an AFP repository."""
     protocol = "afp"
     fs_type = "afpfs"
     required_attrs = {"url", "mount_point", "username", "password",
@@ -457,12 +441,8 @@ class AFPDistributionPoint(MountedRepository):
     def __init__(self, **connection_args):
         """Set up an AFP connection.
 
-        If you have migrated your JSS, you need to pass a JSS object as
-        a keyword argument during repository setup, and the JSS object
-        needs the jss_migrated=True preference set.
-
         Args:
-            connection_args: Dict with the following key/val pairs:
+            connection_args (dict): Dict with the following key/val pairs:
                 url: URL to the mountpoint,including volume name e.g.:
                     "my_repository.domain.org/jamf" (Do _not_ include
                     protocol or auth info.)
@@ -470,10 +450,6 @@ class AFPDistributionPoint(MountedRepository):
                 share_name: The fileshare's name.
                 username: Share R/W username.
                 password: Share R/W password.
-
-                Optional connection arguments (Migrated script support):
-                    jss: A JSS Object. NOTE: jss_migrated must be True
-                        for this to do anything.
         """
         super(AFPDistributionPoint, self).__init__(**connection_args)
         # Check to see if share is mounted, and update mount point
@@ -500,7 +476,7 @@ class AFPDistributionPoint(MountedRepository):
         # mount_afp "afp://scraig:<password>@address/share" <mnt_point>
         if is_osx():
             if self.connection["jss"].verbose:
-                print self.connection["mount_url"]
+                print(self.connection["mount_url"])
             if mount_share:
                 self.connection["mount_point"] = mount_share(
                     self.connection["mount_url"])
@@ -510,34 +486,27 @@ class AFPDistributionPoint(MountedRepository):
                         self.connection["mount_url"],
                         self.connection["mount_point"]]
                 if self.connection["jss"].verbose:
-                    print " ".join(args)
+                    print(" ".join(args))
                 subprocess.check_call(args)
         elif is_linux():
             args = ["mount_afp", "-t", self.protocol,
                     self.connection["mount_url"],
                     self.connection["mount_point"]]
             if self.connection["jss"].verbose:
-                print " ".join(args)
+                print(" ".join(args))
             subprocess.check_call(args)
         else:
             raise JSSError("Unsupported OS.")
 
 
 class SMBDistributionPoint(MountedRepository):
-    """Represents a SMB distribution point.
-
-    For a migrated JSS, please see __init__ and copy_script docs.
-    """
+    """Represents a SMB distribution point."""
     protocol = "smbfs"
     required_attrs = {"url", "share_name", "mount_point", "domain", "username",
                       "password"}
 
     def __init__(self, **connection_args):
         """Set up a SMB connection.
-
-        If you have migrated your JSS, you need to pass a JSS object as
-        a keyword argument during repository setup, and the JSS object
-        needs the jss_migrated=True preference set.
 
         Args:
             connection_args: Dict with the following key/val pairs:
@@ -549,10 +518,6 @@ class SMBDistributionPoint(MountedRepository):
                 domain: Specify the domain.
                 username: Share R/W username.
                 password: Share R/W password.
-
-                Optional connection arguments (Migrated script support):
-                    jss: A JSS Object. NOTE: jss_migrated must be True
-                        for this to do anything.
         """
         super(SMBDistributionPoint, self).__init__(**connection_args)
         if is_osx():
@@ -589,7 +554,7 @@ class SMBDistributionPoint(MountedRepository):
             if mount_share:
                 mount_url = "smb:%s" % self.connection["mount_url"]
                 if self.connection["jss"].verbose:
-                    print mount_url
+                    print(mount_url)
                 self.connection["mount_point"] = mount_share(mount_url)
             else:
                 # Non-Apple OS X python:
@@ -597,7 +562,7 @@ class SMBDistributionPoint(MountedRepository):
                         self.connection["mount_url"],
                         self.connection["mount_point"]]
                 if self.connection["jss"].verbose:
-                    print " ".join(args)
+                    print(" ".join(args))
                 subprocess.check_call(args)
         elif is_linux():
             args = ["mount", "-t", "cifs", "-o",
@@ -608,7 +573,7 @@ class SMBDistributionPoint(MountedRepository):
                                  self.connection["share_name"]),
                     self.connection["mount_point"]]
             if self.connection["jss"].verbose:
-                print " ".join(args)
+                print(" ".join(args))
             subprocess.check_call(args)
         else:
             raise JSSError("Unsupported OS.")
@@ -640,9 +605,23 @@ class DistributionServer(Repository):
         self.connection["url"] = self.connection["jss"].base_url
 
     def _build_url(self):
-        """Build the URL for POSTing files."""
+        """Build the URL for POSTing files. 10.2 and earlier.
+
+        This actually still works in some scenarios, but it seems like it will be deprecated soon.
+        """
         self.connection["upload_url"] = (
-            "%s/%s" % (self.connection["jss"].base_url, "dbfileupload"))
+                "%s/%s" % (self.connection["jss"].base_url, "dbfileupload"))
+        self.connection["delete_url"] = (
+                "%s/%s" % (self.connection["jss"].base_url,
+                           "casperAdminSave.jxml"))
+
+    def _build_url_modern(self):
+        """Build the URL for POSTing files.
+
+        This uses the UploadServlet that has been used to handle most file uploads into JAMF Pro.
+        """
+        self.connection["upload_url"] = (
+            "%s/%s" % (self.connection["jss"].base_url, "upload"))
         self.connection["delete_url"] = (
             "%s/%s" % (self.connection["jss"].base_url,
                        "casperAdminSave.jxml"))
@@ -659,24 +638,14 @@ class DistributionServer(Repository):
         """
         self._copy(filename, id_=id_, file_type=PKG_FILE_TYPE)
 
-    def copy_script(self, filename, id_=-1):
-        """Copy a script to the distribution server.
-
-        Args:
-            filename: Full path to file to upload.
-            id_: ID of Script object to associate with, or -1 for new
-                Script (default).
-        """
-        self._copy(filename, id_=id_, file_type=SCRIPT_FILE_TYPE)
-
     def _copy(self, filename, id_=-1, file_type=0):
-        """Upload a file to the distribution server.
+        """Upload a file to the distribution server. 10.2 and earlier
 
         Directories/bundle-style packages must be zipped prior to
         copying.
         """
         if os.path.isdir(filename):
-            raise JSSUnsupportedFileType(
+            raise TypeError(
                 "Distribution Server type repos do not permit directory "
                 "uploads. You are probably trying to upload a non-flat "
                 "package. Please zip or create a flat package.")
@@ -685,9 +654,34 @@ class DistributionServer(Repository):
         headers = {"DESTINATION": self.destination, "OBJECT_ID": str(id_),
                    "FILE_TYPE": file_type, "FILE_NAME": basefname}
         response = self.connection["jss"].session.post(
-            url=self.connection["upload_url"], data=resource, headers=headers)
+            url=self.connection["upload_url"],
+            data=resource.read(),
+            headers=headers)
         if self.connection["jss"].verbose:
-            print response
+            print(response)
+
+    def _copy_new(self, filename, id_=-1, file_type=0):
+        """Upload a file to the distribution server.
+
+        Directories/bundle-style packages must be zipped prior to
+        copying.
+        """
+        if os.path.isdir(filename):
+            raise TypeError(
+                "Distribution Server type repos do not permit directory "
+                "uploads. You are probably trying to upload a non-flat "
+                "package. Please zip or create a flat package.")
+        basefname = os.path.basename(filename)
+        resource = open(filename, "rb")
+        headers = {"sessionIdentifier": "com.jamfsoftware.jss.objects.packages.Package:%s" % str(id_),
+                   "fileIdentifier": "FIELD_FILE_NAME_FOR_DIST_POINTS"}
+        response = self.connection["jss"].session.post(
+            url=self.connection["upload_url"],
+            data=resource.read(),
+            headers=headers)
+        print(response)
+        if self.connection["jss"].verbose:
+            print(response)
 
     def delete_with_casper_admin_save(self, pkg):
         """Delete a pkg from the distribution server.
@@ -709,16 +703,16 @@ class DistributionServer(Repository):
         data_dict = {"username": self.connection["jss"].user,
                      "password": self.connection["jss"].password,
                      "deletedPackageID": package_to_delete}
-        self.connection["jss"].session.post(url=self.connection["delete_url"],
-                                            data=data_dict)
+        self.connection["jss"].session.post(
+            url=self.connection["delete_url"], data=data_dict)
         # There's no response if it works.
 
     def delete(self, filename):
-        """Delete a package or script from the distribution server.
+        """Delete a package distribution server.
 
-        This method simply finds the Package or Script object from the
-        database with the API GET call and then deletes it. This will
-        remove the file from the database blob.
+        This method simply finds the Package object from the database
+        with the API GET call and then deletes it. This will remove the
+        file from the database blob.
 
         For setups which have file share distribution points, you will
         need to delete the files on the shares also.
@@ -728,17 +722,15 @@ class DistributionServer(Repository):
         """
         if is_package(filename):
             self.connection["jss"].Package(filename).delete()
-        else:
-            self.connection["jss"].Script(filename).delete()
 
     def exists(self, filename):
-        """Check for the existence of a package or script.
+        """Check for the existence of a package.
 
         Unlike other DistributionPoint types, JDS and CDP types have no
         documented interface for checking whether the server and its
         children have a complete copy of a file. The best we can do is
         check for an object using the API /packages URL--JSS.Package()
-        or /scripts and look for matches on the filename.
+        and look for matches on the filename.
 
         If this is not enough, please use the alternate
         exists_with_casper method.  For example, it's possible to create
@@ -758,12 +750,6 @@ class DistributionServer(Repository):
                 if package.findtext("filename") == filename:
                     result = True
                     break
-        else:
-            scripts = self.connection["jss"].Script().retrieve_all()
-            for script in scripts:
-                if script.findtext("filename") == filename:
-                    result = True
-                    break
 
         return result
 
@@ -774,14 +760,12 @@ class DistributionServer(Repository):
         documented interface for checking whether the server and its
         children have a complete copy of a file. The best we can do is
         check for an object using the API /packages URL--JSS.Package()
-        or /scripts and look for matches on the filename.
+        and look for matches on the filename.
 
         If this is not enough, this method uses the results of the
         casper.jxml page to determine if a package exists. This is an
         undocumented feature and as such should probably not be relied
-        upon. Please note, scripts are not listed per-distributionserver
-        like packages. For scripts, the best you can do is use the
-        regular exists method.
+        upon.
 
         It will test for whether the file exists on ALL configured
         distribution servers. This may register False if the JDS is busy
@@ -838,3 +822,421 @@ class CDP(DistributionServer):
     """
     required_attrs = {"jss"}
     destination = "2"
+
+
+class CloudDistributionServer(Repository):
+    """Abstract class for representing JCDS type repos.
+
+    """
+    def package_index_using_casper(self):
+        """Get a list of packages on the JCDS
+
+        Similar to JDS and CDP, JCDS types have no
+        documented interface for checking whether the server and its
+        children have a complete copy of a file. The best we can do is
+        check for an object using the API /packages URL--JSS.Package()
+        and look for matches on the filename.
+
+        If this is not enough, this method uses the results of the
+        casper.jxml page to determine if a package exists. This is an
+        undocumented feature and as such should probably not be relied
+        upon.
+
+        It will test for whether the file exists on only cloud distribution points.
+        """
+        casper_results = casper.Casper(self.connection["jss"])
+        cloud_distribution_points = casper_results.find("cloudDistributionPoints")
+
+        # Step one: Build a list of sets of all package names.
+        all_packages = []
+        for distribution_point in cloud_distribution_points:
+            if distribution_point.findtext('name') != 'Jamf Cloud':
+                continue  # type 4 might be reserved for JCDS?
+
+            for package in distribution_point.findall("packages/package"):
+                package_obj = casper_results.find("./packages/package[id='%s']" % (package.findtext('id'),))
+
+                all_packages.append({
+                    'id': package.findtext('id'),
+                    'checksum': package.findtext('checksum'),
+                    'size': package.findtext('size'),
+                    'lastModified': package.findtext('lastModified'),
+                    'fileURL': unquote(package.findtext('fileURL')),
+                    'name': package_obj.findtext('name'),
+                    'filename': package_obj.findtext('filename'),
+                })
+
+        return all_packages
+
+
+def _jcds_upload_chunk(
+        filename,
+        base_url,
+        upload_token,
+        chunk_index,
+        chunk_size,
+        total_chunks):
+    """Upload a single chunk of a file to JCDS.
+
+    Args:
+        filename (str): The full path to the file being uploaded.
+        base_url (str): The JCDS base URL which includes the regional hostname and the tenant id.
+        upload_token (str): The upload token, scraped from legacy/packages.html
+        chunk_index (int): The zero-based index of the chunk being uploaded.
+        total_chunks (int): The total count of chunks to upload
+
+    Returns:
+        dict: JSON Response from JCDS
+    """
+    print("Working on Chunk [{}/{}]".format(chunk_index + 1, total_chunks))
+    resource = open(filename, "rb")
+    resource.seek(chunk_index * chunk_size)
+    chunk_data = resource.read(chunk_size)
+    basefname = os.path.basename(filename)
+    chunk_url = "{}/{}/part?chunk={}&chunks={}".format(
+        base_url, basefname, chunk_index, total_chunks
+    )
+
+    chunk_reader = io.BytesIO(chunk_data)
+    headers = {"X-Auth-Token": upload_token}
+    response = requests.post(
+        url=chunk_url,
+        headers=headers,
+        files={'file': chunk_reader},
+    )
+
+    return response.json()
+
+
+# Semaphore controlling max workers for chunked uploads
+jcds_semaphore = threading.BoundedSemaphore(value=3)
+
+
+class JCDSChunkUploadThread(threading.Thread):
+    def __init__(self, *args, **kwargs):
+        self.filename = kwargs['filename']
+        self.base_url = kwargs['base_url']
+        self.upload_token = kwargs['upload_token']
+        self.chunk_index = kwargs['chunk_index']
+        self.chunk_size = kwargs['chunk_size']
+        self.total_chunks = kwargs['total_chunks']
+
+        super_kwargs = dict(kwargs)
+        del super_kwargs['filename']
+        del super_kwargs['base_url']
+        del super_kwargs['upload_token']
+        del super_kwargs['chunk_index']
+        del super_kwargs['chunk_size']
+        del super_kwargs['total_chunks']
+
+        super(JCDSChunkUploadThread, self).__init__(*args, **super_kwargs)
+
+    def run(self):
+        jcds_semaphore.acquire()
+        try:
+            print("Working on Chunk [{}/{}]".format(self.chunk_index + 1, self.total_chunks))
+
+            resource = open(self.filename, "rb")
+            resource.seek(self.chunk_index * self.chunk_size)
+            chunk_data = resource.read(self.chunk_size)
+            basefname = os.path.basename(self.filename)
+            chunk_url = "{}/{}/part?chunk={}&chunks={}".format(
+                self.base_url, basefname, self.chunk_index, self.total_chunks
+            )
+
+            chunk_reader = io.BytesIO(chunk_data)
+            headers = {"X-Auth-Token": self.upload_token}
+            response = requests.post(
+                url=chunk_url,
+                headers=headers,
+                files={'file': chunk_reader},
+            )
+
+            return response.json()
+        except:
+            pass
+        finally:
+            jcds_semaphore.release()
+
+
+class AWS(CloudDistributionServer, abstract.AbstractRepository):
+    """Class for representing an AWS Cloud Distribution Point and its controlling JSS.
+
+    """
+    required_attrs = {"jss", "bucket"}
+
+    def __init__(self, **connection_args):
+        """Set up a connection to an AWS S3 bucket.
+
+        It is more secure to use the following environment variables provided by boto:
+
+            AWS_ACCESS_KEY_ID - The access key id to the jamf bucket
+            AWS_SECRET_ACCESS_KEY - The secret access key to the jamf bucket
+
+        You may also use the file ~/.boto as described in the boto documentation.
+
+        Args:
+            connection_args: Dict, with required keys:
+                jss: A JSS Object.
+                bucket: Name of the JAMF bucket.
+                aws_access_key_id (optional): The access key id
+                secret_access_key (optional): The secret access key, use environment instead.
+                host (optional): A bucket host. Seems to be needed if your bucket is not in the default location
+                    eg. southeast asia ap 2
+                chunk_size (optional): The chunk size for large objects >50mb
+
+        Throws:
+            S3ResponseError if the bucket does not exist
+        """
+        super(AWS, self).__init__(**connection_args)
+        self.s3 = S3Connection(
+            aws_access_key_id=connection_args.get('aws_access_key_id', None),
+            aws_secret_access_key=connection_args.get('aws_secret_access_key', None),
+            host=connection_args.get('host', boto.s3.connection.NoHostProvided),
+        )
+        try:
+            self.bucket = self.s3.get_bucket(connection_args['bucket'])
+        except S3ResponseError as e:
+            raise JSSError("got error getting bucket, may not exist: {}".format(connection_args['bucket']))
+
+        self.connection["url"] = self.bucket
+        self.chunk_size = connection_args.get('chunk_size', 52428800)  # 50 mb default
+
+    def _build_url(self):
+        """Build a connection URL."""
+        pass
+
+    def copy_pkg(self, filename, id_=-1):
+        """Copy a package to the repo's Package subdirectory.
+
+        Args:
+            filename: Path for file to copy.
+            id_: Unused
+        """
+        self._copy(filename, id_=id_)
+
+    def _copy(self, filename, id_=-1):   # type: (str, int) -> None
+        """Copy a file or folder to the bucket.
+
+        Does not yet support chunking.
+
+        Args:
+            filename: Path to copy.
+            destination: Remote path to copy file to.
+        """
+        bucket_key = os.path.basename(filename)
+        exists = self.bucket.get_key(bucket_key)
+        if exists:
+            print("Already exists")
+        else:
+            k = Key(self.bucket)
+            k.key = bucket_key
+            k.set_metadata('jamf-package-id', id_)
+            k.set_contents_from_filename(filename)
+
+    def delete(self, filename):  # type: (str) -> None
+        bucket_key = os.path.basename(filename)
+        self.bucket.delete_key(bucket_key)
+
+    def exists(self, filename):  # type: (str) -> bool
+        """Check whether a package already exists by checking for a bucket item with the same filename.
+
+        Args:
+            filename: full path to filename. Only the name itself will be checked.
+
+        Returns:
+            True if the package exists, else false
+        """
+        k = self.bucket.get_key(os.path.basename(filename))
+        return k is not None
+
+
+class JCDS(CloudDistributionServer):
+    """Class for representing a JCDS and its controlling jamfcloud JSS.
+
+    The JSS allows direct upload to the JCDS by exposing the access token from the package upload page.
+
+    This class should be considered experimental!
+    """
+    required_attrs = {"jss"}
+    destination = "3"
+    workers = 3
+    chunk_size = 1048768
+
+    def __init__(self, **connection_args):
+        """Set up a connection to a distribution server.
+
+        Args:
+            connection_args (dict):
+                jss (JSS): The associated JAMF Pro Server instance
+        """
+        super(JCDS, self).__init__(**connection_args)
+        self.connection["url"] = "JCDS"
+
+    def _scrape_tokens(self):
+        """Scrape JCDS upload URL and upload access token from the jamfcloud instance."""
+        jss = self.connection['jss']
+        response = jss.scrape('legacy/packages.html?id=-1&o=c')
+        matches = re.search(r'data-base-url="([^"]*)"', response.content)
+        if matches is None:
+            raise JSSError('Did not find the JCDS base URL on the packages page. Is this actually Jamfcloud?')
+
+        jcds_base_url = matches.group(1)
+
+        matches = re.search(r'data-upload-token="([^"]*)"', response.content)
+        if matches is None:
+            raise JSSError('Did not find the JCDS upload token on the packages page. Is this actually Jamfcloud?')
+
+        jcds_upload_token = matches.group(1)
+
+        h = HTMLParser()
+        jcds_base_url = h.unescape(jcds_base_url)
+        self.connection['jcds_base_url'] = jcds_base_url
+        self.connection['jcds_upload_token'] = jcds_upload_token
+        self.connection["url"] = jcds_base_url  # This is to make JSSImporter happy because it accesses .connection
+
+    def _build_url(self):
+        """Build a connection URL."""
+        pass
+
+    def copy_pkg(self, filename, id_=-1):
+        """Copy a package to the JAMF Cloud distribution server.
+
+        Bundle-style packages must be zipped prior to copying.
+
+        Args:
+            filename: Full path to file to upload.
+            id_: ID of Package object to associate with, or -1 for new
+                packages (default).
+        """
+        self._copy(filename, id_=id_)
+
+    def _build_chunk_url(self, filename, chunk, chunk_total):
+        """Build the path to the chunk being uploaded to the JCDS."""
+        return "{}/{}/part?chunk={}&chunks={}".format(
+            self.connection["jcds_base_url"], filename, chunk, chunk_total
+        )
+
+    def _copy_multiprocess(self, filename, upload_token, id_=-1):
+        """Upload a file to the distribution server using multiple processes to upload several chunks in parallel.
+
+        Directories/bundle-style packages must be zipped prior to copying.
+        """
+        fsize = os.stat(filename).st_size
+        total_chunks = int(math.ceil(fsize / JCDS.chunk_size))
+        p = multiprocessing.Pool(3)
+
+        def _chunk_args(chunk_index):
+            return [filename, self.connection["jcds_base_url"], upload_token, chunk_index, JCDS.chunk_size, total_chunks]
+
+        for chunk in xrange(0, total_chunks):
+            res = p.apply_async(_jcds_upload_chunk, _chunk_args(chunk))
+            data = res.get(timeout=10)
+            print("id: {0}, version: {1}, size: {2}, filename: {3}, lastModified: {4}, created: {5}".format(
+                data['id'], data['version'], data['size'], data['filename'], data['lastModified'], data['created']))
+
+    def _copy_threaded(self, filename, upload_token, id_=-1):
+        """Upload a file to the distribution server using multiple threads to upload several chunks in parallel."""
+        fsize = os.stat(filename).st_size
+        total_chunks = int(math.ceil(fsize / JCDS.chunk_size))
+
+        for chunk in xrange(0, total_chunks):
+            t = JCDSChunkUploadThread(
+                filename=filename,
+                base_url=self.connection["jcds_base_url"],
+                upload_token=upload_token,
+                chunk_index=chunk,
+                chunk_size=JCDS.chunk_size,
+                total_chunks=total_chunks,
+            )
+            t.start()
+
+    def _copy_sequential(self, filename, upload_token, id_=-1):
+        """Upload a file to the distribution server using the same process as python-jss.
+
+        Directories/bundle-style packages must be zipped prior to copying.
+        """
+        fsize = os.stat(filename).st_size
+        total_chunks = int(math.ceil(fsize / JCDS.chunk_size))
+
+        basefname = os.path.basename(filename)
+        resource = open(filename, "rb")
+
+        headers = {
+            "X-Auth-Token": self.connection['jcds_upload_token'],
+            # "Content-Type": "application/octet-steam",
+        }
+
+        for chunk in xrange(0, total_chunks):
+            resource.seek(chunk * JCDS.chunk_size)
+            chunk_data = resource.read(JCDS.chunk_size)
+            chunk_reader = io.BytesIO(chunk_data)
+            chunk_url = self._build_chunk_url(basefname, chunk, total_chunks)
+            response = self.connection["jss"].session.post(
+                url=chunk_url,
+                headers=headers,
+                files={'file': chunk_reader},
+            )
+
+            if self.connection["jss"].verbose:
+                print(response.json())
+
+        resource.close()
+
+    def _copy(self, filename, id_=-1, file_type=0):
+        """Upload a file to the distribution server. 10.2 and earlier
+
+        Directories/bundle-style packages must be zipped prior to
+        copying.
+
+        JCDS returns a JSON structure like this::
+
+            {
+                u'status': u'PENDING',
+                u'created': u'2018-07-10T03:21:17.000Z',
+                u'lastModified': u'2018-07-11T03:55:32.000Z',
+                u'filename': u'SkypeForBusinessInstaller-16.18.0.51.pkg',
+                u'version': 6,
+                u'md5': u'',
+                u'sha512': u'',
+                u'id': u'3a7e6a7479fc4000bf53a9693d906b11',
+                u'size': 35658112
+            }
+
+        """
+        if os.path.isdir(filename):
+            raise TypeError(
+                "JCDS Server type repos do not permit directory "
+                "uploads. You are probably trying to upload a non-flat "
+                "package. Please zip or create a flat package.")
+
+        if 'jcds_upload_token' not in self.connection:
+            self._scrape_tokens()
+
+        self._copy_threaded(filename, self.connection['jcds_upload_token'])
+        # if False:
+        #self._copy_sequential(filename, self.connection['jcds_upload_token'])
+        # else:
+        #     self._copy_threaded(filename, self.connection['jcds_upload_token'])
+
+    def exists(self, filename):
+        """Check whether a package file already exists."""
+        packages = self.package_index_using_casper()
+        for p in packages:
+            url, token = p['fileURL'].split('?', 2)
+            urlparts = url.split('/')
+
+            if urlparts[-1] == filename:
+                return True
+
+        return False
+
+    def __repr__(self):
+        """Return string representation of connection arguments."""
+        output = ["JAMF Cloud Distribution Server: %s" % self.connection["jss"].base_url]
+        output.append("Type: %s" % type(self))
+        output.append("Connection Information:")
+        for key, val in self.connection.items():
+            output.append("\t%s: %s" % (key, val))
+
+        return "\n".join(output) + "\n"

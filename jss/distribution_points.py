@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2014 Shea G Craig <shea.craig@da.org>
+# Copyright (C) 2014-2017 Shea G Craig
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,15 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """distribution_points.py
 
-Utility class for synchronizing packages and scripts to Jamf file
-repositories, CDPs, and JDSs.
+Utility class for synchronizing packages to Jamf file repositories,
+CDPs, and JDSs.
 """
 
 
 import os
 
-from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
-                                 JDS, CDP, LocalRepository)
+from .distribution_point import (
+    AFPDistributionPoint, SMBDistributionPoint, JDS, CDP, LocalRepository, AWS, JCDS)
 from .exceptions import JSSError
 from .tools import (is_osx, is_linux, is_package)
 
@@ -77,7 +77,7 @@ class DistributionPoints(object):
         # If no distribution points are configured, there's nothing to
         # do here.
         if self.jss.repo_prefs:
-            self.dp_info = self.jss.DistributionPoint().retrieve_all()
+            self.dp_info = self.jss.DistributionPoint()
 
             for repo in self.jss.repo_prefs:
                 # Handle AFP/SMB shares, as they can be auto-configured.
@@ -89,7 +89,7 @@ class DistributionPoints(object):
                     dpt = self._get_auto_configured_dp(repo)
                 # Handle Explictly declared DP's.
                 elif repo.get("type") in ["AFP", "SMB"]:
-                    dpt = self._get_explictly_configured_dp(repo)
+                    dpt = self._get_explicitly_configured_dp(repo)
                 elif repo.get("type") == "JDS":
                     dpt = JDS(jss=self.jss)
                 elif repo.get("type") == "CDP":
@@ -99,16 +99,28 @@ class DistributionPoints(object):
                     share_name = repo["share_name"]
                     dpt = LocalRepository(mount_point=mount_point,
                                           share_name=share_name, jss=self.jss)
+                elif repo.get("type") == "JCDS":
+                    dpt = JCDS(jss=self.jss)
+                elif repo.get("type") == "AWS":
+                    dpt = AWS(jss=self.jss, **repo)
                 else:
                     raise ValueError("Distribution Point Type not recognized.")
 
                 # Add the DP to the list.
                 self._children.append(dpt)
 
+    def __iter__(self):
+        for dp in self._children:
+            yield dp
+
+    def __len__(self):
+        return len(self._children)
+
     def _get_auto_configured_dp(self, repo):
         "Return a file share DP from auto-configured data."""
+        dpt = None
         for dp_object in self.dp_info:
-            if repo["name"] == dp_object.findtext("name"):
+            if repo["name"] == dp_object.name:
                 url = dp_object.findtext("ip_address")
                 connection_type = dp_object.findtext("connection_type")
                 share_name = dp_object.findtext("share_name")
@@ -139,9 +151,14 @@ class DistributionPoints(object):
                         username=username, password=password,
                         jss=self.jss)
 
-                return dpt
+        if not dpt:
+            raise ValueError(
+                "Error auto-configuring distribution point '{}'!".format(
+                    repo["name"]))
 
-    def _get_explictly_configured_dp(self, repo):
+        return dpt
+
+    def _get_explicitly_configured_dp(self, repo):
         "Return a file share DP from auto-configured data."""
         url = repo["URL"]
 
@@ -196,32 +213,29 @@ class DistributionPoints(object):
         self._children.pop(index)
 
     def copy(self, filename, id_=-1, pre_callback=None, post_callback=None):
-        """Copy a package or script to all repos.
+        """Copy a package to all repos.
 
         Determines appropriate location (for file shares) and type based
         on file extension.
 
         Args:
             filename: String path to the local file to copy.
-            id_: Package or Script object ID to target. For use with JDS
-                and CDP DP's only. If uploading a package that does not
-                have a corresponding object, use id_ of -1, which is the
+            id_: Package object ID to target. For use with JDS and CDP
+                DP's only. If uploading a package that does not have a
+                corresponding object, use id_ of -1, which is the
                 default.
             pre_callback: Func to call before each distribution point
                 starts copying. Should accept a Repository connection
                 dictionary as a parameter. Will be called like:
-                    `pre_callback(repo.connection)`
+                `pre_callback(repo.connection)`
             post_callback: Func to call after each distribution point
                 finishes copying. Should accept a Repository connection
                 dictionary as a parameter. Will be called like:
-                    `pre_callback(repo.connection)`
+                `pre_callback(repo.connection)`
         """
         for repo in self._children:
             if is_package(filename):
                 copy_method = repo.copy_pkg
-            else:
-                # All other file types can go to scripts.
-                copy_method = repo.copy_script
             if pre_callback:
                 pre_callback(repo.connection)
             copy_method(filename, id_)
@@ -239,21 +253,6 @@ class DistributionPoints(object):
         """
         for repo in self._children:
             repo.copy_pkg(filename, id_)
-
-    def copy_script(self, filename, id_=-1):
-        """Copy a script to all repositories.
-
-        Takes into account whether a JSS has been migrated. See the
-        individual DistributionPoint types for more information.
-
-        Args:
-            filename: String path to the local file to copy.
-            id_: Integer ID you wish to associate script with for a JDS
-                or CDP only. Default is -1, which is used for creating
-                a new script object in the database.
-        """
-        for repo in self._children:
-            repo.copy_script(filename, id_)
 
     def delete(self, filename):
         """Delete a file from all repositories which support it.

@@ -2,8 +2,176 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased][unreleased]
+## [2.0.1] - 2018-09-22 - The master and the student
+
+### Added
+- Completely new test suites from the ground up using [pytest](https://docs.pytest.org/en/latest/), using docker containers
+  to test functionality such as Distribution Points and temporarily standing up / tearing down JAMF Pro servers for groups of
+  test cases.
+- Added the `JCDS` Distribution Point type. This distribution point type takes no configuration parameters except the
+  `type` key. The `JCDS` type retrieves information about your jamfcloud instance and uploads packages directly instead
+  of the `/dbfileupload` endpoint which should improve speed and reliability.
+- Added a new transport adapter `NSURLSessionAdapter` to perform native API HTTP transfers on macOS. This was to work around
+  the TLS1.2 issue and is largely superseded by the default Requests Adapter.
+- Add support for the new JAMF Pro API (working, but incomplete).
+- Add support for Patch feature via `PatchAvailableTitle`, `PatchExternalSource`, `PatchInternalSource`, `PatchReport`,
+  `PatchSoftwareTitle` and `PatchPolicy`.
+- Allow `JCDS` distribution point type to get files via the legacy `Casper.jxml` API.
+- `JCDS` distribution point type has a multi-threaded implementation as well as a single threaded one.
+- Begun the `AWS` repo type, which will establish a direct connection to Amazon S3 via the boto library.
+- Python 3.x and 2.x compatibility.
+- Developer notes on how to set up the pytest environment.
+- Added `add_script` and `remove_package` methods to the `Policy` object.
+  
+### Changed
+- The **JSS** object now uses the `Content-Type` of the response from the API to determine how it should decode the response.
+  This was necessary to support the new UAPI/JAMF Pro API. 
+- Add more empty data keys to `OSXConfigurationProfile` to make creating new instances easier.
+- Add more empty data keys to `ComputerExtensionAttribute`.
+- Add more empty data keys to `Computer`.
+- Add more empty data keys to `NetworkSegment`.
+- The main package is now built using [munkipkg](https://github.com/munki/munki-pkg) instead of The Luggage.
+
+### Removed
+- Nose based test suites.
+- `RequestsAdapter`, because we are now using requests directly.
+- `TLSAdapter`, because we do not have the TLS1.2 problem.
+
+
+### Fixed
+- `LDAPServer` incorrectly tried to use **PUT** to create new objects because the implementation of the `id` property
+  was incorrect.
+
 
 ## [Unreleased][unreleased]
+## [2.0.0] - 2017-03-19 - Start Choppin'
+
+### Added
+- Added `CurlAdapter`, `ResponseAdapter`, and `RequestsAdapter` to wrap curl in
+  requests' API. This is primarily to deal with the fact that Apple's shipped
+  OpenSSL is extremely out of date (requests uses pyopenssl, which uses the
+  out-of-date OpenSSL). Since current recommendations from Jamf are to run the
+  Casper server using only TLS1.2, this puts us in a bind. So, by default,
+  python-jss will now use curl for networking. Developers seeking the
+  advantages of using requests can replace the networking adapter they want to
+  use (see `jss.jamf_software_server.JSS`).
+- @mosen really stepped up and provided Sphinx documentation! This is a great
+  motivator for getting some improved documentation going for this project.
+- `JSSObject` and all of its subclasses can now be used as a context manager
+  (the python `with` statement). All this does is automatically tries to save
+  the object automatically on the way out of the with context.
+- Added `Container.__contains__` magic method, which allows you to do things
+  like `if some_pkg in some_policy:`. Please note, this will find *any*
+  reference to that object contained within. This may not be what you want, for
+  example, if a computer is in a group's exclusions list but you want to know
+  if it's in the inclusion list. Thankfully, there's a method for that
+  (`JSSGroupObject.has_member()`).
+- Added `JSSObject` magic methods for equality and hash. This means you can
+  test whether two `Computer` objects are the same, for example. You can also
+  now use the objects as keys in a dictionary, or other mapping.
+- Implemented new endpoints and their corresponding objects:
+  `AllowedFileExtension`, `ComputerApplicationUsage`, `ComputerApplication`,
+  `ComputerHardwareSoftwareReport`, `ComputerManagement`, `HealthcareListener`,
+  `HealthcareListerRule`, `JSONWebTokenConfigurations`,
+  `InfrastructureManager`, `MobileDeviceHistory`, `Webhook`.
+- Added compression argument to `JSS.pickle_all()` (defaults to `True`) to
+  compress pickle output. A lot.
+- Tag access through the `.` operator for `JSSObject`s. For example, you can
+  now do `computer.configuration_profiles.size.text` to reach all the way down
+  the tree to that value.
+- All `JSSObject`s have a `tree()` method which will return a nicely indented
+  representation of the tag structure of the object. Use it like this: `print
+  a_computer_group.tree()`.
+- Automatic `match` search detection for object types that support it. Now you
+  can do `j.Computer("MacBook*")` instead of `j.Computer("match=MacBook*")`.
+  Match searches will _always_ return a QuerySet.
+- `JSS.version()` method now returns the server's version (using the jssuser
+  endpoint.
+- Made the `DistributionPoints` collection class iterable, so if you do need to
+  operate on individual DPs within, you don't need to fool around with the
+  private collection. (See JSSImporter for an example).
+- Added `Script.add_script()` to handle XML escaping and adding a script
+  payload to a `Script` object.
+
+### Changed
+- Moved the `suppress_warnings` preference out of `JSS` and into the requests
+  adapter. The `JSS` initialization will accept that keyword argument to ease
+  the (sudden) deprecation, but it just won't do anything. Use the
+  `RequestsAdapter.suppress_warnings()` method if you need it.
+- Instantiating a `JSS` object will now default to using the `CurlAdapter` for
+  networking. Use `JSS.mount_networking_adapter()` to replace it with the
+  `RequestsAdapter` and gain things like sessions.
+- The requests library is now not a required dependency. You only need it if
+  you want to import/use the `RequestsAdapter`.
+- Through some metaprogramming shenanigans, jss.JSS is now about 500 lines
+  shorter, from dynamically creating all of the object search methods. This
+  makes maintenance of this code significantly easier.
+- All object search methods _accept_ keyword arguments (instead of a `subset`
+  positional argument). Whether the JSS is considered to work with subsetting
+  is recorded as a new attribute on the class (`jss.Computer.allowed_kwargs =
+  True` for example). This, again, makes it easier to maintain as JAMF adds or
+  removes query features. The search methods docstrings all reflect the level
+  of (considered) support.
+- `JSSObjectList` is now called a `QuerySet`, inspired by Django. The old
+  behavior was that the contents were just id/name for each contained object,
+  until you used the "retrieve" method. Now all objects contained within are
+  full JSSObjects.
+- python-jss was using `repr` and `str` too casually. Throughout, class' `repr`
+  has been rewritten to provide a very basic marker of the type, and `str` has
+  been written to provide the pretty-printing of XML functionality that it had
+  previously. In practice, this means that in the interpreter, developers will
+  have to `print x` instead of just entering `x` to see what they have.
+  However, it also means that simply doing `x` gives easier to read information
+  for QuerySets of items without dumping their entire contents to screen (e.g.
+  `j.Computer()` results in thousands of lines vomited into your terminal).
+- Renamed some internal classes (`JSSContainerObject` -> `Container`,
+  `JSSGroupObject` -> `Group`)
+- `Container` and all of its subclasses (most types of data from the JSS) now
+  use lazy-loading to defer sending a GET method until you actually need the
+  data.
+- All `Element` objects added to a `JSSObject` will get converted to the
+  `PrettyElement` type to enable dot access and pretty printing.
+- Renamed all of the request-failure exceptions by dropping the `JSS`:
+	- `JSSGetError` -> `GetError`
+	- `JSSPutError` -> `PutError`
+	- `JSSPostError` -> `PostError`
+	- `JSStDeleteError` -> `DeleteError`
+
+### Deprecated
+- `JSSObjectList` has been renamed to QuerySet and now inherits from it. While
+  it is unlikely that any client code directly references this class, it is
+  worth checking for in your code. It will be remmoved entirely in a future
+  release. Please update code to use the QuerySet API and signature.
+
+### Removed
+- All references to the `jss_migrated` preference has been removed. This is no
+  longer an issue with current and future JSS versions.
+- Scripts stopped being stored on distribution points with the conclusion
+  of version 8, so all distribution point code that did script copying,
+  deletion, existence testing, etc, has been removed.
+- `JSSObjectList.retrieve()` has been removed as it's no longer needed.
+- `JSSObjectList.pickle()` and `from_pickle()`. This code is just cruft; it's
+  just about the same amount of work to pickle it on your own.
+- `JSSObjectFactory` was removed as it is no longer needed. Client code should
+  use `getattr` if it needs to dynamically choose which class to use.
+- `JSSDeviceObject` was removed as it was no longer needed. It only added a
+  `udid` and `serial_number` method to two subclasses, `Computer` and
+  `MobileDevice`. You can access these through `.` notation now:
+  `computer.general.serial_number.text`
+- As a result of `.` access to subelements, all properties doing the same thing
+  have been removed. The vast majority of these were in `Policy` (e.g.
+  `a_policy.computers` is now accessed through `a_policy.scope.computers`).
+- Removed a bunch of spurious internal-use-only exceptions and used the builtin
+  ones that make more sense.
+
+### Fixed
+- Made `JSS.user` and `JSS.password` proper properties, that will set the
+  attached network adapter appropriately.
+- Unicode and bytes usage throughout has been audited and fixed. For the most
+  part, developers can pass either to classes or methods and when they need to
+  get converted, python-jss will do the right thing.
+- Removed pretty-printing injection from `ElementTree`.
 
 ## [1.5.0] - 2016-09-12 - Brick House
 
