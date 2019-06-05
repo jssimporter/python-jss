@@ -92,6 +92,16 @@ class JSS(object):
         user (str): API Username.
         password (str): API Password.
 
+            repo_prefs: A list of dicts with repository names and
+                passwords.
+            repos: (Optional) List of file repositories dicts to
+                    connect.
+                repo dicts:
+                    Each file-share distribution point requires:
+                        name: String name of the distribution point.
+                            Must match the value on the JSS.
+                        password: String password for the read/write
+                            user.
         repo_prefs (list): A list of dicts with repository names and passwords.
 
             repos: (Optional) List of file repositories dicts to

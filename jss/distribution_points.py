@@ -38,9 +38,9 @@ class DistributionPoints(object):
     This class provides an abstracted interface for uploading packages
     and dmg's to file repositories.
 
-    .. warning:: Not all DistributionPoint types support all of the
-        available methods, or in the same way. For example, a JDS has
-        caveats to the reliability of the exists() method.
+    PLEASE NOTE: Not all DistributionPoint types support all of the
+    available methods, or in the same way. For example, a JDS has
+    caveats to the reliability of the exists() method.
 
     Support for Local repositories, AFP/SMB shares and JDS and CDP
     servers are included, and are selected based on configuration files.

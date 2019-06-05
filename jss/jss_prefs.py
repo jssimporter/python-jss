@@ -46,7 +46,7 @@ class JSSPrefs(object):
 
     This JSSPrefs object can be used as an argument for a new JSS.
     By default and with no arguments, it uses the preference domain
-    ``"com.github.sheagcraig.python-jss.plist"``. However, alternate
+    "com.github.sheagcraig.python-jss.plist". However, alternate
     configurations can be supplied to the __init__ method to use
     something else.
 
