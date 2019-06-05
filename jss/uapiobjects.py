@@ -37,6 +37,10 @@ class AlertNotification(UAPIContainer):
     can_post = False
 
 
+class APIIntegration(UAPIContainer):
+    _endpoint_path = "api-integrations"
+
+
 class Building(UAPIContainer):
     _endpoint_path = "settings/obj/building"
 
@@ -106,6 +110,24 @@ class InventoryPreload(UAPIContainer):
     _endpoint_path = "inventory-preload"
 
 
+class JAMFProServerURL(UAPIObject):
+    _endpoint_path = "v1/jamf-pro-server-url"
+
+
+class LDAPGroup(UAPIContainer):
+    _endpoint_path = "ldap/groups"
+    can_delete = False
+    can_post = False
+    can_put = False
+
+
+class LDAPServer(UAPIContainer):
+    _endpoint_path = "ldap/servers"
+    can_delete = False
+    can_post = False
+    can_put = False
+
+
 class Lobby(UAPIObject):
     _endpoint_path = ""
     can_put = False
@@ -120,7 +142,35 @@ class MobileDevice(UAPIObject):
     can_delete = False
 
 
+class MobileDeviceExtensionAttribute(UAPIContainer):
+    _endpoint_path = "devices/extensionAttributes"
+    can_put = False
+    can_post = False
+    can_delete = False
+
+
+class MobileDevicePrestage(UAPIContainer):
+    _endpoint_path = "v1/mobile-device-prestages"
+    can_put = False
+    can_post = False
+    can_delete = False
+
+
 class PatchPolicy(UAPIContainer):
+    # _endpoint_path = "patch/obj/policy"
+    _endpoint_path = "patch/patch-policies"
+    can_put = False
+    can_post = False
+    can_delete = False
+
+
+# class PatchPolicyLog(UAPIContainer):
+#     _endpoint_path = "patch/patch-policies/id/logs"
+#     can_put = False
+#     can_post = False
+#     can_delete = False
+
+class Patch(UAPIContainer):
     _endpoint_path = "patch/obj/policy"
 
 
@@ -185,6 +235,11 @@ class User(UAPIContainer):
     can_delete = False
     can_post = False
     can_put = False
+
+
+class UserAccountSetting(UAPIContainer):
+    _endpoint_path = "user/obj/preference"
+    can_post = False
 
 
 class VPPAdminAccount(UAPIContainer):
