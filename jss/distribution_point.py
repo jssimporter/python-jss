@@ -44,12 +44,12 @@ except ImportError:
 
 # 2 and 3 compatible
 try:
-    from urllib.parse import urlparse, urlencode, unquote
+    from urllib.parse import urlparse, urlencode, unquote, quote
     from urllib.request import urlopen, Request
     from urllib.error import HTTPError
 except ImportError:
     from urlparse import urlparse
-    from urllib import urlencode, unquote
+    from urllib import urlencode, unquote, quote
     from urllib2 import urlopen, Request, HTTPError
 
 from . import casper
@@ -353,7 +353,7 @@ class MountedRepository(FileRepository):
         results = set()
         join = os.path.join
         url = self.connection["url"]
-        share_name = urllib.quote(self.connection["share_name"],
+        share_name = quote(self.connection["share_name"],
                                   safe="~()*!.'")
         port = self.connection["port"]
 
@@ -428,7 +428,7 @@ class MountedRepository(FileRepository):
     @property
     def _encoded_password(self):
         """Returns the safely url-quoted password for this DP."""
-        return urllib.quote(self.connection["password"], safe="~()*!.'")
+        return quote(self.connection["password"], safe="~()*!.'")
 
 
 class AFPDistributionPoint(MountedRepository):
