@@ -228,6 +228,7 @@ class SystemInitialize(UAPIObject):
     can_get = False
     can_put = False
     can_delete = False
+    can_post = True
 
 
 class User(UAPIContainer):
