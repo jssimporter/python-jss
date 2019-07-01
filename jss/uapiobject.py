@@ -135,17 +135,20 @@ class UAPIObject(UserDict):
         a new object with POST, otherwise, it will try to update the
         existing object with PUT.
 
+        New: some UAPI endpoints require a POST even if they are a non CRUD object type. The presence of can_post = True
+        will determine which method we use, with PUT always being the default.
+
         Data validation is up to the client; The JSS in most cases will
         at least give you some hints as to what is invalid.
         """
-        try:
+        if self.can_post:
+            self.jss.post(self.url, data=self)
+        else:
             self.jss.put(self.url, data=self)
-        except PutError as put_error:
-            # Something when wrong.
-            raise PutError(put_error)
 
-        # Replace current instance's data with new, JSS-validated data.
-        self.retrieve()
+        if self.can_get:
+            # Replace current instance's data with new, JSS-validated data.
+            self.retrieve()
 
     def to_file(self, path):
         """Write object JSON to path.
