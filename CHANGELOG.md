@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+### Fixed
+- `urllib3` dependency version bumped to mitigate vulnerability.
+- Added `$` to safe characters in URLs to allow hidden shares (#169).
+
+
 ## [2.0.1] - 2018-09-22 - The master and the student
 
 ### Added
@@ -42,10 +47,8 @@ All notable changes to this project will be documented in this file. This projec
 ### Fixed
 - `LDAPServer` incorrectly tried to use **PUT** to create new objects because the implementation of the `id` property
   was incorrect.
-- `urllib3` dependency version bumped to mitigate vulnerability.
 
 
-## [Unreleased][unreleased]
 ## [2.0.0] - 2017-03-19 - Start Choppin'
 
 ### Added

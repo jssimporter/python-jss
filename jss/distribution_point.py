@@ -354,7 +354,7 @@ class MountedRepository(FileRepository):
         join = os.path.join
         url = self.connection["url"]
         share_name = quote(self.connection["share_name"],
-                                  safe="~()*!.'")
+                                  safe="~()*!.'$")
         port = self.connection["port"]
 
         # URL from python-jss form:
@@ -428,7 +428,7 @@ class MountedRepository(FileRepository):
     @property
     def _encoded_password(self):
         """Returns the safely url-quoted password for this DP."""
-        return quote(self.connection["password"], safe="~()*!.'")
+        return quote(self.connection["password"], safe="~()*!.'$")
 
 
 class AFPDistributionPoint(MountedRepository):
