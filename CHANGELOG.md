@@ -23,10 +23,10 @@ All notable changes to this project will be documented in this file. This projec
 - Python 3.x and 2.x compatibility.
 - Developer notes on how to set up the pytest environment.
 - Added `add_script` and `remove_package` methods to the `Policy` object.
-  
+
 ### Changed
 - The **JSS** object now uses the `Content-Type` of the response from the API to determine how it should decode the response.
-  This was necessary to support the new UAPI/JAMF Pro API. 
+  This was necessary to support the new UAPI/JAMF Pro API.
 - Add more empty data keys to `OSXConfigurationProfile` to make creating new instances easier.
 - Add more empty data keys to `ComputerExtensionAttribute`.
 - Add more empty data keys to `Computer`.
@@ -42,6 +42,7 @@ All notable changes to this project will be documented in this file. This projec
 ### Fixed
 - `LDAPServer` incorrectly tried to use **PUT** to create new objects because the implementation of the `id` property
   was incorrect.
+- `urllib3` dependency version bumped to mitigate vulnerability.
 
 
 ## [Unreleased][unreleased]
