@@ -136,7 +136,7 @@ All notable changes to this project will be documented in this file. This projec
 	- `JSSGetError` -> `GetError`
 	- `JSSPutError` -> `PutError`
 	- `JSSPostError` -> `PostError`
-	- `JSStDeleteError` -> `DeleteError`
+	- `JSSDeleteError` -> `DeleteError`
 
 ### Deprecated
 - `JSSObjectList` has been renamed to QuerySet and now inherits from it. While
