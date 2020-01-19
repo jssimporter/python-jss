@@ -18,6 +18,7 @@
 Base Classes representing JSS database objects and their API endpoints
 """
 from __future__ import print_function
+from __future__ import absolute_import
 from six import string_types
 
 import collections

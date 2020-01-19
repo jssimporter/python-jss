@@ -33,6 +33,7 @@ JSS object beginning with python-jss 2.0.0.
 """
 
 
+from __future__ import absolute_import
 import copy
 import subprocess
 import logging

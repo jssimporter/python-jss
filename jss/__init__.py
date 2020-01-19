@@ -53,6 +53,7 @@ Private package contents include:
 """
 
 
+from __future__ import absolute_import
 from .casper import Casper
 from .curl_adapter import CurlAdapter
 from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
@@ -62,7 +63,7 @@ from .exceptions import *
 from .jamf_software_server import JSS
 from .jssobject import JSSObject
 from .jssobjects import *
-import uapiobjects as uapi
+from . import uapiobjects as uapi
 from .jss_prefs import JSSPrefs
 from .misc_endpoints import *
 from .misc_uapi_endpoints import *

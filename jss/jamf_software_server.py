@@ -20,6 +20,7 @@ as JSSObjects.
 """
 from __future__ import print_function
 
+from __future__ import absolute_import
 try:
     import cPickle  # Python 2.X
 except ImportError:

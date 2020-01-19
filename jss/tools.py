@@ -19,6 +19,7 @@ Helper functions for python-jss.
 """
 
 
+from __future__ import absolute_import
 import copy
 from functools import wraps
 import os

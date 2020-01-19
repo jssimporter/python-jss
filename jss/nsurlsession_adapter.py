@@ -5,6 +5,7 @@ Requests API transport that uses NSURLSession and friends via PyObjC 2.1 that sh
 Much of this code was copied, rewritten, or inspired by gurl.py from the munki project.
 Thanks to Greg Neagle and frogor, amongst many other contributors.
 """
+from __future__ import absolute_import
 import logging
 import os
 import io

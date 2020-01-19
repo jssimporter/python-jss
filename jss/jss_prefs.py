@@ -21,6 +21,7 @@ a plist.
 """
 from __future__ import print_function
 
+from __future__ import absolute_import
 import getpass
 import os
 import readline   # pylint: disable=unused-import

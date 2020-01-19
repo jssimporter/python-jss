@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import pytest
 # import __builtin__
 from jss import JSSPrefs, tools

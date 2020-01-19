@@ -11,6 +11,7 @@ Mount file shares on OS X.
 """
 
 
+from __future__ import absolute_import
 from distutils.version import StrictVersion
 import subprocess
 

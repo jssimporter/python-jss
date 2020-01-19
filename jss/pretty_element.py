@@ -26,6 +26,7 @@ Pretty-printing xml.etree.ElementTree.Element subclass
     https://stackoverflow.com/questions/20995601/cant-set-attributes-on-elementtree-element-instance-in-python-3
 
 """
+from __future__ import absolute_import
 import re
 from xml.etree import ElementTree
 

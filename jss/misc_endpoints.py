@@ -19,6 +19,7 @@ Classes representing API endpoints that don't subclass JSSObject
 """
 from __future__ import print_function
 
+from __future__ import absolute_import
 import mimetypes
 import os
 from xml.etree import ElementTree
