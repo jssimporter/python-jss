@@ -131,7 +131,7 @@ class DistributionPoints(object):
                 password = repo.get("password")
                 # Make very sure this password is unicode.
                 if isinstance(password, str):
-                    password = unicode(password, "utf-8")
+                    password = password.encode("utf-8")
 
                 if is_osx():
                     mount_point = os.path.join("/Volumes", share_name)
@@ -176,7 +176,7 @@ class DistributionPoints(object):
         password = repo["password"]
         # Make very sure this password is unicode.
         if isinstance(password, str):
-            password = unicode(password, "utf-8")
+            password = password.encode("utf-8")
 
         if is_osx():
             mount_point = os.path.join("/Volumes", share_name)
@@ -316,5 +316,3 @@ class DistributionPoints(object):
             index += 1
 
         return "\n".join(output)
-
-
