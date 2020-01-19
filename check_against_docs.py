@@ -60,7 +60,7 @@ def main():
 
     missing = sorted(h2_names.difference(jssobjects))
 
-    print '\n'.join('{:>2}: {}'.format(i, n) for i, n in  enumerate(missing))
+    print('\n'.join('{:>2}: {}'.format(i, n) for i, n in  enumerate(missing)))
 
     # TODO: Expand all operations so we can chew on the juicy data within.
     #expanders = [i for i in expands if i.text == "Expand Operations"]
