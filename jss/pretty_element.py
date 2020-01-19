@@ -15,20 +15,11 @@
 """pretty_element.py
 
 Pretty-printing xml.etree.ElementTree.Element subclass
-
-..note: As of python 3.3 it seems like you cannot easily subclass Element, see this StackOverflow answer:
-
-    Since 3.3 ElementTree tries to import the c implementation in for efficiency,
-    however you can't set arbitrary attributes on that implementation.
-    If you are in a situation where you don't want to use the Set or Get methods every time,
-    you should use ET._Element_Py, which is the Python implementation. - RandomName
-
-    https://stackoverflow.com/questions/20995601/cant-set-attributes-on-elementtree-element-instance-in-python-3
-
 """
 from __future__ import absolute_import
+import importlib
 import re
-from xml.etree import ElementTree
+import sys
 
 from jss import tools
 
@@ -36,14 +27,14 @@ from jss import tools
 _DUNDER_PATTERN = re.compile(r'__[a-zA-Z]+__')
 _RESERVED_METHODS = ('cached',)
 
-# py3.x and py2 backwards compatible
-if hasattr(ElementTree, '_Element_Py'):
-    Element = ElementTree._Element_Py
-else:
-    Element = ElementTree.Element
+# ElementTree monkey patch borrowed with love from Matteo Ferla.
+# https://blog.matteoferla.com/2019/02/uniprot-xml-and-python-elementtree.html
+sys.modules.pop('xml.etree.ElementTree', None)
+sys.modules['_elementtree'] = None
+ElementTree = importlib.import_module('xml.etree.ElementTree')
 
 
-class PrettyElement(Element):
+class PrettyElement(ElementTree.Element):
     """Pretty printing element subclass
 
     Element subclasses xml.etree.ElementTree.Element to pretty print.
@@ -99,4 +90,3 @@ class PrettyElement(Element):
     def _convert(self, item):
         """If item is not a PrettyElement, make it one"""
         return item if isinstance(item, PrettyElement) else PrettyElement(item)
-
