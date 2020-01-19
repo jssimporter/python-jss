@@ -65,6 +65,9 @@ CURL_RETURNCODE = {
     60: 'Peer certificate cannot be authenticated with known CA certificates.'
 }
 
+# Map Python 2 unicode type for Python 3.
+if sys.version_info.major == 3:
+    unicode = str
 
 class CurlAdapter(object):
     """Adapter to use Curl for all Casper API calls
