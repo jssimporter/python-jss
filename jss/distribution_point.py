@@ -1078,13 +1078,13 @@ class JCDS(CloudDistributionServer):
         """Scrape JCDS upload URL and upload access token from the jamfcloud instance."""
         jss = self.connection['jss']
         response = jss.scrape('legacy/packages.html?id=-1&o=c')
-        matches = re.search(r'data-base-url="([^"]*)"', response.content)
+        matches = re.search(r'data-base-url="([^"]*)"', response.content.decode("utf-8"))
         if matches is None:
             raise JSSError('Did not find the JCDS base URL on the packages page. Is this actually Jamfcloud?')
 
         jcds_base_url = matches.group(1)
 
-        matches = re.search(r'data-upload-token="([^"]*)"', response.content)
+        matches = re.search(r'data-upload-token="([^"]*)"', response.content.decode("utf-8"))
         if matches is None:
             raise JSSError('Did not find the JCDS upload token on the packages page. Is this actually Jamfcloud?')
 

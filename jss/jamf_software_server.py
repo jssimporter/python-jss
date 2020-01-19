@@ -378,7 +378,7 @@ class JSS(object):
             error_handler(PostError, response)
 
         if 'text/xml' in response.headers['content-type']:
-            id_ = re.search(r"<id>([0-9]+)</id>", response.content).group(1)
+            id_ = re.search(r"<id>([0-9]+)</id>", response.content.decode("utf-8")).group(1)
         else:
             return response
 
