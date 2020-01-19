@@ -279,7 +279,7 @@ class MountedRepository(FileRepository):
         If it is currently mounted, determine the path where it's
         mounted and update the connection's mount_point accordingly.
         """
-        mount_check = subprocess.check_output("mount").splitlines()
+        mount_check = subprocess.check_output("mount").decode().splitlines()
         # The mount command returns lines like this on OS X...
         # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO
         # (afpfs, nodev, nosuid, mounted by local_me)

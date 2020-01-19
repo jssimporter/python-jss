@@ -127,7 +127,7 @@ class CurlAdapter(object):
         logger.debug(' '.join(command))
 
         try:
-            response = subprocess.check_output(command)
+            response = subprocess.check_output(command).decode()
         except subprocess.CalledProcessError as err:
             if err.returncode in CURL_RETURNCODE:
                 raise JSSError('CURL Error: {}'.format(CURL_RETURNCODE[err.returncode]))

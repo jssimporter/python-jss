@@ -144,7 +144,7 @@ class JSSPrefs(object):
             if is_osx():
                 plist = subprocess.check_output(
                     ["plutil", "-convert", "xml1", "-o", "-",
-                     preferences_file])
+                     preferences_file]).decode()
                 prefs = plistlib.readPlistFromString(preferences_file)
 
         self.user = prefs.get("jss_user")
