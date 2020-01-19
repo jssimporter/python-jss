@@ -60,6 +60,9 @@ __all__ = (
     'SoftwareUpdateServer', 'SMTPServer', 'UserExtensionAttribute', 'User',
     'UserGroup', 'VPPAccount', 'VPPAssignment', 'VPPInvitation', 'Webhook')
 
+# Map Python 2 basestring type for Python 3.
+if sys.version_info.major == 3:
+    basestring = str
 
 # pylint: disable=missing-docstring
 class Account(Container):

@@ -30,6 +30,9 @@ from .tools import error_handler
 
 __all__ = ('CommandFlush', 'FileUpload', 'LogFlush')
 
+# Map Python 2 basestring type for Python 3.
+if sys.version_info.major == 3:
+    basestring = str
 
 # pylint: disable=missing-docstring
 # pylint: disable=too-few-public-methods
