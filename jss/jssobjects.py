@@ -22,6 +22,7 @@ Classes representing JSS database objects and their API endpoints
 from __future__ import absolute_import
 import mimetypes
 import os
+import sys
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 

@@ -37,6 +37,7 @@ from __future__ import absolute_import
 import copy
 import subprocess
 import logging
+import sys
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

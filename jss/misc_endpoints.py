@@ -22,6 +22,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 import mimetypes
 import os
+import sys
 from xml.etree import ElementTree
 
 from .exceptions import MethodNotAllowedError, PostError
