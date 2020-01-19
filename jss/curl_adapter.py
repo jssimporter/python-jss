@@ -92,7 +92,7 @@ class CurlAdapter(object):
         content_type = 'text/xml' if not files else 'multipart/form-data'
         header = ['Content-Type: {}'.format(content_type)]
         if headers:
-            [header.append('{}: {}'.format(k, v)) for k, v in headers.iteritems()]
+            [header.append('{}: {}'.format(k, headers[k])) for k in headers]
 
         post_kwargs = {"--request": "POST"}
         return self._request(url, header, data, files, **post_kwargs)
@@ -101,7 +101,7 @@ class CurlAdapter(object):
         content_type = 'text/xml' if not files else 'multipart/form-data'
         header = ['Content-Type: {}'.format(content_type)]
         if headers:
-            [header.append('{}: {}'.format(k, v)) for k, v in headers.iteritems()]
+            [header.append('{}: {}'.format(k, headers[k])) for k in headers]
 
         put_args = {"--request": "PUT"}
         return self._request(url, header, data, files, **put_args)
@@ -178,7 +178,7 @@ class CurlAdapter(object):
             if isinstance(data, file):
                 command += ["--data-binary", "@{}".format(data.name)]
             elif isinstance(data, dict):
-                [command.extend(["-F", "{}={}".format(k, v)]) for k, v in data.iteritems()]
+                [command.extend(["-F", "{}={}".format(k, data[k])]) for k in data]
             else:
                 command += ["--data", data]
 
