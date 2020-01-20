@@ -28,12 +28,14 @@ import re
 import shutil
 import socket
 import subprocess
+import sys
 import io
 import math
 import multiprocessing
 import threading
-import requests
 
+sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
+import requests
 
 try:
     # Python 2.6-2.7

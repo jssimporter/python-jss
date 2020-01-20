@@ -52,7 +52,6 @@ Private package contents include:
         package.
 """
 
-
 from __future__ import absolute_import
 from .casper import Casper
 from .curl_adapter import CurlAdapter
@@ -70,12 +69,10 @@ from .misc_uapi_endpoints import *
 from .queryset import QuerySet
 from .pretty_element import PrettyElement
 
-# If a system doesn't have the required dependencies for requests, do
-# nothing.
-try:
-    from .requests_adapter import RequestsAdapter
-except ImportError:
-    RequestsAdapter = None
+import sys
+
+sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
+import requests
 
 from .tools import is_osx, is_linux, element_str
 

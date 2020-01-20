@@ -26,13 +26,15 @@ try:
 except ImportError:
     import _pickle as cPickle  # Python 3+
 
-
+import sys
 import gzip
 import os
 import platform
 import re
 import json
 from xml.etree import ElementTree
+
+sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
 import requests
 
 try:

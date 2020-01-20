@@ -26,6 +26,7 @@ import sys
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 
+sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
 import requests
 
 from .queryset import QuerySet
