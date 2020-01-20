@@ -19,6 +19,7 @@ Deprecated in favor of QuerySet.
 """
 
 
+from __future__ import absolute_import
 import warnings
 
 from .queryset import QuerySet

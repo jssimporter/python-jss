@@ -19,8 +19,10 @@ Classes representing JSS database objects and their API endpoints
 """
 
 
+from __future__ import absolute_import
 import mimetypes
 import os
+import sys
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 
@@ -59,6 +61,9 @@ __all__ = (
     'SoftwareUpdateServer', 'SMTPServer', 'UserExtensionAttribute', 'User',
     'UserGroup', 'VPPAccount', 'VPPAssignment', 'VPPInvitation', 'Webhook')
 
+# Map Python 2 basestring type for Python 3.
+if sys.version_info.major == 3:
+    basestring = str
 
 # pylint: disable=missing-docstring
 class Account(Container):

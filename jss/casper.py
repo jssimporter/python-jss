@@ -22,6 +22,7 @@ removed. Do not rely on its continued existence!
 """
 from __future__ import unicode_literals
 
+from __future__ import absolute_import
 try:
     # Python 2
     from __builtin__ import str as text

@@ -1,4 +1,5 @@
-from jamf_software_server import JSS
+from __future__ import absolute_import
+from .jamf_software_server import JSS
 
 UPLOAD_TYPE_MAC_PROFILE = 4
 UPLOAD_TYPE_IOS_PROFILE = 22

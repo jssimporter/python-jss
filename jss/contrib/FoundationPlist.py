@@ -1,20 +1,19 @@
-#!/usr/bin/python
 # encoding: utf-8
 #
-# Copyright 2009-2014 Greg Neagle.
+# Copyright 2009-2020 Greg Neagle.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""FoundationPlist.py -- a tool to generate and parse MacOSX .plist files.
+"""FoundationPlist.py -- a tool to generate and parse OS X .plist files.
 
 This is intended as a drop-in replacement for Python's included plistlib,
 with a few caveats:
@@ -40,6 +39,7 @@ dictionary).
 To work with plist data in strings, you can use readPlistFromString()
 and writePlistToString().
 """
+from __future__ import absolute_import, print_function
 
 # PyLint cannot properly find names inside Cocoa libraries, so issues bogus
 # No name 'Foo' in module 'Bar' warnings. Disable them.
@@ -88,11 +88,11 @@ def readPlist(filepath):
 
 
 def readPlistFromString(data):
-    '''Read a plist data from a string. Return the root object.'''
-    try:
-        plistData = buffer(data)
-    except TypeError as err:
-        raise NSPropertyListSerializationException(err)
+    '''Read a plist data from a (byte)string. Return the root object.'''
+    plistData = NSData.dataWithBytes_length_(data, len(data))
+    if not plistData:
+        raise NSPropertyListSerializationException(
+            "Could not convert string to NSData")
     dataObject, dummy_plistFormat, error = (
         NSPropertyListSerialization.
         propertyListFromData_mutabilityOption_format_errorDescription_(
@@ -130,7 +130,7 @@ def writePlist(dataObject, filepath):
 
 
 def writePlistToString(rootObject):
-    '''Return 'rootObject' as a plist-formatted string.'''
+    '''Return 'rootObject' as a plist-formatted (byte)string.'''
     plistData, error = (
         NSPropertyListSerialization.
         dataFromPropertyList_format_errorDescription_(
@@ -142,4 +142,8 @@ def writePlistToString(rootObject):
             error = "Unknown error"
         raise NSPropertyListSerializationException(error)
     else:
-        return str(plistData)
+        return bytes(plistData)
+
+
+if __name__ == '__main__':
+    print('This is a library of support tools for the Munki Suite.')
