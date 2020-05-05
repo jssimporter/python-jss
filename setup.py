@@ -49,5 +49,10 @@ setup(name='python-jss',
       ],
       classifiers=[
           'Development Status :: 5 - Production/Stable',
-          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)']
+          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+          'Intended Audience :: System Administrators',
+          'Operating System :: MacOS',
+          'Topic :: System :: Systems Administration',
+          'Topic :: System :: Software Distribution'
+        ]
       )
