@@ -38,10 +38,10 @@ setup(name='python-jss',
       author='Shea G. Craig',
       url='https://github.com/JSSImporter/python-jss/',
       license='GPLv3',
-      install_requires=['requests>=2.13.0'],
+      install_requires=['requests>=2.23.0'],
       extras_require={
           'reST': [
-              "Sphinx>=1.5.3", "docutils>=0.13.1"]
+              "Sphinx>=3.0.3", "docutils>=0.16"]
       },
       setup_requires=['pytest-runner'],
       tests_require=[
