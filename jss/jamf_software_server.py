@@ -20,18 +20,21 @@ as JSSObjects.
 """
 from __future__ import print_function
 
+from __future__ import absolute_import
 try:
     import cPickle  # Python 2.X
 except ImportError:
     import _pickle as cPickle  # Python 3+
 
-
+import sys
 import gzip
 import os
 import platform
 import re
 import json
 from xml.etree import ElementTree
+
+sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
 import requests
 
 try:
@@ -377,7 +380,7 @@ class JSS(object):
             error_handler(PostError, response)
 
         if 'text/xml' in response.headers['content-type']:
-            id_ = re.search(r"<id>([0-9]+)</id>", response.content).group(1)
+            id_ = re.search(r"<id>([0-9]+)</id>", response.content.decode("utf-8")).group(1)
         else:
             return response
 

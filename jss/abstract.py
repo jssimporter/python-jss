@@ -20,6 +20,7 @@ Shea would call this non-pythonic but i'd like to verify exactly which subclasse
 a declared interface - mosen.
 """
 
+from __future__ import absolute_import
 import abc
 
 

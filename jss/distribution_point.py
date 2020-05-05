@@ -22,17 +22,20 @@ the JAMF Pro Server.
 from __future__ import division
 from __future__ import print_function
 
+from __future__ import absolute_import
 import os
 import re
 import shutil
 import socket
 import subprocess
+import sys
 import io
 import math
 import multiprocessing
 import threading
-import requests
 
+sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
+import requests
 
 try:
     # Python 2.6-2.7
@@ -278,7 +281,7 @@ class MountedRepository(FileRepository):
         If it is currently mounted, determine the path where it's
         mounted and update the connection's mount_point accordingly.
         """
-        mount_check = subprocess.check_output("mount").splitlines()
+        mount_check = subprocess.check_output("mount").decode().splitlines()
         # The mount command returns lines like this on OS X...
         # //username@pretendco.com/JSS%20REPO on /Volumes/JSS REPO
         # (afpfs, nodev, nosuid, mounted by local_me)
@@ -1077,13 +1080,13 @@ class JCDS(CloudDistributionServer):
         """Scrape JCDS upload URL and upload access token from the jamfcloud instance."""
         jss = self.connection['jss']
         response = jss.scrape('legacy/packages.html?id=-1&o=c')
-        matches = re.search(r'data-base-url="([^"]*)"', response.content)
+        matches = re.search(r'data-base-url="([^"]*)"', response.content.decode("utf-8"))
         if matches is None:
             raise JSSError('Did not find the JCDS base URL on the packages page. Is this actually Jamfcloud?')
 
         jcds_base_url = matches.group(1)
 
-        matches = re.search(r'data-upload-token="([^"]*)"', response.content)
+        matches = re.search(r'data-upload-token="([^"]*)"', response.content.decode("utf-8"))
         if matches is None:
             raise JSSError('Did not find the JCDS upload token on the packages page. Is this actually Jamfcloud?')
 

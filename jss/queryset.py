@@ -20,6 +20,7 @@ result of all queries in python-jss.
 """
 
 
+from __future__ import absolute_import
 from collections import defaultdict
 try:
     import cPickle  # Python 2.X

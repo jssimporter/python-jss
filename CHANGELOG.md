@@ -2,10 +2,17 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased][unreleased]
-### Fixed
-- `urllib3` dependency version bumped to mitigate vulnerability.
+## [2.1.0] - date TBD
+
+### Added
+- Retained compatibility with AutoPkg 1.x (Python 2) while adding compatibility for AutoPkg 2.x (Python 3).
 - Added `$` to safe characters in URLs to allow hidden shares (#169).
+
+### Changed
+- Brought in latest upstream changes from [FoundationPlist](https://github.com/munki/munki/blob/72a0535/code/client/munkilib/FoundationPlist.py) and [GURL](https://github.com/munki/munki/blob/72a0535/code/client/munkilib/gurl.py).
+
+### Security
+- `urllib3` dependency version bumped to mitigate vulnerability.
 
 
 ## [2.0.1] - 2018-09-22 - The master and the student

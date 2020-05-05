@@ -11,6 +11,7 @@ Mount file shares on OS X.
 """
 
 
+from __future__ import absolute_import
 from distutils.version import StrictVersion
 import subprocess
 
@@ -80,5 +81,5 @@ def mount_share(share_path):
 
 def is_high_sierra():
     version = StrictVersion(
-        subprocess.check_output(['sw_vers', '-productVersion']).strip())
+        subprocess.check_output(['sw_vers', '-productVersion']).decode().strip())
     return version >= StrictVersion('10.13')

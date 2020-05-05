@@ -14,9 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import requests
+from __future__ import absolute_import
 from datetime import datetime
 import logging
+import sys
+
+sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +63,3 @@ class UAPIAuth(requests.auth.AuthBase):
 
         logger.debug("Server returned HTTP 401, getting a new token")
         self._get_token()
-
-
-
-

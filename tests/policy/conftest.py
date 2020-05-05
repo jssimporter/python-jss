@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import pytest
 from jss import Policy, JSS, Package, PostError
 from xml.etree import ElementTree

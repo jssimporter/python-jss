@@ -52,7 +52,7 @@ Private package contents include:
         package.
 """
 
-
+from __future__ import absolute_import
 from .casper import Casper
 from .curl_adapter import CurlAdapter
 from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
@@ -62,19 +62,17 @@ from .exceptions import *
 from .jamf_software_server import JSS
 from .jssobject import JSSObject
 from .jssobjects import *
-import uapiobjects as uapi
+from . import uapiobjects as uapi
 from .jss_prefs import JSSPrefs
 from .misc_endpoints import *
 from .misc_uapi_endpoints import *
 from .queryset import QuerySet
 from .pretty_element import PrettyElement
 
-# If a system doesn't have the required dependencies for requests, do
-# nothing.
-try:
-    from .requests_adapter import RequestsAdapter
-except ImportError:
-    RequestsAdapter = None
+import sys
+
+sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
+import requests
 
 from .tools import is_osx, is_linux, element_str
 
@@ -82,4 +80,4 @@ from .tools import is_osx, is_linux, element_str
 from .jssobjectlist import JSSObjectList
 
 
-__version__ = "2.0.1"
+__version__ = "2.1.0"

@@ -21,6 +21,7 @@ a plist.
 """
 from __future__ import print_function
 
+from __future__ import absolute_import
 import getpass
 import os
 import readline   # pylint: disable=unused-import
@@ -143,7 +144,7 @@ class JSSPrefs(object):
             if is_osx():
                 plist = subprocess.check_output(
                     ["plutil", "-convert", "xml1", "-o", "-",
-                     preferences_file])
+                     preferences_file]).decode()
                 prefs = plistlib.readPlistFromString(preferences_file)
 
         self.user = prefs.get("jss_user")

@@ -1,8 +1,12 @@
 from __future__ import print_function
 
+from __future__ import absolute_import
 import pytest
 import sys
+
+sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
 import requests
+
 from xml.etree import ElementTree
 try:
     from jss.nsurlsession_adapter import NSURLSessionAdapter, NSURLCredentialAuth

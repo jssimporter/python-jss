@@ -33,9 +33,11 @@ JSS object beginning with python-jss 2.0.0.
 """
 
 
+from __future__ import absolute_import
 import copy
 import subprocess
 import logging
+import sys
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -64,6 +66,9 @@ CURL_RETURNCODE = {
     60: 'Peer certificate cannot be authenticated with known CA certificates.'
 }
 
+# Map Python 2 unicode type for Python 3.
+if sys.version_info.major == 3:
+    unicode = str
 
 class CurlAdapter(object):
     """Adapter to use Curl for all Casper API calls
@@ -88,7 +93,7 @@ class CurlAdapter(object):
         content_type = 'text/xml' if not files else 'multipart/form-data'
         header = ['Content-Type: {}'.format(content_type)]
         if headers:
-            [header.append('{}: {}'.format(k, v)) for k, v in headers.iteritems()]
+            [header.append('{}: {}'.format(k, headers[k])) for k in headers]
 
         post_kwargs = {"--request": "POST"}
         return self._request(url, header, data, files, **post_kwargs)
@@ -97,7 +102,7 @@ class CurlAdapter(object):
         content_type = 'text/xml' if not files else 'multipart/form-data'
         header = ['Content-Type: {}'.format(content_type)]
         if headers:
-            [header.append('{}: {}'.format(k, v)) for k, v in headers.iteritems()]
+            [header.append('{}: {}'.format(k, headers[k])) for k in headers]
 
         put_args = {"--request": "PUT"}
         return self._request(url, header, data, files, **put_args)
@@ -122,7 +127,7 @@ class CurlAdapter(object):
         logger.debug(' '.join(command))
 
         try:
-            response = subprocess.check_output(command)
+            response = subprocess.check_output(command).decode()
         except subprocess.CalledProcessError as err:
             if err.returncode in CURL_RETURNCODE:
                 raise JSSError('CURL Error: {}'.format(CURL_RETURNCODE[err.returncode]))
@@ -174,7 +179,7 @@ class CurlAdapter(object):
             if isinstance(data, file):
                 command += ["--data-binary", "@{}".format(data.name)]
             elif isinstance(data, dict):
-                [command.extend(["-F", "{}={}".format(k, v)]) for k, v in data.iteritems()]
+                [command.extend(["-F", "{}={}".format(k, data[k])]) for k in data]
             else:
                 command += ["--data", data]
 
