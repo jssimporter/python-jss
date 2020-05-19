@@ -156,7 +156,7 @@ def element_str(elem):
     # deepcopy so we don't mess with the valid XML.
     pretty_data = copy.deepcopy(elem)
     indent_xml(pretty_data)
-    return ElementTree.tostring(pretty_data, encoding='UTF-8')
+    return ElementTree.tostring(pretty_data, encoding='unicode')
 
 
 def quote_and_encode(string):
