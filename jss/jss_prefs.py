@@ -23,6 +23,7 @@ from __future__ import print_function
 
 from __future__ import absolute_import
 import getpass
+from six.moves import input as raw_input
 import os
 import readline   # pylint: disable=unused-import
 import subprocess
