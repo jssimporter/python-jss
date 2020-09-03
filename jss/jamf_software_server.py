@@ -437,9 +437,8 @@ class JSS(object):
 
         if response.status_code == 201 and self.verbose:
             print("PUT %s: Success." % request_url)
-        elif (
-            response.status_code == 502
-        ):  # TEMP fix for Jamf Pro PI-008770 (2020-09-04)
+        elif response.status_code == 502:
+            # TEMP fix for Jamf Pro PI-008770 (2020-09-04)
             print("PUT %s: Ambiguous response." % request_url)
         elif response.status_code >= 400:
             error_handler(PutError, response)
