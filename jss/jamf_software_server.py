@@ -21,6 +21,7 @@ as JSSObjects.
 from __future__ import print_function
 
 from __future__ import absolute_import
+
 try:
     import cPickle  # Python 2.X
 except ImportError:
@@ -34,7 +35,7 @@ import re
 import json
 from xml.etree import ElementTree
 
-sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
+sys.path.insert(0, "/Library/AutoPkg/JSSImporter")
 import requests
 
 try:
@@ -132,6 +133,7 @@ class JSS(object):
 
     class UAPI(object):
         """This object represents the UAPI. All UAPI search methods will be attached here."""
+
         def __init__(self, jss, url=None):
             self.jss = jss
             self._base_url = url
@@ -154,6 +156,7 @@ class JSS(object):
 
     class JSSAPI(object):
         """This object represents the XML API. All regular API search methods will be attached here."""
+
         def __init__(self, jss, url=None):
             self.jss = jss
             self._base_url = url
@@ -175,8 +178,16 @@ class JSS(object):
 
     # pylint: disable=too-many-arguments
     def __init__(
-        self, jss_prefs=None, url=None, user=None, password=None,
-        repo_prefs=None, ssl_verify=True, verbose=False, **kwargs):
+        self,
+        jss_prefs=None,
+        url=None,
+        user=None,
+        password=None,
+        repo_prefs=None,
+        ssl_verify=True,
+        verbose=False,
+        **kwargs
+    ):
 
         if jss_prefs is not None:
             url = jss_prefs.url
@@ -191,8 +202,8 @@ class JSS(object):
 
         self.base_url = url
 
-        if 'adapter' in kwargs:
-            self.session = kwargs['adapter']
+        if "adapter" in kwargs:
+            self.session = kwargs["adapter"]
         else:
             self.session = requests.session()
 
@@ -239,7 +250,7 @@ class JSS(object):
             value (str): username.
         """
         auth = self.session.auth
-        password = auth[1] if auth else ''
+        password = auth[1] if auth else ""
         self.session.auth = (value, password)
 
     @property
@@ -255,7 +266,7 @@ class JSS(object):
             value (str): password.
         """
         auth = self.session.auth
-        user = auth[0] if auth else ''
+        user = auth[0] if auth else ""
         self.session.auth = (user, value)
 
     @property
@@ -315,8 +326,10 @@ class JSS(object):
             to returning None.
         """
         request_url = os.path.join(self.base_url, quote_and_encode(url_path))
-        if headers is None:  # Fall back to XML to support python-jss prior to addition of UAPI
-            headers = {'Content-Type': 'text/xml', 'Accept': 'text/xml'}
+        if (
+            headers is None
+        ):  # Fall back to XML to support python-jss prior to addition of UAPI
+            headers = {"Content-Type": "text/xml", "Accept": "text/xml"}
 
         response = self.session.get(request_url, headers=headers, **kwargs)
 
@@ -325,14 +338,14 @@ class JSS(object):
         elif response.status_code >= 400:
             error_handler(GetError, response)
 
-        if 'text/xml' in response.headers['content-type']:
+        if "text/xml" in response.headers["content-type"]:
             # ElementTree in python2 only accepts bytes.
             try:
                 xmldata = ElementTree.fromstring(response.content)
                 return xmldata
             except ElementTree.ParseError:
                 raise GetError("Error Parsing XML:\n%s" % response.content)
-        elif response.headers['content-type'].startswith('application/json'):
+        elif response.headers["content-type"].startswith("application/json"):
             return response.json()
         else:
             return response.content
@@ -361,16 +374,16 @@ class JSS(object):
         headers = {}
 
         if isinstance(data, ElementTree.Element):
-            data = ElementTree.tostring(data, encoding='UTF-8')
-            headers = {'Content-Type': 'text/xml', 'Accept': 'text/xml'}
+            data = ElementTree.tostring(data, encoding="UTF-8")
+            headers = {"Content-Type": "text/xml", "Accept": "text/xml"}
         elif isinstance(data, dict):
             data = json.dumps(data)
-            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+            headers = {"Content-Type": "application/json", "Accept": "application/json"}
         elif isinstance(data, UserDict):
             data = json.dumps(data.data)
-            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+            headers = {"Content-Type": "application/json", "Accept": "application/json"}
         else:
-            headers = {'Content-Type': 'application/octet-stream', 'Accept': '*/*'}
+            headers = {"Content-Type": "application/octet-stream", "Accept": "*/*"}
 
         response = self.session.post(request_url, data=data, headers=headers)
 
@@ -379,8 +392,10 @@ class JSS(object):
         elif response.status_code >= 400:
             error_handler(PostError, response)
 
-        if 'text/xml' in response.headers['content-type']:
-            id_ = re.search(r"<id>([0-9]+)</id>", response.content.decode("utf-8")).group(1)
+        if "text/xml" in response.headers["content-type"]:
+            id_ = re.search(
+                r"<id>([0-9]+)</id>", response.content.decode("utf-8")
+            ).group(1)
         else:
             return response
 
@@ -407,21 +422,25 @@ class JSS(object):
         headers = {}
 
         if isinstance(data, ElementTree.Element):
-            data = ElementTree.tostring(data, encoding='UTF-8')
-            headers = {'Content-Type': 'text/xml', 'Accept': 'text/xml'}
+            data = ElementTree.tostring(data, encoding="UTF-8")
+            headers = {"Content-Type": "text/xml", "Accept": "text/xml"}
         elif isinstance(data, dict):
             data = json.dumps(data)
-            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+            headers = {"Content-Type": "application/json", "Accept": "application/json"}
         elif isinstance(data, UserDict):
             data = json.dumps(data.data)
-            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+            headers = {"Content-Type": "application/json", "Accept": "application/json"}
         else:
-            raise TypeError('Could not PUT unrecognised data type')
+            raise TypeError("Could not PUT unrecognised data type")
 
         response = self.session.put(request_url, data=data, headers=headers)
 
         if response.status_code == 201 and self.verbose:
             print("PUT %s: Success." % request_url)
+        elif (
+            response.status_code == 502
+        ):  # TEMP fix for Jamf Pro PI-008770 (2020-09-04)
+            print("PUT %s: Ambiguous response." % request_url)
         elif response.status_code >= 400:
             error_handler(PutError, response)
 
@@ -443,9 +462,12 @@ class JSS(object):
         """
         request_url = os.path.join(self.base_url, quote_and_encode(url_path))
         if data:
-            data = ElementTree.tostring(data, encoding='UTF-8')
-            response = self.session.delete(request_url, data=data,
-                                           headers={'Content-Type': 'text/xml', 'Accept': 'text/xml'})
+            data = ElementTree.tostring(data, encoding="UTF-8")
+            response = self.session.delete(
+                request_url,
+                data=data,
+                headers={"Content-Type": "text/xml", "Accept": "text/xml"},
+            )
         else:
             response = self.session.delete(request_url)
 
@@ -455,8 +477,7 @@ class JSS(object):
             error_handler(DeleteError, response)
 
     def retrieve_all(self):
-        all_search_methods = [
-            getattr(self, name) for name in jssobjects.__all__]
+        all_search_methods = [getattr(self, name) for name in jssobjects.__all__]
 
         all_objects = {}
         for method in all_search_methods:
@@ -469,7 +490,6 @@ class JSS(object):
                     msg += "; permission error"
                 print(msg.format(name))
                 continue
-
 
             # Flat objects can go straight in.
             if isinstance(result, JSSObject):
@@ -511,9 +531,8 @@ class JSS(object):
             path = path + gz_ext
 
         opener = gzip.open if compress else open
-        with opener(path, 'wb') as file_handle:
-            cPickle.Pickler(
-                file_handle, cPickle.HIGHEST_PROTOCOL).dump(all_objects)
+        with opener(path, "wb") as file_handle:
+            cPickle.Pickler(file_handle, cPickle.HIGHEST_PROTOCOL).dump(all_objects)
 
     @classmethod
     def from_pickle(cls, path):
@@ -614,14 +633,18 @@ class JSS(object):
                 probably using JSESSIONID
         """
         if session_id is None:
-            response = self.session.post(self.base_url, data={'username': self.user, 'password': self.password})
+            response = self.session.post(
+                self.base_url, data={"username": self.user, "password": self.password}
+            )
 
             if response.status_code == 200:
-                scrape_url = '{}/{}'.format(self.base_url, url_path)
+                scrape_url = "{}/{}".format(self.base_url, url_path)
                 return self.session.get(scrape_url)
 
     def version(self):
-        return self.JSSUser().version.text
+        # return self.JSSUser().version.text
+        pass
+
 
 # There's a lot of repetition involved in creating the object query
 # methods on JSS, so we create them dynamically at import time.
@@ -697,9 +720,9 @@ def add_search_method(cls, name):
             return obj_type(self, data)
 
     # Add in the missing variables to the docstring and set name.
-    if hasattr(obj_type, 'allowed_kwargs') and obj_type.allowed_kwargs:
-        allowed = ', '.join(obj_type.allowed_kwargs)
-        msg = 'Allowed keyword arguments for this class are:\n{}{}'
+    if hasattr(obj_type, "allowed_kwargs") and obj_type.allowed_kwargs:
+        allowed = ", ".join(obj_type.allowed_kwargs)
+        msg = "Allowed keyword arguments for this class are:\n{}{}"
         kwarg_doc = msg.format(6 * "    ", allowed) if allowed else ""
     else:
         kwarg_doc = "(None supported)"
@@ -769,8 +792,18 @@ def add_uapi_search_method(cls, name):
         """
         if not isinstance(data, dict):
             url = obj_type.build_query(data, **kwargs)
-            data = self.jss.get(url, headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
-                            auth=UAPIAuth(self.jss.user, self.jss.password, "{}/uapi/auth/tokens".format(self.jss.base_url)))
+            data = self.jss.get(
+                url,
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                auth=UAPIAuth(
+                    self.jss.user,
+                    self.jss.password,
+                    "{}/uapi/auth/tokens".format(self.jss.base_url),
+                ),
+            )
 
         if isinstance(data, list):
             return [obj_type(self.jss, d) for d in data]
@@ -778,9 +811,9 @@ def add_uapi_search_method(cls, name):
             return obj_type(self.jss, data)
 
     # Add in the missing variables to the docstring and set name.
-    if hasattr(obj_type, 'allowed_kwargs') and obj_type.allowed_kwargs:
-        allowed = ', '.join(obj_type.allowed_kwargs)
-        msg = 'Allowed keyword arguments for this class are:\n{}{}'
+    if hasattr(obj_type, "allowed_kwargs") and obj_type.allowed_kwargs:
+        allowed = ", ".join(obj_type.allowed_kwargs)
+        msg = "Allowed keyword arguments for this class are:\n{}{}"
         kwarg_doc = msg.format(6 * "    ", allowed) if allowed else ""
     else:
         kwarg_doc = "(None supported)"
@@ -802,4 +835,5 @@ for jss_uapi_class in uapiobjects.__all__:
 
 class JSSObjectFactory(object):
     """Deprecated"""
+
     pass
