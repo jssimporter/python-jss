@@ -440,6 +440,12 @@ class JSS(object):
         elif response.status_code == 502:
             # TEMP fix for Jamf Pro PI-008770 (2020-09-04)
             print("PUT %s: Ambiguous response." % request_url)
+        elif response.status_code == 504:
+            # dangerous? fix for gateway timeouts (2020-10-15)
+            print(
+                "PUT %s: Schrödiger's API object - "
+                "object may or may not have been uploaded." % request_url
+            )
         elif response.status_code >= 400:
             error_handler(PutError, response)
 
