@@ -205,7 +205,7 @@ class JSS(object):
         if "adapter" in kwargs:
             self.session = kwargs["adapter"]
         else:
-            self.session = requests.Session()
+            self.session = requests.session()
 
         self.user = user
         self.password = password
@@ -315,7 +315,7 @@ class JSS(object):
                 self.session.cookies.update(cPickle.load(f))
 
         # show the load balancer to confirm cookie use
-        if self.verbose:
+        if self.verbose and len(self.session.cookies) > 0:
             cookie = list(self.session.cookies)[0]
             print(cookie.name, cookie.value)
 

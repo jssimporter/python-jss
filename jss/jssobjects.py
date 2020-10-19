@@ -26,7 +26,7 @@ import sys
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 
-sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
+sys.path.insert(0, "/Library/AutoPkg/JSSImporter")
 import requests
 
 from .queryset import QuerySet
@@ -36,31 +36,88 @@ from .tools import error_handler
 
 
 __all__ = (
-    'Account', 'AccountGroup', 'ActivationCode', 'AdvancedComputerSearch',
-    'AdvancedMobileDeviceSearch', 'AdvancedUserSearch',
-    'AllowedFileExtension', 'Building', 'BYOProfile', 'Category', 'Class',
-    'Computer', 'ComputerApplication', 'ComputerApplicationUsage',
-    'ComputerCheckIn', 'ComputerCommand', 'ComputerConfiguration',
-    'ComputerExtensionAttribute', 'ComputerGroup',
-    'ComputerHardwareSoftwareReport', 'ComputerHistory',
-    'ComputerInventoryCollection', 'ComputerInvitation', 'ComputerManagement',
-    'ComputerReport', 'Department', 'DirectoryBinding',
-    'DiskEncryptionConfiguration', 'DistributionPoint', 'DockItem', 'EBook',
-    'GSXConnection', 'HealthcareListener', 'HealthcareListenerRule', 'IBeacon',
-    'InfrastructureManager', 'JSSUser', 'JSONWebTokenConfigurations',
-    'LDAPServer', 'LicensedSoftware', 'MacApplication',
-    'ManagedPreferenceProfile', 'MobileDevice', 'MobileDeviceApplication',
-    'MobileDeviceCommand', 'MobileDeviceConfigurationProfile',
-    'MobileDeviceEnrollmentProfile', 'MobileDeviceExtensionAttribute',
-    'MobileDeviceGroup', 'MobileDeviceHistory', 'MobileDeviceInvitation',
-    'MobileDeviceProvisioningProfile', 'NetbootServer', 'NetworkSegment',
-    'OSXConfigurationProfile', 'Package', 'Patch', 'PatchAvailableTitle',
-    'PatchExternalSource', 'PatchInternalSource', 'PatchPolicy',
-    'PatchReport', 'PatchSoftwareTitle', 'Peripheral',
-    'PeripheralType', 'Policy', 'Printer', 'RestrictedSoftware',
-    'RemovableMACAddress', 'SavedSearch', 'Script', 'Site',
-    'SoftwareUpdateServer', 'SMTPServer', 'UserExtensionAttribute', 'User',
-    'UserGroup', 'VPPAccount', 'VPPAssignment', 'VPPInvitation', 'Webhook')
+    "Account",
+    "AccountGroup",
+    "ActivationCode",
+    "AdvancedComputerSearch",
+    "AdvancedMobileDeviceSearch",
+    "AdvancedUserSearch",
+    "AllowedFileExtension",
+    "Building",
+    "BYOProfile",
+    "Category",
+    "Class",
+    "Computer",
+    "ComputerApplication",
+    "ComputerApplicationUsage",
+    "ComputerCheckIn",
+    "ComputerCommand",
+    "ComputerConfiguration",
+    "ComputerExtensionAttribute",
+    "ComputerGroup",
+    "ComputerHardwareSoftwareReport",
+    "ComputerHistory",
+    "ComputerInventoryCollection",
+    "ComputerInvitation",
+    "ComputerManagement",
+    "ComputerReport",
+    "Department",
+    "DirectoryBinding",
+    "DiskEncryptionConfiguration",
+    "DistributionPoint",
+    "DockItem",
+    "EBook",
+    "GSXConnection",
+    "HealthcareListener",
+    "HealthcareListenerRule",
+    "IBeacon",
+    "InfrastructureManager",
+    "JSSUser",
+    "JSONWebTokenConfigurations",
+    "LDAPServer",
+    "LicensedSoftware",
+    "MacApplication",
+    "ManagedPreferenceProfile",
+    "MobileDevice",
+    "MobileDeviceApplication",
+    "MobileDeviceCommand",
+    "MobileDeviceConfigurationProfile",
+    "MobileDeviceEnrollmentProfile",
+    "MobileDeviceExtensionAttribute",
+    "MobileDeviceGroup",
+    "MobileDeviceHistory",
+    "MobileDeviceInvitation",
+    "MobileDeviceProvisioningProfile",
+    "NetbootServer",
+    "NetworkSegment",
+    "OSXConfigurationProfile",
+    "Package",
+    "Patch",
+    "PatchAvailableTitle",
+    "PatchExternalSource",
+    "PatchInternalSource",
+    "PatchPolicy",
+    "PatchReport",
+    "PatchSoftwareTitle",
+    "Peripheral",
+    "PeripheralType",
+    "Policy",
+    "Printer",
+    "RestrictedSoftware",
+    "RemovableMACAddress",
+    "SavedSearch",
+    "Script",
+    "Site",
+    "SoftwareUpdateServer",
+    "SMTPServer",
+    "UserExtensionAttribute",
+    "User",
+    "UserGroup",
+    "VPPAccount",
+    "VPPAssignment",
+    "VPPInvitation",
+    "Webhook",
+)
 
 # Map Python 2 basestring type for Python 3.
 if sys.version_info.major == 3:
@@ -69,12 +126,12 @@ if sys.version_info.major == 3:
 # pylint: disable=missing-docstring
 class Account(Container):
     """JSS account."""
+
     _endpoint_path = "accounts"
     # TODO: This is pending removal.
     container = "users"
     id_url = "userid"
-    search_types = {"userid": "userid", "username": "username",
-                    "name": "username"}
+    search_types = {"userid": "userid", "username": "username", "name": "username"}
 
 
 class AccountGroup(Container):
@@ -88,8 +145,7 @@ class AccountGroup(Container):
     # TODO: This is pending removal.
     container = "groups"
     id_url = "groupid"
-    search_types = {"groupid": "groupid", "groupname": "groupname",
-                    "name": "groupname"}
+    search_types = {"groupid": "groupid", "groupname": "groupname", "name": "groupname"}
 
 
 class ActivationCode(JSSObject):
@@ -127,8 +183,7 @@ class BYOProfile(Container):
     root_tag = "byoprofiles"
     can_delete = False
     can_post = False
-    search_types = {"sitename": "site/name", "siteid": "site/id",
-                    "name": "name"}
+    search_types = {"sitename": "site/name", "siteid": "site/id", "name": "name"}
 
 
 class Category(Container):
@@ -143,11 +198,16 @@ class Class(Container):
 class Computer(Container):
     root_tag = "computer"
     _endpoint_path = "computers"
-    search_types = {"name": "name", "serial_number": "serialnumber",
-                    "udid": "udid", "macaddress": "macaddress", "match": "match"}
+    search_types = {
+        "name": "name",
+        "serial_number": "serialnumber",
+        "udid": "udid",
+        "macaddress": "macaddress",
+        "match": "match",
+    }
     # The '/computers/match/name/{matchname}' variant is not supported
     # here because in testing, it didn't actually do anything. - It does now, at least in 10.5 -mo
-    allowed_kwargs = ('subset', 'match')
+    allowed_kwargs = ("subset", "match")
     data_keys = {
         "general": {
             "mac_address": None,
@@ -170,7 +230,7 @@ class Computer(Container):
             "position": None,
             "phone": None,
             "phone_number": None,
-        }
+        },
     }
 
     @property
@@ -200,23 +260,27 @@ class ComputerApplicationUsage(Container):
     can_delete = False
     can_put = False
     can_post = False
-    allowed_kwargs = ('start_date', 'end_date')
-    search_types = {"name": "name", "serial_number": "serialnumber",
-                    "udid": "udid", "macaddress": "macaddress",
-                    "match": "match"}
+    allowed_kwargs = ("start_date", "end_date")
+    search_types = {
+        "name": "name",
+        "serial_number": "serialnumber",
+        "udid": "udid",
+        "macaddress": "macaddress",
+        "match": "match",
+    }
 
     @classmethod
     def _handle_kwargs(cls, kwargs):
         """Do nothing. Can be overriden by classes which need it."""
-        if not all(key in kwargs for key in ('start_date', 'end_date')):
+        if not all(key in kwargs for key in ("start_date", "end_date")):
             raise TypeError(
-                "This class requires a `start_date` and an `end_date` "
-                "parameter.")
+                "This class requires a `start_date` and an `end_date` " "parameter."
+            )
 
         # The current `build_query` implementation needs dates to be a
         # single item in the keywords dict, so combine them.
-        start, end = kwargs.pop('start_date'), kwargs.pop('end_date')
-        kwargs['date_range'] = (start, end)
+        start, end = kwargs.pop("start_date"), kwargs.pop("end_date")
+        kwargs["date_range"] = (start, end)
         return kwargs
 
 
@@ -262,7 +326,8 @@ class ComputerGroup(Group):
     data_keys = {
         "is_smart": False,
         "criteria": None,
-        "computers": None,}
+        "computers": None,
+    }
 
     def add_computer(self, computer):
         """Add a computer to the group.
@@ -278,8 +343,7 @@ class ComputerGroup(Group):
         Args:
             computer: A Computer object to add to the group.
         """
-        super(ComputerGroup, self).remove_object_from_list(
-            computer, "computers")
+        super(ComputerGroup, self).remove_object_from_list(computer, "computers")
 
 
 class ComputerHardwareSoftwareReport(Container):
@@ -287,18 +351,22 @@ class ComputerHardwareSoftwareReport(Container):
     can_put = False
     can_post = False
     can_delete = False
-    search_types = {"name": "name", "serial_number": "serialnumber",
-                    "udid": "udid", "macaddress": "macadress",
-                    "match": "match"}
-    allowed_kwargs = ('start_date', 'end_date', 'subset')
+    search_types = {
+        "name": "name",
+        "serial_number": "serialnumber",
+        "udid": "udid",
+        "macaddress": "macadress",
+        "match": "match",
+    }
+    allowed_kwargs = ("start_date", "end_date", "subset")
 
 
-class ComputerHardwareSoftwareReport(Container):
-    """Unimplemented at this time."""
-    _endpoint_path = "computerhardwaresoftwarereports"
-    can_delete = False
-    can_put = False
-    can_post = False
+# class ComputerHardwareSoftwareReport(Container):
+#     """Unimplemented at this time."""
+#     _endpoint_path = "computerhardwaresoftwarereports"
+#     can_delete = False
+#     can_put = False
+#     can_post = False
 
 
 class ComputerHistory(Container):
@@ -306,9 +374,13 @@ class ComputerHistory(Container):
     can_delete = False
     can_put = False
     can_post = False
-    allowed_kwargs = ('subset',)
-    search_types = {"name": "name", "serial_number": "serialnumber",
-                    "udid": "udid", "macaddress": "macadress"}
+    allowed_kwargs = ("subset",)
+    search_types = {
+        "name": "name",
+        "serial_number": "serialnumber",
+        "udid": "udid",
+        "macaddress": "macadress",
+    }
 
 
 class ComputerInventoryCollection(JSSObject):
@@ -328,9 +400,13 @@ class ComputerManagement(Container):
     can_put = False
     can_post = False
     can_delete = False
-    allowed_kwargs = ('patchfilter', 'username', 'subset')
-    search_types = {"name": "name", "serial_number": "serialnumber",
-                    "udid": "udid", "macaddress": "macadress"}
+    allowed_kwargs = ("patchfilter", "username", "subset")
+    search_types = {
+        "name": "name",
+        "serial_number": "serialnumber",
+        "udid": "udid",
+        "macaddress": "macadress",
+    }
 
 
 class ComputerReport(Container):
@@ -364,7 +440,7 @@ class DockItem(Container):
 
 class EBook(Container):
     _endpoint_path = "ebooks"
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ("subset",)
 
 
 class GSXConnection(JSSObject):
@@ -403,6 +479,7 @@ class InfrastructureManager(Container):
 
 class JSSUser(JSSObject):
     """JSSUser is deprecated."""
+
     _endpoint_path = "jssuser"
     can_post = False
     can_put = False
@@ -468,8 +545,7 @@ class LDAPServer(Container):
 
         Returns bool.
         """
-        search_url = "%s/%s/%s/%s/%s" % (self.url, "group", group,
-                                         "user", user)
+        search_url = "%s/%s/%s/%s/%s" % (self.url, "group", group, "user", user)
         response = self.jss.get(search_url)
         # Sanity check
         length = len(response)
@@ -502,6 +578,7 @@ class LDAPServer(Container):
 
 class LDAPUsersResults(Container):
     """Helper class for results of LDAPServer queries for users."""
+
     can_get = False
     can_post = False
     can_put = False
@@ -510,6 +587,7 @@ class LDAPUsersResults(Container):
 
 class LDAPGroupsResults(Container):
     """Helper class for results of LDAPServer queries for groups."""
+
     can_get = False
     can_post = False
     can_put = False
@@ -523,12 +601,12 @@ class LicensedSoftware(Container):
 class MacApplication(Container):
     _endpoint_path = "macapplications"
     root_tag = "mac_application"
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ("subset",)
 
 
 class ManagedPreferenceProfile(Container):
     _endpoint_path = "managedpreferenceprofiles"
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ("subset",)
 
 
 class MobileDevice(Container):
@@ -538,23 +616,26 @@ class MobileDevice(Container):
 
     _endpoint_path = "mobiledevices"
     root_tag = "mobile_device"
-    search_types = {"name": "name", "serial_number": "serialnumber",
-                    "udid": "udid", "macaddress": "macadress",
-                    "match": "match"}
-    allowed_kwargs = ('subset',)
+    search_types = {
+        "name": "name",
+        "serial_number": "serialnumber",
+        "udid": "udid",
+        "macaddress": "macadress",
+        "match": "match",
+    }
+    allowed_kwargs = ("subset",)
 
 
 class MobileDeviceApplication(Container):
     _endpoint_path = "mobiledeviceapplications"
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ("subset",)
 
 
 class MobileDeviceCommand(Container):
     _endpoint_path = "mobiledevicecommands"
     can_put = False
     can_delete = False
-    search_types = {"name": "name", "uuid": "uuid",
-                    "command": "command"}
+    search_types = {"name": "name", "uuid": "uuid", "command": "command"}
     # TODO: This object _can_ post, but it works a little differently
     # and is not yet implemented
     can_post = False
@@ -562,13 +643,13 @@ class MobileDeviceCommand(Container):
 
 class MobileDeviceConfigurationProfile(Container):
     _endpoint_path = "mobiledeviceconfigurationprofiles"
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ("subset",)
 
 
 class MobileDeviceEnrollmentProfile(Container):
     _endpoint_path = "mobiledeviceenrollmentprofiles"
     search_types = {"name": "name", "invitation": "invitation"}
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ("subset",)
 
 
 class MobileDeviceExtensionAttribute(Container):
@@ -593,8 +674,7 @@ class MobileDeviceGroup(Group):
         Args:
             device: A MobileDevice object to remove from the group.
         """
-        super(MobileDeviceGroup, self).remove_object_from_list(
-            device, "mobile_devices")
+        super(MobileDeviceGroup, self).remove_object_from_list(device, "mobile_devices")
 
 
 class MobileDeviceHistory(Container):
@@ -602,9 +682,13 @@ class MobileDeviceHistory(Container):
     can_delete = False
     can_put = False
     can_post = False
-    allowed_kwargs = ('subset',)
-    search_types = {"name": "name", "serial_number": "serialnumber",
-                    "udid": "udid", "macaddress": "macadress"}
+    allowed_kwargs = ("subset",)
+    search_types = {
+        "name": "name",
+        "serial_number": "serialnumber",
+        "udid": "udid",
+        "macaddress": "macadress",
+    }
 
 
 class MobileDeviceInvitation(Container):
@@ -616,7 +700,7 @@ class MobileDeviceInvitation(Container):
 class MobileDeviceProvisioningProfile(Container):
     _endpoint_path = "mobiledeviceprovisioningprofiles"
     search_types = {"name": "name", "uuid": "uuid"}
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ("subset",)
 
 
 class NetbootServer(Container):
@@ -645,7 +729,7 @@ class OSXConfigurationProfile(Container):
     _endpoint_path = "osxconfigurationprofiles"
     root_tag = "os_x_configuration_profile"
     search_types = {"name": "name"}
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ("subset",)
     _name_element = "general/name"
     data_keys = {
         "general": {
@@ -704,7 +788,8 @@ class OSXConfigurationProfile(Container):
         payloads_contents_tag = self.find("general/payloads")
         if not payloads_contents_tag:
             payloads_contents_tag = ElementTree.SubElement(
-                self.find("general"), "payloads")
+                self.find("general"), "payloads"
+            )
 
         # Normally, when embedding xml within xml you would think that a normal person would
         # require escaping to avoid parsing issues. But nope, we just put the profile inline with the
@@ -713,8 +798,7 @@ class OSXConfigurationProfile(Container):
 
         uuid_tag = self.find("uuid")
         if not uuid_tag:
-            uuid_tag = ElementTree.SubElement(
-                self.find("general"), "uuid")
+            uuid_tag = ElementTree.SubElement(self.find("general"), "uuid")
         uuid_tag.text = "336001A6-460A-4213-B000-ECAE32E8429E"
 
 
@@ -732,12 +816,13 @@ class Package(Container):
         "boot_volume_required": "true",
         "allow_uninstalled": "false",
         "os_requirements": None,
-        "required_processor": "None",   # Really. The string "None".
+        "required_processor": "None",  # Really. The string "None".
         "switch_with_package": "Do Not Install",
         "install_if_reported_available": "false",
         "reinstall_option": "Do Not Reinstall",
         "triggering_files": None,
-        "send_notification": "false",}
+        "send_notification": "false",
+    }
 
     def _new(self, name, **kwargs):
         """Create a new Package from scratch.
@@ -788,7 +873,7 @@ class Patch(Container):
     _endpoint_path = "patches"
     root_tag = "software_title"
     can_post = False
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ("subset",)
     # The /patches/id/{id}/version/{version} variant is not currently
     # implemented.
 
@@ -806,9 +891,9 @@ class PatchExternalSource(Container):
     _endpoint_path = "patchexternalsources"
     root_tag = "patch_external_source"
     data_keys = {
-        'host_name': None,
-        'ssl_enabled': 'true',
-        'port': '443',
+        "host_name": None,
+        "ssl_enabled": "true",
+        "port": "443",
     }
 
 
@@ -834,11 +919,8 @@ class PatchSoftwareTitle(Container):
     data_keys = {
         "name_id": None,
         "source_id": None,
-        "notifications": {
-            "web_notification": "true",
-            "email_notification": "false"
-        },
-        "versions": None
+        "notifications": {"web_notification": "true", "email_notification": "false"},
+        "versions": None,
     }
 
     def add_package(self, pkg, version):
@@ -849,21 +931,20 @@ class PatchSoftwareTitle(Container):
             version: The version of the package being added.
         """
         if isinstance(pkg, Package):
-            version_el = ElementTree.SubElement(self.find('versions'), 'version')
-            software_version = ElementTree.SubElement(version_el, 'software_version')
+            version_el = ElementTree.SubElement(self.find("versions"), "version")
+            software_version = ElementTree.SubElement(version_el, "software_version")
             software_version.text = version
             package_version = self.add_object_to_path(pkg, version_el)
 
         else:
-            raise ValueError("Please pass a Package object to parameter: "
-                             "pkg.")
+            raise ValueError("Please pass a Package object to parameter: " "pkg.")
 
 
 class PatchPolicy(Container):
     _endpoint_path = "patchpolicies"
     root_tag = "patch_policy"
     search_types = {"id": "id", "softwaretitleconfigid": "softwaretitleconfigid/id"}
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ("subset",)
     _name_element = "general/name"
     data_keys = {
         "general": {
@@ -876,17 +957,14 @@ class PatchPolicy(Container):
             "kill_apps": None,
             "distribution_method": "selfservice",
             "allow_downgrade": "true",
-            "patch_unknown": "true"
+            "patch_unknown": "true",
         },
         "scope": {
             "computers": None,
             "computer_groups": None,
             "buildings": None,
             "departments": None,
-            "limitations": {
-                "network_segments": None,
-                "ibeacons": None
-            },
+            "limitations": {"network_segments": None, "ibeacons": None},
             "exclusions": {
                 "computers": None,
                 "computer_groups": None,
@@ -894,7 +972,7 @@ class PatchPolicy(Container):
                 "departments": None,
                 "network_segments": None,
                 "ibeacons": None,
-            }
+            },
         },
         "user_interaction": {
             "install_button_text": "Update",
@@ -906,10 +984,10 @@ class PatchPolicy(Container):
                 "notification_message": "Update Available",
                 "reminders": {
                     "notification_reminders_enabled": "true",
-                    "notification_reminder_frequency": "1"
-                }
-            }
-        }
+                    "notification_reminder_frequency": "1",
+                },
+            },
+        },
     }
 
     def add_object_to_scope(self, obj):
@@ -938,13 +1016,23 @@ class PatchPolicy(Container):
 
     def clear_scope(self):
         """Clear all objects from the scope, including exclusions."""
-        clear_list = ["computers", "computer_groups", "buildings",
-                      "departments", "limit_to_users/user_groups",
-                      "limitations/users", "limitations/user_groups",
-                      "limitations/network_segments", "exclusions/computers",
-                      "exclusions/computer_groups", "exclusions/buildings",
-                      "exclusions/departments", "exclusions/users",
-                      "exclusions/user_groups", "exclusions/network_segments"]
+        clear_list = [
+            "computers",
+            "computer_groups",
+            "buildings",
+            "departments",
+            "limit_to_users/user_groups",
+            "limitations/users",
+            "limitations/user_groups",
+            "limitations/network_segments",
+            "exclusions/computers",
+            "exclusions/computer_groups",
+            "exclusions/buildings",
+            "exclusions/departments",
+            "exclusions/users",
+            "exclusions/user_groups",
+            "exclusions/network_segments",
+        ]
         for section in clear_list:
             self.clear_list("%s%s" % ("scope/", section))
 
@@ -1001,11 +1089,10 @@ class PatchPolicy(Container):
             raise TypeError
 
 
-
 class Peripheral(Container):
     _endpoint_path = "peripherals"
     search_types = {}
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ("subset",)
 
 
 class PeripheralType(Container):
@@ -1019,13 +1106,14 @@ class Policy(Container):
     _endpoint_path = "policies"
     root_tag = "policy"
     search_types = {"name": "name", "category": "category"}
-    allowed_kwargs = ('subset',)
+    allowed_kwargs = ("subset",)
     _name_element = "general/name"
     data_keys = {
         "general": {
             "enabled": "true",
             "frequency": "Once per computer",
-            "category": "",},
+            "category": "",
+        },
         "scope": {
             "computers": None,
             "computer_groups": None,
@@ -1035,14 +1123,13 @@ class Policy(Container):
                 "computers": None,
                 "computer_groups": None,
                 "buildings": None,
-                "departments": None,},},
-        "self_service": {
-            "use_for_self_service": "true"},
-        "package_configuration": {
-            "packages": None},
+                "departments": None,
+            },
+        },
+        "self_service": {"use_for_self_service": "true"},
+        "package_configuration": {"packages": None},
         "scripts": None,
-        "maintenance": {
-            "recon": "true"},
+        "maintenance": {"recon": "true"},
     }
 
     def add_object_to_scope(self, obj):
@@ -1071,13 +1158,23 @@ class Policy(Container):
 
     def clear_scope(self):
         """Clear all objects from the scope, including exclusions."""
-        clear_list = ["computers", "computer_groups", "buildings",
-                      "departments", "limit_to_users/user_groups",
-                      "limitations/users", "limitations/user_groups",
-                      "limitations/network_segments", "exclusions/computers",
-                      "exclusions/computer_groups", "exclusions/buildings",
-                      "exclusions/departments", "exclusions/users",
-                      "exclusions/user_groups", "exclusions/network_segments"]
+        clear_list = [
+            "computers",
+            "computer_groups",
+            "buildings",
+            "departments",
+            "limit_to_users/user_groups",
+            "limitations/users",
+            "limitations/user_groups",
+            "limitations/network_segments",
+            "exclusions/computers",
+            "exclusions/computer_groups",
+            "exclusions/buildings",
+            "exclusions/departments",
+            "exclusions/users",
+            "exclusions/user_groups",
+            "exclusions/network_segments",
+        ]
         for section in clear_list:
             self.clear_list("%s%s" % ("scope/", section))
 
@@ -1144,8 +1241,7 @@ class Policy(Container):
         if isinstance(pkg, Package):
             if action_type not in ("Install", "Cache", "Install Cached"):
                 raise ValueError
-            package = self.add_object_to_path(
-                pkg, "package_configuration/packages")
+            package = self.add_object_to_path(pkg, "package_configuration/packages")
             # If there's already an action specified, get it, then
             # overwrite. Otherwise, make a new subelement.
             action = package.find("action")
@@ -1153,8 +1249,7 @@ class Policy(Container):
                 action = ElementTree.SubElement(package, "action")
             action.text = action_type
         else:
-            raise ValueError("Please pass a Package object to parameter: "
-                             "pkg.")
+            raise ValueError("Please pass a Package object to parameter: " "pkg.")
 
     def remove_package(self, pkg):  # type: (Union[Package,str]) -> None
         """Remove a Package object from the policy.
@@ -1170,14 +1265,14 @@ class Policy(Container):
     def get_packages(self):  # type: () -> Optional[QuerySet]
         """Get all package objects associated with this policy."""
         package_set = QuerySet.from_response(
-            'Package',
-            self.package_configuration.packages.findall('package'),
+            "Package",
+            self.package_configuration.packages.findall("package"),
             jss=self.jss,
         )
 
         return package_set
 
-    def add_script(self, script, priority='After', parameters=None):
+    def add_script(self, script, priority="After", parameters=None):
         """Add a Script object to the policy with priority=After.
 
         Args:
@@ -1188,8 +1283,7 @@ class Policy(Container):
         if isinstance(script, Script):
             if priority not in ("After", "Before"):
                 raise ValueError
-            script_tag = self.add_object_to_path(
-                script, "scripts")
+            script_tag = self.add_object_to_path(script, "scripts")
             priority_tag = script_tag.find("priority")
             if not priority_tag:
                 priority_tag = ElementTree.SubElement(script_tag, "priority")
@@ -1199,7 +1293,9 @@ class Policy(Container):
                 for param_idx in range(4, 11, 1):
                     param_tag = script_tag.find("parameter{}".format(param_idx))
                     if not param_tag:
-                        param_tag = ElementTree.SubElement(script_tag, "parameter{}".format(param_idx))
+                        param_tag = ElementTree.SubElement(
+                            script_tag, "parameter{}".format(param_idx)
+                        )
 
                     if param_idx - 4 > len(parameters) - 1:
                         param_tag.text = ""
@@ -1214,10 +1310,7 @@ class Policy(Container):
         Args:
             priority (str, optional): One of "After" or "Before" to filter attached scripts by their priority.
         """
-        script_set = QuerySet.from_response(
-            Script,
-            self.scripts,
-        )
+        script_set = QuerySet.from_response(Script, self.scripts,)
 
         return script_set
 
@@ -1246,6 +1339,7 @@ class Policy(Container):
         elif isinstance(category, basestring):
             name = ElementTree.SubElement(pcategory, "name")
             name.text = category
+
 
 # pylint: enable=too-many-instance-attributes, too-many-locals
 
@@ -1286,8 +1380,7 @@ class Script(Container):
         escaped_script_contents = escape(script_contents)
         script_contents_tag = self.find("script_contents")
         if not script_contents_tag:
-            script_contents_tag = ElementTree.SubElement(
-                self, "script_contents")
+            script_contents_tag = ElementTree.SubElement(self, "script_contents")
         script_contents_tag.text = escaped_script_contents
 
 
