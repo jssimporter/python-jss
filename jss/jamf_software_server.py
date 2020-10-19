@@ -317,7 +317,7 @@ class JSS(object):
         # show the load balancer to confirm cookie use
         if self.verbose and len(self.session.cookies) > 0:
             cookie = list(self.session.cookies)[0]
-            print(cookie.name, cookie.value)
+            print("Cookie used: {}={}".format(cookie.name, cookie.value))
 
     def get(self, url_path, headers=None, **kwargs):
         # type: (str) -> Union[ElementTree.Element, dict, bytes]
@@ -467,7 +467,11 @@ class JSS(object):
         #  read existing cookies
         self.get_cookies_from_file()
 
-        response = self.session.put(request_url, data=data, headers=headers)
+        try:
+            response = self.session.put(request_url, data=data, headers=headers)
+        except requests.exceptions.ConnectionError:
+            if self.verbose:
+                print("WARNING: Connection reset by peer - object may not be updated")
 
         #  write the cookie jar to file so we can use it again
         self.write_cookies_to_file()
