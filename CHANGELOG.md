@@ -2,11 +2,16 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.1.1] - date TBD
+## [2.1.1] - date 2020-10-19
+
+### Added
+
+- Write session cookie to temp file and re-load the cookie for each request. This is an attempt to fix the long-standing issue of multiple requests in succession going to different Jamf Cloud cluster nodes and therefore not getting the correct response because sync across cluster nodes takes up to a minute.
 
 ### Changed
 
 - To address a PI in Jamf Pro, don't fail on a 502 response, just print a warning.
+- To address problems with long requests timing out with a 504 Bad Gateway error, just print a warning but don't fail.
 
 ## [2.1.0] - date 2020-01-20
 
@@ -687,7 +692,11 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 
 - Initial release.
 
-[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.5.0...HEAD
+[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.1.1...HEAD
+[2.1.1]: https://github.com/sheagcraig/python-jss/compare/v2.1.0...v2.1.1
+[2.1.0]: https://github.com/sheagcraig/python-jss/compare/v2.0.1...v2.1.0
+[2.0.1]: https://github.com/sheagcraig/python-jss/compare/v2.0.0...v2.0.1
+[2.0.0]: https://github.com/sheagcraig/python-jss/compare/v1.5.0...v2.0.0
 [1.5.0]: https://github.com/sheagcraig/python-jss/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/sheagcraig/python-jss/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/sheagcraig/python-jss/compare/v1.2.1...v1.3.0
