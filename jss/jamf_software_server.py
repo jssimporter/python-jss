@@ -205,7 +205,7 @@ class JSS(object):
         if "adapter" in kwargs:
             self.session = kwargs["adapter"]
         else:
-            self.session = requests.session()
+            self.session = requests.Session()
 
         self.user = user
         self.password = password
@@ -300,6 +300,25 @@ class JSS(object):
         self.user, self.password = auth
         self.ssl_verify = ssl_verify
 
+    def write_cookies_to_file(self):
+        """Write cookies to file"""
+        cookiejar = "/tmp/pythonjss_cookie_jar"
+        with open(cookiejar, "wb") as f:
+            f.truncate()
+            cPickle.dump(self.session.cookies, f)
+
+    def get_cookies_from_file(self):
+        """Load cookies from file"""
+        cookiejar = "/tmp/pythonjss_cookie_jar"
+        if os.path.exists(cookiejar):
+            with open(cookiejar, "rb") as f:
+                self.session.cookies.update(cPickle.load(f))
+
+        # show the load balancer to confirm cookie use
+        if self.verbose:
+            cookie = list(self.session.cookies)[0]
+            print(cookie.name, cookie.value)
+
     def get(self, url_path, headers=None, **kwargs):
         # type: (str) -> Union[ElementTree.Element, dict, bytes]
         """GET a url, handle errors, and return an etree.
@@ -331,7 +350,13 @@ class JSS(object):
         ):  # Fall back to XML to support python-jss prior to addition of UAPI
             headers = {"Content-Type": "text/xml", "Accept": "text/xml"}
 
+        # read existing cookies
+        self.get_cookies_from_file()
+
         response = self.session.get(request_url, headers=headers, **kwargs)
+
+        #  write the cookie jar to file so we can use it again
+        self.write_cookies_to_file()
 
         if response.status_code == 200 and self.verbose:
             print("GET %s: Success." % request_url)
@@ -385,7 +410,13 @@ class JSS(object):
         else:
             headers = {"Content-Type": "application/octet-stream", "Accept": "*/*"}
 
+        #  read existing cookies
+        self.get_cookies_from_file()
+
         response = self.session.post(request_url, data=data, headers=headers)
+
+        #  write the cookie jar to file so we can use it again
+        self.write_cookies_to_file()
 
         if response.status_code == 201 and self.verbose:
             print("POST %s: Success" % request_url)
@@ -433,7 +464,13 @@ class JSS(object):
         else:
             raise TypeError("Could not PUT unrecognised data type")
 
+        #  read existing cookies
+        self.get_cookies_from_file()
+
         response = self.session.put(request_url, data=data, headers=headers)
+
+        #  write the cookie jar to file so we can use it again
+        self.write_cookies_to_file()
 
         if response.status_code == 201 and self.verbose:
             print("PUT %s: Success." % request_url)
@@ -466,6 +503,10 @@ class JSS(object):
             DeleteError if provided url_path has a >= 400 response.
         """
         request_url = os.path.join(self.base_url, quote_and_encode(url_path))
+
+        #  read existing cookies
+        self.get_cookies_from_file()
+
         if data:
             data = ElementTree.tostring(data, encoding="UTF-8")
             response = self.session.delete(
@@ -475,6 +516,9 @@ class JSS(object):
             )
         else:
             response = self.session.delete(request_url)
+
+        #  write the cookie jar to file so we can use it again
+        self.write_cookies_to_file()
 
         if response.status_code == 200 and self.verbose:
             print("DEL %s: Success." % request_url)
