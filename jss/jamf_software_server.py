@@ -185,6 +185,7 @@ class JSS(object):
         password=None,
         repo_prefs=None,
         ssl_verify=True,
+        cert=None,
         verbose=False,
         **kwargs
     ):
@@ -195,6 +196,7 @@ class JSS(object):
             password = jss_prefs.password
             repo_prefs = jss_prefs.repos
             ssl_verify = jss_prefs.verify
+            cert = jss_prefs.cert
             suppress_warnings = jss_prefs.suppress_warnings
 
         # TODO: This method currently accepts '**kwargs' to soften
@@ -205,7 +207,7 @@ class JSS(object):
         if "adapter" in kwargs:
             self.session = kwargs["adapter"]
         else:
-            self.session = requests.session()
+            self.session = requests.Session()
 
         self.user = user
         self.password = password
@@ -213,6 +215,7 @@ class JSS(object):
         self.repo_prefs = repo_prefs if repo_prefs else []
         self.verbose = verbose
         self.ssl_verify = ssl_verify
+        self.cert = cert
 
         self.distribution_points = DistributionPoints(self)
         self.max_age = -1
@@ -283,6 +286,25 @@ class JSS(object):
         """
         self.session.verify = value
 
+    @property
+    def cert(self):
+        """Certificate used to connect to the Casper API"""
+        ## print("@propery class method called")
+        return self.session.cert
+
+    @cert.setter
+    def cert(self, value):
+        """Certificate used to connect to the Casper API.
+
+        Args:
+            value (str): path to certificate.
+        """
+        ## print("@cert.setter class method called")
+        cert = self.session.cert
+        self.session.cert = value
+        if value:
+            print("INFO: Connected by using certificate: ", value)
+
     def mount_network_adapter(self, network_adapter):
         """Mount a network adapter that uses the Requests API.
 
@@ -315,11 +337,14 @@ class JSS(object):
                 self.session.cookies.update(cPickle.load(f))
 
         # show the load balancer to confirm cookie use
-        if self.verbose and len(self.session.cookies) > 0:
-            cookie = list(self.session.cookies)[0]
-            print("Cookie used: {}={}".format(cookie.name, cookie.value))
+        if self.verbose:
+            if len(self.session.cookies) == 0:
+                print("Cookies array empty")
+            else:
+                cookie = list(self.session.cookies)[0]
+                print(cookie.name, cookie.value)
 
-    def get(self, url_path, headers=None, **kwargs):
+    def get(self, url_path, headers=None, cert=None, **kwargs):
         # type: (str) -> Union[ElementTree.Element, dict, bytes]
         """GET a url, handle errors, and return an etree.
 
@@ -351,12 +376,12 @@ class JSS(object):
             headers = {"Content-Type": "text/xml", "Accept": "text/xml"}
 
         # read existing cookies
-        self.get_cookies_from_file()
+        # self.get_cookies_from_file()
 
-        response = self.session.get(request_url, headers=headers, **kwargs)
+        response = self.session.get(request_url, headers=headers, cert=cert, **kwargs)
 
         #  write the cookie jar to file so we can use it again
-        self.write_cookies_to_file()
+        # self.write_cookies_to_file()
 
         if response.status_code == 200 and self.verbose:
             print("GET %s: Success." % request_url)
@@ -465,7 +490,9 @@ class JSS(object):
             raise TypeError("Could not PUT unrecognised data type")
 
         #  read existing cookies
-        self.get_cookies_from_file()
+        # self.get_cookies_from_file()
+
+        # response = self.session.put(request_url, data=data, headers=headers)
 
         try:
             response = self.session.put(request_url, data=data, headers=headers)
@@ -474,21 +501,21 @@ class JSS(object):
                 print("WARNING: Connection reset by peer - object may not be updated")
 
         #  write the cookie jar to file so we can use it again
-        self.write_cookies_to_file()
+        # self.write_cookies_to_file()
 
-        if response.status_code == 201 and self.verbose:
-            print("PUT %s: Success." % request_url)
-        elif response.status_code == 502:
-            # TEMP fix for Jamf Pro PI-008770 (2020-09-04)
-            print("PUT %s: Ambiguous response." % request_url)
-        elif response.status_code == 504:
-            # dangerous? fix for gateway timeouts (2020-10-15)
-            print(
-                "PUT %s: Schrödiger's API object - "
-                "object may or may not have been uploaded." % request_url
-            )
-        elif response.status_code >= 400:
-            error_handler(PutError, response)
+        # if response.status_code == 201 and self.verbose:
+        #    print("PUT %s: Success." % request_url)
+        # elif response.status_code == 502:
+        # TEMP fix for Jamf Pro PI-008770 (2020-09-04)
+        #    print("PUT %s: Ambiguous response." % request_url)
+        # elif response.status_code == 504:
+        # dangerous? fix for gateway timeouts (2020-10-15)
+        #    print(
+        #        "PUT %s: Schrödiger's API object - "
+        #        "object may or may not have been uploaded." % request_url
+        #    )
+        # elif response.status_code >= 400:
+        #    error_handler(PutError, response)
 
     def delete(self, url_path, data=None):
         # type: (str, Optional[Union[ElementTree.Element, dict]]) -> None
