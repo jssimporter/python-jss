@@ -300,7 +300,6 @@ class JSS(object):
             value (str): path to certificate.
         """
         ## print("@cert.setter class method called")
-        cert = self.session.cert
         self.session.cert = value
         if value:
             print("INFO: Connected by using certificate: ", value)
@@ -337,12 +336,9 @@ class JSS(object):
                 self.session.cookies.update(cPickle.load(f))
 
         # show the load balancer to confirm cookie use
-        if self.verbose:
-            if len(self.session.cookies) == 0:
-                print("Cookies array empty")
-            else:
-                cookie = list(self.session.cookies)[0]
-                print(cookie.name, cookie.value)
+        if self.verbose and len(self.session.cookies) > 0:
+            cookie = list(self.session.cookies)[0]
+            print("Cookie used: {}={}".format(cookie.name, cookie.value))
 
     def get(self, url_path, headers=None, cert=None, **kwargs):
         # type: (str) -> Union[ElementTree.Element, dict, bytes]
@@ -376,12 +372,12 @@ class JSS(object):
             headers = {"Content-Type": "text/xml", "Accept": "text/xml"}
 
         # read existing cookies
-        # self.get_cookies_from_file()
+        self.get_cookies_from_file()
 
         response = self.session.get(request_url, headers=headers, cert=cert, **kwargs)
 
-        #  write the cookie jar to file so we can use it again
-        # self.write_cookies_to_file()
+        # write the cookie jar to file so we can use it again
+        self.write_cookies_to_file()
 
         if response.status_code == 200 and self.verbose:
             print("GET %s: Success." % request_url)
@@ -489,10 +485,8 @@ class JSS(object):
         else:
             raise TypeError("Could not PUT unrecognised data type")
 
-        #  read existing cookies
-        # self.get_cookies_from_file()
-
-        # response = self.session.put(request_url, data=data, headers=headers)
+        # read existing cookies
+        self.get_cookies_from_file()
 
         try:
             response = self.session.put(request_url, data=data, headers=headers)
@@ -501,21 +495,21 @@ class JSS(object):
                 print("WARNING: Connection reset by peer - object may not be updated")
 
         #  write the cookie jar to file so we can use it again
-        # self.write_cookies_to_file()
+        self.write_cookies_to_file()
 
-        # if response.status_code == 201 and self.verbose:
-        #    print("PUT %s: Success." % request_url)
-        # elif response.status_code == 502:
-        # TEMP fix for Jamf Pro PI-008770 (2020-09-04)
-        #    print("PUT %s: Ambiguous response." % request_url)
-        # elif response.status_code == 504:
-        # dangerous? fix for gateway timeouts (2020-10-15)
-        #    print(
-        #        "PUT %s: Schrödiger's API object - "
-        #        "object may or may not have been uploaded." % request_url
-        #    )
-        # elif response.status_code >= 400:
-        #    error_handler(PutError, response)
+        if response.status_code == 201 and self.verbose:
+            print("PUT %s: Success." % request_url)
+        elif response.status_code == 502:
+            # TEMP fix for Jamf Pro PI-008770 (2020-09-04)
+            print("PUT %s: Ambiguous response." % request_url)
+        elif response.status_code == 504:
+            # dangerous? fix for gateway timeouts (2020-10-15)
+            print(
+                "PUT %s: Gateway Timeout (load balancer issue) - "
+                "object may or may not have been uploaded." % request_url
+            )
+        elif response.status_code >= 400:
+            error_handler(PutError, response)
 
     def delete(self, url_path, data=None):
         # type: (str, Optional[Union[ElementTree.Element, dict]]) -> None
