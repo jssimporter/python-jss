@@ -658,7 +658,7 @@ class DistributionServer(Repository):
                    "FILE_TYPE": file_type, "FILE_NAME": basefname}
         response = self.connection["jss"].session.post(
             url=self.connection["upload_url"],
-            data=resource.read(),
+            data=resource,
             headers=headers)
         if self.connection["jss"].verbose:
             print(response)
@@ -680,7 +680,7 @@ class DistributionServer(Repository):
                    "fileIdentifier": "FIELD_FILE_NAME_FOR_DIST_POINTS"}
         response = self.connection["jss"].session.post(
             url=self.connection["upload_url"],
-            data=resource.read(),
+            data=resource,
             headers=headers)
         print(response)
         if self.connection["jss"].verbose:
