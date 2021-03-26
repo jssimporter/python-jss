@@ -20,12 +20,14 @@ import subprocess
 # pylint: disable=no-name-in-module
 from CoreFoundation import CFURLCreateWithString
 import Foundation  # pylint: disable=unused-import
-from objc import (initFrameworkWrapper, pathForFramework, loadBundleFunctions)
+from objc import initFrameworkWrapper, pathForFramework, loadBundleFunctions
+
 # pylint: enable=no-name-in-module
 
 
 class AttrDict(dict):
     """Attribute Dictionary"""
+
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
 
@@ -36,19 +38,22 @@ NetFS = AttrDict()  # pylint: disable=invalid-name
 # scan_classes=False means only add the contents of this Framework.
 # pylint: disable=invalid-name
 NetFS_bundle = initFrameworkWrapper(
-    'NetFS', frameworkIdentifier=None,
-    frameworkPath=pathForFramework('NetFS.framework'), globals=NetFS,
-    scan_classes=False)
+    "NetFS",
+    frameworkIdentifier=None,
+    frameworkPath=pathForFramework("NetFS.framework"),
+    globals=NetFS,
+    scan_classes=False,
+)
 # pylint: enable=invalid-name
 
 # https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 # Fix NetFSMountURLSync signature
-del NetFS['NetFSMountURLSync']
-loadBundleFunctions(NetFS_bundle, NetFS, [('NetFSMountURLSync', b'i@@@@@@o^@')])
+del NetFS["NetFSMountURLSync"]
+loadBundleFunctions(NetFS_bundle, NetFS, [("NetFSMountURLSync", b"i@@@@@@o^@")])
 
 
 def mount_share(share_path):
-    """Mounts a share at /Volumes
+    """Mounts a share at /Users/Shared
 
     Args:
         share_path: String URL with all auth info to connect to file share.
@@ -70,7 +75,8 @@ def mount_share(share_path):
         mount_options = {NetFS.kNetFSAllowSubMountsKey: True}
     # Build our connected pointers for our results
     result, output = NetFS.NetFSMountURLSync(
-        sh_url, None, None, None, open_options, mount_options, None)
+        sh_url, None, None, None, open_options, mount_options, None
+    )
 
     # Check if it worked
     if result != 0:
@@ -81,5 +87,6 @@ def mount_share(share_path):
 
 def is_high_sierra():
     version = StrictVersion(
-        subprocess.check_output(['sw_vers', '-productVersion']).decode().strip())
-    return version >= StrictVersion('10.13')
+        subprocess.check_output(["sw_vers", "-productVersion"]).decode().strip()
+    )
+    return version >= StrictVersion("10.13")
