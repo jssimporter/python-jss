@@ -2,11 +2,12 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.1.1] - date 2020-10-19
+## [2.1.1] - date 2021-03-26
 
 ### Added
 
 - Write session cookie to temp file and re-load the cookie for each request. This is an attempt to fix the long-standing issue of multiple requests in succession going to different Jamf Cloud cluster nodes and therefore not getting the correct response because sync across cluster nodes takes up to a minute.
+- Changed the mount point from `/Volumes` to `/Users/Shared`. This is to address failing mount points on macOS Big Sur.
 
 ### Changed
 
@@ -158,7 +159,11 @@ All notable changes to this project will be documented in this file. This projec
   data.
 - All `Element` objects added to a `JSSObject` will get converted to the
   `PrettyElement` type to enable dot access and pretty printing.
-- Renamed all of the request-failure exceptions by dropping the `JSS`: - `JSSGetError` -> `GetError` - `JSSPutError` -> `PutError` - `JSSPostError` -> `PostError` - `JSSDeleteError` -> `DeleteError`
+- Renamed all of the request-failure exceptions by dropping the `JSS`:
+  - `JSSGetError` -> `GetError`
+  - `JSSPutError` -> `PutError`
+  - `JSSPostError` -> `PostError`
+  - `JSSDeleteError` -> `DeleteError`
 
 ### Deprecated
 
@@ -212,7 +217,11 @@ All notable changes to this project will be documented in this file. This projec
 - Added `JSSObject.pickle` and `JSSObject.from_pickle` methods.
 - Added `JSSObjectList.pickle` and `JSSObjectList.from_pickle`.
 - Added category search to `Policy`. (#50 Thanks @jlrgraham)
-- Added stub objects. With these new endpoints, the Casper API now allows multiple parameters in a single URL (aside from the `subset` param). As I have limited development time for this project, these endpoints have stub objects added, but no `JSS` helper method, testing, or easy import with `import jss`. The TODO list has an item to add an ability to handle an arbitrary number of keyword arguments to a a GET request to support these new endpoints. Until then, the following objects serve as placeholders: - Added `ComputerApplication` object (untested at this time). - Added `ComputerApplicationUsage` object. - Added `ComputerHardwareSoftwareReport` object (untested at this time). - Added `ComputerHistory` object (untested at this time).
+- Added stub objects. With these new endpoints, the Casper API now allows multiple parameters in a single URL (aside from the `subset` param). As I have limited development time for this project, these endpoints have stub objects added, but no `JSS` helper method, testing, or easy import with `import jss`. The TODO list has an item to add an ability to handle an arbitrary number of keyword arguments to a a GET request to support these new endpoints. Until then, the following objects serve as placeholders:
+  - Added `ComputerApplication` object (untested at this time).
+  - Added `ComputerApplicationUsage` object.
+  - Added `ComputerHardwareSoftwareReport` object (untested at this time).
+  - Added `ComputerHistory` object (untested at this time).
 
 ### Changed
 
@@ -258,7 +267,8 @@ All notable changes to this project will be documented in this file. This projec
 - Improved the formatting of `JSSObjectList` objects.
 - Replaced the Element.**repr** method with the indenting pretty-printing one that has been in python-jss for awhile now. This allows all non-assigned results from Element subclass methods to pretty-print the XML.
 - Removed the recently added `JSSObject.pretty_find` as it's no longer needed.
-- Changed the method for creating "new" JSSObjects. Now, generating a blank XML for JSSObjects uses a class attribute `data_keys` to generate the structure. It allows for setting default values. - Now, the `__init__` and `_new` methods accept any of the `data_keys` as keyword args to be set during creation.
+- Changed the method for creating "new" JSSObjects. Now, generating a blank XML for JSSObjects uses a class attribute `data_keys` to generate the structure. It allows for setting default values.
+  - Now, the `__init__` and `_new` methods accept any of the `data_keys` as keyword args to be set during creation.
 - Renamed `JSSObject.new` to `JSSObject._new` to discourage client use.
 
 ### Fixed
@@ -269,7 +279,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Added
 
-- Added the subset feature to object queries that support it. For example Computers allow you to do `jss_connection.Computer(None, "basic") for extended list information or`jss_connection.Computer("computer-name", "general&purchasing")`or`jss_connection.Computer("computer-name", ["general", "purchasing"])`for subsection retrieval. This should allow you to speed up big`retrieve_all` runs significantly.
+- Added the subset feature to object queries that support it. For example Computers allow you to do `jss_connection.Computer(None, "basic") for extended list information or `jss_connection.Computer("computer-name", "general&purchasing")`or`jss_connection.Computer("computer-name", ["general", "purchasing"])`for subsection retrieval. This should allow you to speed up big`retrieve_all` runs significantly.
 - Added Cloud Distribution Point support. Thanks to @beckf for packet analysis help, and @homebysix for testing. (#22)
 - Added `JSSObject.pretty_find`. Pretty prints sub-elements of a JSSObject for use in interactive exploration of the JSS.
 - Added option `verify` to `JSSPrefs` and the com.github.sheagcraig.python-jss preference domain. If not specified in the preferences, it will assume `True`.
@@ -278,7 +288,11 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Changed
 
-- New mount technique uses PyObjC rather than subprocess to mount. Thanks to @pudquick for this slick implementation! - Solves some Kerberos issues some users were experiencing. - For OS X users who are not using the Apple Python, continue to use subprocess to mount. - The nobrowse argument to mount is now deprecated, and will do nothing. It will be removed entirely in the future. - Verbose prints mount arguments.
+- New mount technique uses PyObjC rather than subprocess to mount. Thanks to @pudquick for this slick implementation!
+  - Solves some Kerberos issues some users were experiencing.
+  - For OS X users who are not using the Apple Python, continue to use subprocess to mount.
+  - The nobrowse argument to mount is now deprecated, and will do nothing. It will be removed entirely in the future.
+  - Verbose prints mount arguments.
 - When viewing object data interactively, the `__repr__` now displays simply `*data*` instead of the full binary data for things like icons and app binaries.
 
 ### Fixed
@@ -302,7 +316,11 @@ All notable changes to this project will be documented in this file. This projec
 
 - `jss.ComputerGroup`s that are made with the `new` method now include the `computers` subelement. Strangely, even smart groups include a computers tag. If previously populated with computer objects, it will retain them!
 - Removed bundled copy of python requests.
-- Using setuptools `setup.py` property `install_requires` to specify dependencies: - requests - pyasn1 - ndg-httpsclient - Previous two required for cipher change support.
+- Using setuptools `setup.py` property `install_requires` to specify dependencies:
+  - requests
+  - pyasn1
+  - ndg-httpsclient
+  - Previous two required for cipher change support.
 - Updated documentation to describe this requirement for developer (i.e. anyone who does not use the egg or wheel files to install).
 - `JSS.base_url` (Get and Set) and `JSS._url` (Read only) are now proper properties.
 
@@ -343,7 +361,10 @@ All notable changes to this project will be documented in this file. This projec
 ### Changed
 
 - Basic interface is in place; Calling this 1.0.0 now.
-- Begin working on Linux functionality. - Preferences plist on Linux should be: `~/.com.github.sheagcraig.python-jss.plist` and should be a non-binary plist. - Mount on OS X has different output format than Linux. Thus, regex searches need to be os-specific. - Mounting a share is also different.
+- Begin working on Linux functionality.
+  - Preferences plist on Linux should be: `~/.com.github.sheagcraig.python-jss.plist` and should be a non-binary plist.
+  - Mount on OS X has different output format than Linux. Thus, regex searches need to be os-specific.
+  - Mounting a share is also different.
 - As this is largely stable code, set major version to 1.
 
 ### Fixed
@@ -433,7 +454,9 @@ All notable changes to this project will be documented in this file. This projec
 ### Fixed
 
 - Non-flat packages cannot be uploaded to JDS'. Now there is a warning message and documentation. (#20)
-- If you haven't configured any DP's through the `repo_prefs` parameter to the `JSS`, we shouldn't attempt `DistributionPoints.retrieve_all()`. Reordered slightly to avoid problems. (#21) - No need (unnecessary work) - Your API user may not have permissions to do so! Thanks @arubdesu
+- If you haven't configured any DP's through the `repo_prefs` parameter to the `JSS`, we shouldn't attempt `DistributionPoints.retrieve_all()`. Reordered slightly to avoid problems. (#21)
+  - No need (unnecessary work)
+  - Your API user may not have permissions to do so! Thanks @arubdesu
 
 ### Changed
 
@@ -460,8 +483,14 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Changed
 
-- Configuration for a JDS has changed. Now it only requires key: type, value: JDS. See the [wiki](https://github.com/sheagcraig/python-jss/wiki/Configuration) for complete examples. - Old configuration was misleading and/or redundent. Uploading to a JDS actually involves POSTing to the _JSS_, using the JSS' URL, and a correctly privileged API user, NOT the JDS' URL or WebDAV R/W accounts.
-- Implemented missing API objects: - BYOProfile - ComputerConfiguration - IBeacon. PEP8 wins over Apple 'iFoolishness' for naming. - MacApplication - VPPAccount
+- Configuration for a JDS has changed. Now it only requires key: type, value: JDS. See the [wiki](https://github.com/sheagcraig/python-jss/wiki/Configuration) for complete examples.
+  - Old configuration was misleading and/or redundent. Uploading to a JDS actually involves POSTing to the _JSS_, using the JSS' URL, and a correctly privileged API user, NOT the JDS' URL or WebDAV R/W accounts.
+- Implemented missing API objects:
+  - BYOProfile
+  - ComputerConfiguration
+  - IBeacon. PEP8 wins over Apple 'iFoolishness' for naming.
+  - MacApplication
+  - VPPAccount
 
 ## [0.4.4] - 2014-12-03 - Welcome to the Terrordome
 
@@ -528,7 +557,12 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 ### Added
 
 - Adds class `casper`. This class pulls the information returned from POSTing to the undocumented casper.jxml. At some point I would like this to allow for automatic configuration of all repository information (provided an authentication by a privileged user). However, due to its undocumented nature, I don't want to rely on it until I can get some confirmation from JAMF that this is 'OK'.
-- Adds class `JDS` to module `distribution_points`. (#1) - Can copy packages/DMG's. - Can copy scripts, although it is currently broken. - Scripts include HTML form boundaries... Working on this. - Has a limited .exists() method. - Has a more thorough .exists_with_casper() method that uses the undocumented casper.jxml/casper-module.
+- Adds class `JDS` to module `distribution_points`. (#1)
+  - Can copy packages/DMG's.
+  - Can copy scripts, although it is currently broken.
+    - Scripts include HTML form boundaries... Working on this.
+  - Has a limited .exists() method.
+  - Has a more thorough .exists_with_casper() method that uses the undocumented casper.jxml/casper-module.
 - class `DistributionPoints` now adds `JDS` type DP's.
 - `DistributionPoints` now have helper methods to add and remove a `DistributionPoint`.
 
@@ -539,9 +573,16 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 ### Changed
 
 - `DistributionPoints.__repr__` factored into `DistributionPoint` and children.
-- New option to fully declare distribution point connection information in the preference file or at JSS or DistributionPoints instantiation time. - Shares will now only be included if they are defined in the list of `repos`. (Previously, it would try to match all DP's from .distributionpoints to a config option). - AFP or SMB shares declared in the previous style, with just a `name` and `password` will still get the rest of the information from the server. - You may now specify these connection properties explictly. - JDS' must be configured with explicit properties. - See docstrings for the different types of DistributionPoint for required keys.
+- New option to fully declare distribution point connection information in the preference file or at JSS or DistributionPoints instantiation time.
+  - Shares will now only be included if they are defined in the list of `repos`. (Previously, it would try to match all DP's from .distributionpoints to a config option).
+  - AFP or SMB shares declared in the previous style, with just a `name` and `password` will still get the rest of the information from the server.
+  - You may now specify these connection properties explictly.
+  - JDS' must be configured with explicit properties.
+  - See docstrings for the different types of DistributionPoint for required keys.
 - DistributionPoint subclasses will now let you know what config information you left out.
-- DistributionPoints and DistributionPoint subclasses now have an optional argument id\_ for supporting JDS copy methods. - Ignored by non-JDS DP's. - Can be used to copy a package/script to an existing package object rather than creating a new one (the default, of -1 makes a new object).
+- DistributionPoints and DistributionPoint subclasses now have an optional argument id\_ for supporting JDS copy methods.
+  - Ignored by non-JDS DP's.
+  - Can be used to copy a package/script to an existing package object rather than creating a new one (the default, of -1 makes a new object).
 - Moved documentation from README to wiki.
 
 ## [0.3.11] - 2014-10-08 - Offal Sliders 2
@@ -572,8 +613,15 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 ### Added
 
 - Add module `distribution_points`. Provides:
-  - `DistributionPoints` to handle copying packages and scripts across all configured repositories. - Distribution points are automatically configured (except for password until I can figure out the hashing) based on your JSS's data. - copy copies a file to the directory indicated by the file extension (.pkg, .dmg to Packages, everything else to Scripts) of all distribution points. - copy_pkg copies a .pkg or .dmg to the Packages directory of all distribution points. - copy_script copies a script to the Scripts directory of all distribution points. - Distribution points are mounted prior to copy operations if they aren't already.
-  - `AFPRepository`, `SMBRepository`, `HTTPRepository`, `HTTPSRepository`, and `JDSRepository`. (Only AFP and SMB implemented currently-HTTP(S) and JDS coming soon.) - mount (Has option to mount -o nobrowse, so disk doesn't appear in GUI) - umount
+  - `DistributionPoints` to handle copying packages and scripts across all configured repositories.
+  - Distribution points are automatically configured (except for password until I can figure out the hashing) based on your JSS's data.
+  - copy copies a file to the directory indicated by the file extension (.pkg, .dmg to Packages, everything else to Scripts) of all distribution points.
+  - copy_pkg copies a .pkg or .dmg to the Packages directory of all distribution points.
+  - copy_script copies a script to the Scripts directory of all distribution points.
+  - Distribution points are mounted prior to copy operations if they aren't already.
+  - `AFPRepository`, `SMBRepository`, `HTTPRepository`, `HTTPSRepository`, and `JDSRepository`. (Only AFP and SMB implemented currently-HTTP(S) and JDS coming soon.)
+  - mount (Has option to mount -o nobrowse, so disk doesn't appear in GUI)
+  - umount
 
 ### Changed
 
@@ -631,8 +679,8 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
   - To create an object now, use the class constructor with the string argument "name", configure as before, and then save().
   - i.e.
     ```
-    ")
-    ()
+    policy = Policy(jss_instance, "Install Adventure")
+    policy.save()
     ```
 
 ### Removed
@@ -692,44 +740,44 @@ I did a quick update to include an egg installer on pypi.org. This was needed to
 
 - Initial release.
 
-[unreleased]: https://github.com/sheagcraig/python-jss/compare/v1.1.1...HEAD
-[2.1.1]: https://github.com/sheagcraig/python-jss/compare/v2.1.0...v2.1.1
-[2.1.0]: https://github.com/sheagcraig/python-jss/compare/v2.0.1...v2.1.0
-[2.0.1]: https://github.com/sheagcraig/python-jss/compare/v2.0.0...v2.0.1
-[2.0.0]: https://github.com/sheagcraig/python-jss/compare/v1.5.0...v2.0.0
-[1.5.0]: https://github.com/sheagcraig/python-jss/compare/v1.4.0...v1.5.0
-[1.4.0]: https://github.com/sheagcraig/python-jss/compare/v1.3.0...v1.4.0
-[1.3.0]: https://github.com/sheagcraig/python-jss/compare/v1.2.1...v1.3.0
-[1.2.1]: https://github.com/sheagcraig/python-jss/compare/v1.2.0...v1.2.1
-[1.2.0]: https://github.com/sheagcraig/python-jss/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/sheagcraig/python-jss/compare/v1.0.2...v1.1.0
-[1.0.2]: https://github.com/sheagcraig/python-jss/compare/v1.0.1...v1.0.2
-[1.0.1]: https://github.com/sheagcraig/python-jss/compare/v1.0.0...v1.0.1
-[1.0.0]: https://github.com/sheagcraig/python-jss/compare/v0.5.9...v1.0.0
-[0.5.9]: https://github.com/sheagcraig/python-jss/compare/v0.5.8...v0.5.9
-[0.5.8]: https://github.com/sheagcraig/python-jss/compare/v0.5.7...v0.5.8
-[0.5.7]: https://github.com/sheagcraig/python-jss/compare/v0.5.6...v0.5.7
-[0.5.6]: https://github.com/sheagcraig/python-jss/compare/v0.5.5...v0.5.6
-[0.5.5]: https://github.com/sheagcraig/python-jss/compare/v0.5.4...v0.5.5
-[0.5.4]: https://github.com/sheagcraig/python-jss/compare/v0.5.3...v0.5.4
-[0.5.3]: https://github.com/sheagcraig/python-jss/compare/v0.5.2...v0.5.3
-[0.5.2]: https://github.com/sheagcraig/python-jss/compare/v0.5.1...v0.5.2
-[0.5.1]: https://github.com/sheagcraig/python-jss/compare/v0.4.4...v0.5.1
-[0.4.4]: https://github.com/sheagcraig/python-jss/compare/v0.4.3...v0.4.4
-[0.4.3]: https://github.com/sheagcraig/python-jss/compare/v0.4.2...v0.4.3
-[0.4.2]: https://github.com/sheagcraig/python-jss/compare/v0.4.1...v0.4.2
-[0.4.1]: https://github.com/sheagcraig/python-jss/compare/v0.4...v0.4.1
-[0.4]: https://github.com/sheagcraig/python-jss/compare/v0.3.11...v0.4
-[0.3.11]: https://github.com/sheagcraig/python-jss/compare/v0.3.10...v0.3.11
-[0.3.10]: https://github.com/sheagcraig/python-jss/compare/v0.3.9...v0.3.10
-[0.3.9]: https://github.com/sheagcraig/python-jss/compare/v0.3.7...v0.3.9
-[0.3.7]: https://github.com/sheagcraig/python-jss/compare/v0.3.5...v0.3.7
-[0.3.5]: https://github.com/sheagcraig/python-jss/compare/v0.3.4...v0.3.5
-[0.3.4]: https://github.com/sheagcraig/python-jss/compare/v0.3.3...v0.3.4
-[0.3.3]: https://github.com/sheagcraig/python-jss/compare/v0.3.2...v0.3.3
-[0.3.2]: https://github.com/sheagcraig/python-jss/compare/v0.3.1...v0.3.2
-[0.3.1]: https://github.com/sheagcraig/python-jss/compare/v0.3...v0.3.1
-[0.3]: https://github.com/sheagcraig/python-jss/compare/v0.2.2...v0.3
-[0.2.2]: https://github.com/sheagcraig/python-jss/compare/v0.2.1...v0.2.2
-[0.2.1]: https://github.com/sheagcraig/python-jss/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/sheagcraig/python-jss/compare/v0.0.7...v0.2.0
+[unreleased]: https://github.com/jssimporter/python-jss/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/jssimporter/python-jss/compare/v2.1.0...v2.1.1
+[2.1.0]: https://github.com/jssimporter/python-jss/compare/v2.0.1...v2.1.0
+[2.0.1]: https://github.com/jssimporter/python-jss/compare/v2.0.0...v2.0.1
+[2.0.0]: https://github.com/jssimporter/python-jss/compare/v1.5.0...v2.0.0
+[1.5.0]: https://github.com/jssimporter/python-jss/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/jssimporter/python-jss/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/jssimporter/python-jss/compare/v1.2.1...v1.3.0
+[1.2.1]: https://github.com/jssimporter/python-jss/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/jssimporter/python-jss/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/jssimporter/python-jss/compare/v1.0.2...v1.1.0
+[1.0.2]: https://github.com/jssimporter/python-jss/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/jssimporter/python-jss/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/jssimporter/python-jss/compare/v0.5.9...v1.0.0
+[0.5.9]: https://github.com/jssimporter/python-jss/compare/v0.5.8...v0.5.9
+[0.5.8]: https://github.com/jssimporter/python-jss/compare/v0.5.7...v0.5.8
+[0.5.7]: https://github.com/jssimporter/python-jss/compare/v0.5.6...v0.5.7
+[0.5.6]: https://github.com/jssimporter/python-jss/compare/v0.5.5...v0.5.6
+[0.5.5]: https://github.com/jssimporter/python-jss/compare/v0.5.4...v0.5.5
+[0.5.4]: https://github.com/jssimporter/python-jss/compare/v0.5.3...v0.5.4
+[0.5.3]: https://github.com/jssimporter/python-jss/compare/v0.5.2...v0.5.3
+[0.5.2]: https://github.com/jssimporter/python-jss/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/jssimporter/python-jss/compare/v0.4.4...v0.5.1
+[0.4.4]: https://github.com/jssimporter/python-jss/compare/v0.4.3...v0.4.4
+[0.4.3]: https://github.com/jssimporter/python-jss/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/jssimporter/python-jss/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/jssimporter/python-jss/compare/v0.4...v0.4.1
+[0.4]: https://github.com/jssimporter/python-jss/compare/v0.3.11...v0.4
+[0.3.11]: https://github.com/jssimporter/python-jss/compare/v0.3.10...v0.3.11
+[0.3.10]: https://github.com/jssimporter/python-jss/compare/v0.3.9...v0.3.10
+[0.3.9]: https://github.com/jssimporter/python-jss/compare/v0.3.7...v0.3.9
+[0.3.7]: https://github.com/jssimporter/python-jss/compare/v0.3.5...v0.3.7
+[0.3.5]: https://github.com/jssimporter/python-jss/compare/v0.3.4...v0.3.5
+[0.3.4]: https://github.com/jssimporter/python-jss/compare/v0.3.3...v0.3.4
+[0.3.3]: https://github.com/jssimporter/python-jss/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/jssimporter/python-jss/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/jssimporter/python-jss/compare/v0.3...v0.3.1
+[0.3]: https://github.com/jssimporter/python-jss/compare/v0.2.2...v0.3
+[0.2.2]: https://github.com/jssimporter/python-jss/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/jssimporter/python-jss/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/jssimporter/python-jss/compare/v0.0.7...v0.2.0
