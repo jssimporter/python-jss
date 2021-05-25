@@ -2,13 +2,19 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.1.1] - 2021-03-26
+## [2.1.1] - date 2021-03-26
+
+### Added
+
+- Write session cookie to temp file and re-load the cookie for each request. This is an attempt to fix the long-standing issue of multiple requests in succession going to different Jamf Cloud cluster nodes and therefore not getting the correct response because sync across cluster nodes takes up to a minute.
+- Changed the mount point from `/Volumes` to `/Users/Shared`. This is to address failing mount points on macOS Big Sur.
 
 ### Changed
 
-- Changed the mount point from `/Volumes` to `/Users/Shared`. This is to address failing mount points on macOS Big Sur.
+- To address a PI in Jamf Pro, don't fail on a 502 response, just print a warning.
+- To address problems with long requests timing out with a 504 Bad Gateway error, just print a warning but don't fail.
 
-## [2.1.0] - 2020-10-19
+## [2.1.0] - date 2020-01-20
 
 ### Added
 
