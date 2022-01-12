@@ -185,6 +185,7 @@ class JSS(object):
         password=None,
         repo_prefs=None,
         ssl_verify=True,
+        cert=None,
         verbose=False,
         **kwargs
     ):
@@ -195,6 +196,7 @@ class JSS(object):
             password = jss_prefs.password
             repo_prefs = jss_prefs.repos
             ssl_verify = jss_prefs.verify
+            cert = jss_prefs.cert
             suppress_warnings = jss_prefs.suppress_warnings
 
         # TODO: This method currently accepts '**kwargs' to soften
@@ -205,7 +207,7 @@ class JSS(object):
         if "adapter" in kwargs:
             self.session = kwargs["adapter"]
         else:
-            self.session = requests.session()
+            self.session = requests.Session()
 
         self.user = user
         self.password = password
@@ -213,6 +215,7 @@ class JSS(object):
         self.repo_prefs = repo_prefs if repo_prefs else []
         self.verbose = verbose
         self.ssl_verify = ssl_verify
+        self.cert = cert
 
         self.distribution_points = DistributionPoints(self)
         self.max_age = -1
@@ -283,6 +286,24 @@ class JSS(object):
         """
         self.session.verify = value
 
+    @property
+    def cert(self):
+        """Certificate used to connect to the Casper API"""
+        ## print("@propery class method called")
+        return self.session.cert
+
+    @cert.setter
+    def cert(self, value):
+        """Certificate used to connect to the Casper API.
+
+        Args:
+            value (str): path to certificate.
+        """
+        ## print("@cert.setter class method called")
+        self.session.cert = value
+        if value:
+            print("INFO: Connected by using certificate: ", value)
+
     def mount_network_adapter(self, network_adapter):
         """Mount a network adapter that uses the Requests API.
 
@@ -319,7 +340,7 @@ class JSS(object):
             cookie = list(self.session.cookies)[0]
             print("Cookie used: {}={}".format(cookie.name, cookie.value))
 
-    def get(self, url_path, headers=None, **kwargs):
+    def get(self, url_path, headers=None, cert=None, **kwargs):
         # type: (str) -> Union[ElementTree.Element, dict, bytes]
         """GET a url, handle errors, and return an etree.
 
@@ -353,9 +374,9 @@ class JSS(object):
         # read existing cookies
         self.get_cookies_from_file()
 
-        response = self.session.get(request_url, headers=headers, **kwargs)
+        response = self.session.get(request_url, headers=headers, cert=cert, **kwargs)
 
-        #  write the cookie jar to file so we can use it again
+        # write the cookie jar to file so we can use it again
         self.write_cookies_to_file()
 
         if response.status_code == 200 and self.verbose:
@@ -464,7 +485,7 @@ class JSS(object):
         else:
             raise TypeError("Could not PUT unrecognised data type")
 
-        #  read existing cookies
+        # read existing cookies
         self.get_cookies_from_file()
 
         try:
@@ -484,7 +505,7 @@ class JSS(object):
         elif response.status_code == 504:
             # dangerous? fix for gateway timeouts (2020-10-15)
             print(
-                "PUT %s: Schrödiger's API object - "
+                "PUT %s: Gateway Timeout (load balancer issue) - "
                 "object may or may not have been uploaded." % request_url
             )
         elif response.status_code >= 400:
