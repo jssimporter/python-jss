@@ -19,46 +19,58 @@ from datetime import datetime
 import logging
 import sys
 
-sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
+sys.path.insert(0, "/Library/AutoPkg/JSSImporter")
 import requests
 
 logger = logging.getLogger(__name__)
 
 
 class UAPIAuth(requests.auth.AuthBase):
-
-    def __init__(self, username, password, fetch_url='/uapi/auth/tokens', token=None, expires=None):
+    def __init__(
+        self,
+        username,
+        password,
+        fetch_url="/api/v1/auth/tokens",
+        token=None,
+        expires=None,
+    ):
         self.username = username
         self.password = password
         self.token = token
         self.expires = expires if expires else datetime.now()
         self.fetch_url = fetch_url
 
-    def __call__(self, r):  # type: (requests.PreparedRequest) -> requests.PreparedRequest
+    def __call__(
+        self, r
+    ):  # type: (requests.PreparedRequest) -> requests.PreparedRequest
         if self.expires is not None and self.expires < datetime.now():
             logger.debug("Token expiry has passed, fetching a new token.")
             self._get_token()
 
-        r.headers['Authorization'] = 'jamf-token {}'.format(self.token)
-        r.register_hook('response', self.handle_401)
+        r.headers["Authorization"] = "jamf-token {}".format(self.token)
+        r.register_hook("response", self.handle_401)
         return r
 
     def _get_token(self):
-        r = requests.post(self.fetch_url, auth=(self.username, self.password), verify=False)
+        r = requests.post(
+            self.fetch_url, auth=(self.username, self.password), verify=False
+        )
         r.raise_for_status()
         data = r.json()
 
-        self.token = data['token']
-        #self.expires = datetime.utcfromtimestamp(data['expires'])
+        self.token = data["token"]
+        # self.expires = datetime.utcfromtimestamp(data['expires'])
 
-    def handle_401(self, r, **kwargs):  # type: (requests.Response, dict) -> requests.Response
+    def handle_401(
+        self, r, **kwargs
+    ):  # type: (requests.Response, dict) -> requests.Response
         """
         Takes the given response, fetches a new token, and retries
         :param r:
         :param kwargs:
         :return:
         """
-        if r.status_code is not 401:
+        if r.status_code != 401:
             return r
 
         logger.debug("Server returned HTTP 401, getting a new token")

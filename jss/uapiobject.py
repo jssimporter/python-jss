@@ -26,6 +26,7 @@ import datetime as dt
 import json
 
 from jss import tools
+
 try:
     from UserDict import UserDict  # Python 2.X
 except ImportError:
@@ -50,11 +51,12 @@ class UAPIObject(UserDict):
         can_post: Bool whether object allows a POST request.
         can_delete: Bool whether object allows a DEL request.
     """
+
     _endpoint_path = None  # type: Optional[str]
-    can_get = True         # type: bool
-    can_put = True         # type: bool
-    can_post = False       # type: bool
-    can_delete = False     # type: bool
+    can_get = True  # type: bool
+    can_put = True  # type: bool
+    can_post = False  # type: bool
+    can_delete = False  # type: bool
 
     def __init__(self, jss, data, **kwargs):
         # type: (JSS, Optional[dict], Optional[dict]) -> None
@@ -70,7 +72,7 @@ class UAPIObject(UserDict):
         UserDict.__init__(self, data)
         self.jss = jss
         self.cached = False
-        #super(UAPIObject, self).__init__(data)
+        # super(UAPIObject, self).__init__(data)
 
     @property
     def cached(self):  # type: () -> bool
@@ -101,7 +103,7 @@ class UAPIObject(UserDict):
         Returns:
             str path construction for this class to query.
         """
-        return 'uapi/%s' % cls._endpoint_path
+        return "uapi/%s" % cls._endpoint_path
 
     @property
     def url(self):  # type: () -> str
@@ -110,7 +112,7 @@ class UAPIObject(UserDict):
         For example: "/activationcode"
         """
         # Flat objects have no ID property, so there is only one URL.
-        return 'uapi/%s' % self._endpoint_path
+        return "uapi/%s" % self._endpoint_path
 
     def __repr__(self):
         if isinstance(self.cached, dt.datetime):
@@ -118,14 +120,15 @@ class UAPIObject(UserDict):
         else:
             cached = bool(self.cached)
         return "<{} cached: {} at 0x{:0x}>".format(
-            self.__class__.__name__, cached, id(self))
+            self.__class__.__name__, cached, id(self)
+        )
 
     def retrieve(self):
         """Replace this object's data with JSS data, reset cache-age."""
         if self.jss.verbose:
             print("Retrieving data from JSS...")
 
-        json_data = self.jss.get(self.url, headers={'Accept': 'application/json'})
+        json_data = self.jss.get(self.url, headers={"Accept": "application/json"})
         self.update(json_data)
         self.cached = dt.datetime.now()
 
@@ -201,6 +204,7 @@ class UAPIContainer(UAPIObject):
         _id_path (str): URL Path subcomponent used to reference an
             object by ID when querying or posting.
     """
+
     can_get = True
     can_put = True
     can_post = True
@@ -242,7 +246,7 @@ class UAPIContainer(UAPIObject):
             UAPIObject.__init__(self, jss, data, **kwargs)
             # If this has an ID, assume it's from the JSS and set the
             # cache time, otherwise set it to "Unsaved".
-            if 'id' in data and data['id']:
+            if "id" in data and data["id"]:
                 self.cached = dt.datetime.now()
             else:
                 self.cached = "Unsaved"
@@ -257,18 +261,16 @@ class UAPIContainer(UAPIObject):
         #     self.kwargs = kwargs
 
         else:
-            raise TypeError(
-                "UAPIObjects data argument must be of type "
-                "dict")
+            raise TypeError("UAPIObjects data argument must be of type " "dict")
 
-    def url(self, method='GET'):
+    def url(self, method="GET"):
         """Return the path subcomponent of the url to this object.
 
         For example: "computers/id/451"
 
         UAPI is not consistent with the endpoint name based on which operation you are performing.
         """
-        if hasattr(self, '_endpoint_path_' + method.lower()):
+        if hasattr(self, "_endpoint_path_" + method.lower()):
             pass
 
         url_components = [self._endpoint_path, self._id_path, self.id]
@@ -278,7 +280,7 @@ class UAPIContainer(UAPIObject):
     @classmethod
     def _urlify_arg(cls, key, val):
         """Convert keyword arguments' values to proper format for GET"""
-        if key == 'subset':
+        if key == "subset":
             if not isinstance(val, list):
                 val = val.split("&")
 
@@ -287,18 +289,18 @@ class UAPIContainer(UAPIObject):
             if all(k not in val for k in ("general", "basic")):
                 val.append("general")
 
-            return ['subset', "&".join(val)]
+            return ["subset", "&".join(val)]
 
-        elif key == 'date_range':
+        elif key == "date_range":
             start, end = val
-            fmt = lambda s: s.strftime('%Y-%m-%d')
+            fmt = lambda s: s.strftime("%Y-%m-%d")
             start = start if isinstance(start, string_types) else fmt(end)
             end = end if isinstance(end, string_types) else fmt(end)
-            return ['{}_{}'.format(start, end)]
+            return ["{}_{}".format(start, end)]
 
         else:
             return [key, val]
-        
+
     @classmethod
     def _process_kwargs(cls, kwargs):
         kwarg_urls = []

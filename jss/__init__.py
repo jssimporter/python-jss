@@ -87,4 +87,4 @@ from .tools import is_osx, is_linux, element_str
 from .jssobjectlist import JSSObjectList
 
 
-__version__ = "2.1.1"
+__version__ = "2.2.0"

@@ -431,12 +431,12 @@ class JSS(object):
         else:
             headers = {"Content-Type": "application/octet-stream", "Accept": "*/*"}
 
-        #  read existing cookies
+        # read existing cookies
         self.get_cookies_from_file()
 
         response = self.session.post(request_url, data=data, headers=headers)
 
-        #  write the cookie jar to file so we can use it again
+        # write the cookie jar to file so we can use it again
         self.write_cookies_to_file()
 
         if response.status_code == 201 and self.verbose:
@@ -494,7 +494,7 @@ class JSS(object):
             if self.verbose:
                 print("WARNING: Connection reset by peer - object may not be updated")
 
-        #  write the cookie jar to file so we can use it again
+        # write the cookie jar to file so we can use it again
         self.write_cookies_to_file()
 
         if response.status_code == 201 and self.verbose:
@@ -529,7 +529,7 @@ class JSS(object):
         """
         request_url = os.path.join(self.base_url, quote_and_encode(url_path))
 
-        #  read existing cookies
+        # read existing cookies
         self.get_cookies_from_file()
 
         if data:
@@ -542,7 +542,7 @@ class JSS(object):
         else:
             response = self.session.delete(request_url)
 
-        #  write the cookie jar to file so we can use it again
+        # write the cookie jar to file so we can use it again
         self.write_cookies_to_file()
 
         if response.status_code == 200 and self.verbose:
@@ -731,58 +731,69 @@ def add_search_method(cls, name):
     def api_method(self, data=None, **kwargs):
         """Flexibly search the JSS for objects of type {0}.
 
-            Args:
-                data (int, str, :obj:`xml.etree.ElementTree.Element`, optional): Argument to query for.
+        Args:
+            data (int, str, :obj:`xml.etree.ElementTree.Element`, optional): Argument to query for.
 
-                    Different queries are performed depending on the type of this arg:
-                        - **None** (or provide no argument / default):
-                            Search for all objects.
-                        - **int**: Search for an object by ID.
-                        - **str**: Search for an object by name. Some objects
-                            allow 'match' searches, using '*' as the
-                            wildcard operator.
-                        - :obj:`xml.etree.ElementTree.Element`: create a new
-                            object from the Element's data.
+                Different queries are performed depending on the type of this arg:
+                    - **None** (or provide no argument / default):
+                        Search for all objects.
+                    - **int**: Search for an object by ID.
+                    - **str**: Search for an object by name. Some objects
+                        allow 'match' searches, using '*' as the
+                        wildcard operator.
+                    - :obj:`xml.etree.ElementTree.Element`: create a new
+                        object from the Element's data.
 
-                **kwargs:
-                    {1}
+            **kwargs:
+                {1}
 
-                    Some classes allow additional filters, subsets, etc,
-                    in their queries. Check the object's `allowed_kwargs`
-                    attribute for a complete list of implemented keys.
+                Some classes allow additional filters, subsets, etc,
+                in their queries. Check the object's `allowed_kwargs`
+                attribute for a complete list of implemented keys.
 
-                    Not all classes offer all types of searches, nor are
-                    they all necessarily offered in a single query.
-                    Consult the Casper API documentation for usage.
+                Not all classes offer all types of searches, nor are
+                they all necessarily offered in a single query.
+                Consult the Casper API documentation for usage.
 
-                    In general, the key name is applied to the end of the
-                    URL, followed by the val; e.g.
-                    '<url>/subset/general'.
+                In general, the key name is applied to the end of the
+                URL, followed by the val; e.g.
+                '<url>/subset/general'.
 
-                    Some common types of extra arguments:
+                Some common types of extra arguments:
 
-                    subset (list of str or str): XML subelement tags to
-                        request (e.g.  ['general', 'purchasing']), OR an
-                        '&' delimited string (e.g.
-                        'general&purchasing').  Defaults to None.
-                    start_date/end_date (str or datetime): Either dates
-                        in the form 'YYYY-MM-DD' or a datetime.datetime
-                        object.
+                subset (list of str or str): XML subelement tags to
+                    request (e.g.  ['general', 'purchasing']), OR an
+                    '&' delimited string (e.g.
+                    'general&purchasing').  Defaults to None.
+                start_date/end_date (str or datetime): Either dates
+                    in the form 'YYYY-MM-DD' or a datetime.datetime
+                    object.
 
-            Returns:
-                QuerySet: If data=None, return all objects of this
-                    type.
-                {0}: If searching or creating new objects, return an
-                    instance of that object.
-                None: (FUTURE) Will return None if nothing is found that
-                    matches the search criteria.
+        Returns:
+            QuerySet: If data=None, return all objects of this
+                type.
+            {0}: If searching or creating new objects, return an
+                instance of that object.
+            None: (FUTURE) Will return None if nothing is found that
+                matches the search criteria.
 
-            Raises:
-                GetError for nonexistent objects.
+        Raises:
+            GetError for nonexistent objects.
         """
         if not isinstance(data, ElementTree.Element):
             url = obj_type.build_query(data, **kwargs)
-            data = self.get(url)
+            data = self.get(
+                url,
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                auth=UAPIAuth(
+                    self.user,
+                    self.password,
+                    "{}/api/v1/auth/tokens".format(self.base_url),
+                ),
+            )
 
         # TODO: Deprecated and pending removal
         if hasattr(obj_type, "container"):
@@ -816,53 +827,53 @@ def add_uapi_search_method(cls, name):
     def api_method(self, data=None, **kwargs):
         """Flexibly search the JSS for objects of type {0}.
 
-            Args:
-                data (None, int, str, xml.etree.ElementTree.Element):
-                    Argument to query for. Different queries are
-                    performed depending on the type of this arg:
-                        None (or provide no argument / default):
-                            Search for all objects.
-                        int: Search for an object by ID.
-                        str: Search for an object by name. Some objects
-                            allow 'match' searches, using '*' as the
-                            wildcard operator.
-                        xml.etree.ElementTree.Element: create a new
-                            object from the Element's data.
-                kwargs:
-                    {1}
+        Args:
+            data (None, int, str, xml.etree.ElementTree.Element):
+                Argument to query for. Different queries are
+                performed depending on the type of this arg:
+                    None (or provide no argument / default):
+                        Search for all objects.
+                    int: Search for an object by ID.
+                    str: Search for an object by name. Some objects
+                        allow 'match' searches, using '*' as the
+                        wildcard operator.
+                    xml.etree.ElementTree.Element: create a new
+                        object from the Element's data.
+            kwargs:
+                {1}
 
-                    Some classes allow additional filters, subsets, etc,
-                    in their queries. Check the object's `allowed_kwargs`
-                    attribute for a complete list of implemented keys.
+                Some classes allow additional filters, subsets, etc,
+                in their queries. Check the object's `allowed_kwargs`
+                attribute for a complete list of implemented keys.
 
-                    Not all classes offer all types of searches, nor are
-                    they all necessarily offered in a single query.
-                    Consult the Casper API documentation for usage.
+                Not all classes offer all types of searches, nor are
+                they all necessarily offered in a single query.
+                Consult the Casper API documentation for usage.
 
-                    In general, the key name is applied to the end of the
-                    URL, followed by the val; e.g.
-                    '<url>/subset/general'.
+                In general, the key name is applied to the end of the
+                URL, followed by the val; e.g.
+                '<url>/subset/general'.
 
-                    Some common types of extra arguments:
+                Some common types of extra arguments:
 
-                    subset (list of str or str): XML subelement tags to
-                        request (e.g.  ['general', 'purchasing']), OR an
-                        '&' delimited string (e.g.
-                        'general&purchasing').  Defaults to None.
-                    start_date/end_date (str or datetime): Either dates
-                        in the form 'YYYY-MM-DD' or a datetime.datetime
-                        object.
+                subset (list of str or str): XML subelement tags to
+                    request (e.g.  ['general', 'purchasing']), OR an
+                    '&' delimited string (e.g.
+                    'general&purchasing').  Defaults to None.
+                start_date/end_date (str or datetime): Either dates
+                    in the form 'YYYY-MM-DD' or a datetime.datetime
+                    object.
 
-            Returns:
-                QuerySet: If data=None, return all objects of this
-                    type.
-                {0}: If searching or creating new objects, return an
-                    instance of that object.
-                None: (FUTURE) Will return None if nothing is found that
-                    matches the search criteria.
+        Returns:
+            QuerySet: If data=None, return all objects of this
+                type.
+            {0}: If searching or creating new objects, return an
+                instance of that object.
+            None: (FUTURE) Will return None if nothing is found that
+                matches the search criteria.
 
-            Raises:
-                GetError for nonexistent objects.
+        Raises:
+            GetError for nonexistent objects.
         """
         if not isinstance(data, dict):
             url = obj_type.build_query(data, **kwargs)
@@ -875,7 +886,7 @@ def add_uapi_search_method(cls, name):
                 auth=UAPIAuth(
                     self.jss.user,
                     self.jss.password,
-                    "{}/uapi/auth/tokens".format(self.jss.base_url),
+                    "{}/api/v1/auth/tokens".format(self.jss.base_url),
                 ),
             )
 
