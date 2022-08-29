@@ -58,7 +58,7 @@ class UAPIAuth(requests.auth.AuthBase):
         :param kwargs:
         :return:
         """
-        if r.status_code is not 401:
+        if r.status_code != 401:
             return r
 
         logger.debug("Server returned HTTP 401, getting a new token")
