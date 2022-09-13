@@ -157,7 +157,7 @@ class JSSObject(PrettyElement):
         """Clear all children of base element and replace with update"""
         self.clear()
         # Convert all incoming data to PrettyElements.
-        for child in updated_data.getchildren():
+        for child in list(updated_data):
             if not isinstance(child, PrettyElement):
                 child = PrettyElement(child)
             self._children.append(child)
@@ -767,7 +767,7 @@ class Container(JSSObject):
         """
         location = self._handle_location(location)
         location.append(obj.as_list_data())
-        results = [item for item in location.getchildren() if
+        results = [item for item in list(location) if
                    item.findtext("id") == obj.id][0]
         return results
 
@@ -782,10 +782,10 @@ class Container(JSSObject):
         list_element = self._handle_location(list_element)
 
         if isinstance(obj, Container):
-            results = [item for item in list_element.getchildren() if
+            results = [item for item in list(list_element) if
                        item.findtext("id") == obj.id]
         elif isinstance(obj, (int, string_types)):
-            results = [item for item in list_element.getchildren() if
+            results = [item for item in list(list_element) if
                        item.findtext("id") == str(obj) or
                        item.findtext("name") == obj]
 
